@@ -117,11 +117,13 @@ build: ## Build web và mock agent
 	@cd apps/web && $(PNPM) build
 	@cd agent && go build -o bin/itso-mock-agent ./cmd/itso-mock-agent
 
-codegen: ## Sinh code từ contracts
-	$(call todo,codegen,1.7)
+codegen: ## Sinh code từ contracts: TS (OpenAPI), Go structs + bản nhúng schema (agent-ops)
+	@cd apps/web && $(PNPM) -s codegen
+	@python3 contracts/tools/gen_go_types.py
+	@cd agent && go generate ./internal/contracts && echo "✓ đồng bộ agent/internal/contracts/data"
 
-codegen-check: ## Kiểm tra codegen không tạo diff
-	$(call todo,codegen-check,1.7)
+codegen-check: ## Báo lỗi nếu file sinh lệch với contracts (không ghi file)
+	@PNPM="$(PNPM)" bash scripts/codegen-check.sh
 
 check: structure docs-check ## Chạy toàn bộ kiểm tra (đầy đủ ở Prompt 1.7)
 	$(call todo,check (đầy đủ),1.7)

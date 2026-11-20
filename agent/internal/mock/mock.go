@@ -46,19 +46,30 @@ func Register(r *registry.Registry, started time.Time) error {
 	}
 	srv := ds.Servers[0]
 
-	if err := r.Register("system.ping", func(context.Context, *envelope.Envelope) (map[string]any, error) {
-		return map[string]any{"pong": true, "agent_version": Version, "mode": "mock"}, nil
+	// Kết quả dùng struct sinh từ contracts (types_gen.go) để không lệch schema.
+	if err := r.Register(contracts.OpSystemPing, func(context.Context, *envelope.Envelope) (map[string]any, error) {
+		return toData(contracts.SystemPingResult{Pong: true, AgentVersion: Version, Mode: "mock"})
 	}); err != nil {
 		return err
 	}
-	return r.Register("system.info", func(context.Context, *envelope.Envelope) (map[string]any, error) {
-		return map[string]any{
-			"os":         srv.OS,
-			"kernel":     srv.Kernel,
-			"hostname":   srv.Hostname,
-			"uptime_sec": srv.Resources.UptimeSec + int64(time.Since(started).Seconds()),
-			"cpu_cores":  srv.Resources.CPUCores,
-			"ram_mb":     srv.Resources.RAMMB,
-		}, nil
+	return r.Register(contracts.OpSystemInfo, func(context.Context, *envelope.Envelope) (map[string]any, error) {
+		return toData(contracts.SystemInfoResult{
+			OS:        srv.OS,
+			Kernel:    srv.Kernel,
+			Hostname:  srv.Hostname,
+			UptimeSec: srv.Resources.UptimeSec + int64(time.Since(started).Seconds()),
+			CPUCores:  int64(srv.Resources.CPUCores),
+			RAMMB:     int64(srv.Resources.RAMMB),
+		})
 	})
+}
+
+// toData chuyển struct kết quả có type thành map cho registry.Result.Data.
+func toData(v any) (map[string]any, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	return m, json.Unmarshal(b, &m)
 }
