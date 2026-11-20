@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Auth\Access;
 use App\Auth\ApiTokenAuth;
 use App\Auth\RealmSessionHandler;
 use App\Infrastructure\Agent\AgentClient;
@@ -17,6 +18,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Cache quyền theo request.
+        $this->app->scoped(Access::class);
         $this->app->bind(AgentClient::class, function ($app): AgentClient {
             $socket = config('itso.agent.socket');
             $url = config('itso.agent.url');

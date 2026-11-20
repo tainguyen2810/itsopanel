@@ -35,5 +35,9 @@ return [
         'recovery_codes' => 10,
         'step_up_seconds' => 600,
         'password_reset_minutes' => 60,
+        'invite_hours' => 72,
+        // Giả danh (D-61): vé đổi phiên 60 giây, phiên giả danh 30 phút.
+        'impersonation_ticket_seconds' => 60,
+        'impersonation_minutes' => 30,
     ],
 ];

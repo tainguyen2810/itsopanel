@@ -4,7 +4,9 @@ use App\Http\Middleware\ApplyRememberPreference;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureIpAllowed;
+use App\Http\Middleware\RejectImpersonation;
 use App\Http\Middleware\RequireMfa;
+use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\RequireStepUp;
 use App\Http\Middleware\RequireTokenScope;
 use App\Http\Middleware\ResolveRealm;
@@ -43,6 +45,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'itso.mfa' => RequireMfa::class,
             'itso.step-up' => RequireStepUp::class,
             'itso.scope' => RequireTokenScope::class,
+            'itso.perm' => RequirePermission::class,
+            'itso.self' => RejectImpersonation::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

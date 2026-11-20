@@ -100,6 +100,18 @@ def auth_paths(api: Api, realm: str):
                                           "password": s(minLength=12, maxLength=200, writeOnly=True)}),
             body_example={"token": "8f1c2a7b9e3d4f6a0b5c8d2e7f1a3b6c9d0e4f7a", "email": me["user"]["email"],
                           "password": "************"}, no_content=True)
+    if realm == "portal":
+        # Giả danh (D-61): Admin tạo vé dùng một lần (POST /admin/users/{id}:impersonate → portal_url),
+        # Portal đổi vé lấy phiên portal của USER đích, có hạn, mọi thao tác ghi audit kèm người giả danh.
+        api.add("post", "/api/v1/auth/impersonation:accept", "acceptImpersonation",
+                "Nhận phiên giả danh từ Admin (vé dùng một lần)", "Auth", public=True, security=csrf_only,
+                body=obj({"ticket": s(minLength=32, maxLength=200)}),
+                body_example={"ticket": "q7Yb2kV9xW4mN8pR3tL6sD1fG5hJ0aZcE2uI7oP9"},
+                ok=cref("Me"), ok_example=one(me | {"impersonating": D.IMPERSONATION["staff"]}),
+                desc="Vé do `POST /api/v1/admin/users/{id}:impersonate` tạo, hết hạn sau 60 giây, dùng một lần. "
+                     "Phiên giả danh không đổi được mật khẩu/MFA và tự hết hạn theo `expires_at`.")
+        api.add("post", "/api/v1/auth/impersonation:end", "endImpersonation", "Kết thúc giả danh", "Auth",
+                no_content=True)
     # Realm của /auth/*: production theo origin (host admin / portal); một origin (dev, demo) theo header.
     for path, ops in api.paths.items():
         if path.startswith("/api/v1/auth/"):

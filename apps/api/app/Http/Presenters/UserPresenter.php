@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Presenters;
 
+use App\Auth\Access;
 use App\Auth\MfaService;
 use App\Auth\SessionKeys;
+use App\Models\ImpersonationSession;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 /** Biểu diễn User / Me theo contracts/openapi/common.yaml. */
 final class UserPresenter
 {
-    public function __construct(private readonly MfaService $mfa) {}
+    public function __construct(private readonly MfaService $mfa, private readonly Access $access) {}
 
     /** @return array<string, mixed> */
     public function user(User $u): array
@@ -44,20 +46,37 @@ final class UserPresenter
             'permissions' => $this->permissions($u),
             'scopes' => $this->scopes($u),
             'mfa_verified_at' => is_string($mfaAt) ? $mfaAt : null,
-            'impersonating' => null,
+            'impersonating' => $this->impersonator($request),
         ];
+    }
+
+    /** @return array{uuid: string, name: string, email: string}|null */
+    private function impersonator(Request $request): ?array
+    {
+        $id = $request->hasSession() ? $request->session()->get(SessionKeys::IMPERSONATION_ID) : null;
+        if (! is_int($id)) {
+            return null;
+        }
+        $imp = ImpersonationSession::query()->find($id);
+        $staff = $imp !== null ? User::query()->find($imp->staff_user_id) : null;
+
+        return $staff instanceof User ? $this->ref($staff) : null;
     }
 
     /** @return list<string> */
     public function permissions(User $u): array
     {
-        $keys = DB::table('user_roles')
-            ->join('role_permissions', 'role_permissions.role_id', '=', 'user_roles.role_id')
-            ->join('permissions', 'permissions.id', '=', 'role_permissions.permission_id')
-            ->where('user_roles.user_id', $u->id)->orderBy('permissions.key')
-            ->pluck('permissions.key')->map(fn ($k): string => (string) $k)->all();
+        return $this->access->permissions($u);
+    }
 
-        return array_values($keys);
+    /**
+     * UserRef (uuid, name, email).
+     *
+     * @return array{uuid: string, name: string, email: string}
+     */
+    public function ref(User $u): array
+    {
+        return ['uuid' => $u->uuid, 'name' => $u->name, 'email' => $u->email];
     }
 
     /** @return list<array{scope_type: string, uuid: string, name: string}> */

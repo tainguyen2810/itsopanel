@@ -18,4 +18,7 @@ final class SessionKeys
 
     /** Đăng ký TOTP chờ xác nhận: secret (đã mã hóa) + băm mã khôi phục. */
     public const TOTP_PENDING = 'itso.totp_pending';
+
+    /** id bảng impersonation_sessions khi phiên Portal là phiên giả danh. */
+    public const IMPERSONATION_ID = 'itso.impersonation_id';
 }

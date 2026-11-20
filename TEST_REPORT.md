@@ -2,6 +2,30 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 3 / Prompt 3.3 — nhánh `phase-3`
+
+Môi trường: như 3.1.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (portal thêm `POST /auth/impersonation:accept`, `POST /auth/impersonation:end`; admin 220 / portal 103 operation) |
+| Ma trận quyền | `php artisan test tests/Feature/Rbac/MatrixTest.php` | PASS: 69 test — 17 endpoint × 4 nhân vật (SA, ADMIN trong phạm vi, ADMIN ngoài phạm vi, USER) + danh sách theo phạm vi. Ngoài phạm vi → 404, thiếu quyền → 403, USER gọi Admin API → 401 (GET) / 419 (ghi, không có phiên admin nên chặn ở CSRF) |
+| Users API | `php artisan test tests/Feature/Rbac/UsersApiTest.php` | PASS: 12 test — mọi endpoint users/roles/api-tokens khớp OpenAPI (200/201/204/404/409/412/422); token tạo qua API dùng được đúng scope; mời user 72 giờ; ≥1 SUPER_ADMIN; ETag/If-Match; khóa thu hồi phiên, mở khóa xóa bộ đếm, reset MFA; step-up hết hạn; gán phạm vi; giả danh (vé một lần, hết hạn 60 giây / 30 phút, chặn đổi mật khẩu/MFA, audit kèm người giả danh); audit che secret + hash chain; cursor + sort sai 422 |
+| Pest toàn bộ | `make test-api` | PASS: 146 test, 983 assertion |
+| Lint | `make lint-api` · `make docs-check` · web `tsc -b` | PASS (Larastan 0 lỗi) |
+
+**Test bị bỏ qua:** không.
+
+Ghi chú: Policies hiện thực bằng `App\Auth\Access` (truy vấn có phạm vi dùng chung cho list và chi tiết) + middleware `itso.perm`; model của 3.4/3.5 (job, audit, account, gói) dùng cùng lớp này khi có endpoint.
+
+### Acceptance Prompt 3.3
+
+- ✓ Seed vai trò/quyền, phạm vi ADMIN, USER chỉ thấy của mình (`Access::accounts`)
+- ✓ /users (lọc, tạo, sửa, khóa/mở, reset MFA, scopes), /roles, API token
+- ✓ Giả danh chỉ SA, có lý do, chỉ USER Portal đang hoạt động, impersonation_sessions, audit
+- ✓ Luôn còn ít nhất một SUPER_ADMIN; ADMIN chỉ quản lý USER Portal trong phạm vi
+- ✓ Ma trận quyền tự động
+
 ## 2026-11-20 — Phase 3 / Prompt 3.2 — nhánh `phase-3`
 
 Môi trường: như 3.1 (PostgreSQL 16 + Redis 7 cục bộ).

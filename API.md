@@ -43,6 +43,17 @@ Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so v
 | IP allowlist | Bảng `ip_allowlist`: scope `admin` áp cho realm admin (cả `/auth/*` khi realm admin), scope `api` áp thêm cho request bằng token. Danh sách trống = không giới hạn. Ngoài danh sách → `403 ip_not_allowed` |
 | API token | `Authorization: Bearer itso_…` chỉ cho realm admin; lưu SHA-256, kiểm `expires_at`, `allowed_cidrs`, user admin còn active; không cần CSRF/MFA. Route kiểm scope bằng `itso.scope:<nhóm>:read\|write` (`write` bao gồm `read`). Tạo/thu hồi token qua `/admin/api-tokens` (Prompt 3.3) |
 
+## 1b. Phân quyền (Prompt 3.3)
+
+| Mục | Cách làm |
+|---|---|
+| Quyền | Danh mục ở `apps/api/app/Auth/Permissions.php` (seed `PermissionSeeder`): SUPER_ADMIN `*`; ADMIN `users.read/write`, `roles.read`, `servers.read`, `packages.read`, `accounts.read/write`, `jobs.read/write`, `audit.read`, `websites.*`, `databases.*`, `backups.read`; USER `own.*`. Route gắn `itso.perm:<quyền>`; thiếu → `403 forbidden` |
+| Phạm vi ADMIN | `user_scopes` (server \| hosting_account). ADMIN thấy account trên server trong phạm vi hoặc account được giao, thấy USER Portal sở hữu các account đó hoặc do mình tạo. Ngoài phạm vi → `404` (không lộ sự tồn tại). USER chỉ thấy tài nguyên `owner_user_id` của mình |
+| Token API | Ngoài quyền của user, token phải có scope tương ứng: `users.read` → `users:read`, hành động khác → `users:write` |
+| Users | ADMIN chỉ tạo/sửa/khóa USER Portal trong phạm vi; đổi vai trò và gán phạm vi chỉ SUPER_ADMIN; luôn còn ít nhất một SUPER_ADMIN đang hoạt động (`409`); không tự khóa. `PATCH` trả `ETag`, gửi `If-Match` sai → `412`. Mời user (`send_invite`) gửi link đặt mật khẩu 72 giờ. Khóa → thu hồi mọi phiên; mở khóa → xóa bộ đếm đăng nhập sai; reset MFA (step-up) → xóa TOTP + mã khôi phục + phiên |
+| Giả danh | D-61: vé một lần 60 giây → `portal_url` (`{ITSO_PORTAL_URL}/impersonate?ticket=…`) → `POST /auth/impersonation:accept`; phiên 30 phút; `Me.impersonating` = người giả danh |
+| Ma trận kiểm thử | `apps/api/tests/Feature/Rbac/MatrixTest.php`: mỗi endpoint × SA / ADMIN trong phạm vi / ADMIN ngoài phạm vi / USER; Prompt 3.4–3.5 thêm dòng cho endpoint mới |
+
 ## 2. Hosting Provisioning Service (lớp nội bộ)
 
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.

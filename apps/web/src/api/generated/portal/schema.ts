@@ -19,6 +19,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/impersonation:accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Nhận phiên giả danh từ Admin (vé dùng một lần)
+         * @description Vé do `POST /api/v1/admin/users/{id}:impersonate` tạo, hết hạn sau 60 giây, dùng một lần. Phiên giả danh không đổi được mật khẩu/MFA và tự hết hạn theo `expires_at`.
+         */
+        post: operations["acceptImpersonation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/impersonation:end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kết thúc giả danh */
+        post: operations["endImpersonation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -1519,16 +1556,6 @@ export interface components {
                 [key: string]: string[];
             };
         };
-        LoginRequest: {
-            /** Format: email */
-            email: string;
-            password: string;
-            remember?: boolean;
-        };
-        LoginResult: {
-            mfa_required: boolean;
-            mfa_methods: ("totp" | "recovery")[];
-        };
         User: {
             /** Format: uuid */
             uuid: string;
@@ -1571,6 +1598,16 @@ export interface components {
             /** Format: date-time */
             mfa_verified_at: string | null;
             impersonating: components["schemas"]["UserRef"] | null;
+        };
+        LoginRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+            remember?: boolean;
+        };
+        LoginResult: {
+            mfa_required: boolean;
+            mfa_methods: ("totp" | "recovery")[];
         };
         MfaVerifyRequest: {
             code: string;
@@ -2582,6 +2619,100 @@ export interface operations {
                 };
                 content?: never;
             };
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    acceptImpersonation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ticket": "q7Yb2kV9xW4mN8pR3tL6sD1fG5hJ0aZcE2uI7oP9"
+                 *     }
+                 */
+                "application/json": {
+                    ticket: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "user": {
+                     *           "uuid": "01938a01-0003-7000-8000-000001000003",
+                     *           "realm": "portal",
+                     *           "name": "Công ty An Phát",
+                     *           "email": "it@anphat.vn",
+                     *           "role": "USER",
+                     *           "status": "active",
+                     *           "mfa_enabled": true,
+                     *           "locale": "vi",
+                     *           "timezone": "Asia/Ho_Chi_Minh",
+                     *           "last_login_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         "permissions": [
+                     *           "own.*"
+                     *         ],
+                     *         "scopes": [],
+                     *         "mfa_verified_at": "2026-11-20T08:15:00+07:00",
+                     *         "impersonating": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["Me"];
+                    };
+                };
+            };
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    endImpersonation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công, không có nội dung */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };

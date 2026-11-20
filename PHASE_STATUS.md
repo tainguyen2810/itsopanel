@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 3 — Auth, RBAC, Users, Packages, Accounts, Jobs, Audit (đang làm; Phase 2 ✓ hoàn tất và merge 2026-11-20, chờ duyệt cùng D-56/D-57)
-- **Prompt hiện tại:** 3.3 Phân quyền và người dùng. Người dùng yêu cầu (2026-11-20) lên kế hoạch và thực hiện Phase 3; làm hàng loạt 3.1 → 3.6, tự merge local
-- **Task đang làm:** 3.3 — bắt đầu (3.2 ✓)
+- **Prompt hiện tại:** 3.4 Job, agent mock, audit, thông báo, cài đặt. Người dùng yêu cầu (2026-11-20) lên kế hoạch và thực hiện Phase 3; làm hàng loạt 3.1 → 3.6, tự merge local
+- **Task đang làm:** 3.4 — bắt đầu (3.3 ✓)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-3`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_3_PROMPTS.md`; cuối 3.6 báo cáo Phase 3 và DỪNG (không bắt đầu Phase 4)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
@@ -35,8 +35,8 @@ Phase 3 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_3_PROMPTS.
 
 - ✓ 3.1 Schema Phase 3 (migrations), model, Pest trên PostgreSQL
 - ✓ 3.2 Auth theo realm, MFA, phiên, mật khẩu, API token
-- ✱ 3.3 RBAC, phạm vi ADMIN, Policies, Users API
-- ○ 3.4 Jobs, mock agent, idempotency, audit, thông báo, cài đặt
+- ✓ 3.3 RBAC, phạm vi ADMIN, Policies, Users API
+- ✱ 3.4 Jobs, mock agent, idempotency, audit, thông báo, cài đặt
 - ○ 3.5 Gói, Hosting Provisioning Service, tài khoản, API Portal
 - ○ 3.6 Nối UI vào API thật, e2e, báo cáo Phase 3
 
@@ -72,3 +72,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-20 | 2 / 2.8 | Kiểm tra tổng: 74 route axe light/dark + 390px + EN không lẫn tiếng Việt; số liệu nhất quán (5 test); 56 ảnh trang chính `docs/screenshots/phase-2/`; bản demo tĩnh; `make check` (2 bước đỏ lần đầu do môi trường/markdown, sửa và chạy lại PASS); sửa 5 lỗi a11y; báo cáo `docs/reports/phase-2.md` | b7f6bd9 |
 | 2026-11-20 | 3 / 3.1 | Migration Phase 3 sinh từ đặc tả (`database/tools/gen_migrations.py`, `make db-migrations`): 26 bảng + trigger/CHECK của extras.sql; `db-verify` kiểm file khớp đặc tả và Phase 3 → 11 áp lần lượt = itso.sql + extras.sql; 22 model Eloquent (uuid công khai, cast `text[]`), factory, RoleSeeder, hash argon2id; Pest chạy trên PostgreSQL 16 (D-59), CI/Makefile/compose cập nhật; 9 test schema | 3afe712 |
 | 2026-11-20 | 3 / 3.2 | Xác thực (D-58): contract thêm header `X-ITSO-Realm` + cookie phiên theo realm; middleware realm → cookie `itso_{realm}_session` (chạy trước StartSession), phiên bảng `sessions` có realm + `mfa_verified_at`, CSRF cookie `XSRF-TOKEN-{REALM}` → 419; login argon2id, cùng lỗi cho sai realm/khóa, khóa lũy tiến email + IP (`login_attempts`); TOTP RFC 6238 tự viết + 10 mã khôi phục argon2id, SA bắt buộc MFA, step-up 10 phút; phiên của tôi (uuid băm), đổi/quên/đặt lại mật khẩu (token SHA-256 trong cache, một lần, 60 phút, mail log); IP allowlist realm admin/api; guard API token SHA-256 + scope + CIDR; route admin/system chuyển sau đăng nhập admin. Pest 65 (42 mới) | 7a6b371 |
+| 2026-11-20 | 3 / 3.3 | RBAC: danh mục quyền + `PermissionSeeder` (SA `*`, ADMIN theo nhóm, USER `own.*`), `Access` (phạm vi ADMIN qua `user_scopes`, ngoài phạm vi 404), middleware `itso.perm` (kèm scope token); Users API (list lọc/tìm/cursor, tạo + mời, sửa có ETag/If-Match, khóa/mở, reset MFA có step-up, scopes GET/PUT), roles, API token CRUD (uuid HMAC, secret một lần); giả danh bằng vé một lần (contract `impersonation:accept`/`end`, D-61 đề xuất); luôn còn ≥1 SUPER_ADMIN; `AuditLogger` tối thiểu (che secret, hash chain DB). Ma trận quyền 68 ô + 13 test API; Pest 146 | (commit 3.3) |

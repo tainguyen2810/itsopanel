@@ -6,16 +6,14 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Auth\Realm;
 use App\Auth\SessionRepository;
+use App\Domain\Users\UserService;
 use App\Exceptions\ApiProblem;
-use App\Mail\PasswordResetMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 
 /**
  * Đổi / quên / đặt lại mật khẩu. Token đặt lại: ngẫu nhiên 64 ký tự, chỉ lưu SHA-256 trong cache,
@@ -23,7 +21,7 @@ use Illuminate\Support\Str;
  */
 final class PasswordController
 {
-    public function __construct(private readonly SessionRepository $sessions) {}
+    public function __construct(private readonly SessionRepository $sessions, private readonly UserService $users) {}
 
     public function change(Request $request): Response
     {
@@ -59,12 +57,7 @@ final class PasswordController
         /** @var User|null $user */
         $user = User::query()->where('realm', $realm)->where('email', $email)->where('status', 'active')->first();
         if ($user !== null) {
-            $token = Str::random(64);
-            $minutes = (int) config('itso.auth.password_reset_minutes', 60);
-            Cache::put(self::cacheKey($user), hash('sha256', $token), now()->addMinutes($minutes));
-            $base = rtrim((string) config("itso.auth.app_urls.$realm"), '/');
-            $url = $base.'/reset-password?'.http_build_query(['token' => $token, 'email' => $user->email]);
-            Mail::to($user->email)->send(new PasswordResetMail($user->name, $url, $minutes));
+            $this->users->sendPasswordLink($user, (int) config('itso.auth.password_reset_minutes', 60));
         }
 
         return response()->noContent();
@@ -95,6 +88,6 @@ final class PasswordController
 
     private static function cacheKey(User $user): string
     {
-        return 'itso:pwreset:'.$user->id;
+        return UserService::resetCacheKey($user);
     }
 }

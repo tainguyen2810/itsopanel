@@ -67,6 +67,7 @@
 | D-58 | **Mới (Phase 3):** Xác thực SPA bằng session cookie cùng origin (guard session của Laravel, bảng `sessions` theo DBML có `realm`, `mfa_verified_at`) + CSRF double-submit (`/auth/csrf`, header `X-XSRF-TOKEN`), không cài Sanctum; API token nội bộ (`api_tokens`, SHA-256, scopes, CIDR) qua guard riêng; MFA TOTP RFC 6238 tự viết (secret mã hóa bằng APP_KEY, mã khôi phục băm argon2id) | **ĐỀ XUẤT** (chờ duyệt cùng Phase 3) |
 | D-59 | **Mới (Phase 3):** Pest chạy trên PostgreSQL 16 (bỏ SQLite) vì schema dùng trigger, `citext`, `inet`, `jsonb`, partial index, partition; `make test-api` cần PostgreSQL (`make services-up` hoặc cluster cục bộ) | **ĐỀ XUẤT** (chờ duyệt cùng Phase 3) |
 | D-60 | **Mới (Phase 3):** Job runner = bảng `jobs`/`job_steps`/`job_logs` + `JobRunner` chạy từng bước gọi `AgentClient` qua queue Redis; test dùng queue sync + fake agent; tiến độ bằng polling `GET /jobs/{id}` và `/jobs/{id}/events?after=` (SSE để Phase 11) | **ĐỀ XUẤT** (chờ duyệt cùng Phase 3) |
+| D-61 | **Mới (Phase 3):** Giả danh USER Portal bằng vé một lần: `POST /admin/users/{id}:impersonate` (chỉ SUPER_ADMIN, step-up, lý do) tạo `impersonation_sessions` (30 phút) + vé ngẫu nhiên lưu SHA-256 trong cache 60 giây; Portal đổi vé qua `POST /auth/impersonation:accept` lấy phiên portal của USER đích (cookie portal riêng, không dùng chung phiên admin), `POST /auth/impersonation:end` kết thúc. Phiên giả danh không đổi được mật khẩu/MFA/phiên; mọi audit ghi `impersonator_user_id` | **ĐỀ XUẤT** (chờ duyệt cùng Phase 3) |
 
 ---
 

@@ -32,6 +32,7 @@ final class Spa
         app('session')->forgetDrivers();
         app()->forgetInstance('session.store');
         app()->forgetInstance('auth.driver');
+        app()->forgetScopedInstances();
         app('auth')->forgetGuards();
         config(['auth.defaults.guard' => 'web']);
 
