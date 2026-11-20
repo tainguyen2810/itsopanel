@@ -5,10 +5,10 @@
 ## Hiện tại
 
 - **Phase:** 1 — Foundation, Architecture, Database, API Contracts, Design System (đang làm)
-- **Prompt hiện tại:** 1.4 ✓ hoàn tất, chờ duyệt
-- **Task đang làm:** — (dừng chờ duyệt Prompt 1.4)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.4)
-- **Bước tiếp theo:** Người dùng duyệt 1.4 → Prompt 1.5 (Scaffold web/api/agent, mock agent, dev env)
+- **Prompt hiện tại:** 1.5 ✓ hoàn tất, chờ duyệt
+- **Task đang làm:** — (dừng chờ duyệt Prompt 1.5)
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.5)
+- **Bước tiếp theo:** Người dùng duyệt 1.5 → Prompt 1.6 (Design System: tokens, Light/Dark, i18n, component nền, app shell)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -37,7 +37,7 @@ Phase 1 (đang làm)
 - ✓ 1.2 Architecture & ADR trong repo
 - ✓ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
 - ✓ 1.4 API Contracts (OpenAPI admin/portal, agent schemas, test vectors)
-- ○ 1.5 Scaffold web/api/agent + mock agent + dev env
+- ✓ 1.5 Scaffold web/api/agent + mock agent + dev env
 - ○ 1.6 Design System (tokens, Light/Dark, i18n, component nền, app shell 2 entry)
 - ○ 1.7 CI, codegen, kiểm tra tổng và báo cáo Phase 1
 
@@ -54,3 +54,5 @@ Phase 1 (đang làm)
 | 2026-11-20 | 1 / 1.2 | ARCHITECTURE.md (6 sơ đồ Mermaid), 10 ADR, threat model, sitemap UI; scripts docs-check | b6ac081 |
 | 2026-11-20 | 1 / 1.3 | DBML 78 bảng, itso.sql + extras.sql (trigger realm, purge guard D-46, audit append-only + hash chain, partition), ERD 9 SVG, ownership/lifecycle/migration-plan, db-verify 41 test | 1de27fe |
 | 2026-11-20 | 1 / 1.4 | OpenAPI admin 208 + portal 90 operation (+ common), agent-ops 60 op có schema + 21 khai báo, evil-inputs 93 vector, demo dataset, Redocly ruleset + check_contracts + ajv | 6a06302 |
+| 2026-11-20 | 1 / mockup | Mockup dashboard Admin (desktop/tablet/mobile) trước 1.5 theo yêu cầu | 7aefaf0 |
+| 2026-11-20 | 1 / 1.5 | Contract `GET /admin/system/status` + op `system.ping`; apps/web (Vite/React/Tailwind, 2 entry), apps/api (Laravel 13.43, RFC 9457, Pest, Larastan + rule cấm exec), agent mock (Go, unix socket), make setup/dev/test/lint, compose dev, runbook | 67211b5, e050c8c, 53f4a13, 16837e7, 1fd5485 |

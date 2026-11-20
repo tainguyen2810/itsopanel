@@ -37,6 +37,7 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Cài dependency | `make setup` | 1.5 |
 | Chạy dev (web + api + mock agent) | `make dev` | 1.5 |
 | Test / Lint / Build | `make test` · `make lint` · `make build` | 1.5 |
+| PostgreSQL + Redis dev (Docker, tùy chọn) · fuzz agent | `make services-up` · `make test-fuzz` | 1.5 |
 | Codegen từ contracts | `make codegen` · `make codegen-check` | 1.7 |
 | Toàn bộ kiểm tra | `make check` | 1.7 |
 
