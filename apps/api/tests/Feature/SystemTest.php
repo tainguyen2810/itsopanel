@@ -47,12 +47,12 @@ it('GET /api/v1/admin/system/status: agent không chạy → reachable=false, ap
         ->and($res->json('data.agent.error'))->toContain('AgentUnavailable');
 });
 
-it('route không tồn tại trả 404 application/problem+json đúng schema Problem', function () {
+it('route không tồn tại trả 404 application/problem+json đúng schema Problem (mã not_available: module chưa có ở bản này)', function () {
     $res = $this->getJson('/api/v1/khong-ton-tai');
     $res->assertNotFound();
     expect($res->headers->get('Content-Type'))->toBe('application/problem+json')
         ->and($res->json())->toMatchArray([
-            'type' => 'https://docs.itso.local/errors/not_found', 'status' => 404, 'code' => 'not_found',
+            'type' => 'https://docs.itso.local/errors/not_available', 'status' => 404, 'code' => 'not_found',
             'instance' => '/api/v1/khong-ton-tai',
         ]);
     expect(OpenApi::validate('common.yaml', ['$ref' => '#/components/schemas/Problem'], $res->json()))->toBeNull();

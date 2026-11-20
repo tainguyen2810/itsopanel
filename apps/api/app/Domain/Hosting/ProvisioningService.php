@@ -191,6 +191,33 @@ final class ProvisioningService
         });
     }
 
+    /**
+     * Áp lại desired state của account xuống agent (account.ensure + quota.apply, khóa lại nếu suspended/terminated):
+     * dùng khi agent mất trạng thái (mock khởi động lại) hoặc khi nạp dữ liệu demo.
+     */
+    public function reconcile(HostingAccount $a, ?User $actor = null): Job
+    {
+        return DB::transaction(function () use ($a, $actor): Job {
+            /** @var HostingAccount $a */
+            $a = HostingAccount::query()->lockForUpdate()->findOrFail($a->id);
+            if (! in_array($a->lifecycle_state, ['active', 'suspended', 'terminated'], true)) {
+                throw new ApiProblem(409, 'invalid_state_transition', 'Không đồng bộ được', "Account đang {$a->lifecycle_state}.");
+            }
+            $this->ensureIdle($a);
+            $limits = $this->quota->limits($a);
+            $spec = (new JobSpec('hosting_account.reconcile', $a, $a->server_id))
+                ->step('account.ensure', ['account' => self::ref($a), 'home_path' => $a->home_path,
+                    'shell' => $limits['ssh_allowed'] ? '/bin/bash' : '/usr/sbin/nologin', 'limits' => self::agentLimits($limits)])
+                ->step('quota.apply', ['account' => self::ref($a), 'limits' => self::agentLimits($limits)]);
+            if ($a->lifecycle_state !== 'active') {
+                $spec->step('account.suspend', ['account' => self::ref($a), 'reason' => (string) ($a->suspended_reason ?: $a->lifecycle_state)]);
+            }
+            $job = $this->dispatch($spec, $actor, [$a]);
+
+            return $job;
+        });
+    }
+
     public function currentVersion(HostingPackage $p): HostingPackageVersion
     {
         return HostingPackageVersion::query()->where('package_id', $p->id)->where('version', $p->current_version)->firstOrFail();
@@ -236,7 +263,7 @@ final class ProvisioningService
     }
 
     /** @param  array<int, HostingAccount>  $accounts */
-    private function dispatch(JobSpec $spec, User $actor, array $accounts): Job
+    private function dispatch(JobSpec $spec, ?User $actor, array $accounts): Job
     {
         $job = $this->jobs->dispatch($spec, $actor);
         HostingAccount::query()->whereKey(array_map(fn (HostingAccount $a): int => $a->id, $accounts))

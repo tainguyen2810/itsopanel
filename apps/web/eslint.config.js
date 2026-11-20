@@ -88,7 +88,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'e2e/**'],
+    files: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'e2e/**', 'e2e-real/**'],
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
   {

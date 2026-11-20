@@ -24,7 +24,7 @@ type V = z.infer<typeof schema>;
 /** Đăng nhập Admin/Portal (demo: không xác thực thật; tài khoản có MFA chuyển sang bước mã). */
 export default function LoginPage() {
   const { t } = useTranslation('admin');
-  const { user, demo } = useSession();
+  const { user, demo, refresh } = useSession();
   const navigate = useNavigate();
   const home = useHomePath();
   const { realm, basepath } = useRoutesInfo();
@@ -35,8 +35,15 @@ export default function LoginPage() {
   });
   const login = useMutation({
     mutationFn: (v: V) =>
-      sendAuth<{ mfa_required: boolean }>('POST', '/api/v1/auth/login', { body: v }),
-    onSuccess: (r) => void navigate({ to: r.mfa_required ? '/login/mfa' : home }),
+      sendAuth<{ mfa_required: boolean; mfa_methods?: string[] }>('POST', '/api/v1/auth/login', {
+        body: v,
+      }),
+    // Có phương thức MFA → bước mã; SUPER_ADMIN chưa bật MFA → shell đưa tới Hồ sơ để bật.
+    onSuccess: async (r) => {
+      await refresh();
+      const needCode = r.mfa_required && (r.mfa_methods === undefined || r.mfa_methods.length > 0);
+      void navigate({ to: needCode ? '/login/mfa' : home });
+    },
   });
   return (
     <AuthLayout

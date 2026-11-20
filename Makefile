@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -61,7 +61,7 @@ COMPOSE ?= docker compose -f docker-compose.dev.yml
 setup: ## Cài dependency (web, api, agent), không cần Docker
 	@bash scripts/setup.sh
 
-dev: ## Chạy web + api + mock agent (Ctrl+C để dừng)
+dev: ## Chạy web + api + queue worker + mock agent (Ctrl+C để dừng)
 	@bash scripts/dev.sh
 
 services-up: ## (Tùy chọn) PostgreSQL 16 + Redis 7 bằng Docker, chỉ cho dev
@@ -83,6 +83,9 @@ test-agent:
 
 test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự bật Vite)
 	@cd apps/web && $(PNPM) e2e
+
+test-e2e-real: ## Playwright trên stack thật (cần `make dev` đang chạy + DemoSeeder, xem docs/runbooks/phase-3-demo.md)
+	@cd apps/web && $(PNPM) exec playwright test -c playwright.real.config.ts --trace off
 
 screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/) và trang chính Phase 2 (docs/screenshots/phase-2/)
 	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system SCREENSHOT_DIR_P2=$(CURDIR)/docs/screenshots/phase-2 $(PNPM) e2e

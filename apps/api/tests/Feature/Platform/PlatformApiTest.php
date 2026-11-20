@@ -96,6 +96,11 @@ it('thông báo: chỉ của chính user; đọc một / đọc hết; admin và
     $sl = $sa->get('/api/v1/admin/notifications');
     assertMatchesContract(XA, 'get', '/api/v1/admin/notifications', 200, $sl);
     expect(collect($sl->json('data'))->pluck('title')->all())->toBe(['Cho SA']);
+    $saUuid = $sl->json('data.0.uuid');
+    assertMatchesContract(XA, 'post', '/api/v1/admin/notifications/{id}:read', 204, $sa->post("/api/v1/admin/notifications/$saUuid:read"));
+    expect($sa->get('/api/v1/admin/notifications')->json('data.0.read_at'))->not->toBeNull();
+    // Thông báo của người khác (kể cả SA) không đánh dấu được: 404.
+    assertMatchesContract(XA, 'post', '/api/v1/admin/notifications/{id}:read', 404, $sa->post("/api/v1/admin/notifications/$theirUuid:read"));
 });
 
 it('cài đặt: chỉ SA, không trả secret, ETag/If-Match 412, khóa lạ 422, PATCH cần step-up', function () {
@@ -186,4 +191,12 @@ it('dashboard summary theo phạm vi, khớp hợp đồng', function () {
     expect($in->json('data.counts'))->toMatchArray(['servers' => 1, 'hosting_accounts' => 1])
         ->and(collect($in->json('data.servers'))->pluck('server.uuid')->all())->toBe([$a->server->uuid])
         ->and(array_sum(array_column($in->json('data.package_distribution'), 'accounts')))->toBe(1);
+});
+
+it('endpoint chưa có route ở bản này → 404 type not_available (UI hiện "chưa có ở bản này")', function () {
+    $a = new Actors($this);
+    $r = $a->spa('SA')->get('/api/v1/admin/websites');
+    expect($r->status())->toBe(404)->and($r->json('type'))->toEndWith('/not_available')->and($r->json('code'))->toBe('not_found');
+    $real = $a->spa('SA')->get('/api/v1/admin/servers/00000000-0000-4000-8000-000000000000');
+    expect($real->status())->toBe(404)->and($real->json('type'))->toEndWith('/not_found');
 });

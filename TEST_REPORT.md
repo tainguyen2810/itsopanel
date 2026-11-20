@@ -2,6 +2,30 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 3 / Prompt 3.6 — nhánh `phase-3`
+
+Môi trường: như 3.4; stack thật chạy bằng `make dev` (Vite 5173, Laravel 8000, mock agent, queue worker), DB `itso` đã `migrate:fresh --seed` + `DemoSeeder`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật | `make test-e2e-real` | PASS: 4/4 — Admin đăng nhập MFA (mã sai bị từ chối, chưa xác minh bị đưa về MFA); tạo user portal → gói → account qua wizard → job mock agent → Hoạt động → tạm khóa → mở khóa; Portal chỉ thấy `anphat`, `oldshop`, account người khác 404 (API + URL); sai realm 401 và user portal không vào được Admin |
+| Endpoint còn thiếu test | `php artisan test tests/Feature/Platform` | PASS: 20 test (mới: 501 purge/migrate, gợi ý đặt account, đánh dấu đọc thông báo Admin, sự kiện + chạy lại job Portal) |
+| DemoSeeder | `php artisan test tests/Feature/Demo/DemoSeederTest.php` | PASS |
+| Toàn bộ | `make check` | 20 PASS · 1 SKIP (staticcheck) · 0 FAIL; Pest 292 (2095 assertion), Vitest 457, Playwright 259, db-verify 41, fuzz 240.425 lần, git-clean PASS |
+
+Lần chạy `make check` đầu: FAIL ở docs-check (URL/email trần trong runbook), test-e2e (21 test shell bị đưa về đăng nhập vì build thường dùng phiên thật), test-api (1 test còn kỳ vọng `type` `not_found` cho route không tồn tại), git-clean (sửa file trong lúc chạy). Đã sửa runbook, thêm giả lập `/auth/me` vào fixture e2e, cập nhật kỳ vọng test theo hành vi mới; lần 2 xanh hết.
+
+Coverage: không có pcov/xdebug, build pcov trong container bị chặn → thay bằng đối chiếu route (87/87 route có test gọi tới), chi tiết ở `docs/reports/phase-3.md` §6.
+
+**Test bị bỏ qua:** không.
+
+### Acceptance Prompt 3.6
+
+- ✓ Client gửi CSRF, xử lý 401/419; phiên thật thay persona ở build thường
+- ✓ DemoSeeder (mật khẩu dev, SA dùng secret TOTP dev), `make dev` chạy web + api + queue + mock agent
+- ✓ Module Phase sau hiện "Chưa có ở bản này"
+- ✓ Playwright trên stack thật; `make check` xanh; báo cáo `docs/reports/phase-3.md`; runbook `docs/runbooks/phase-3-demo.md`
+
 ## 2026-11-20 — Phase 3 / Prompt 3.5 — nhánh `phase-3`
 
 Môi trường: như 3.4.

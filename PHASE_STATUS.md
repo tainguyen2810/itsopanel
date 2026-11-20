@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 3 — Auth, RBAC, Users, Packages, Accounts, Jobs, Audit (đang làm; Phase 2 ✓ hoàn tất và merge 2026-11-20, chờ duyệt cùng D-56/D-57)
+- **Phase:** 3 — Auth, RBAC, Users, Packages, Accounts, Jobs, Audit ✓ hoàn tất, merge vào `main` (local) 2026-11-20; chờ duyệt Phase 3 + D-58 → D-62
 - **Prompt hiện tại:** 3.6 Nối UI vào API thật, e2e, báo cáo Phase 3. Người dùng yêu cầu (2026-11-20) lên kế hoạch và thực hiện Phase 3; làm hàng loạt 3.1 → 3.6, tự merge local
-- **Task đang làm:** 3.6 — bắt đầu (3.5 ✓)
+- **Task đang làm:** không (3.6 ✓, báo cáo `docs/reports/phase-3.md`)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-3`
-- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_3_PROMPTS.md`; cuối 3.6 báo cáo Phase 3 và DỪNG (không bắt đầu Phase 4)
+- **Bước tiếp theo:** DỪNG. Chờ người dùng duyệt Phase 3 trước khi lên kế hoạch Phase 4
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -18,7 +18,7 @@
 | 0 | Planning | ✓ APPROVED |
 | 1 | Foundation, Architecture, Database, API Contracts, Design System | ✓ APPROVED |
 | 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ✓ (báo cáo `docs/reports/phase-2.md`) |
-| 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ✱ |
+| 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ✓ (báo cáo `docs/reports/phase-3.md`) |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ○ |
 | 5 | Website / Nginx / PHP / SSL / DNS | ○ |
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ○ |
@@ -38,7 +38,7 @@ Phase 3 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_3_PROMPTS.
 - ✓ 3.3 RBAC, phạm vi ADMIN, Policies, Users API
 - ✓ 3.4 Jobs, mock agent, idempotency, audit, thông báo, cài đặt
 - ✓ 3.5 Gói, Hosting Provisioning Service, tài khoản, API Portal
-- ✱ 3.6 Nối UI vào API thật, e2e, báo cáo Phase 3
+- ✓ 3.6 Nối UI vào API thật, e2e, báo cáo Phase 3
 
 Phase 2: ✓ hoàn tất 2026-11-20 (báo cáo `docs/reports/phase-2.md`, merge `6a9cda5`, tag `v0.0.1-demo`).
 
@@ -75,3 +75,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-20 | 3 / 3.3 | RBAC: danh mục quyền + `PermissionSeeder` (SA `*`, ADMIN theo nhóm, USER `own.*`), `Access` (phạm vi ADMIN qua `user_scopes`, ngoài phạm vi 404), middleware `itso.perm` (kèm scope token); Users API (list lọc/tìm/cursor, tạo + mời, sửa có ETag/If-Match, khóa/mở, reset MFA có step-up, scopes GET/PUT), roles, API token CRUD (uuid HMAC, secret một lần); giả danh bằng vé một lần (contract `impersonation:accept`/`end`, D-61 đề xuất); luôn còn ≥1 SUPER_ADMIN; `AuditLogger` tối thiểu (che secret, hash chain DB). Ma trận quyền 68 ô + 13 test API; Pest 146 | 4406e7e |
 | 2026-11-20 | 3 / 3.4 | JobRunner (D-60): `JobDispatcher` → queue Redis → bước op agent có kiểu, `op_id = job_uuid:seq:attempt`, retry có backoff cho lỗi tạm thời, cancel, timeout, job_logs, thông báo khi lỗi; mock agent thêm op `account.*`/`quota.*` (kho trong bộ nhớ, struct sinh); `/jobs` admin + portal (list, chi tiết ETag, logs, events snapshot SSE, cancel, retry); middleware `itso.idempotent` (cùng key khác request → 409 theo contract); `/audit-logs` lọc + xuất CSV chống chèn công thức, `itso:audit-verify`, audit `denied` cho 403; thông báo in-app; `/settings/{group}` (SA, secret mã hóa, step-up, ETag); `/servers` + server local từ cấu hình (`itso:server-local` đọc `system.info`); `/dashboard/summary`. Pest 206 (60 mới) | c322082 |
 | 2026-11-20 | 3 / 3.5 | Contract: response `501 NotImplemented` + mã `purge_not_available`/`migration_not_available` cho `:schedule-purge`/`:confirm-purge`/`:migrate`. Gói: CRUD, phiên bản bất biến khi đổi limits, `/versions`, `migrate-accounts` qua job; `ProvisioningService` (D-49, D-62 đề xuất): tạo account (username, server nhận account, UID không tái dùng 90 ngày, job `account.ensure` + `quota.apply`), suspend/unsuspend/khôi phục/terminate (≥30 ngày, legal hold), đổi gói, override; `AccountJobHandler` cập nhật observed; lifecycle events; `QuotaService` (422 `quota_exceeded`); `/features`, `/usage`, `/lifecycle-events`, placement; Portal hosting-accounts/overview/profile; `itso:usage-refresh`. Ma trận thêm 9 endpoint admin + 10 endpoint Portal × chủ/người khác. Pest 287 | bff7f16 |
+| 2026-11-20 | 3 / 3.6 | Client theo realm (`realm-http.ts`: X-ITSO-Realm, CSRF + thử lại khi 419, 401 → đăng nhập đúng realm); phiên thật thay persona ở build thường (loading/anonymous/mfa/enroll/ready); route `/api/v1/*` chưa có → 404 `not_available`, UI hiện "Chưa có ở bản này"; DemoSeeder; `itso:reconcile`; `make dev` thêm queue worker + đăng ký server + reconcile; Playwright stack thật 4 test (`make test-e2e-real`); test cho 7 endpoint còn thiếu (87/87 route); 4xx có chủ đích không ghi log lỗi; báo cáo Phase 3, runbook `phase-3-demo.md`. Pest 292, `make check` 20 PASS · 1 SKIP | (commit 3.6) |

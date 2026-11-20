@@ -78,6 +78,16 @@ Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so v
 | Đọc | `/features` (D-57), `/usage`, `/lifecycle-events`; `/placement/suggestions?package=` xếp hạng server trong phạm vi (gợi ý, không tự cấp) |
 | Portal | `/portal/hosting-accounts` (+ chi tiết, `/features`, `/usage`) chỉ account `owner_user_id` của mình, khác → 404; `/portal/overview` (account + cảnh báo dung lượng/khóa/chấm dứt, 5 job gần nhất, số thông báo chưa đọc); `/portal/profile` GET/PATCH (`name`, `locale`, `timezone`, ETag/If-Match); `/portal/jobs`, `/portal/notifications` (3.4) |
 
+## 1e. Chạy với giao diện thật (Prompt 3.6)
+
+| Mục | Cách làm |
+|---|---|
+| Client | `apps/web/src/api/realm-http.ts`: mọi request gửi `X-ITSO-Realm`; request ghi gửi `X-XSRF-TOKEN` (lấy từ `GET /auth/csrf` nếu chưa có cookie), nhận 419 thì lấy CSRF mới và thử lại một lần; 401 ngoài `/auth/*` → phiên hết, về trang đăng nhập đúng realm |
+| Phiên | `/auth/me` quyết định trạng thái: chưa đăng nhập → `/login`; chưa xác minh MFA → `/login/mfa`; SUPER_ADMIN chưa bật MFA → chỉ vào `/profile`. Bản demo (MSW) và Vitest vẫn dùng persona |
+| Chưa có ở bản này | Route `/api/v1/*` không khớp (module của Phase sau) → 404 `type` `…/errors/not_available`, `code` `not_available`; giao diện hiện "Chưa có ở bản này" cho 404 `not_available` và 501 |
+| Reconcile | `php artisan itso:reconcile [--account=<username>]` tạo job `hosting_account.reconcile` (đẩy lại `account.ensure` + `quota.apply` theo trạng thái mong muốn) để trạng thái observed khớp desired; `make dev` tự chạy sau khi agent sẵn sàng |
+| Dữ liệu demo | `php artisan db:seed --class=DemoSeeder` (từ chối chạy ở production): người dùng, gói, account mẫu; chi tiết ở `docs/runbooks/phase-3-demo.md` |
+
 ## 2. Hosting Provisioning Service (lớp nội bộ)
 
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.

@@ -155,6 +155,14 @@ function PreferencesCard() {
     queryKey: ['admin', 'notification-prefs'],
     queryFn: () => get('/notification-preferences'),
   });
+  if (q.isError)
+    return (
+      <Card>
+        <CardContent className="pt-4">
+          <ErrorState error={q.error} onRetry={() => void q.refetch()} />
+        </CardContent>
+      </Card>
+    );
   if (!q.data)
     return (
       <Card>

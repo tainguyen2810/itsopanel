@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# make dev — chạy mock agent + Laravel API + Vite (web) cùng lúc; Ctrl+C dừng cả ba.
+# make dev — chạy mock agent + Laravel API + queue worker + Vite (web) cùng lúc; Ctrl+C dừng tất cả.
 # Chỉ nghe trên 127.0.0.1 / unix socket. Không đụng cấu hình hệ thống.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -39,8 +39,19 @@ agent/bin/itso-mock-agent -listen "unix:${ITSO_AGENT_SOCKET}" > >(prefix agent) 
 pids+=($!)
 ( cd apps/api && exec php artisan serve --host=127.0.0.1 --port="$API_PORT" --no-reload ) > >(prefix api) 2>&1 &
 pids+=($!)
+# Worker chạy job nghiệp vụ (D-60: queue Redis theo QUEUE_CONNECTION trong apps/api/.env).
+( cd apps/api && exec php artisan queue:work --sleep=1 --tries=1 --timeout=900 ) > >(prefix queue) 2>&1 &
+pids+=($!)
 ( cd apps/web && exec node node_modules/vite/bin/vite.js ) > >(prefix web) 2>&1 &
 pids+=($!)
+
+# Khi agent sẵn sàng: đọc dữ kiện server local và đồng bộ lại account (mock agent giữ trạng thái trong bộ nhớ).
+(
+  for _ in $(seq 1 50); do [[ -S "$ITSO_AGENT_SOCKET" ]] && break; sleep 0.2; done
+  cd apps/api
+  php artisan itso:server-local || true
+  php artisan itso:reconcile || true
+) > >(prefix setup) 2>&1 &
 
 cat <<MSG
 
@@ -49,6 +60,8 @@ cat <<MSG
   Portal: http://127.0.0.1:5173/portal/
   API   : ${ITSO_API_URL}/api/v1/system/health
   Agent : unix:${ITSO_AGENT_SOCKET} (mock)
+  Queue : php artisan queue:work (job nghiệp vụ)
+  Dữ liệu demo: cd apps/api && php artisan db:seed --class=DemoSeeder (docs/runbooks/phase-3-demo.md)
   Ctrl+C để dừng.
 
 MSG

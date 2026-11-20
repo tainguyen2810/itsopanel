@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ApiProblem;
 use App\Http\Middleware\ApplyRememberPreference;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\AuditDenied;
@@ -54,6 +55,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Lỗi 4xx có chủ đích (chưa đăng nhập, dữ liệu sai, 409…) là phản hồi bình thường, không ghi log lỗi.
+        $exceptions->dontReportWhen(fn (Throwable $e): bool => $e instanceof ApiProblem && $e->status < 500);
         // Mọi lỗi dưới /api/* trả RFC 9457 application/problem+json.
         $exceptions->render(function (Throwable $e, Request $request) {
             return $request->is('api', 'api/*') ? ProblemRenderer::render($e) : null;

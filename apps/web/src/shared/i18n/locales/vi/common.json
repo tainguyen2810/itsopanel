@@ -23,6 +23,8 @@
     "noResults": "Không có kết quả phù hợp",
     "forbidden": "Bạn không có quyền xem trang này",
     "forbiddenHint": "Trang này cần vai trò khác hoặc nằm ngoài phạm vi được giao. Liên hệ Super Admin nếu cần quyền.",
+    "notAvailable": "Chưa có ở bản này",
+    "notAvailableHint": "Chức năng này thuộc giai đoạn phát triển sau, API chưa có ở phiên bản đang chạy. Dữ liệu trong trang sẽ xuất hiện khi chức năng được phát hành.",
     "notFound": "Không tìm thấy trang",
     "notFoundHint": "Đường dẫn không tồn tại hoặc đã bị di chuyển."
   },
@@ -161,6 +163,7 @@
     },
     "hosting_account": {
       "create": "Tạo tài khoản hosting",
+      "reconcile": "Đồng bộ tài khoản hosting với máy chủ",
       "suspend": "Tạm khóa tài khoản hosting",
       "unsuspend": "Mở khóa tài khoản hosting",
       "change_package": "Đổi gói hosting",

@@ -1,8 +1,6 @@
 <?php
 
-use App\Domain\Jobs\JobDispatcher;
 use App\Domain\Jobs\JobRunner;
-use App\Domain\Jobs\JobSpec;
 use App\Models\AuditLog;
 use App\Models\Job;
 use App\Models\Notification;
@@ -13,15 +11,6 @@ use Tests\Support\FakeAgent;
 
 const JA = 'itso-admin-v1.yaml';
 const JP = 'itso-portal-v1.yaml';
-
-function makeJob(Actors $a, ?int $timeout = 600, int $maxAttempts = 3): Job
-{
-    $spec = new JobSpec('account.suspend', $a->account, $a->server->id, $maxAttempts, $timeout);
-    $spec->step('account.suspend', ['username' => $a->account->username, 'reason' => 'kiểm thử'])
-        ->step('quota.report', ['username' => $a->account->username]);
-
-    return app(JobDispatcher::class)->dispatch($spec, $a->owner);
-}
 
 it('job thành công: op_id job_uuid:seq:attempt, tiến độ 100, log, audit; API admin + portal khớp hợp đồng', function () {
     $agent = new FakeAgent(['*' => fn () => ['ok' => true]]);

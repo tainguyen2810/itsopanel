@@ -1,6 +1,10 @@
 <?php
 
+use App\Domain\Jobs\JobDispatcher;
+use App\Domain\Jobs\JobSpec;
+use App\Models\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\Actors;
 use Tests\Support\OpenApi;
 use Tests\TestCase;
 
@@ -33,4 +37,14 @@ function limits(array $over = []): array
         'cron_limit' => 5, 'cron_min_interval_min' => 5, 'backup_quota_mb' => 20480,
         'backup_retention' => ['daily' => 7], 'ssh_allowed' => true, 'php_versions' => ['8.3'],
         'retention_days_after_terminate' => 30], $over);
+}
+
+/** Job 2 bước (account.suspend + quota.report) trên account mẫu, người yêu cầu là chủ account. */
+function makeJob(Actors $a, ?int $timeout = 600, int $maxAttempts = 3): Job
+{
+    $spec = new JobSpec('account.suspend', $a->account, $a->server->id, $maxAttempts, $timeout);
+    $spec->step('account.suspend', ['username' => $a->account->username, 'reason' => 'kiểm thử'])
+        ->step('quota.report', ['username' => $a->account->username]);
+
+    return app(JobDispatcher::class)->dispatch($spec, $a->owner);
 }

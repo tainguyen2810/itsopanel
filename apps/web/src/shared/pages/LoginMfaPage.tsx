@@ -10,6 +10,7 @@ import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { sendAuth } from '@/shared/api/realm';
+import { useSession } from '@/shared/session/SessionContext';
 
 /** Bước 2 đăng nhập: mã TOTP 6 số hoặc mã khôi phục 10 ký tự. */
 export default function LoginMfaPage() {
@@ -17,12 +18,16 @@ export default function LoginMfaPage() {
   const navigate = useNavigate();
   const home = useHomePath();
   const { realm } = useRoutesInfo();
+  const { refresh } = useSession();
   const [method, setMethod] = useState<'totp' | 'recovery'>('totp');
   const [code, setCode] = useState('');
   const valid = method === 'totp' ? /^[0-9]{6}$/.test(code) : /^[a-z0-9]{10}$/.test(code);
   const verify = useMutation({
     mutationFn: () => sendAuth('POST', '/api/v1/auth/mfa/verify', { body: { code, method } }),
-    onSuccess: () => void navigate({ to: home }),
+    onSuccess: async () => {
+      await refresh();
+      void navigate({ to: home });
+    },
   });
   return (
     <AuthLayout

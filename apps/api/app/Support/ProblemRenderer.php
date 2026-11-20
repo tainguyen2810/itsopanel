@@ -23,6 +23,16 @@ final class ProblemRenderer
 {
     public static function render(Throwable $e): JsonResponse
     {
+        // Endpoint có trong contract nhưng chưa có route ở bản này (module Phase sau): 404 với type riêng để UI
+        // hiện "chưa có ở bản này" thay vì lỗi.
+        if ($e instanceof NotFoundHttpException && request()->is('api/v1/*') && request()->route() === null) {
+            $r = Problem::response(404, 'not_found', 'Chưa có ở phiên bản này', 'Chức năng thuộc Phase sau, chưa có API.');
+            $body = (array) $r->getData(true);
+            $body['type'] = Problem::TYPE_BASE.'not_available';
+
+            return $r->setData($body);
+        }
+
         return match (true) {
             $e instanceof ApiProblem => Problem::response($e->status, $e->problemCode, $e->title, $e->detail,
                 $e->errors, $e->headers),
