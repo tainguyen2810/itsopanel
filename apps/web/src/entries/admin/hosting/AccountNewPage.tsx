@@ -6,11 +6,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, Rocket } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
-import { cn } from '@/shared/lib/utils';
 import { SelectField, TextField } from '@/shared/page/fields';
 import { InfoList } from '@/shared/page/InfoList';
 import { PageHeader } from '@/shared/page/PageHeader';
 import { ErrorState, TableSkeleton } from '@/shared/page/states';
+import { ChoiceCard } from '@/shared/page/ChoiceCard';
 import { Stepper } from '@/shared/page/Stepper';
 import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
@@ -19,44 +19,6 @@ import { FormField } from '@/ui/FormField';
 import { list, send, type JobAccepted } from '../api';
 import { useAction } from '../useAction';
 import { ACCOUNT_STEPS, accountSchema, suggestUsername, type AccountForm } from './accounts';
-
-/** Ô chọn dạng thẻ (radio) dùng trong wizard. */
-export function ChoiceCard({
-  name,
-  value,
-  checked,
-  disabled,
-  onChange,
-  children,
-}: {
-  name: string;
-  value: string;
-  checked: boolean;
-  disabled?: boolean;
-  onChange: (v: string) => void;
-  children: ReactNode;
-}) {
-  return (
-    <label
-      className={cn(
-        'flex cursor-pointer gap-3 rounded-md border p-3 text-base',
-        checked ? 'border-primary bg-primary-soft' : 'border-border hover:bg-surface-hover',
-        disabled && 'cursor-not-allowed opacity-60 hover:bg-transparent',
-      )}
-    >
-      <input
-        type="radio"
-        name={name}
-        value={value}
-        checked={checked}
-        disabled={disabled}
-        onChange={() => onChange(value)}
-        className="mt-1 accent-[var(--itso-primary)]"
-      />
-      <span className="min-w-0 flex-1">{children}</span>
-    </label>
-  );
-}
 
 export default function AccountNewPage() {
   const { t } = useTranslation('admin');

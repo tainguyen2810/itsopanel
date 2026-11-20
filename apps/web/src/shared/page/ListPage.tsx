@@ -39,6 +39,8 @@ interface Props<T> {
   children?: ReactNode;
   /** Không render PageHeader (dùng trong tab): chỉ hiện mô tả và nút thao tác phía trên bảng. */
   embedded?: boolean;
+  /** Điều hướng phụ dưới tiêu đề (SectionNav). */
+  nav?: ReactNode;
 }
 
 const ALL = '__all';
@@ -58,6 +60,7 @@ export function ListPage<T>({
   empty,
   children,
   embedded = false,
+  nav,
 }: Props<T>) {
   const { t } = useTranslation('common');
   const [url, setUrl] = useUrlState();
@@ -135,7 +138,9 @@ export function ListPage<T>({
 
   return (
     <>
-      {!embedded && <PageHeader title={title} description={description} actions={actions} />}
+      {!embedded && (
+        <PageHeader title={title} description={description} actions={actions} nav={nav} />
+      )}
       {embedded && (description !== undefined || actions !== undefined) && (
         // Trong tab: không lặp tiêu đề trang, chỉ hiện mô tả ngắn và nút thao tác.
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">

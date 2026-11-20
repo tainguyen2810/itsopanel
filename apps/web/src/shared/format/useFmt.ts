@@ -5,6 +5,7 @@ import {
   formatBytes,
   formatDate,
   formatDateTime,
+  formatDuration,
   formatMegabytes,
   formatNumber,
   formatPercent,
@@ -29,6 +30,8 @@ export function useFmt() {
       dateTime: (iso: string) => formatDateTime(iso, l),
       time: (iso: string) => formatTime(iso, l),
       rel: (iso: string) => formatRelative(iso, l),
+      /** duration(3600) → "1 giờ". */
+      duration: (sec: number) => formatDuration(sec, l),
       opt: (iso: string | null | undefined, empty = '—') => (iso ? formatDateTime(iso, l) : empty),
     }),
     [l],

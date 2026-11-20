@@ -91,3 +91,16 @@ export function formatRelative(iso: string | Date, locale: Locale, now: Date = n
   }
   return rtf.format(Math.round(diff / div), unit);
 }
+
+/** Khoảng thời gian (giây) theo đơn vị lớn nhất chia hết: 3600 → "1 giờ" / "1 hour". */
+export function formatDuration(sec: number, locale: Locale): string {
+  const units: [Intl.NumberFormatOptions['unit'], number][] = [
+    ['day', 86_400],
+    ['hour', 3_600],
+    ['minute', 60],
+  ];
+  const [unit, size] = units.find(([, n]) => sec >= n && sec % n === 0) ?? ['second', 1];
+  return new Intl.NumberFormat(TAG[locale], { style: 'unit', unit, unitDisplay: 'long' }).format(
+    sec / size,
+  );
+}

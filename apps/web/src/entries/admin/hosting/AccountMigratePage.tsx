@@ -18,7 +18,7 @@ import { Input } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { get, list, send } from '../api';
 import { useAction } from '../useAction';
-import { ChoiceCard } from './AccountNewPage';
+import { ChoiceCard } from '@/shared/page/ChoiceCard';
 import { MIGRATION_STEPS, migrationStep, type Account, type Migration } from './accounts';
 import { useAccount } from './common';
 

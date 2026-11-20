@@ -77,7 +77,9 @@
     "cutover": "Đang cutover",
     "completed": "Hoàn tất",
     "rolled_back": "Đã hoàn tác",
-    "deleting": "Đang xóa"
+    "deleting": "Đang xóa",
+    "denied": "Bị từ chối",
+    "acknowledged": "Đã xác nhận"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",
@@ -129,10 +131,22 @@
       "login": "Đăng nhập hệ thống"
     },
     "backup": {
-      "run": "Chạy sao lưu"
+      "run": "Chạy sao lưu",
+      "manual": "Sao lưu thủ công",
+      "restore": "Khôi phục từ bản sao lưu",
+      "policy": {
+        "run": "Chạy chính sách sao lưu"
+      },
+      "snapshot": {
+        "delete": "Xóa bản sao lưu",
+        "verify": "Kiểm chứng bản sao lưu",
+        "download_link": "Tạo link tải bản sao lưu"
+      }
     },
     "backup_policy": {
-      "update": "Cập nhật chính sách sao lưu"
+      "update": "Cập nhật chính sách sao lưu",
+      "create": "Tạo chính sách sao lưu",
+      "delete": "Xóa chính sách sao lưu"
     },
     "database": {
       "create": "Tạo cơ sở dữ liệu",
@@ -187,7 +201,14 @@
     },
     "user": {
       "update": "Cập nhật người dùng",
-      "password_change": "Đổi mật khẩu"
+      "password_change": "Đổi mật khẩu",
+      "create": "Tạo người dùng",
+      "lock": "Khóa người dùng",
+      "unlock": "Mở khóa người dùng",
+      "reset_mfa": "Đặt lại MFA",
+      "scopes": {
+        "update": "Cập nhật phạm vi quản trị"
+      }
     },
     "website": {
       "create": "Tạo website",
@@ -280,7 +301,50 @@
       "rollback": "Quay về release trước"
     },
     "security": {
-      "scan": "Quét mã độc"
+      "scan": "Quét mã độc",
+      "ssh": {
+        "update": "Cập nhật cấu hình SSH"
+      },
+      "fail2ban": {
+        "update": "Cập nhật Fail2ban"
+      },
+      "allowlist": {
+        "update": "Cập nhật danh sách IP được phép"
+      },
+      "quarantine": {
+        "restore": "Khôi phục file khỏi khu cách ly"
+      }
+    },
+    "security_event": {
+      "acknowledge": "Xác nhận sự kiện bảo mật"
+    },
+    "backup_destination": {
+      "create": "Thêm đích sao lưu",
+      "update": "Cập nhật đích sao lưu",
+      "test": "Kiểm tra kết nối đích sao lưu"
+    },
+    "alert_rule": {
+      "create": "Tạo quy tắc cảnh báo",
+      "update": "Sửa quy tắc cảnh báo",
+      "delete": "Xóa quy tắc cảnh báo"
+    },
+    "audit_log": {
+      "export": "Xuất nhật ký kiểm toán"
+    },
+    "settings": {
+      "general": {
+        "update": "Cập nhật cài đặt chung"
+      },
+      "security": {
+        "update": "Cập nhật cài đặt bảo mật"
+      },
+      "smtp": {
+        "update": "Cập nhật cài đặt SMTP"
+      }
+    },
+    "api_token": {
+      "create": "Tạo API token",
+      "revoke": "Thu hồi API token"
     }
   },
   "ops": {
@@ -347,7 +411,9 @@
     "backup": {
       "run": "Chạy sao lưu (restic)",
       "check": "Kiểm chứng bản sao lưu",
-      "restore_test": "Thử khôi phục bản sao lưu"
+      "restore_test": "Thử khôi phục bản sao lưu",
+      "forget": "Xóa snapshot (restic forget)",
+      "restore": "Khôi phục dữ liệu (restic)"
     },
     "service": {
       "control": "Điều khiển dịch vụ",
@@ -413,11 +479,20 @@
       "apply": "Áp dụng luật WAF"
     },
     "malware": {
-      "scan": "Quét mã độc (ClamAV)"
+      "scan": "Quét mã độc (ClamAV)",
+      "restore": "Khôi phục file từ khu cách ly"
     },
     "git": {
       "deploy": "Kéo code, build và chuyển release",
       "rollback": "Chuyển symlink về release cũ"
+    },
+    "sshd": {
+      "config": {
+        "apply": "Áp dụng cấu hình sshd"
+      }
+    },
+    "fail2ban": {
+      "apply": "Áp dụng cấu hình Fail2ban"
     }
   },
   "wizard": {

@@ -77,7 +77,9 @@
     "cutover": "Cutting over",
     "completed": "Completed",
     "rolled_back": "Rolled back",
-    "deleting": "Deleting"
+    "deleting": "Deleting",
+    "denied": "Denied",
+    "acknowledged": "Acknowledged"
   },
   "table": {
     "selected_one": "{{count}} row selected",
@@ -129,10 +131,22 @@
       "login": "Signed in"
     },
     "backup": {
-      "run": "Backup run"
+      "run": "Backup run",
+      "manual": "Manual backup",
+      "restore": "Restore from backup",
+      "policy": {
+        "run": "Run backup policy"
+      },
+      "snapshot": {
+        "delete": "Delete snapshot",
+        "verify": "Verify snapshot",
+        "download_link": "Create snapshot download link"
+      }
     },
     "backup_policy": {
-      "update": "Backup policy updated"
+      "update": "Backup policy updated",
+      "create": "Create backup policy",
+      "delete": "Delete backup policy"
     },
     "database": {
       "create": "Database created",
@@ -187,7 +201,14 @@
     },
     "user": {
       "update": "User updated",
-      "password_change": "Password changed"
+      "password_change": "Password changed",
+      "create": "Create user",
+      "lock": "Lock user",
+      "unlock": "Unlock user",
+      "reset_mfa": "Reset MFA",
+      "scopes": {
+        "update": "Update admin scope"
+      }
     },
     "website": {
       "create": "Website created",
@@ -280,7 +301,50 @@
       "rollback": "Roll back release"
     },
     "security": {
-      "scan": "Malware scan"
+      "scan": "Malware scan",
+      "ssh": {
+        "update": "Update SSH settings"
+      },
+      "fail2ban": {
+        "update": "Update Fail2ban"
+      },
+      "allowlist": {
+        "update": "Update IP allowlist"
+      },
+      "quarantine": {
+        "restore": "Restore file from quarantine"
+      }
+    },
+    "security_event": {
+      "acknowledge": "Acknowledge security event"
+    },
+    "backup_destination": {
+      "create": "Add backup destination",
+      "update": "Update backup destination",
+      "test": "Test backup destination"
+    },
+    "alert_rule": {
+      "create": "Create alert rule",
+      "update": "Update alert rule",
+      "delete": "Delete alert rule"
+    },
+    "audit_log": {
+      "export": "Export audit log"
+    },
+    "settings": {
+      "general": {
+        "update": "Update general settings"
+      },
+      "security": {
+        "update": "Update security settings"
+      },
+      "smtp": {
+        "update": "Update SMTP settings"
+      }
+    },
+    "api_token": {
+      "create": "Create API token",
+      "revoke": "Revoke API token"
     }
   },
   "ops": {
@@ -347,7 +411,9 @@
     "backup": {
       "run": "Run backup (restic)",
       "check": "Verify backup",
-      "restore_test": "Test-restore the backup"
+      "restore_test": "Test-restore the backup",
+      "forget": "Forget snapshot (restic)",
+      "restore": "Restore data (restic)"
     },
     "service": {
       "control": "Control service",
@@ -413,11 +479,20 @@
       "apply": "Apply WAF rules"
     },
     "malware": {
-      "scan": "Malware scan (ClamAV)"
+      "scan": "Malware scan (ClamAV)",
+      "restore": "Restore quarantined file"
     },
     "git": {
       "deploy": "Fetch, build and switch release",
       "rollback": "Point symlink to previous release"
+    },
+    "sshd": {
+      "config": {
+        "apply": "Apply sshd config"
+      }
+    },
+    "fail2ban": {
+      "apply": "Apply Fail2ban config"
     }
   },
   "wizard": {

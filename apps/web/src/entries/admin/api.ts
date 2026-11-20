@@ -91,3 +91,26 @@ export async function send<T = unknown>(
   }
   return (body?.data ?? body) as T;
 }
+
+/** GET trả văn bản (vd. text/csv xuất audit log) qua client openapi-fetch. */
+export async function getText<P extends keyof paths>(
+  path: P,
+  query: Record<string, string | undefined> = {},
+): Promise<string> {
+  const r = (await adminApi.GET(
+    path as never,
+    {
+      params: { query: Object.fromEntries(Object.entries(query).filter(([, v]) => v)) },
+      parseAs: 'text',
+    } as never,
+  )) as { data?: string; error?: unknown; response: Response };
+  if (!r.response.ok) {
+    throw new ApiError({
+      type: 'about:blank',
+      title: r.response.statusText || 'Error',
+      status: r.response.status,
+      code: 'internal_error',
+    });
+  }
+  return r.data ?? '';
+}

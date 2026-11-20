@@ -99,9 +99,7 @@ describe('admin entry', () => {
   it('SUPER_ADMIN vào được trang Cài đặt hệ thống', async () => {
     vi.stubGlobal('fetch', vi.fn(mockFetch({})));
     renderWithProviders(<App history={at('/admin/settings')} />);
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Cài đặt hệ thống' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cài đặt' })).toBeInTheDocument();
   });
 
   it('đường dẫn không tồn tại hiện trang 404', async () => {

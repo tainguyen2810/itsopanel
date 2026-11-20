@@ -48,7 +48,7 @@ export function parseCsv(text: string): string[][] {
 /** Tải văn bản về máy dưới dạng file (trình duyệt). */
 export function downloadText(name: string, text: string, type = 'text/csv;charset=utf-8') {
   // BOM để Excel đọc đúng tiếng Việt UTF-8.
-  const blob = new Blob(['﻿', text], { type });
+  const blob = new Blob(['\uFEFF', text], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

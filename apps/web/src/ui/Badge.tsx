@@ -81,7 +81,9 @@ export type StatusKey =
   | 'cutover'
   | 'completed'
   | 'rolled_back'
-  | 'deleting';
+  | 'deleting'
+  | 'denied'
+  | 'acknowledged';
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
@@ -133,6 +135,8 @@ const TONE: Record<StatusKey, Tone> = {
   completed: 'success',
   rolled_back: 'neutral',
   deleting: 'warning',
+  denied: 'danger',
+  acknowledged: 'info',
 };
 
 /** Trạng thái có trong bảng (dữ liệu API có thể có giá trị mới: hiện nguyên văn, tông trung tính). */
