@@ -1,0 +1,37 @@
+# CHỈ DÙNG CHO MÔI TRƯỜNG DEV trên máy lập trình viên.
+# KHÔNG dùng cho production / VM test: hệ thống thật do installer cài PostgreSQL/Redis native (Phase 6).
+# Mật khẩu dưới đây là giá trị dev công khai, không phải secret. Chỉ bind 127.0.0.1.
+#   make services-up    # bật
+#   make services-down  # tắt (giữ dữ liệu trong volume)
+name: itso-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: itso
+      POSTGRES_USER: itso
+      POSTGRES_PASSWORD: itso_dev_only
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - itso-dev-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itso -d itso"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  itso-dev-pg:

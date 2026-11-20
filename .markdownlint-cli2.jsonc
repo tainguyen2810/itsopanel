@@ -10,5 +10,5 @@
     "MD060": false
   },
   "globs": ["*.md", "docs/**/*.md", "apps/**/README.md", "agent/README.md", "contracts/**/README.md", "database/**/README.md", "design/**/README.md", "installer/README.md", "packaging/README.md", "demo/README.md"],
-  "ignores": ["docs/planning/**", "node_modules/**"]
+  "ignores": ["docs/planning/**", "node_modules/**", "**/node_modules/**", "apps/api/vendor/**"]
 }

@@ -10,7 +10,7 @@ endef
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev test lint build codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-agent test-fuzz lint lint-web lint-api lint-agent no-exec build codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -55,20 +55,54 @@ contracts-check: ## Kiểm contracts: không diff, Redocly lint, ngữ nghĩa, a
 contracts-docs: ## Dựng HTML docs API vào docs/api/ (không commit)
 	@cd contracts && for r in admin portal; do REDOCLY_TELEMETRY=off $(PNPX) @redocly/cli@2.71.0 build-docs openapi/itso-$$r-v1.yaml -o ../docs/api/itso-$$r-v1.html; done
 
-setup: ## Cài dependency (web, api, agent)
-	$(call todo,setup,1.5)
+PNPM ?= corepack pnpm
+FUZZTIME ?= 30s
+COMPOSE ?= docker compose -f docker-compose.dev.yml
 
-dev: ## Chạy web + api + mock agent
-	$(call todo,dev,1.5)
+setup: ## Cài dependency (web, api, agent), không cần Docker
+	@bash scripts/setup.sh
 
-test: ## Chạy toàn bộ test
-	$(call todo,test,1.5)
+dev: ## Chạy web + api + mock agent (Ctrl+C để dừng)
+	@bash scripts/dev.sh
 
-lint: ## Chạy lint cho mọi phần
-	$(call todo,lint,1.5)
+services-up: ## (Tùy chọn) PostgreSQL 16 + Redis 7 bằng Docker, chỉ cho dev
+	$(COMPOSE) up -d --wait
 
-build: ## Build web, api, agent
-	$(call todo,build,1.5)
+services-down: ## Tắt PostgreSQL/Redis dev (giữ volume)
+	$(COMPOSE) stop
+
+test: test-web test-api test-agent no-exec ## Chạy toàn bộ test (web, api, agent, chặn exec)
+
+test-web:
+	@cd apps/web && $(PNPM) test
+
+test-api:
+	@cd apps/api && php artisan config:clear --ansi >/dev/null && php vendor/bin/pest
+
+test-agent:
+	@cd agent && go test -race ./...
+
+test-fuzz: ## Fuzz parser envelope của agent (FUZZTIME=30s)
+	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope
+
+lint: lint-web lint-api lint-agent no-exec ## Chạy lint cho mọi phần
+
+lint-web:
+	@cd apps/web && $(PNPM) lint
+
+lint-api:
+	@cd apps/api && php vendor/bin/pint --test && php vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+lint-agent:
+	@cd agent && test -z "$$(gofmt -l .)" || { echo "gofmt cần chạy:"; gofmt -l .; exit 1; }
+	@cd agent && go vet ./...
+
+no-exec: ## Chặn lệnh hệ thống trong apps/api/app và agent/
+	@bash scripts/check-no-exec.sh
+
+build: ## Build web và mock agent
+	@cd apps/web && $(PNPM) build
+	@cd agent && go build -o bin/itso-mock-agent ./cmd/itso-mock-agent
 
 codegen: ## Sinh code từ contracts
 	$(call todo,codegen,1.7)
