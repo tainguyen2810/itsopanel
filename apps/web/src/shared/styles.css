@@ -1,19 +1,30 @@
 @import 'tailwindcss';
+@import './styles/tokens.css';
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+@import '@fontsource/be-vietnam-pro/700.css';
 
-/* Token tạm cho scaffold. Design System đầy đủ (Light/Dark) ở Prompt 1.6. */
-@theme {
-  --color-bg: #0a1120;
-  --color-card: #111a2c;
-  --color-line: #1e2a42;
-  --color-fg: #e8edf7;
-  --color-muted: #8a96ad;
-  --color-ok: #22c55e;
-  --color-bad: #ef4444;
-  --color-brand: #2f7cf6;
-}
-
-body {
-  background: var(--color-bg);
-  color: var(--color-fg);
-  font-family: 'Be Vietnam Pro', Inter, system-ui, sans-serif;
+/* Màu, font, radius, shadow đều lấy từ token (design/tokens/tokens.json → styles/tokens.css). */
+@layer base {
+  html {
+    background: var(--itso-bg);
+    color: var(--itso-fg);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100dvh;
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }

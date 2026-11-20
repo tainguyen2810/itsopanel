@@ -15,6 +15,7 @@ function entryRedirects(): Plugin {
     '/': '/admin/',
     '/admin': '/admin/',
     '/portal': '/portal/',
+    '/design': '/design/',
   };
   const mw = (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const to = req.url === undefined ? undefined : map[req.url.split('?')[0] ?? ''];

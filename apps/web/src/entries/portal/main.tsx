@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { createQueryClient } from '@/shared/lib/query';
+import { AppProviders } from '@/shared/AppProviders';
 import { App } from './App';
 import '@/shared/styles.css';
 
@@ -10,8 +9,8 @@ if (root === null) throw new Error('#root not found');
 
 createRoot(root).render(
   <StrictMode>
-    <QueryClientProvider client={createQueryClient()}>
+    <AppProviders>
       <App />
-    </QueryClientProvider>
+    </AppProviders>
   </StrictMode>,
 );

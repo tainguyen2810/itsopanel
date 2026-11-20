@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
-import { mockFetch, renderWithQuery } from '@/test/render';
+import { screen, waitFor, within } from '@testing-library/react';
+import { mockFetch, renderWithProviders } from '@/test/render';
 import { App } from './App';
 
 const status = {
@@ -14,7 +14,7 @@ const status = {
 describe('admin entry', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('hiển thị health API và ping agent', async () => {
+  it('render AdminShell + health API + ping agent', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(
@@ -24,8 +24,15 @@ describe('admin entry', () => {
         }),
       ),
     );
-    renderWithQuery(<App />);
-    expect(screen.getByRole('heading', { name: 'Private Admin Panel' })).toBeInTheDocument();
+    renderWithProviders(<App />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Bảng điều khiển' })).toBeInTheDocument();
+    const nav = screen.getByRole('navigation', { name: 'Điều hướng chính' });
+    expect(within(nav).getByRole('link', { name: /^Máy chủ/ })).toHaveAttribute(
+      'href',
+      '/admin/servers',
+    );
+    expect(within(nav).getByRole('link', { current: 'page' })).toHaveTextContent('Bảng điều khiển');
+    expect(screen.getByRole('button', { name: /Tìm server/ })).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByTestId('status-API')).toHaveAttribute('data-state', 'ok'),
     );
@@ -37,10 +44,17 @@ describe('admin entry', () => {
 
   it('báo lỗi khi API trả problem+json', async () => {
     vi.stubGlobal('fetch', vi.fn(mockFetch({})));
-    renderWithQuery(<App />);
+    renderWithProviders(<App />);
     await waitFor(() =>
       expect(screen.getByTestId('status-API')).toHaveAttribute('data-state', 'error'),
     );
     expect(screen.getByTestId('status-Agent')).toHaveTextContent('Not Found');
+  });
+
+  it('hiển thị tiếng Anh khi chọn en', () => {
+    vi.stubGlobal('fetch', vi.fn(mockFetch({})));
+    renderWithProviders(<App />, { lang: 'en' });
+    expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
 });

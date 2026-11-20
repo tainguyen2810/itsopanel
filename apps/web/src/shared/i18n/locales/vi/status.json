@@ -1,0 +1,9 @@
+{
+  "title": "Trạng thái môi trường dev",
+  "api": "API",
+  "agent": "Agent",
+  "database": "PostgreSQL",
+  "redis": "Redis",
+  "checking": "Đang kiểm tra…",
+  "unreachable": "không kết nối được"
+}

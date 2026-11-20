@@ -1,11 +1,26 @@
 import type { ReactElement } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
+import { AppProviders } from '@/shared/AppProviders';
+import { createI18n } from '@/shared/i18n';
+import type { Locale } from '@/shared/i18n/format';
 
-export function renderWithQuery(ui: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+/** Render với đủ provider (Query, i18n, Theme, Tooltip, Toaster) như entry thật. */
+export function renderWithProviders(ui: ReactElement, opts: { lang?: Locale } = {}) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const i18n = createI18n(opts.lang ?? 'vi');
+  return {
+    i18n,
+    ...render(
+      <AppProviders i18n={i18n} queryClient={queryClient}>
+        {ui}
+      </AppProviders>,
+    ),
+  };
 }
+
+/** @deprecated giữ tên cũ cho test 1.5 */
+export const renderWithQuery = renderWithProviders;
 
 /** Giả lập fetch theo đường dẫn → [status, body]. */
 export function mockFetch(routes: Record<string, [number, unknown]>) {
