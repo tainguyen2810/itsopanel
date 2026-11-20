@@ -5856,6 +5856,64 @@ export interface operations {
                      *             ]
                      *           },
                      *           "hash": "5e8f0c6b1d2a7e9f4c3b8a1d6e0f2c7b9a4d1e3f5c7b9d0e2f4a6c8e1b3d5f70"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1f-0002-7000-8000-00001f000002",
+                     *           "at": "2026-11-12T09:10:00+07:00",
+                     *           "actor": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "impersonator": null,
+                     *           "actor_ip": "10.10.5.20",
+                     *           "action": "hosting_account.create",
+                     *           "resource": {
+                     *             "type": "hosting_account",
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005"
+                     *           },
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "job_uuid": null,
+                     *           "result": "success",
+                     *           "changes": {
+                     *             "updated_at": [
+                     *               "2026-11-18T09:30:00+07:00",
+                     *               "2026-11-19T14:05:00+07:00"
+                     *             ]
+                     *           },
+                     *           "hash": "0000000000000000000000000000000000000000000000013c6ef372fe94f82a"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1f-0003-7000-8000-00001f000003",
+                     *           "at": "2026-11-13T10:20:00+07:00",
+                     *           "actor": {
+                     *             "uuid": "01938a01-0002-7000-8000-000001000002",
+                     *             "name": "Trần Minh",
+                     *             "email": "minh.tran@itso.local"
+                     *           },
+                     *           "impersonator": null,
+                     *           "actor_ip": "10.10.5.21",
+                     *           "action": "website.create",
+                     *           "resource": {
+                     *             "type": "website",
+                     *             "uuid": "01938a06-0007-7000-8000-000006000007"
+                     *           },
+                     *           "server": {
+                     *             "uuid": "01938a02-0002-7000-8000-000002000002",
+                     *             "name": "srv-hn-02"
+                     *           },
+                     *           "job_uuid": null,
+                     *           "result": "success",
+                     *           "changes": {
+                     *             "updated_at": [
+                     *               "2026-11-18T09:30:00+07:00",
+                     *               "2026-11-19T14:05:00+07:00"
+                     *             ]
+                     *           },
+                     *           "hash": "000000000000000000000000000000000000000000000001daa66d2c7ddf743f"
                      *         }
                      *       ],
                      *       "meta": {
@@ -6696,6 +6754,30 @@ export interface operations {
                      *             "final",
                      *             "pre-purge"
                      *           ]
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0e-0003-7000-8000-00000e000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "destination": {
+                     *             "uuid": "01938a17-0002-7000-8000-000017000002",
+                     *             "name": "S3 Object Lock (offsite)"
+                     *           },
+                     *           "scope_type": "hosting_account",
+                     *           "restic_snapshot_id": "5a005ccd",
+                     *           "size_mb": 1500,
+                     *           "taken_at": "2026-11-20T01:14:00+07:00",
+                     *           "verified_at": "2026-11-20T03:00:00+07:00",
+                     *           "contents": [
+                     *             "files",
+                     *             "databases",
+                     *             "config"
+                     *           ],
+                     *           "tags": [
+                     *             "daily"
+                     *           ]
                      *         }
                      *       ],
                      *       "meta": {
@@ -7144,6 +7226,24 @@ export interface operations {
                      *           "not_after": "2026-12-02T07:00:00+07:00",
                      *           "auto_renew": true,
                      *           "status": "expiring",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a08-0003-7000-8000-000008000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "source": "acme",
+                     *           "domains": [
+                     *             "shop.anphat.vn"
+                     *           ],
+                     *           "issuer": "Let's Encrypt R11",
+                     *           "not_before": "2026-11-18T07:00:00+07:00",
+                     *           "not_after": "2027-02-16T07:00:00+07:00",
+                     *           "auto_renew": true,
+                     *           "status": "valid",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
@@ -8132,6 +8232,28 @@ export interface operations {
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0d-0003-7000-8000-00000d000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "website": null,
+                     *           "schedule": "0 3 * * *",
+                     *           "command": "php artisan backup:clean",
+                     *           "working_dir": ".",
+                     *           "php_version": "8.3",
+                     *           "enabled": true,
+                     *           "last_run_at": "2026-11-20T03:00:00+07:00",
+                     *           "last_status": "succeeded",
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -8564,10 +8686,10 @@ export interface operations {
                      *       "data": {
                      *         "counts": {
                      *           "servers": 3,
-                     *           "hosting_accounts": 4,
-                     *           "websites": 4,
-                     *           "databases": 3,
-                     *           "users": 5,
+                     *           "hosting_accounts": 11,
+                     *           "websites": 21,
+                     *           "databases": 10,
+                     *           "users": 13,
                      *           "packages": 3
                      *         },
                      *         "servers": [
@@ -8605,20 +8727,20 @@ export interface operations {
                      *         "package_distribution": [
                      *           {
                      *             "code": "basic",
-                     *             "accounts": 1
+                     *             "accounts": 4
                      *           },
                      *           {
                      *             "code": "business",
-                     *             "accounts": 3
+                     *             "accounts": 5
                      *           },
                      *           {
                      *             "code": "pro",
-                     *             "accounts": 0
+                     *             "accounts": 2
                      *           }
                      *         ],
                      *         "alerts_firing": 1,
                      *         "security_events_24h": 38,
-                     *         "jobs_running": 1,
+                     *         "jobs_running": 2,
                      *         "updated_at": "2026-11-20T08:15:00+07:00"
                      *       }
                      *     }
@@ -8703,6 +8825,26 @@ export interface operations {
                      *             }
                      *           ],
                      *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0a-0003-7000-8000-00000a000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "engine": "mariadb",
+                     *           "username": "binhminh_web",
+                     *           "host": "localhost",
+                     *           "grants": [
+                     *             {
+                     *               "database": "binhminh_web",
+                     *               "privileges": [
+                     *                 "ALL"
+                     *               ]
+                     *             }
+                     *           ],
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
@@ -9591,7 +9733,7 @@ export interface operations {
                      *             "uuid": "01938a05-0001-7000-8000-000005000001",
                      *             "username": "anphat"
                      *           },
-                     *           "records_count": 6,
+                     *           "records_count": 3,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
@@ -10095,11 +10237,11 @@ export interface operations {
                      *               "limit": 2
                      *             },
                      *             "ftp_accounts": {
-                     *               "used": 1,
+                     *               "used": 0,
                      *               "limit": 2
                      *             },
                      *             "cron_jobs": {
-                     *               "used": 1,
+                     *               "used": 0,
                      *               "limit": 3
                      *             },
                      *             "backup_mb": {
@@ -10164,7 +10306,7 @@ export interface operations {
                      *               "limit": 10
                      *             },
                      *             "databases": {
-                     *               "used": 1,
+                     *               "used": 0,
                      *               "limit": 10
                      *             },
                      *             "ftp_accounts": {
@@ -10177,79 +10319,6 @@ export interface operations {
                      *             },
                      *             "backup_mb": {
                      *               "used": 3000,
-                     *               "limit": 40960
-                     *             },
-                     *             "bandwidth_mb_30d": 48213,
-                     *             "measured_at": "2026-11-20T08:15:00+07:00"
-                     *           },
-                     *           "status": "suspended",
-                     *           "spec_version": 3,
-                     *           "observed_version": 3,
-                     *           "drift": null,
-                     *           "observed_at": "2026-11-20T08:15:00+07:00",
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a05-0004-7000-8000-000005000004",
-                     *           "username": "oldshop",
-                     *           "server": {
-                     *             "uuid": "01938a02-0003-7000-8000-000002000003",
-                     *             "name": "srv-hcm-01"
-                     *           },
-                     *           "package": {
-                     *             "uuid": "01938a03-0002-7000-8000-000003000002",
-                     *             "code": "business",
-                     *             "name": "Business",
-                     *             "version": 1
-                     *           },
-                     *           "owner": {
-                     *             "uuid": "01938a01-0003-7000-8000-000001000003",
-                     *             "name": "Công ty An Phát",
-                     *             "email": "it@anphat.vn"
-                     *           },
-                     *           "uid": 20003,
-                     *           "home_path": "/home/oldshop",
-                     *           "lifecycle_state": "terminated",
-                     *           "suspended_reason": null,
-                     *           "terminated_at": "2026-11-01T10:00:00+07:00",
-                     *           "purge_after": "2026-12-01T10:00:00+07:00",
-                     *           "legal_hold": false,
-                     *           "usage": {
-                     *             "disk_mb": {
-                     *               "used": 950,
-                     *               "limit": 20480
-                     *             },
-                     *             "inodes": {
-                     *               "used": 21000,
-                     *               "limit": 400000
-                     *             },
-                     *             "cpu_percent": {
-                     *               "used": 0,
-                     *               "limit": 200
-                     *             },
-                     *             "ram_mb": {
-                     *               "used": 0,
-                     *               "limit": 4096
-                     *             },
-                     *             "websites": {
-                     *               "used": 0,
-                     *               "limit": 10
-                     *             },
-                     *             "databases": {
-                     *               "used": 0,
-                     *               "limit": 10
-                     *             },
-                     *             "ftp_accounts": {
-                     *               "used": 0,
-                     *               "limit": 5
-                     *             },
-                     *             "cron_jobs": {
-                     *               "used": 0,
-                     *               "limit": 10
-                     *             },
-                     *             "backup_mb": {
-                     *               "used": 1200,
                      *               "limit": 40960
                      *             },
                      *             "bandwidth_mb_30d": 48213,
@@ -11886,7 +11955,7 @@ export interface operations {
                      *           "description": "Website giới thiệu, blog nội bộ",
                      *           "current_version": 2,
                      *           "is_active": true,
-                     *           "account_count": 1,
+                     *           "account_count": 4,
                      *           "limits": {
                      *             "disk_mb": 5120,
                      *             "inode_limit": 150000,
@@ -11928,7 +11997,7 @@ export interface operations {
                      *           "description": "Website doanh nghiệp, shop nhỏ",
                      *           "current_version": 1,
                      *           "is_active": true,
-                     *           "account_count": 2,
+                     *           "account_count": 5,
                      *           "limits": {
                      *             "disk_mb": 20480,
                      *             "inode_limit": 400000,
@@ -11971,7 +12040,7 @@ export interface operations {
                      *           "description": "Ứng dụng lớn, nhiều website",
                      *           "current_version": 1,
                      *           "is_active": true,
-                     *           "account_count": 0,
+                     *           "account_count": 2,
                      *           "limits": {
                      *             "disk_mb": 102400,
                      *             "inode_limit": 2000000,
@@ -12093,7 +12162,7 @@ export interface operations {
                      *         "description": "Website giới thiệu, blog nội bộ",
                      *         "current_version": 2,
                      *         "is_active": true,
-                     *         "account_count": 1,
+                     *         "account_count": 4,
                      *         "limits": {
                      *           "disk_mb": 5120,
                      *           "inode_limit": 150000,
@@ -12170,7 +12239,7 @@ export interface operations {
                      *         "description": "Website giới thiệu, blog nội bộ",
                      *         "current_version": 2,
                      *         "is_active": true,
-                     *         "account_count": 1,
+                     *         "account_count": 4,
                      *         "limits": {
                      *           "disk_mb": 5120,
                      *           "inode_limit": 150000,
@@ -12313,7 +12382,7 @@ export interface operations {
                      *         "description": "Website giới thiệu, blog nội bộ",
                      *         "current_version": 2,
                      *         "is_active": true,
-                     *         "account_count": 1,
+                     *         "account_count": 4,
                      *         "limits": {
                      *           "disk_mb": 5120,
                      *           "inode_limit": 150000,
@@ -12472,7 +12541,7 @@ export interface operations {
                      *             ],
                      *             "retention_days_after_terminate": 30
                      *           },
-                     *           "account_count": 1,
+                     *           "account_count": 4,
                      *           "created_by": {
                      *             "uuid": "01938a01-0001-7000-8000-000001000001",
                      *             "name": "Quản trị hệ thống",
@@ -12719,6 +12788,59 @@ export interface operations {
                      *           "links": {
                      *             "self": "/api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002",
                      *             "events": "/api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002/events"
+                     *           }
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0f-0005-7000-8000-00000f000005",
+                     *           "type": "hosting_account.create",
+                     *           "state": "running",
+                     *           "progress": 40,
+                     *           "resource": {
+                     *             "type": "hosting_account",
+                     *             "uuid": "01938a05-000c-7000-8000-00000500000c"
+                     *           },
+                     *           "steps": [
+                     *             {
+                     *               "seq": 1,
+                     *               "op": "account.ensure",
+                     *               "state": "succeeded",
+                     *               "started_at": "2026-11-20T08:15:00+07:00",
+                     *               "finished_at": "2026-11-20T08:15:00+07:00"
+                     *             },
+                     *             {
+                     *               "seq": 2,
+                     *               "op": "quota.apply",
+                     *               "state": "running",
+                     *               "started_at": "2026-11-20T08:15:00+07:00",
+                     *               "finished_at": null
+                     *             },
+                     *             {
+                     *               "seq": 3,
+                     *               "op": "php.pool.apply",
+                     *               "state": "pending",
+                     *               "started_at": null,
+                     *               "finished_at": null
+                     *             }
+                     *           ],
+                     *           "attempts": 1,
+                     *           "max_attempts": 3,
+                     *           "timeout_sec": 600,
+                     *           "error": null,
+                     *           "server": {
+                     *             "uuid": "01938a02-0002-7000-8000-000002000002",
+                     *             "name": "srv-hn-02"
+                     *           },
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "created_at": "2026-11-20T08:15:00+07:00",
+                     *           "started_at": "2026-11-20T08:15:00+07:00",
+                     *           "finished_at": null,
+                     *           "links": {
+                     *             "self": "/api/v1/admin/jobs/01938a0f-0005-7000-8000-00000f000005",
+                     *             "events": "/api/v1/admin/jobs/01938a0f-0005-7000-8000-00000f000005/events"
                      *           }
                      *         }
                      *       ],
@@ -13320,6 +13442,16 @@ export interface operations {
                      *           "link": "/backups",
                      *           "read_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-20T03:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a12-0003-7000-8000-000012000003",
+                     *           "type": "job.failed",
+                     *           "severity": "high",
+                     *           "title": "Tạo database intranet_web thất bại",
+                     *           "body": "PostgreSQL không phản hồi; có thể thử lại.",
+                     *           "link": "/jobs/01938a0f-0008-7000-8000-00000f000008",
+                     *           "read_at": null,
+                     *           "created_at": "2026-11-20T08:15:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -14007,6 +14139,23 @@ export interface operations {
                      *           "message": "Phát hiện webshell wp-content/uploads/2026/11/x.php",
                      *           "acknowledged_at": "2026-11-19T14:05:00+07:00",
                      *           "at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1a-0003-7000-8000-00001a000003",
+                     *           "type": "waf.block",
+                     *           "severity": "medium",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "website": {
+                     *             "uuid": "01938a06-0007-7000-8000-000006000007",
+                     *             "primary_domain": "docs.binhminh.vn"
+                     *           },
+                     *           "source_ip": "203.0.113.77",
+                     *           "message": "Chặn XSS tại /lien-he",
+                     *           "acknowledged_at": null,
+                     *           "at": "2026-11-15T14:00:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -14786,7 +14935,7 @@ export interface operations {
                      *             "load_1m": 2.31,
                      *             "uptime_sec": 3888000
                      *           },
-                     *           "account_count": 2,
+                     *           "account_count": 5,
                      *           "status": "ready",
                      *           "spec_version": 3,
                      *           "observed_version": 3,
@@ -14820,7 +14969,7 @@ export interface operations {
                      *             "load_1m": 0.42,
                      *             "uptime_sec": 864000
                      *           },
-                     *           "account_count": 0,
+                     *           "account_count": 5,
                      *           "status": "ready",
                      *           "spec_version": 1,
                      *           "observed_version": 1,
@@ -14855,7 +15004,7 @@ export interface operations {
                      *             "load_1m": 6.8,
                      *             "uptime_sec": 1728000
                      *           },
-                     *           "account_count": 2,
+                     *           "account_count": 1,
                      *           "status": "degraded",
                      *           "spec_version": 5,
                      *           "observed_version": 4,
@@ -14982,7 +15131,7 @@ export interface operations {
                      *           "load_1m": 2.31,
                      *           "uptime_sec": 3888000
                      *         },
-                     *         "account_count": 2,
+                     *         "account_count": 5,
                      *         "status": "ready",
                      *         "spec_version": 3,
                      *         "observed_version": 3,
@@ -15063,7 +15212,7 @@ export interface operations {
                      *           "load_1m": 2.31,
                      *           "uptime_sec": 3888000
                      *         },
-                     *         "account_count": 2,
+                     *         "account_count": 5,
                      *         "status": "ready",
                      *         "spec_version": 3,
                      *         "observed_version": 3,
@@ -15120,7 +15269,7 @@ export interface operations {
                      *         "allocated_cpu_pct": 300,
                      *         "allocated_ram_mb": 5120,
                      *         "allocated_disk_mb": 25600,
-                     *         "account_count": 2,
+                     *         "account_count": 5,
                      *         "max_accounts": 200,
                      *         "accepting_new": true,
                      *         "updated_at": "2026-11-20T08:15:00+07:00"
@@ -16102,13 +16251,6 @@ export interface operations {
                      *           "enabled": true,
                      *           "version": "11.4.4",
                      *           "since": "2026-11-18T09:30:00+07:00"
-                     *         },
-                     *         {
-                     *           "name": "fail2ban",
-                     *           "active": true,
-                     *           "enabled": true,
-                     *           "version": "1.1.0",
-                     *           "since": "2026-11-18T09:30:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -16583,6 +16725,44 @@ export interface operations {
                      *           "drift": null,
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0b-0002-7000-8000-00000b000002",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "username": "binhminh_ftp",
+                     *           "protocol": "sftp",
+                     *           "root_path": ".",
+                     *           "read_only": false,
+                     *           "last_login_at": null,
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0b-0003-7000-8000-00000b000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0006-7000-8000-000005000006",
+                     *             "username": "saomai"
+                     *           },
+                     *           "username": "saomai_ftp",
+                     *           "protocol": "sftp",
+                     *           "root_path": ".",
+                     *           "read_only": false,
+                     *           "last_login_at": "2026-11-19T14:05:00+07:00",
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-13T10:20:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
@@ -17253,34 +17433,6 @@ export interface operations {
                      *           "last_login_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a01-0004-7000-8000-000001000004",
-                     *           "realm": "portal",
-                     *           "name": "Phòng Marketing",
-                     *           "email": "marketing@itso.vn",
-                     *           "role": "USER",
-                     *           "status": "active",
-                     *           "mfa_enabled": false,
-                     *           "locale": "vi",
-                     *           "timezone": "Asia/Ho_Chi_Minh",
-                     *           "last_login_at": "2026-11-19T14:05:00+07:00",
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a01-0005-7000-8000-000001000005",
-                     *           "realm": "portal",
-                     *           "name": "Lê Hoa",
-                     *           "email": "hoa.le@example.vn",
-                     *           "role": "USER",
-                     *           "status": "locked",
-                     *           "mfa_enabled": false,
-                     *           "locale": "en",
-                     *           "timezone": "Asia/Ho_Chi_Minh",
-                     *           "last_login_at": null,
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -17898,32 +18050,6 @@ export interface operations {
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a06-0004-7000-8000-000006000004",
-                     *           "hosting_account": {
-                     *             "uuid": "01938a05-0003-7000-8000-000005000003",
-                     *             "username": "lehoa"
-                     *           },
-                     *           "server": {
-                     *             "uuid": "01938a02-0003-7000-8000-000002000003",
-                     *             "name": "srv-hcm-01"
-                     *           },
-                     *           "primary_domain": "lehoa.blog",
-                     *           "type": "php",
-                     *           "document_root": "public",
-                     *           "php_version": "8.1",
-                     *           "ssl_mode": "acme",
-                     *           "waf_enabled": true,
-                     *           "domains_count": 1,
-                     *           "certificate_expires_at": "2026-12-02T07:00:00+07:00",
-                     *           "status": "suspended",
-                     *           "spec_version": 3,
-                     *           "observed_version": 3,
-                     *           "drift": null,
-                     *           "observed_at": "2026-11-20T08:15:00+07:00",
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -18448,6 +18574,18 @@ export interface operations {
                      *           },
                      *           "name": "www.anphat.vn",
                      *           "type": "alias",
+                     *           "verified_at": "2026-11-18T09:30:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a07-0003-7000-8000-000007000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "name": "shop.anphat.vn",
+                     *           "type": "primary",
                      *           "verified_at": "2026-11-18T09:30:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
@@ -19221,6 +19359,52 @@ export interface operations {
                      *           "latest_version": "6.7.1",
                      *           "plugins_total": 14,
                      *           "plugins_outdated": 3,
+                     *           "themes_outdated": 1,
+                     *           "auto_update": "minor",
+                     *           "hardening": {
+                     *             "xmlrpc_disabled": true,
+                     *             "file_edit_disabled": true
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a11-0002-7000-8000-000011000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0008-7000-8000-000006000008",
+                     *             "primary_domain": "saomai.edu.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0006-7000-8000-000005000006",
+                     *             "username": "saomai"
+                     *           },
+                     *           "wp_version": "6.7.1",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 9,
+                     *           "plugins_outdated": 1,
+                     *           "themes_outdated": 1,
+                     *           "auto_update": "minor",
+                     *           "hardening": {
+                     *             "xmlrpc_disabled": true,
+                     *             "file_edit_disabled": true
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a11-0003-7000-8000-000011000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-000b-7000-8000-00000600000b",
+                     *             "primary_domain": "thientam.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0008-7000-8000-000005000008",
+                     *             "username": "thientam"
+                     *           },
+                     *           "wp_version": "6.7.1",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 11,
+                     *           "plugins_outdated": 0,
                      *           "themes_outdated": 1,
                      *           "auto_update": "minor",
                      *           "hardening": {

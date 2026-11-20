@@ -600,4 +600,256 @@ IMPERSONATION = {"uuid": u("impersonation", 1), "staff": user_ref(0), "target": 
 def dataset() -> dict:
     """Toàn bộ dữ liệu demo theo tên tập."""
     return {k.lower(): v for k, v in globals().items()
-            if k.isupper() and isinstance(v, (list, dict)) and k not in ("KIND",)}
+            if k.isupper() and not k.startswith("_") and isinstance(v, (list, dict)) and k not in ("KIND",)}
+
+
+# ================================================================ Phase 2: mở rộng dữ liệu demo
+# Phần trên giữ nguyên (example OpenAPI tham chiếu theo chỉ số). Phần dưới thêm bản ghi để mọi trang
+# demo có đủ dữ liệu, rồi TÍNH LẠI mọi số tổng hợp từ dữ liệu chi tiết để các trang luôn khớp nhau
+# (vd. dashboard "22 website" = danh sách 22 dòng). Kiểm bằng contracts/tools/check_demo.py.
+
+_PORTAL_USERS = [
+    ("Công ty Bình Minh", "it@binhminh.vn", "binhminh", "binhminh.vn"),
+    ("Trường THPT Sao Mai", "admin@saomai.edu.vn", "saomai", "saomai.edu.vn"),
+    ("Phòng Nhân sự ITSO", "hr@itso.vn", "hritso", "tuyendung.itso.vn"),
+    ("Nhà thuốc Thiện Tâm", "web@thientam.vn", "thientam", "thientam.vn"),
+    ("Cà phê Gió Núi", "hello@gionui.vn", "gionui", "gionui.vn"),
+    ("Dự án Cổng nội bộ", "portal@itso.vn", "intranet", "intranet.itso.vn"),
+    ("Studio Mây Xanh", "contact@mayxanh.vn", "mayxanh", "mayxanh.vn"),
+]
+# (tên site phụ, loại, php) cho từng account mới; site đầu tiên dùng domain chính của account.
+_EXTRA_SITES = {
+    "binhminh": [("shop", "php", "8.3"), ("docs", "static", None)],
+    "saomai": [("elearning", "php", "8.2")],
+    "hritso": [],
+    "thientam": [("dat-lich", "php", "8.3"), ("cdn", "static", None)],
+    "gionui": [("menu", "static", None)],
+    "intranet": [("wiki", "php", "8.3"), ("api", "proxy", None)],
+    "mayxanh": [("portfolio", "static", None), ("blog", "php", "8.3")],
+    "pending01": [],
+}
+_SERVER_OF = {"binhminh": 0, "saomai": 1, "hritso": 1, "thientam": 0, "gionui": 1, "intranet": 0,
+              "mayxanh": 1, "pending01": 1}
+_PKG_OF = {"binhminh": 1, "saomai": 2, "hritso": 0, "thientam": 1, "gionui": 0, "intranet": 2, "mayxanh": 1,
+           "pending01": 0}
+_WP = {"blog.mayxanh.vn", "gionui.vn", "saomai.edu.vn", "thientam.vn"}
+_DAY = ["2026-11-1%dT%02d:%02d:00+07:00" % (d, h, m) for d, h, m in
+        [(2, 9, 10), (3, 10, 20), (4, 11, 30), (5, 14, 0), (6, 15, 45), (7, 16, 5), (8, 8, 40), (9, 13, 15)]]
+
+
+def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy tắc sinh dữ liệu
+    # ---- người dùng: thêm 1 ADMIN có phạm vi + 7 USER
+    USERS.append({"uuid": u("user", 6), "realm": "admin", "name": "Phạm Lan", "email": "lan.pham@itso.local",
+                  "role": "ADMIN", "status": "active", "mfa_enabled": True, "locale": "vi",
+                  "timezone": "Asia/Ho_Chi_Minh", "last_login_at": T2, **ts()})
+    for i, (name, email, _, _) in enumerate(_PORTAL_USERS):
+        USERS.append({"uuid": u("user", 7 + i), "realm": "portal", "name": name, "email": email,
+                      "role": "USER", "status": "active", "mfa_enabled": i % 2 == 0,
+                      "locale": "vi" if i != 4 else "en", "timezone": "Asia/Ho_Chi_Minh",
+                      "last_login_at": T1 if i % 3 else T2, **ts(_DAY[i], T1)})
+
+    # ---- account mới (8): 7 của user mới + 1 account đang tạo
+    owners = {x[2]: 6 + i for i, x in enumerate(_PORTAL_USERS)}
+    owners["pending01"] = 3
+    uid = 20004
+    for n, (username, srv) in enumerate(_SERVER_OF.items()):
+        pending = username == "pending01"
+        ACCOUNTS.append({
+            "uuid": u("account", 5 + n), "username": username, "server": server_ref(srv),
+            "package": pkg_ref(_PKG_OF[username], PACKAGES[_PKG_OF[username]]["current_version"]),
+            "owner": user_ref(owners[username]), "uid": uid, "home_path": f"/home/{username}",
+            "lifecycle_state": "provisioning" if pending else "active", "suspended_reason": None,
+            "terminated_at": None, "purge_after": None, "legal_hold": False,
+            "usage": usage(0 if pending else 1800 + 950 * n, 0 if pending else 40000 + 9000 * n,
+                           0 if pending else 8 + 3 * n, 0 if pending else 300 + 120 * n,
+                           0, 0, 0, 0, 0 if pending else 1500 + 700 * n, _PKG_OF[username]),
+            **do(status="provisioning" if pending else "ready", spec=1, obs=0 if pending else 1),
+            **ts(_DAY[n % len(_DAY)], T1)})
+        uid += 1
+
+    # ---- website, domain, chứng chỉ, database, SFTP, cron, snapshot cho account mới
+    site_n, db_n, sftp_n, cron_n, snap_n = 5, 4, 2, 3, 3
+    for i, (_, _, username, domain) in enumerate(_PORTAL_USERS):
+        acc_idx = 4 + i
+        names = [(domain, "wordpress" if domain in _WP else "php", "8.3")]
+        names += [(f"{sub}.{domain}", "wordpress" if f"{sub}.{domain}" in _WP else t, p)
+                  for sub, t, p in _EXTRA_SITES[username]]
+        for d, kind, php in names:
+            wtype = "php" if kind == "wordpress" else kind
+            WEBSITES.append({
+                "uuid": u("website", site_n), "hosting_account": acc_ref(acc_idx),
+                "server": ACCOUNTS[acc_idx]["server"], "primary_domain": d, "type": wtype,
+                "document_root": "dist" if wtype == "static" else "public",
+                "php_version": php if wtype == "php" else None, "ssl_mode": "acme", "waf_enabled": wtype == "php",
+                "domains_count": 1, "certificate_expires_at": EXP, **do(spec=1, obs=1),
+                **ts(_DAY[i], T1)})
+            if kind == "wordpress":
+                WORDPRESS.append({
+                    "uuid": u("wordpress", len(WORDPRESS) + 1), "website": site_ref(len(WEBSITES) - 1),
+                    "hosting_account": acc_ref(acc_idx), "wp_version": "6.7.1" if i % 2 else "6.6.2",
+                    "latest_version": "6.7.1", "plugins_total": 8 + i, "plugins_outdated": i % 3,
+                    "themes_outdated": i % 2, "auto_update": "minor",
+                    "hardening": {"xmlrpc_disabled": True, "file_edit_disabled": i % 2 == 1},
+                    "staging_of": None, "updated_at": T1})
+            site_n += 1
+        db = f"{username}_web"
+        DATABASES.append({"uuid": u("database", db_n), "hosting_account": acc_ref(acc_idx),
+                          "server": ACCOUNTS[acc_idx]["server"], "engine": "mariadb" if i != 5 else "postgresql",
+                          "name": db, "size_mb": round(48.5 + 37.25 * i, 2),
+                          "charset": "utf8mb4" if i != 5 else "UTF8", "users": [db], **do(spec=1, obs=1),
+                          **ts(_DAY[i], T1)})
+        DB_USERS.append({"uuid": u("database_user", db_n - 1), "hosting_account": acc_ref(acc_idx),
+                         "engine": "mariadb" if i != 5 else "postgresql", "username": db, "host": "localhost",
+                         "grants": [{"database": db, "privileges": ["ALL"]}], **ts(_DAY[i], T1)})
+        db_n += 1
+        SFTP.append({"uuid": u("sftp", sftp_n), "hosting_account": acc_ref(acc_idx), "username": f"{username}_ftp",
+                     "protocol": "sftp", "root_path": ".", "read_only": False,
+                     "last_login_at": T1 if i % 2 else None, **do(spec=1, obs=1), **ts(_DAY[i], T1)})
+        sftp_n += 1
+        if i % 2 == 0:
+            CRON.append({"uuid": u("cron", cron_n), "hosting_account": acc_ref(acc_idx), "website": None,
+                         "schedule": "0 3 * * *", "command": "php wp-cron.php" if domain in _WP else "php artisan backup:clean",
+                         "working_dir": ".", "php_version": "8.3", "enabled": True,
+                         "last_run_at": "2026-11-20T03:00:00+07:00", "last_status": "succeeded",
+                         **do(spec=1, obs=1), **ts(_DAY[i], T1)})
+            cron_n += 1
+        SNAPSHOTS.append({"uuid": u("snapshot", snap_n), "hosting_account": acc_ref(acc_idx),
+                          "destination": {"uuid": BACKUP_DESTS[1]["uuid"], "name": BACKUP_DESTS[1]["name"]},
+                          "scope_type": "hosting_account", "restic_snapshot_id": f"{0x5a000000 + 7919 * snap_n:08x}",
+                          "size_mb": float(ACCOUNTS[acc_idx]["usage"]["backup_mb"]["used"]),
+                          "taken_at": "2026-11-20T01:%02d:00+07:00" % (14 + i), "verified_at": "2026-11-20T03:00:00+07:00",
+                          "contents": ["files", "databases", "config"], "tags": ["daily"]})
+        snap_n += 1
+
+    # Domain + chứng chỉ cho mọi website chưa có (domain chính; site 1 đã có thêm alias www).
+    have_dom = {d["website"]["uuid"] for d in DOMAINS}
+    have_cert = {c["website"]["uuid"] for c in CERTS}
+    for idx, w in enumerate(WEBSITES):
+        if w["uuid"] not in have_dom:
+            DOMAINS.append({"uuid": u("domain", len(DOMAINS) + 1), "website": site_ref(idx),
+                            "name": w["primary_domain"], "type": "primary", "verified_at": w["created_at"],
+                            **ts(w["created_at"], w["updated_at"])})
+        if w["ssl_mode"] == "acme" and w["uuid"] not in have_cert:
+            exp = w["certificate_expires_at"]
+            CERTS.append({"uuid": u("certificate", len(CERTS) + 1), "website": site_ref(idx), "source": "acme",
+                          "domains": [w["primary_domain"]], "issuer": "Let's Encrypt R11",
+                          "not_before": "2026-11-18T07:00:00+07:00", "not_after": exp, "auto_renew": True,
+                          "status": "expiring" if exp.startswith("2026-12") else "valid", **ts()})
+        w["domains_count"] = sum(1 for d in DOMAINS if d["website"]["uuid"] == w["uuid"])
+
+    # ---- job, audit, sự kiện bảo mật, thông báo
+    job_specs = [
+        ("hosting_account.create", "running", 40, "hosting_account", ACCOUNTS[-1]["uuid"], 1,
+         [("account.ensure", "succeeded"), ("quota.apply", "running"), ("php.pool.apply", "pending")], None),
+        ("website.ssl.renew", "succeeded", 100, "website", WEBSITES[0]["uuid"], 0,
+         [("cert.issue", "succeeded"), ("cert.install", "succeeded")], None),
+        ("backup.run", "succeeded", 100, "hosting_account", ACCOUNTS[0]["uuid"], 0,
+         [("backup.run", "succeeded"), ("backup.check", "succeeded")], None),
+        ("database.create", "failed", 50, "database",
+         next(d["uuid"] for d in DATABASES if d["name"] == "intranet_web"), 0,
+         [("db.pg.create", "succeeded"), ("db.pg.user_ensure", "failed")],
+         {"code": "dependency_unavailable", "message": "PostgreSQL không phản hồi trong 30 giây", "retryable": True}),
+        ("service.restart", "succeeded", 100, "server", SERVERS[2]["uuid"], 2,
+         [("service.control", "succeeded")], None),
+        ("software.install", "queued", 0, "server", SERVERS[1]["uuid"], 1,
+         [("software.install", "pending")], None),
+        ("website.create", "succeeded", 100, "website", WEBSITES[-1]["uuid"], 1,
+         [("fs.mkdir", "succeeded"), ("php.pool.apply", "succeeded"), ("nginx.vhost.apply", "succeeded"),
+          ("cert.issue", "succeeded")], None),
+        ("hosting_account.suspend", "succeeded", 100, "hosting_account", ACCOUNTS[2]["uuid"], 2,
+         [("account.suspend", "succeeded")], None),
+    ]
+    for k, (jtype, state, prog, rtype, ruuid, srv, steps, err) in enumerate(job_specs):
+        n = 5 + k
+        at = _DAY[k % len(_DAY)] if state in ("succeeded", "failed") else T2
+        done = state in ("succeeded", "failed")
+        JOBS.append({
+            "uuid": u("job", n), "type": jtype, "state": state, "progress": prog,
+            "resource": {"type": rtype, "uuid": ruuid},
+            "steps": [{"seq": s + 1, "op": op, "state": st,
+                       "started_at": None if st == "pending" else at,
+                       "finished_at": at if st in ("succeeded", "failed") else None}
+                      for s, (op, st) in enumerate(steps)],
+            "attempts": 1, "max_attempts": 3, "timeout_sec": 600, "error": err, "server": server_ref(srv),
+            "requested_by": user_ref(0 if k % 2 == 0 else 1), "created_at": at,
+            "started_at": None if state == "queued" else at, "finished_at": at if done else None,
+            "links": {"self": f"/api/v1/admin/jobs/{u('job', n)}", "events": f"/api/v1/admin/jobs/{u('job', n)}/events"}})
+
+    actions = [("hosting_account.create", "hosting_account", ACCOUNTS[4]), ("website.create", "website", WEBSITES[6]),
+               ("database.create", "database", DATABASES[4]), ("user.update", "user", USERS[7]),
+               ("hosting_package.update", "hosting_package", PACKAGES[0]), ("server.update", "server", SERVERS[1]),
+               ("backup_policy.update", "backup_policy", BACKUP_POLICIES[0]), ("auth.login", "user", USERS[1]),
+               ("firewall.apply", "server", SERVERS[0]), ("website.ssl.renew", "website", WEBSITES[0]),
+               ("hosting_account.create", "hosting_account", ACCOUNTS[8]), ("impersonation.start", "user", USERS[2])]
+    for k, (action, rtype, obj) in enumerate(actions):
+        AUDIT.append({"uuid": u("audit", 2 + k), "at": _DAY[k % len(_DAY)], "actor": user_ref(k % 2),
+                      "impersonator": None, "actor_ip": f"10.10.5.{20 + k % 3}", "action": action,
+                      "resource": {"type": rtype, "uuid": obj["uuid"]},
+                      "server": server_ref(k % 3) if rtype in ("server", "hosting_account", "website", "database") else None,
+                      "job_uuid": None, "result": "failure" if action == "auth.login" else "success",
+                      "changes": {} if action == "auth.login" else {"updated_at": [T0, T1]},
+                      "hash": f"{(0x9e3779b97f4a7c15 * (k + 2)) % (1 << 256):064x}"})
+
+    for k, (etype, sev, srv, site, ip, msg) in enumerate([
+        ("waf.block", "medium", 0, 6, "203.0.113.77", "Chặn XSS tại /lien-he"),
+        ("ssh.bruteforce", "high", 2, None, "192.0.2.15", "fail2ban chặn IP sau 5 lần đăng nhập SSH sai"),
+        ("waf.block", "low", 1, 9, "198.51.100.9", "Chặn quét đường dẫn /wp-login.php"),
+        ("login.failed", "medium", 0, None, "203.0.113.200", "Đăng nhập portal sai 3 lần (it@binhminh.vn)"),
+        ("fim.change", "high", 2, None, None, "Thay đổi /etc/ssh/sshd_config ngoài panel"),
+        ("waf.block", "medium", 0, 1, "198.51.100.23", "Chặn SQL injection tại /cart"),
+    ]):
+        SECURITY_EVENTS.append({"uuid": u("security_event", 3 + k), "type": etype, "severity": sev,
+                                "server": server_ref(srv), "website": site_ref(site) if site is not None else None,
+                                "source_ip": ip, "message": msg, "acknowledged_at": None if k % 2 == 0 else T1,
+                                "at": _DAY[(k + 3) % len(_DAY)]})
+
+    for k, (ntype, sev, title, body, link) in enumerate([
+        ("job.failed", "high", "Tạo database intranet_web thất bại", "PostgreSQL không phản hồi; có thể thử lại.",
+         f"/jobs/{u('job', 8)}"),
+        ("security.high", "high", "Thay đổi cấu hình SSH ngoài panel", "srv-hcm-01: /etc/ssh/sshd_config.", "/security"),
+        ("alert.firing", "high", "CPU srv-hcm-01 vượt 85%", "91,3% trong 12 phút.", "/monitoring/alerts"),
+        ("account.created", "info", "Đã tạo account mayxanh", "Gói Business trên srv-hn-02.", f"/hosting-accounts/{u('account', 11)}"),
+    ]):
+        NOTIFICATIONS.append({"uuid": u("notification", 3 + k), "type": ntype, "severity": sev, "title": title,
+                              "body": body, "link": link, "read_at": None if k < 3 else T2, "created_at": T2})
+
+    _recompute()
+
+
+def _recompute() -> None:
+    """Mọi số tổng hợp tính từ dữ liệu chi tiết: không có số viết tay lệch nhau."""
+    def count(items, key, uuid):
+        return sum(1 for x in items if (x.get(key) or {}).get("uuid") == uuid)
+
+    live = [a for a in ACCOUNTS if a["lifecycle_state"] != "terminated"]
+    for a in ACCOUNTS:
+        us = a["usage"]
+        us["websites"]["used"] = count(WEBSITES, "hosting_account", a["uuid"])
+        us["databases"]["used"] = count(DATABASES, "hosting_account", a["uuid"])
+        us["ftp_accounts"]["used"] = count(SFTP, "hosting_account", a["uuid"])
+        us["cron_jobs"]["used"] = count(CRON, "hosting_account", a["uuid"])
+    for s in SERVERS:
+        s["account_count"] = sum(1 for a in live if a["server"]["uuid"] == s["uuid"])
+    for p in PACKAGES:
+        p["account_count"] = sum(1 for a in live if a["package"]["uuid"] == p["uuid"])
+    for v in PACKAGE_VERSIONS:
+        v["account_count"] = sum(1 for a in live if a["package"]["uuid"] == v["package_uuid"]
+                                 and a["package"]["version"] == v["version"])
+    for z in DNS_ZONES:
+        z["records_count"] = len(DNS_RECORDS)
+    CAPACITY["account_count"] = SERVERS[0]["account_count"]
+
+    DASHBOARD["counts"] = {"servers": len(SERVERS), "hosting_accounts": len(live), "websites": len(WEBSITES),
+                           "databases": len(DATABASES), "users": len(USERS), "packages": len(PACKAGES)}
+    DASHBOARD["package_distribution"] = [{"code": p["code"], "accounts": p["account_count"]} for p in PACKAGES]
+    DASHBOARD["alerts_firing"] = sum(1 for a in ALERTS if a["state"] == "firing")
+    DASHBOARD["jobs_running"] = sum(1 for j in JOBS if j["state"] == "running")
+    DASHBOARD["security_events_24h"] = sum(SECURITY_OVERVIEW["events_24h"].values())
+
+    PORTAL_OVERVIEW["accounts"] = [{"hosting_account": {"uuid": a["uuid"], "username": a["username"]},
+                                    "lifecycle_state": a["lifecycle_state"], "usage": a["usage"]}
+                                   for a in live if a["owner"]["uuid"] == USERS[2]["uuid"]]
+    PORTAL_OVERVIEW["notifications_unread"] = sum(1 for n in NOTIFICATIONS if n["read_at"] is None)
+
+
+_expand()

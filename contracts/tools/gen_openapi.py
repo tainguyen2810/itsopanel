@@ -42,7 +42,7 @@ def job(type_: str, resource_type: str | None, resource_uuid: str | None, n: int
 
 
 def page(items):
-    return {"data": items, "meta": {"next_cursor": None, "limit": 50}}
+    return {"data": items[:3], "meta": {"next_cursor": None, "limit": 50}}
 
 
 def one(x):

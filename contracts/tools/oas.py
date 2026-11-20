@@ -192,7 +192,7 @@ class Api:
         idp = [self.p(id_param)]
         if "l" in ops:
             self.add("get", base, f"list{Pl}", f"Danh sách {plural}", tag, list_=True, ok=schema,
-                     ok_example={"data": examples, "meta": {"next_cursor": None, "limit": 50}},
+                     ok_example={"data": examples[:3], "meta": {"next_cursor": None, "limit": 50}},
                      params=list_params)
         if "c" in ops:
             if create_job:

@@ -3427,6 +3427,28 @@ export interface operations {
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0d-0003-7000-8000-00000d000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "website": null,
+                     *           "schedule": "0 3 * * *",
+                     *           "command": "php artisan backup:clean",
+                     *           "working_dir": ".",
+                     *           "php_version": "8.3",
+                     *           "enabled": true,
+                     *           "last_run_at": "2026-11-20T03:00:00+07:00",
+                     *           "last_status": "succeeded",
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -3909,6 +3931,26 @@ export interface operations {
                      *             }
                      *           ],
                      *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0a-0003-7000-8000-00000a000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "engine": "mariadb",
+                     *           "username": "binhminh_web",
+                     *           "host": "localhost",
+                     *           "grants": [
+                     *             {
+                     *               "database": "binhminh_web",
+                     *               "privileges": [
+                     *                 "ALL"
+                     *               ]
+                     *             }
+                     *           ],
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
@@ -5596,6 +5638,59 @@ export interface operations {
                      *             "self": "/api/v1/portal/jobs/01938a0f-0002-7000-8000-00000f000002",
                      *             "events": "/api/v1/portal/jobs/01938a0f-0002-7000-8000-00000f000002/events"
                      *           }
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0f-0005-7000-8000-00000f000005",
+                     *           "type": "hosting_account.create",
+                     *           "state": "running",
+                     *           "progress": 40,
+                     *           "resource": {
+                     *             "type": "hosting_account",
+                     *             "uuid": "01938a05-000c-7000-8000-00000500000c"
+                     *           },
+                     *           "steps": [
+                     *             {
+                     *               "seq": 1,
+                     *               "op": "account.ensure",
+                     *               "state": "succeeded",
+                     *               "started_at": "2026-11-20T08:15:00+07:00",
+                     *               "finished_at": "2026-11-20T08:15:00+07:00"
+                     *             },
+                     *             {
+                     *               "seq": 2,
+                     *               "op": "quota.apply",
+                     *               "state": "running",
+                     *               "started_at": "2026-11-20T08:15:00+07:00",
+                     *               "finished_at": null
+                     *             },
+                     *             {
+                     *               "seq": 3,
+                     *               "op": "php.pool.apply",
+                     *               "state": "pending",
+                     *               "started_at": null,
+                     *               "finished_at": null
+                     *             }
+                     *           ],
+                     *           "attempts": 1,
+                     *           "max_attempts": 3,
+                     *           "timeout_sec": 600,
+                     *           "error": null,
+                     *           "server": {
+                     *             "uuid": "01938a02-0002-7000-8000-000002000002",
+                     *             "name": "srv-hn-02"
+                     *           },
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "created_at": "2026-11-20T08:15:00+07:00",
+                     *           "started_at": "2026-11-20T08:15:00+07:00",
+                     *           "finished_at": null,
+                     *           "links": {
+                     *             "self": "/api/v1/portal/jobs/01938a0f-0005-7000-8000-00000f000005",
+                     *             "events": "/api/v1/portal/jobs/01938a0f-0005-7000-8000-00000f000005/events"
+                     *           }
                      *         }
                      *       ],
                      *       "meta": {
@@ -6066,6 +6161,16 @@ export interface operations {
                      *           "link": "/backups",
                      *           "read_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-20T03:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a12-0003-7000-8000-000012000003",
+                     *           "type": "job.failed",
+                     *           "severity": "high",
+                     *           "title": "Tạo database intranet_web thất bại",
+                     *           "body": "PostgreSQL không phản hồi; có thể thử lại.",
+                     *           "link": "/jobs/01938a0f-0008-7000-8000-00000f000008",
+                     *           "read_at": null,
+                     *           "created_at": "2026-11-20T08:15:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -6216,7 +6321,7 @@ export interface operations {
                      *             "progress": 60
                      *           }
                      *         ],
-                     *         "notifications_unread": 1
+                     *         "notifications_unread": 4
                      *       }
                      *     }
                      */
@@ -6600,6 +6705,44 @@ export interface operations {
                      *           "drift": null,
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0b-0002-7000-8000-00000b000002",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "username": "binhminh_ftp",
+                     *           "protocol": "sftp",
+                     *           "root_path": ".",
+                     *           "read_only": false,
+                     *           "last_login_at": null,
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0b-0003-7000-8000-00000b000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0006-7000-8000-000005000006",
+                     *             "username": "saomai"
+                     *           },
+                     *           "username": "saomai_ftp",
+                     *           "protocol": "sftp",
+                     *           "root_path": ".",
+                     *           "read_only": false,
+                     *           "last_login_at": "2026-11-19T14:05:00+07:00",
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-13T10:20:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
@@ -7665,6 +7808,18 @@ export interface operations {
                      *           "verified_at": "2026-11-18T09:30:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a07-0003-7000-8000-000007000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "name": "shop.anphat.vn",
+                     *           "type": "primary",
+                     *           "verified_at": "2026-11-18T09:30:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -8209,6 +8364,52 @@ export interface operations {
                      *           "latest_version": "6.7.1",
                      *           "plugins_total": 14,
                      *           "plugins_outdated": 3,
+                     *           "themes_outdated": 1,
+                     *           "auto_update": "minor",
+                     *           "hardening": {
+                     *             "xmlrpc_disabled": true,
+                     *             "file_edit_disabled": true
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a11-0002-7000-8000-000011000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0008-7000-8000-000006000008",
+                     *             "primary_domain": "saomai.edu.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0006-7000-8000-000005000006",
+                     *             "username": "saomai"
+                     *           },
+                     *           "wp_version": "6.7.1",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 9,
+                     *           "plugins_outdated": 1,
+                     *           "themes_outdated": 1,
+                     *           "auto_update": "minor",
+                     *           "hardening": {
+                     *             "xmlrpc_disabled": true,
+                     *             "file_edit_disabled": true
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a11-0003-7000-8000-000011000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-000b-7000-8000-00000600000b",
+                     *             "primary_domain": "thientam.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0008-7000-8000-000005000008",
+                     *             "username": "thientam"
+                     *           },
+                     *           "wp_version": "6.7.1",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 11,
+                     *           "plugins_outdated": 0,
                      *           "themes_outdated": 1,
                      *           "auto_update": "minor",
                      *           "hardening": {
