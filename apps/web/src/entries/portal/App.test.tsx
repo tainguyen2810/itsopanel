@@ -17,7 +17,11 @@ describe('portal entry', () => {
       expect(screen.getByTestId('status-API')).toHaveAttribute('data-state', 'ok'),
     );
     expect(screen.queryByTestId('status-Agent')).toBeNull();
-    for (const call of fetchMock.mock.calls) expect(String(call[0])).not.toContain('/admin/');
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
+    for (const [input] of fetchMock.mock.calls) {
+      const url = input instanceof Request ? input.url : String(input);
+      expect(url).not.toContain('/admin/');
+    }
   });
 
   it('menu portal chỉ có chức năng của USER, không tìm kiếm toàn hệ thống', () => {

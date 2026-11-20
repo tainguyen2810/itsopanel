@@ -10,7 +10,7 @@ endef
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-agent test-fuzz test-e2e tokens tokens-check lint lint-web lint-api lint-agent no-exec build codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -84,6 +84,9 @@ test-agent:
 
 test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự bật Vite)
 	@cd apps/web && $(PNPM) e2e
+
+screenshots: ## Chụp lại ảnh Design System vào docs/screenshots/design-system/
+	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system $(PNPM) e2e
 
 tokens: ## Sinh tokens.css từ design/tokens/tokens.json
 	@node design/tools/gen-tokens.mjs

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getJson, type SystemStatus } from '@/shared/api/client';
+import { adminApi } from '@/api/admin';
+import { unwrap } from '@/api/http';
 import { HealthRow } from '@/shared/components/HealthRow';
 import { StatusPanel } from '@/shared/components/StatusPanel';
 import { StatusRow } from '@/shared/components/StatusRow';
@@ -17,7 +18,7 @@ export function App() {
   const { t: ts } = useTranslation('shell');
   const q = useQuery({
     queryKey: ['admin', 'system', 'status'],
-    queryFn: () => getJson<SystemStatus>('/api/v1/admin/system/status'),
+    queryFn: async () => unwrap(await adminApi.GET('/api/v1/admin/system/status')),
   });
   const err = q.isError ? q.error.message : undefined;
   const s = q.data;

@@ -2,7 +2,11 @@ import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, prepare, test } from './fixtures';
 
-const OUT = resolve(import.meta.dirname, '../../../docs/screenshots/design-system');
+// Mặc định ghi ảnh vào test-results (không làm bẩn Git). `make screenshots` đặt
+// SCREENSHOT_DIR=docs/screenshots/design-system để cập nhật ảnh tài liệu.
+const OUT = process.env.SCREENSHOT_DIR
+  ? resolve(process.env.SCREENSHOT_DIR)
+  : resolve(import.meta.dirname, '../test-results/screenshots');
 const PAGES = [
   { name: 'design', path: '/design/', ready: '#sec-jobs' },
   { name: 'admin-shell', path: '/admin/', ready: '[data-testid="status-Agent"][data-state="ok"]' },
@@ -28,6 +32,7 @@ test.describe('ảnh chụp Design System', () => {
           expect(overflow).toBeLessThanOrEqual(0);
           await page.screenshot({
             path: `${OUT}/${p.name}-${w}-${theme}.png`,
+            animations: 'disabled',
             fullPage: p.name === 'design',
           });
         });
@@ -52,7 +57,10 @@ test.describe('ảnh chụp Design System', () => {
         return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
       });
       expect(onTop).toBe(true);
-      await page.screenshot({ path: `${OUT}/admin-shell-390-${theme}-drawer.png` });
+      await page.screenshot({
+        path: `${OUT}/admin-shell-390-${theme}-drawer.png`,
+        animations: 'disabled',
+      });
     });
   }
 });

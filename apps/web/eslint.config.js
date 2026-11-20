@@ -22,7 +22,16 @@ const colorRules = (tpl) =>
   }));
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'playwright-report', 'test-results'] },
+  {
+    ignores: [
+      'dist',
+      'coverage',
+      'node_modules',
+      'playwright-report',
+      'test-results',
+      'src/api/generated',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strict,
   {
@@ -52,6 +61,28 @@ export default tseslint.config(
         'error',
         ...colorRules('Literal[value=/RE/]'),
         ...colorRules('TemplateElement[value.raw=/RE/]'),
+      ],
+    },
+  },
+  {
+    // Portal và phần dùng chung không được chạm Admin API (ranh giới realm của contracts).
+    files: ['src/entries/portal/**', 'src/shared/**', 'src/ui/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@/api/admin',
+                '@/api/generated/admin/*',
+                '**/api/admin',
+                '**/generated/admin/*',
+              ],
+              message: 'Portal/shared không được dùng Admin API.',
+            },
+          ],
+        },
       ],
     },
   },

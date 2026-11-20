@@ -10,7 +10,9 @@
     "lint": "eslint . && prettier --check . && tsc -b --noEmit && node scripts/check-i18n.mjs",
     "format": "prettier --write .",
     "e2e": "playwright test --trace off",
-    "i18n:check": "node scripts/check-i18n.mjs"
+    "i18n:check": "node scripts/check-i18n.mjs",
+    "codegen": "node scripts/codegen.mjs",
+    "codegen:check": "node scripts/codegen.mjs --check"
   },
   "dependencies": {
     "@fontsource/be-vietnam-pro": "^5.3.0",
@@ -22,6 +24,7 @@
     "cmdk": "^1.1.1",
     "i18next": "^26.7.2",
     "lucide-react": "^1.70.0",
+    "openapi-fetch": "^0.17.0",
     "radix-ui": "^1.8.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -49,6 +52,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
     "jsdom": "^31.0.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.4",
     "typescript": "~5.9.3",

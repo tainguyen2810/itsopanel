@@ -25,8 +25,9 @@ export const renderWithQuery = renderWithProviders;
 /** Giả lập fetch theo đường dẫn → [status, body]. */
 export function mockFetch(routes: Record<string, [number, unknown]>) {
   return (input: RequestInfo | URL): Promise<Response> => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const hit = routes[url] ?? [
+    const raw = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const u = new URL(raw, 'http://localhost');
+    const hit = routes[u.pathname + u.search] ?? [
       404,
       { type: 'about:blank', title: 'Not Found', status: 404, code: 'not_found' },
     ];
