@@ -181,6 +181,20 @@
       "last_login_at": "2026-11-20T08:15:00+07:00",
       "created_at": "2026-11-18T08:40:00+07:00",
       "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a01-000e-7000-8000-00000100000e",
+      "realm": "admin",
+      "name": "Nguyễn Hải",
+      "email": "hai.nguyen@itso.local",
+      "role": "SUPER_ADMIN",
+      "status": "active",
+      "mfa_enabled": true,
+      "locale": "vi",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "last_login_at": "2026-11-19T14:05:00+07:00",
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
     }
   ],
   "servers": [
@@ -5649,7 +5663,7 @@
       "hosting_accounts": 11,
       "websites": 21,
       "databases": 10,
-      "users": 13,
+      "users": 14,
       "packages": 3
     },
     "servers": [

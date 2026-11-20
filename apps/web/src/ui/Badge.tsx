@@ -75,7 +75,12 @@ export type StatusKey =
   | 'error'
   | 'skipped'
   | 'connected'
-  | 'disconnected';
+  | 'disconnected'
+  | 'preflight'
+  | 'syncing'
+  | 'cutover'
+  | 'completed'
+  | 'rolled_back';
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
@@ -121,6 +126,11 @@ const TONE: Record<StatusKey, Tone> = {
   skipped: 'neutral',
   connected: 'success',
   disconnected: 'danger',
+  preflight: 'info',
+  syncing: 'info',
+  cutover: 'warning',
+  completed: 'success',
+  rolled_back: 'neutral',
 };
 
 /** Trạng thái có trong bảng (dữ liệu API có thể có giá trị mới: hiện nguyên văn, tông trung tính). */

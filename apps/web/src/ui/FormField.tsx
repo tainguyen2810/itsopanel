@@ -87,10 +87,13 @@ export function FormField<T extends FieldValues>({
 
 type Translate = (k: string, o?: Record<string, unknown>) => string;
 
-/** "form.minLength|3" → t('form.minLength', {min: 3}); key không tồn tại thì hiện nguyên văn. */
+/**
+ * "form.minLength|3" → t('form.minLength', {min: 3, max: 3}); một tham số số dùng được cho cả
+ * {{min}} và {{max}}. Key không tồn tại thì hiện nguyên văn.
+ */
 function translateError(t: Translate, message: string): string {
   const [key = message, arg] = message.split('|');
-  const opts = arg !== undefined ? { min: Number(arg) } : undefined;
+  const opts = arg !== undefined ? { min: Number(arg), max: Number(arg) } : undefined;
   const out = t(key, opts);
   return out === key ? message : out;
 }

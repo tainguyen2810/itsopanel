@@ -649,6 +649,10 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
                       "role": "USER", "status": "active", "mfa_enabled": i % 2 == 0,
                       "locale": "vi" if i != 4 else "en", "timezone": "Asia/Ho_Chi_Minh",
                       "last_login_at": T1 if i % 3 else T2, **ts(_DAY[i], T1)})
+    # Super Admin thứ hai: xác nhận purge phải là SA khác người yêu cầu (D-46).
+    USERS.append({"uuid": u("user", 14), "realm": "admin", "name": "Nguyễn Hải", "email": "hai.nguyen@itso.local",
+                  "role": "SUPER_ADMIN", "status": "active", "mfa_enabled": True, "locale": "vi",
+                  "timezone": "Asia/Ho_Chi_Minh", "last_login_at": T1, **ts()})
 
     # ---- account mới (8): 7 của user mới + 1 account đang tạo
     owners = {x[2]: 6 + i for i, x in enumerate(_PORTAL_USERS)}

@@ -32,6 +32,13 @@ export const PERSONAS: Record<Realm, Persona[]> = {
       role: 'ADMIN',
       label: 'Admin',
     },
+    {
+      uuid: '01938a01-000e-7000-8000-00000100000e',
+      name: 'Nguyễn Hải',
+      email: 'hai.nguyen@itso.local',
+      role: 'SUPER_ADMIN',
+      label: 'Super Admin',
+    },
   ],
   portal: [
     {

@@ -8728,7 +8728,7 @@ export interface operations {
                      *           "hosting_accounts": 11,
                      *           "websites": 21,
                      *           "databases": 10,
-                     *           "users": 13,
+                     *           "users": 14,
                      *           "packages": 3
                      *         },
                      *         "servers": [

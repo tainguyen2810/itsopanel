@@ -287,17 +287,35 @@ export function registerAdminLists() {
       account_count: s?.account_count ?? 0,
     });
   });
-  on('get', '/api/v1/admin/placement/suggestions', (ctx) =>
-    page(ctx, ctx.db.data.placement as Row[]),
-  );
+  // Gợi ý đặt account: chấm điểm theo RAM/disk còn trống và số account trên từng server trong phạm vi.
+  on('get', '/api/v1/admin/placement/suggestions', (ctx) => {
+    const v = visibility(ctx.db, ctx.actor);
+    const rows = ctx.db.data.servers
+      .filter((s) => canSeeServer(v, s.uuid))
+      .map((s) => {
+        const r = s.resources;
+        const ram = 100 - Math.round((r.ram_used_mb * 100) / Math.max(r.ram_mb, 1));
+        const disk = Math.round((r.disk_used_mb * 100) / Math.max(r.disk_mb, 1));
+        const ok = s.accepting_new_accounts && s.agent_connected && s.status === 'ready';
+        const score = ok
+          ? Math.max(1, Math.min(99, Math.round(ram * 0.6 + (100 - disk) * 0.4 - s.account_count)))
+          : 0;
+        return {
+          server: { uuid: s.uuid, name: s.name },
+          score,
+          reasons: ok
+            ? [`Còn ${ram}% RAM chưa dùng`, `Disk đã dùng ${disk}%`, `${s.account_count} account`]
+            : ['Không nhận account mới'],
+          accepting_new: ok,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+    return page(ctx, rows);
+  });
 
   on('get', '/api/v1/admin/hosting-accounts/{id}/usage', (ctx) => {
     const a = accountOr404(ctx);
     return isReply(a) ? a : ok(a.usage);
-  });
-  on('get', '/api/v1/admin/hosting-accounts/{id}/lifecycle-events', (ctx) => {
-    const a = accountOr404(ctx);
-    return isReply(a) ? a : page(ctx, ctx.db.data.lifecycle as Row[]);
   });
   on('get', '/api/v1/admin/hosting-packages/{id}/versions', (ctx) =>
     page(

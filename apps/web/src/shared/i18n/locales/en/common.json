@@ -71,7 +71,12 @@
     "error": "Error",
     "skipped": "Skipped",
     "connected": "Connected",
-    "disconnected": "Disconnected"
+    "disconnected": "Disconnected",
+    "preflight": "Preflight",
+    "syncing": "Syncing",
+    "cutover": "Cutting over",
+    "completed": "Completed",
+    "rolled_back": "Rolled back"
   },
   "table": {
     "selected_one": "{{count}} row selected",
@@ -98,7 +103,8 @@
     "minLength": "At least {{min}} characters",
     "email": "Invalid email",
     "optional": "optional",
-    "mismatch": "Does not match"
+    "mismatch": "Does not match",
+    "maxLength": "At most {{max}} characters"
   },
   "job": {
     "step": "Step {{current}} of {{total}}",
@@ -142,11 +148,19 @@
       "change_package": "Package changed",
       "migrate": "Server migration",
       "terminate": "Account terminated",
-      "purge": "Account purged"
+      "purge": "Account purged",
+      "update": "Update hosting account",
+      "schedule_purge": "Schedule account purge",
+      "confirm_purge": "Confirm account purge",
+      "migrate_preflight": "Server move dry run",
+      "migrate_cutover": "Server move cutover",
+      "migrate_rollback": "Server move rollback"
     },
     "hosting_package": {
       "update": "Hosting package updated",
-      "create": "Hosting package created"
+      "create": "Hosting package created",
+      "migrate_accounts": "Move accounts to new package version",
+      "delete": "Delete hosting package"
     },
     "impersonation": {
       "start": "Impersonation started"
@@ -252,7 +266,8 @@
     },
     "backup": {
       "run": "Run backup (restic)",
-      "check": "Verify backup"
+      "check": "Verify backup",
+      "restore_test": "Test-restore the backup"
     },
     "service": {
       "control": "Control service",
@@ -286,6 +301,16 @@
       "up": "Start services",
       "down": "Stop services",
       "pull": "Pull images"
+    },
+    "migrate": {
+      "preflight": "Check target server",
+      "sync": "Sync files and databases",
+      "verify": "Verify data",
+      "cutover": "Switch vhosts, cron, SSL to target",
+      "rollback": "Roll back to source"
     }
+  },
+  "wizard": {
+    "stepOf": "Step {{current}} of {{total}}"
   }
 }

@@ -21,8 +21,11 @@ cd apps/web && pnpm preview:demo   # xem bản build demo
 - Thao tác ghi trả `202` + Job; job tự chạy từng bước theo thời gian và hiện trong drawer theo dõi job.
 - Mô phỏng hạ tầng: thêm server thì agent "kết nối" sau 6 giây; tường lửa áp dụng an toàn tự hoàn tác nếu
   không xác nhận trong thời hạn; terminal chỉ mô phỏng, không chạy lệnh.
-- Vai trò: nút **Demo** trên topbar chuyển người dùng mẫu. Admin: Super Admin hoặc Admin (Trần Minh, chỉ
-  thấy server srv-hn-01 và account lehoa). Portal: An Phát, Phòng Marketing, Lê Hoa. Route ngoài quyền hiện
+- Mô phỏng hosting: tạo account chạy job rồi chuyển `active` (có domain thì tạo luôn website); đổi giới hạn gói
+  tạo phiên bản mới (D-43); chuyển server dừng ở bước kiểm tra dữ liệu chờ cutover hoặc hoàn tác; purge 2 bước
+  (D-46) cần Super Admin thứ hai: lên lịch bằng "Quản trị hệ thống", đổi vai trò sang "Nguyễn Hải" để xác nhận.
+- Vai trò: nút **Demo** trên topbar chuyển người dùng mẫu. Admin: hai Super Admin (Quản trị hệ thống,
+  Nguyễn Hải) hoặc Admin (Trần Minh, chỉ thấy server srv-hn-01 và account lehoa). Portal: An Phát, Phòng Marketing, Lê Hoa. Route ngoài quyền hiện
   trang 403.
 
 ## Thêm endpoint giả lập

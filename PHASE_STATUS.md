@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 2 — Complete UI Demo (đang làm; Phase 1 ✓ APPROVED 2026-11-20)
-- **Prompt hiện tại:** 2.4 Hosting I (gói hosting, tài khoản hosting). Chạy hàng loạt 2.1 → 2.8, tự merge local cuối Phase
-- **Task đang làm:** 2.4 — gói hosting
+- **Prompt hiện tại:** 2.5 Hosting II (website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git). Chạy hàng loạt 2.1 → 2.8, tự merge local cuối Phase
+- **Task đang làm:** 2.5 — contract Git deployments, trang website
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-2`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_2_PROMPTS.md`; cuối 2.8 báo cáo Phase 2 và DỪNG (không bắt đầu Phase 3)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
@@ -36,8 +36,8 @@ Phase 2 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_2_PROMPTS.
 - ✓ 2.1 Nền demo: router, MSW theo OpenAPI, dataset mở rộng, role switcher, khung trang, smoke test
 - ✓ 2.2 Admin chung: Dashboard, Jobs, Profile, Ctrl+K, Login/MFA, wizard cài đặt
 - ✓ 2.3 Hạ tầng: Servers, dịch vụ, Docker, Compose
-- ✱ 2.4 Hosting I: gói, tài khoản hosting
-- ○ 2.5 Hosting II: website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git
+- ✓ 2.4 Hosting I: gói, tài khoản hosting
+- ✱ 2.5 Hosting II: website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git
 - ○ 2.6 Bảo mật, sao lưu, quản trị
 - ○ 2.7 User Hosting Portal
 - ○ 2.8 Kiểm tra tổng, báo cáo Phase 2
@@ -64,4 +64,5 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-20 | 1 → 2 | Người dùng duyệt Phase 1 ("Tiếp nhé"); D-54, D-55 APPROVED; viết PHASE_2_PROMPTS.md, mở nhánh `phase-2` | — |
 | 2026-11-20 | 2 / 2.1 | Dataset mở rộng + check_demo.py; MSW theo OpenAPI (dispatcher theo template, job giả lập theo thời gian, phạm vi vai trò); contract list khai báo 422; TanStack Router theo sitemap (58 admin + 18 portal), guard 403, breadcrumb, khung trang (PageHeader, ListPage URL state, DetailPage tabs URL, FormDialog, trạng thái), drawer job; `dev:demo`/`build:demo`; Vitest 110, Playwright 106 | 87c2fe0 + commit này |
 | 2026-11-20 | 2 / 2.2 | Contract thêm `jobs/{id}:retry` (admin + portal, theo 05-API); API giả lập ghi (auth/MFA/step-up/đổi mật khẩu/phiên, hủy/thử lại job sinh audit) và dashboard tính từ dữ liệu theo phạm vi vai trò; Dashboard theo mockup, Jobs + chi tiết, Hồ sơ (mật khẩu, MFA, phiên), Ctrl+K tìm thật, Đăng nhập/MFA, wizard cài đặt 10 bước; namespace i18n `admin` (575 key); Vitest 141, Playwright 112 | 2b71414 |
-| 2026-11-20 | 2 / 2.3 | Contract: `ComposeProject.compose_yaml`; API giả lập hạ tầng (token thêm server + agent giả lập kết nối, sửa/reboot, dịch vụ, phần mềm/PHP, Nginx, tường lửa safe-apply có tự hoàn tác, Docker, Compose, Registry, terminal ticket) với dữ liệu tách theo từng server; 12 trang: danh sách/thêm/chi tiết server (5 tab), Nginx, PHP, phần mềm, tường lửa (đếm ngược xác nhận), Docker, terminal mô phỏng có chính sách, Compose (+chi tiết, sửa YAML), Registry; Vitest 188, Playwright 116 | commit này |
+| 2026-11-20 | 2 / 2.3 | Contract: `ComposeProject.compose_yaml`; API giả lập hạ tầng (token thêm server + agent giả lập kết nối, sửa/reboot, dịch vụ, phần mềm/PHP, Nginx, tường lửa safe-apply có tự hoàn tác, Docker, Compose, Registry, terminal ticket) với dữ liệu tách theo từng server; 12 trang: danh sách/thêm/chi tiết server (5 tab), Nginx, PHP, phần mềm, tường lửa (đếm ngược xác nhận), Docker, terminal mô phỏng có chính sách, Compose (+chi tiết, sửa YAML), Registry; Vitest 188, Playwright 116 | 63b40ab |
+| 2026-11-20 | 2 / 2.4 | Dataset: thêm Super Admin thứ hai (Nguyễn Hải) cho purge 2 bước; API giả lập gói và tài khoản hosting (tạo/sửa gói tạo phiên bản bất biến D-43, chuyển account lên phiên bản mới, tạo account qua job, khóa/mở khóa, đổi gói, chấm dứt, purge 2 SA D-46 + legal hold, chuyển server preflight → sync → verify → cutover/rollback), gợi ý đặt account tính theo tài nguyên và phạm vi; 8 trang: gói (danh sách, thêm, chi tiết + lịch sử phiên bản + so sánh), tài khoản (danh sách, wizard tạo, chi tiết 7 tab, wizard chuyển server, đã chấm dứt); Stepper dùng chung; Vitest 233, Playwright 120 | commit này |
