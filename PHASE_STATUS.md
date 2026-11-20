@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 2 — Complete UI Demo ✓ hoàn tất 2026-11-20, đã merge vào `main` (Phase 1 ✓ APPROVED 2026-11-20)
-- **Prompt hiện tại:** 2.8 xong. Người dùng đã duyệt trước (2026-11-20): merge Phase 2 rồi lên kế hoạch và thực hiện Phase 3
-- **Task đang làm:** lập kế hoạch Phase 3 (`docs/planning/seed/PHASE_3_PROMPTS.md`)
+- **Phase:** 3 — Auth, RBAC, Users, Packages, Accounts, Jobs, Audit (đang làm; Phase 2 ✓ hoàn tất và merge 2026-11-20, chờ duyệt cùng D-56/D-57)
+- **Prompt hiện tại:** 3.1 Schema và nền backend. Người dùng yêu cầu (2026-11-20) lên kế hoạch và thực hiện Phase 3; làm hàng loạt 3.1 → 3.6, tự merge local
+- **Task đang làm:** 3.1 — bắt đầu
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-2`
-- **Bước tiếp theo:** Viết `PHASE_3_PROMPTS.md`, mở nhánh `phase-3`, làm hàng loạt 3.1 → cuối, tự merge local, báo cáo và DỪNG trước Phase 4
+- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_3_PROMPTS.md`; cuối 3.6 báo cáo Phase 3 và DỪNG (không bắt đầu Phase 4)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -18,7 +18,7 @@
 | 0 | Planning | ✓ APPROVED |
 | 1 | Foundation, Architecture, Database, API Contracts, Design System | ✓ APPROVED |
 | 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ✓ (báo cáo `docs/reports/phase-2.md`) |
-| 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ○ |
+| 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ✱ |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ○ |
 | 5 | Website / Nginx / PHP / SSL / DNS | ○ |
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ○ |
@@ -31,16 +31,16 @@
 
 ## Checklist Phase hiện tại
 
-Phase 2 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_2_PROMPTS.md`
+Phase 3 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_3_PROMPTS.md`
 
-- ✓ 2.1 Nền demo: router, MSW theo OpenAPI, dataset mở rộng, role switcher, khung trang, smoke test
-- ✓ 2.2 Admin chung: Dashboard, Jobs, Profile, Ctrl+K, Login/MFA, wizard cài đặt
-- ✓ 2.3 Hạ tầng: Servers, dịch vụ, Docker, Compose
-- ✓ 2.4 Hosting I: gói, tài khoản hosting
-- ✓ 2.5 Hosting II: website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git
-- ✓ 2.6 Bảo mật, sao lưu, quản trị
-- ✓ 2.7 User Hosting Portal
-- ✓ 2.8 Kiểm tra tổng, báo cáo Phase 2
+- ✱ 3.1 Schema Phase 3 (migrations), model, Pest trên PostgreSQL
+- ○ 3.2 Auth theo realm, MFA, phiên, mật khẩu, API token
+- ○ 3.3 RBAC, phạm vi ADMIN, Policies, Users API
+- ○ 3.4 Jobs, mock agent, idempotency, audit, thông báo, cài đặt
+- ○ 3.5 Gói, Hosting Provisioning Service, tài khoản, API Portal
+- ○ 3.6 Nối UI vào API thật, e2e, báo cáo Phase 3
+
+Phase 2: ✓ hoàn tất 2026-11-20 (báo cáo `docs/reports/phase-2.md`, merge `6a9cda5`, tag `v0.0.1-demo`).
 
 Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 
