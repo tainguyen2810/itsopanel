@@ -4149,7 +4149,7 @@
       "error": {
         "code": "dependency_unavailable",
         "message": "PostgreSQL không phản hồi trong 30 giây",
-        "retryable": true
+        "step": 2
       },
       "server": {
         "uuid": "01938a02-0001-7000-8000-000002000001",

@@ -33,7 +33,12 @@ function entryRedirects(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), entryRedirects()],
-  resolve: { alias: { '@': resolve(import.meta.dirname, 'src') } },
+  resolve: {
+    alias: {
+      '@': resolve(import.meta.dirname, 'src'),
+      '@contracts': resolve(import.meta.dirname, '../../contracts'),
+    },
+  },
   server: {
     host: '127.0.0.1',
     port: 5173,

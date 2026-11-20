@@ -142,6 +142,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/account-migrations/{id}:
     get:
       operationId: getAccountMigration
@@ -390,6 +392,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createAlertRule
       summary: Tạo alertRule
@@ -629,6 +633,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/api-tokens:
     get:
       operationId: listApiTokens
@@ -675,6 +681,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createApiToken
       summary: Tạo API token (trả secret một lần)
@@ -846,6 +854,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/audit-logs/export:
     get:
       operationId: exportAuditLogs
@@ -939,6 +949,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createBackupDestination
       summary: Tạo backupDestination
@@ -1221,6 +1233,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createBackupPolicy
       summary: Tạo backupPolicy
@@ -1579,6 +1593,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/backup-snapshots/{id}:
     delete:
       operationId: deleteBackupSnapshot
@@ -1701,6 +1717,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/backup-snapshots/{id}:download-link:
     post:
       operationId: backupDownloadLink
@@ -1966,6 +1984,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/certificates/{id}:
     delete:
       operationId: deleteCertificate
@@ -2162,6 +2182,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createComposeProject
       summary: Tạo composeProject
@@ -2786,6 +2808,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createCronJob
       summary: Tạo cron job
@@ -3043,6 +3067,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/cron-jobs/{id}:run:
     post:
       operationId: runCronJob
@@ -3254,6 +3280,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createDatabaseUser
       summary: Tạo DB user
@@ -3603,6 +3631,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createDatabase
       summary: Tạo database
@@ -3996,6 +4026,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/dns/zones/{id}/records:
     get:
       operationId: listDnsRecords
@@ -4056,6 +4088,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createDnsRecord
       summary: Thêm record
@@ -4476,6 +4510,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createHostingAccount
       summary: Tạo hostingAccount
@@ -4815,6 +4851,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/hosting-accounts/{id}/files/content:
     get:
       operationId: ReadFile
@@ -5195,6 +5233,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/hosting-accounts/{id}/usage:
     get:
       operationId: getHostingAccountUsage
@@ -5964,6 +6004,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createHostingPackage
       summary: Tạo hostingPackage
@@ -6383,6 +6425,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/hosting-packages/{id}/versions/{version}:migrate-accounts:
     post:
       operationId: migratePackageVersionAccounts
@@ -6612,6 +6656,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/jobs/{id}:
     get:
       operationId: getJob
@@ -6772,6 +6818,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/jobs/{id}:cancel:
     post:
       operationId: cancelJob
@@ -7113,6 +7161,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/notifications/{id}:read:
     post:
       operationId: markNotificationRead
@@ -7211,6 +7261,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/purge-records:
     get:
       operationId: listPurgeRecords
@@ -7265,6 +7317,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/registries:
     get:
       operationId: listRegistries
@@ -7309,6 +7363,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createRegistry
       summary: Tạo registry
@@ -7433,6 +7489,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createRestore
       summary: Khôi phục
@@ -7624,6 +7682,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/events:
     get:
       operationId: listSecurityEvents
@@ -7703,6 +7763,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/events/{id}:acknowledge:
     post:
       operationId: acknowledgeSecurityEvent
@@ -7998,6 +8060,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/overview:
     get:
       operationId: getSecurityOverview
@@ -8105,6 +8169,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/quarantine/{id}:restore:
     post:
       operationId: restoreQuarantineItem
@@ -8413,6 +8479,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/enrollment-tokens:
     post:
       operationId: createEnrollmentToken
@@ -8708,6 +8776,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/docker/containers/{container}/logs:
     get:
       operationId: getContainerLogs
@@ -8858,6 +8928,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/docker/networks:
     get:
       operationId: listDockerNetworks
@@ -8903,6 +8975,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/docker/volumes:
     get:
       operationId: listDockerVolumes
@@ -8948,6 +9022,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/firewall/rules:
     get:
       operationId: listFirewallRules
@@ -9022,6 +9098,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createFirewallRule
       summary: Thêm rule (nháp, chưa áp dụng)
@@ -9415,6 +9493,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/services:
     get:
       operationId: listServerServices
@@ -9471,6 +9551,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/services/{service}:{action}:
     post:
       operationId: controlServerService
@@ -9596,6 +9678,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/software/{key}:{action}:
     post:
       operationId: manageServerSoftware
@@ -9902,6 +9986,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createSftpAccount
       summary: Tạo tài khoản SFTP/FTPS
@@ -10086,6 +10172,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createSshKey
       summary: Thêm SSH key (gói phải cho phép SSH)
@@ -10389,6 +10477,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/users:
     get:
       operationId: listUsers
@@ -10464,6 +10554,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createUser
       summary: Tạo user
@@ -10666,6 +10758,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     put:
       operationId: setUserScopes
       summary: Đặt phạm vi ADMIN
@@ -11017,6 +11111,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createWebsite
       summary: Tạo website
@@ -11461,6 +11557,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: addWebsiteDomain
       summary: Thêm domain phụ
@@ -12144,6 +12242,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: installWordPress
       summary: Cài WordPress vào website
@@ -12798,6 +12898,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/auth/sessions/{id}:
     delete:
       operationId: revokeSession

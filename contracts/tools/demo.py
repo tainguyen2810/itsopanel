@@ -748,7 +748,7 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
         ("database.create", "failed", 50, "database",
          next(d["uuid"] for d in DATABASES if d["name"] == "intranet_web"), 0,
          [("db.pg.create", "succeeded"), ("db.pg.user_ensure", "failed")],
-         {"code": "dependency_unavailable", "message": "PostgreSQL không phản hồi trong 30 giây", "retryable": True}),
+         {"code": "dependency_unavailable", "message": "PostgreSQL không phản hồi trong 30 giây", "step": 2}),
         ("service.restart", "succeeded", 100, "server", SERVERS[2]["uuid"], 2,
          [("service.control", "succeeded")], None),
         ("software.install", "queued", 0, "server", SERVERS[1]["uuid"], 1,

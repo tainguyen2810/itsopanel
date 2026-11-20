@@ -96,11 +96,12 @@ class Api:
     def r(name: str) -> dict:
         return {"$ref": f"{COMMON}#/components/responses/{name}"}
 
-    def _errors(self, method: str, has_id: bool, has_body: bool, job: bool) -> dict:
+    def _errors(self, method: str, has_id: bool, has_body: bool, job: bool, list_: bool = False) -> dict:
         e = {"401": self.r("Unauthorized"), "403": self.r("Forbidden"), "429": self.r("TooManyRequests")}
         if has_id:
             e["404"] = self.r("NotFound")
-        if has_body or method in ("post", "put", "patch"):
+        # Danh sách: limit/sort/filter sai → 422 validation_failed.
+        if has_body or list_ or method in ("post", "put", "patch"):
             e["422"] = self.r("ValidationFailed")
         if job or method in ("post", "put", "patch", "delete"):
             e["409"] = self.r("Conflict")
@@ -165,7 +166,7 @@ class Api:
             if status == "200" and method == "get" and has_id and not list_:
                 responses[status]["headers"] = {"ETag": {"$ref": f"{COMMON}#/components/headers/ETag"}}
         if not public:
-            responses.update(self._errors(method, has_id, body is not None, job))
+            responses.update(self._errors(method, has_id, body is not None, job, list_))
         else:
             responses["429"] = self.r("TooManyRequests")
             if body is not None:

@@ -434,6 +434,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/auth/sessions/{id}:
     delete:
       operationId: revokeSession
@@ -569,6 +571,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/backup-snapshots/{id}/browse:
     get:
       operationId: portalBrowseBackupSnapshot
@@ -625,6 +629,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/backup-snapshots/{id}:download-link:
     post:
       operationId: portalBackupDownloadLink
@@ -793,6 +799,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/certificates/{id}:
     delete:
       operationId: portalDeleteCertificate
@@ -1024,6 +1032,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalCreateCronJob
       summary: Tạo cron job
@@ -1281,6 +1291,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/cron-jobs/{id}:run:
     post:
       operationId: portalRunCronJob
@@ -1426,6 +1438,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalCreateDatabaseUser
       summary: Tạo DB user
@@ -1755,6 +1769,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalCreateDatabase
       summary: Tạo database
@@ -2197,6 +2213,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/hosting-accounts/{id}:
     get:
       operationId: portalGetHostingAccount
@@ -2351,6 +2369,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/hosting-accounts/{id}/files/content:
     get:
       operationId: portalReadFile
@@ -2889,6 +2909,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/jobs/{id}:
     get:
       operationId: portalGetJob
@@ -3049,6 +3071,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/jobs/{id}:cancel:
     post:
       operationId: portalCancelJob
@@ -3292,6 +3316,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/notifications/{id}:read:
     post:
       operationId: portalMarkNotificationRead
@@ -3565,6 +3591,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalCreateRestore
       summary: Khôi phục
@@ -3784,6 +3812,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalCreateSftpAccount
       summary: Tạo tài khoản SFTP/FTPS
@@ -3968,6 +3998,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalCreateSshKey
       summary: Thêm SSH key (gói phải cho phép SSH)
@@ -4233,6 +4265,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalCreateWebsite
       summary: Tạo website
@@ -4677,6 +4711,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalAddWebsiteDomain
       summary: Thêm domain phụ
@@ -5173,6 +5209,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: portalInstallWordPress
       summary: Cài WordPress vào website
