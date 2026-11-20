@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 1 — Foundation, Architecture, Database, API Contracts, Design System — **✓ hoàn tất, chờ duyệt**
-- **Prompt hiện tại:** 1.7 ✓ (Phase 1 xong; đã merge `phase-1` vào `main` ở Git local)
-- **Task đang làm:** — (DỪNG chờ duyệt Phase 1; không bắt đầu Phase 2)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (merge commit `phase-1 → main`)
-- **Bước tiếp theo:** Người dùng duyệt Phase 1 (báo cáo `docs/reports/phase-1.md`, quyết định đề xuất D-54, D-55) → Phase 2 (Complete UI Demo) khi có lệnh
+- **Phase:** 2 — Complete UI Demo (đang làm; Phase 1 ✓ APPROVED 2026-11-20)
+- **Prompt hiện tại:** 2.1 Nền demo (router, MSW theo OpenAPI, dataset, khung trang). Chạy hàng loạt 2.1 → 2.8, tự merge local cuối Phase
+- **Task đang làm:** 2.1 — mở rộng dataset demo
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-2`
+- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_2_PROMPTS.md`; cuối 2.8 báo cáo Phase 2 và DỪNG (không bắt đầu Phase 3)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -16,8 +16,8 @@
 | Phase | Tên | Trạng thái |
 |---|---|---|
 | 0 | Planning | ✓ APPROVED |
-| 1 | Foundation, Architecture, Database, API Contracts, Design System | ✓ chờ duyệt |
-| 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ○ |
+| 1 | Foundation, Architecture, Database, API Contracts, Design System | ✓ APPROVED |
+| 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ✱ |
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ○ |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ○ |
 | 5 | Website / Nginx / PHP / SSL / DNS | ○ |
@@ -31,15 +31,18 @@
 
 ## Checklist Phase hiện tại
 
-Phase 1 (✓ hoàn tất, chờ duyệt)
+Phase 2 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_2_PROMPTS.md`
 
-- ✓ 1.1 Git local, cấu trúc repo, file tiến độ, CLAUDE.md
-- ✓ 1.2 Architecture & ADR trong repo
-- ✓ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
-- ✓ 1.4 API Contracts (OpenAPI admin/portal, agent schemas, test vectors)
-- ✓ 1.5 Scaffold web/api/agent + mock agent + dev env
-- ✓ 1.6 Design System (tokens, Light/Dark, i18n, component nền, app shell 2 entry)
-- ✓ 1.7 CI, codegen, kiểm tra tổng và báo cáo Phase 1
+- ✱ 2.1 Nền demo: router, MSW theo OpenAPI, dataset mở rộng, role switcher, khung trang, smoke test
+- ○ 2.2 Admin chung: Dashboard, Jobs, Profile, Ctrl+K, Login/MFA, wizard cài đặt
+- ○ 2.3 Hạ tầng: Servers, dịch vụ, Docker, Compose
+- ○ 2.4 Hosting I: gói, tài khoản hosting
+- ○ 2.5 Hosting II: website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git
+- ○ 2.6 Bảo mật, sao lưu, quản trị
+- ○ 2.7 User Hosting Portal
+- ○ 2.8 Kiểm tra tổng, báo cáo Phase 2
+
+Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 
 ## Nhật ký
 
@@ -58,3 +61,4 @@ Phase 1 (✓ hoàn tất, chờ duyệt)
 | 2026-11-20 | 1 / 1.5 | Contract `GET /admin/system/status` + op `system.ping`; apps/web (Vite/React/Tailwind, 2 entry), apps/api (Laravel 13.43, RFC 9457, Pest, Larastan + rule cấm exec), agent mock (Go, unix socket), make setup/dev/test/lint, compose dev, runbook | 67211b5, e050c8c, 53f4a13, 16837e7, 1fd5485 |
 | 2026-11-20 | 1 / 1.6 | Token Light/Dark + sinh CSS/@theme + kiểm AA 84/84; lint cấm màu cứng; ThemeProvider + chặn nháy; i18n VI/EN; 25 component; AdminShell/PortalShell; trang /design (dev); Vitest 26, Playwright 30 (14 ảnh, axe 0 lỗi nghiêm trọng); design/docs | 6e48570, 18f5ea6, 50087c3 |
 | 2026-11-20 | 1 / 1.7 | Codegen TS (openapi-typescript + openapi-fetch) và Go structs (generator Python), codegen-check; CI 7 job; `make check` 21 bước (20 PASS, 1 SKIP); runbook GitHub; báo cáo Phase 1; clean clone xanh; merge `phase-1 → main` (local) | cde2c40, f1d6205, 62c12f2 + commit này |
+| 2026-11-20 | 1 → 2 | Người dùng duyệt Phase 1 ("Tiếp nhé"); D-54, D-55 APPROVED; viết PHASE_2_PROMPTS.md, mở nhánh `phase-2` | — |
