@@ -525,13 +525,20 @@ def admin_paths(api: Api):
         ("confirm-purge", "Xác nhận purge bước 2 (Super Admin khác)", ref("ConfirmPurgeRequest"),
          {"purge_uuid": D.PURGES[0]["uuid"], "confirm_username": "oldshop"}, ["account.remove"], True),
     ]
+    # Phase 3 chưa hiện thực purge (Phase 8) và migrate (Phase 9): trả 501 có mã riêng, không giả thành công.
+    later = {"migrate": ("migration_not_available", "Phase 9"), "schedule-purge": ("purge_not_available", "Phase 8"),
+             "confirm-purge": ("purge_not_available", "Phase 8")}
     for action, label, body, body_ex, steps, step_up in acts:
         camel = "".join(x.title() for x in action.split("-"))
-        api.add("post", f"/hosting-accounts/{{id}}:{action}", f"{camel[0].lower()}{camel[1:]}HostingAccount", label,
+        op = api.add("post", f"/hosting-accounts/{{id}}:{action}", f"{camel[0].lower()}{camel[1:]}HostingAccount", label,
                 "Accounts", params=idp, body=body, body_example=body_ex, job=True, step_up=step_up,
                 job_example=jobs(f"hosting_account.{action.replace('-', '_')}", "hosting_account",
                                  (D.ACCOUNTS[3] if "purge" in action else acc)["uuid"], steps,
                                  server=2 if "purge" in action else 0))
+        if action in later:
+            code, phase = later[action]
+            op["responses"]["501"] = {"$ref": "./common.yaml#/components/responses/NotImplemented"}
+            op["description"] += f"\n\nPhase 3: trả `501` mã `{code}` (hiện thực ở {phase})."
     api.add("get", "/hosting-accounts/{id}/usage", "getHostingAccountUsage", "Usage so với quota", "Accounts",
             params=idp, ok=cref("Usage"), ok_example=one(acc["usage"]))
     api.add("get", "/hosting-accounts/{id}/features", "getHostingAccountFeatures", "Tính năng theo gói (PHP, SSH, cron, backup)",
@@ -775,6 +782,8 @@ def common_components():
         "PreconditionFailed": problem_resp(412, "precondition_failed", "Phiên bản đã thay đổi", "If-Match không khớp ETag hiện tại."),
         "ValidationFailed": v422,
         "TooManyRequests": t429,
+        "NotImplemented": problem_resp(501, "purge_not_available", "Chưa có ở phiên bản này",
+                                       "Purge hiện thực ở Phase 8."),
     }
 
     def qp(name, schema, desc, required=False, where="query"):

@@ -2,6 +2,34 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 3 / Prompt 3.5 — nhánh `phase-3`
+
+Môi trường: như 3.4.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (thêm response `NotImplemented` 501 và 2 mã lỗi; admin 220 / portal 103 operation) |
+| Gói + account + Portal | `php artisan test tests/Feature/Hosting/HostingTest.php` | PASS: 25 test — gói tạo/409/422/412, sửa limits → phiên bản 2, phiên bản bị DB chặn sửa, xóa còn account → 409; tạo account qua job với agent giả → `active` (op `account.ensure` + `quota.apply`, home `/home/<user>`, shell theo `ssh_allowed`, override áp vào limits), username trùng 409, sai/tên hệ thống 422, server ngoài phạm vi / không nhận account 422; agent lỗi → `failed` → retry → `active`; suspend/unsuspend/terminate/khôi phục, quá hạn giữ 409, chuyển sai 409, 501 cho purge/migrate, account bận 409 `resource_locked`, terminate thiếu quyền 403; bảng chuyển trạng thái (15 ca); đổi gói / giảm override dưới mức dùng → 422 `quota_exceeded`, migrate-accounts qua job; `ensureCanAdd`; UID không tái dùng trong 90 ngày; Portal chỉ account của mình (404 với account người khác), overview, profile (ETag), USER gọi Admin API → 401; `itso:usage-refresh` |
+| Ma trận quyền | `php artisan test tests/Feature/Rbac/MatrixTest.php` | PASS: 169 test — admin 37 endpoint × 4 nhân vật; Portal 10 endpoint × chủ / USER khác (USER khác → 404 với account, job của người khác) |
+| Pest toàn bộ | `make test-api` | PASS: 287 test, 1991 assertion |
+| Lint | `make lint-api` · `make no-exec` | PASS |
+
+**Test bị bỏ qua:** không.
+
+Ghi chú:
+
+- `account_usage_snapshots` thuộc Phase 4 nên mức dùng Phase 3 lưu ở `hosting_accounts.observed_facts.usage` (lệnh `itso:usage-refresh`); `QuotaService` tự dùng bảng snapshot khi có.
+- Bảng website/database/FTP/cron có từ Phase 5–6: số đếm hiện bằng 0, `QuotaService` tự đếm khi bảng xuất hiện.
+- Step `php.pool.apply` trong ví dụ contract của job tạo account chưa có trong mock (Phase 5 PHP-FPM), job Phase 3 gồm `account.ensure` + `quota.apply`.
+
+### Acceptance Prompt 3.5
+
+- ✓ /hosting-packages CRUD, phiên bản bất biến, /versions, migrate-accounts qua job
+- ✓ Provisioning: tạo (username, server, UID 90 ngày, job), suspend có lý do, unsuspend, terminate (≥30 ngày, legal hold), khôi phục trong thời gian giữ, đổi gói; lifecycle events
+- ✓ /features, /usage, /lifecycle-events; QuotaService 422 `quota_exceeded`
+- ✓ API Portal: hosting-accounts, overview, profile, jobs, notifications
+- ✓ Purge/migrate trả 501 có mã rõ ràng
+
 ## 2026-11-20 — Phase 3 / Prompt 3.4 — nhánh `phase-3`
 
 Môi trường: như 3.1 (PostgreSQL 16 local, Redis; queue `sync` trong Pest, agent giả bằng `Http::fake` — `tests/Support/FakeAgent.php`).

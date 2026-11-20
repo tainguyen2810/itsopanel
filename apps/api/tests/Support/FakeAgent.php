@@ -24,7 +24,7 @@ final class FakeAgent
         app()->forgetInstance(AgentClient::class);
         Http::fake(['agent.test/v1/ops' => function (Request $r) {
             /** @var array<string, mixed> $env */
-            $env = $r->data();
+            $env = json_decode($r->body(), true, 512, JSON_THROW_ON_ERROR);
             $this->calls[] = $env;
             $h = $this->handlers[$env['op']] ?? $this->handlers['*'] ?? fn (): array => [];
             $out = $h($env);

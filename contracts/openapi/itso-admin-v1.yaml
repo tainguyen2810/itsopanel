@@ -6101,7 +6101,10 @@ paths:
       description: 'Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
 
 
-        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+
+
+        Phase 3: trả `501` mã `purge_not_available` (hiện thực ở Phase 8).'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/IdempotencyKey
@@ -6168,6 +6171,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '501':
+          $ref: ./common.yaml#/components/responses/NotImplemented
   /api/v1/admin/hosting-accounts/{id}:migrate:
     post:
       operationId: migrateHostingAccount
@@ -6178,7 +6183,10 @@ paths:
       description: 'Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
 
 
-        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+
+
+        Phase 3: trả `501` mã `migration_not_available` (hiện thực ở Phase 9).'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/IdempotencyKey
@@ -6257,6 +6265,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '501':
+          $ref: ./common.yaml#/components/responses/NotImplemented
   /api/v1/admin/hosting-accounts/{id}:schedule-purge:
     post:
       operationId: schedulePurgeHostingAccount
@@ -6267,7 +6277,10 @@ paths:
       description: 'Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
 
 
-        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+
+
+        Phase 3: trả `501` mã `purge_not_available` (hiện thực ở Phase 8).'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/IdempotencyKey
@@ -6339,6 +6352,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '501':
+          $ref: ./common.yaml#/components/responses/NotImplemented
   /api/v1/admin/hosting-accounts/{id}:suspend:
     post:
       operationId: suspendHostingAccount

@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Hosting\AccountJobHandler;
+
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
     'version' => env('ITSO_VERSION', '0.1.0-alpha'),
@@ -14,6 +16,12 @@ return [
         // Agent coi là "đang kết nối" nếu lần liên lạc cuối trong khoảng này (giây).
         'connected_window_sec' => (int) env('ITSO_AGENT_CONNECTED_WINDOW', 300),
     ],
+
+    // Hook theo loại job (App\Domain\Jobs\JobHandler): cập nhật observed state khi job kết thúc.
+    'job_handlers' => array_fill_keys([
+        'hosting_account.create', 'hosting_account.suspend', 'hosting_account.unsuspend', 'hosting_account.restore',
+        'hosting_account.terminate', 'hosting_account.change_package', 'hosting_account.update', 'package.migrate_accounts',
+    ], AccountJobHandler::class),
 
     // Server local (Phase 3: một server, agent local/mock). `itso:server-local` tạo/cập nhật bản ghi này.
     'local_server' => [

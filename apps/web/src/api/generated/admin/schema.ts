@@ -1264,6 +1264,8 @@ export interface paths {
          * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         *
+         *     Phase 3: trả `501` mã `purge_not_available` (hiện thực ở Phase 8).
          */
         post: operations["confirmPurgeHostingAccount"];
         delete?: never;
@@ -1286,6 +1288,8 @@ export interface paths {
          * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         *
+         *     Phase 3: trả `501` mã `migration_not_available` (hiện thực ở Phase 9).
          */
         post: operations["migrateHostingAccount"];
         delete?: never;
@@ -1308,6 +1312,8 @@ export interface paths {
          * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         *
+         *     Phase 3: trả `501` mã `purge_not_available` (hiện thực ở Phase 8).
          */
         post: operations["schedulePurgeHostingAccount"];
         delete?: never;
@@ -4149,7 +4155,7 @@ export interface components {
             email: string;
         };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -5167,6 +5173,25 @@ export interface components {
                  *       "status": 412,
                  *       "code": "precondition_failed",
                  *       "detail": "If-Match không khớp ETag hiện tại.",
+                 *       "request_id": "req_01JD8K2M4N"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Chưa có ở phiên bản này */
+        NotImplemented: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "https://docs.itso.local/errors/purge_not_available",
+                 *       "title": "Chưa có ở phiên bản này",
+                 *       "status": 501,
+                 *       "code": "purge_not_available",
+                 *       "detail": "Purge hiện thực ở Phase 8.",
                  *       "request_id": "req_01JD8K2M4N"
                  *     }
                  */
@@ -12531,6 +12556,7 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            501: components["responses"]["NotImplemented"];
         };
     };
     migrateHostingAccount: {
@@ -12636,6 +12662,7 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            501: components["responses"]["NotImplemented"];
         };
     };
     schedulePurgeHostingAccount: {
@@ -12732,6 +12759,7 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            501: components["responses"]["NotImplemented"];
         };
     };
     suspendHostingAccount: {

@@ -154,6 +154,8 @@ components:
       - retention_not_elapsed
       - backup_not_verified
       - confirmation_mismatch
+      - purge_not_available
+      - migration_not_available
       - internal_error
     CursorMeta:
       type: object
@@ -2887,6 +2889,19 @@ components:
           schema:
             type: integer
           description: Số giây chờ.
+    NotImplemented:
+      description: Chưa có ở phiên bản này
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/purge_not_available
+            title: Chưa có ở phiên bản này
+            status: 501
+            code: purge_not_available
+            detail: Purge hiện thực ở Phase 8.
+            request_id: req_01JD8K2M4N
   parameters:
     Id:
       name: id

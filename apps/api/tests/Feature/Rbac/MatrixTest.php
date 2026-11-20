@@ -1,6 +1,10 @@
 <?php
 
+use App\Domain\Jobs\JobDispatcher;
+use App\Domain\Jobs\JobSpec;
+use Illuminate\Support\Str;
 use Tests\Support\Actors;
+use Tests\Support\FakeAgent;
 
 /*
  * Ma trận quyền tự động (Prompt 3.3): mỗi endpoint × nhân vật.
@@ -40,6 +44,32 @@ const MATRIX = [
     ['GET', '/api/v1/admin/servers/{server}', null, 200, 200, 404, 401],
     ['PATCH', '/api/v1/admin/servers/{server}', ['accepting_new_accounts' => false], 200, 403, 403, 419],
     ['GET', '/api/v1/admin/dashboard/summary', null, 200, 200, 200, 401],
+    // 3.5: gói + account ({account} = account của US_OWNER trên server trong phạm vi AD_IN)
+    ['GET', '/api/v1/admin/hosting-packages', null, 200, 200, 200, 401],
+    ['POST', '/api/v1/admin/hosting-packages', ['code' => 'ma-tran', 'name' => 'Ma trận', 'limits' => 'LIMITS'], 201, 403, 403, 419],
+    ['GET', '/api/v1/admin/hosting-accounts', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/hosting-accounts/{account}', null, 200, 200, 404, 401],
+    ['GET', '/api/v1/admin/hosting-accounts/{account}/usage', null, 200, 200, 404, 401],
+    ['GET', '/api/v1/admin/hosting-accounts/{account}/lifecycle-events', null, 200, 200, 404, 401],
+    ['PATCH', '/api/v1/admin/hosting-accounts/{account}', ['legal_hold' => true], 200, 403, 404, 419],
+    ['POST', '/api/v1/admin/hosting-accounts/{account}:suspend', ['reason' => 'Kiểm tra ma trận'], 202, 202, 404, 419],
+    ['POST', '/api/v1/admin/hosting-accounts/{account}:terminate', ['reason' => 'Kiểm tra ma trận', 'confirm_username' => '{username}'], 202, 403, 403, 419],
+];
+
+/*
+ * Portal: USER chỉ đọc tài nguyên của mình. [method, path, US_OWNER, US_OTHER]; {account} thuộc US_OWNER.
+ */
+const PORTAL_MATRIX = [
+    ['GET', '/api/v1/portal/hosting-accounts/{account}', 200, 404],
+    ['GET', '/api/v1/portal/hosting-accounts/{account}/features', 200, 404],
+    ['GET', '/api/v1/portal/hosting-accounts/{account}/usage', 200, 404],
+    ['GET', '/api/v1/portal/jobs/{job}', 200, 404],
+    ['GET', '/api/v1/portal/jobs/{job}/logs', 200, 404],
+    ['POST', '/api/v1/portal/jobs/{job}:cancel', 409, 404],
+    ['GET', '/api/v1/portal/hosting-accounts', 200, 200],
+    ['GET', '/api/v1/portal/overview', 200, 200],
+    ['GET', '/api/v1/portal/profile', 200, 200],
+    ['GET', '/api/v1/portal/notifications', 200, 200],
 ];
 
 dataset('matrix', function () {
@@ -54,11 +84,20 @@ dataset('matrix', function () {
 it('ma trận quyền', function (string $method, string $path, ?array $body, string $persona, int $expected) {
     $a = new Actors($this);
     $spa = $a->spa($persona);
-    $uri = strtr($path, ['{owner}' => $a->owner->uuid, '{other}' => $a->adminOut->uuid, '{server}' => $a->server->uuid]);
+    $uri = strtr($path, ['{owner}' => $a->owner->uuid, '{other}' => $a->adminOut->uuid, '{server}' => $a->server->uuid,
+        '{account}' => $a->account->uuid]);
+    if (($body['limits'] ?? null) === 'LIMITS') {
+        $body['limits'] = limits();
+    }
+    if (($body['confirm_username'] ?? null) === '{username}') {
+        $body['confirm_username'] = $a->account->username;
+    }
+    $headers = str_contains($path, '/hosting-accounts/{account}:') ? ['Idempotency-Key' => (string) Str::uuid()] : [];
+    new FakeAgent(['*' => fn () => ['ok' => true]]);
     if (isset($body['expires_at'])) {
         $body['expires_at'] = now()->modify($body['expires_at'])->toIso8601String();
     }
-    $res = $spa->call($method, $uri, $body ?? []);
+    $res = $spa->call($method, $uri, $body ?? [], $headers);
     expect($res->getStatusCode())->toBe($expected, "$method $uri × $persona: ".$res->getContent());
     if ($expected >= 400) {
         expect($res->headers->get('Content-Type'))->toBe('application/problem+json');
@@ -72,3 +111,21 @@ it('danh sách user theo phạm vi: AD_IN thấy chủ account, AD_OUT không; k
         ->and($uuids('AD_IN'))->toContain($a->owner->uuid, $a->adminIn->uuid)->not->toContain($a->otherUser->uuid, $a->adminOut->uuid)
         ->and($uuids('AD_OUT'))->toEqual(collect([$a->adminOut->uuid]));
 });
+
+dataset('portal_matrix', function () {
+    foreach (PORTAL_MATRIX as $row) {
+        yield "{$row[0]} {$row[1]} × US_OWNER" => [$row[0], $row[1], 'US_OWNER', $row[2]];
+        yield "{$row[0]} {$row[1]} × US_OTHER" => [$row[0], $row[1], 'US_OTHER', $row[3]];
+    }
+});
+
+it('ma trận Portal: USER khác nhận 404 với tài nguyên không phải của mình', function (string $method, string $path, string $persona, int $expected) {
+    $a = new Actors($this);
+    new FakeAgent(['*' => fn () => ['ok' => true]]);
+    $spec = (new JobSpec('hosting_account.suspend', $a->account, $a->server->id))
+        ->step('account.suspend', ['account' => ['username' => $a->account->username, 'uid' => $a->account->uid], 'reason' => 'ma tran']);
+    $job = app(JobDispatcher::class)->dispatch($spec, $a->owner);
+    $uri = strtr($path, ['{account}' => $a->account->uuid, '{job}' => $job->uuid]);
+    $res = $a->spa($persona)->call($method, $uri);
+    expect($res->getStatusCode())->toBe($expected, "$method $uri × $persona: ".$res->getContent());
+})->with('portal_matrix');

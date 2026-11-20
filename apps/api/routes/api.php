@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\V1\Admin\ApiTokenController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
+use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\Api\V1\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\Portal\PortalController;
 use App\Http\Controllers\Api\V1\SystemController;
 use Illuminate\Support\Facades\Route;
 
@@ -100,6 +103,36 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers', [ServerController::class, 'index'])->middleware('itso.perm:servers.read');
             Route::get('servers/{id}', [ServerController::class, 'show'])->middleware('itso.perm:servers.read');
             Route::patch('servers/{id}', [ServerController::class, 'update'])->middleware('itso.perm:servers.write');
+
+            // Gói, account hosting (3.5)
+            Route::get('hosting-packages', [HostingPackageController::class, 'index'])->middleware('itso.perm:packages.read');
+            Route::post('hosting-packages', [HostingPackageController::class, 'store'])->middleware('itso.perm:packages.write');
+            Route::get('hosting-packages/{id}', [HostingPackageController::class, 'show'])->middleware('itso.perm:packages.read');
+            Route::patch('hosting-packages/{id}', [HostingPackageController::class, 'update'])->middleware('itso.perm:packages.write');
+            Route::delete('hosting-packages/{id}', [HostingPackageController::class, 'destroy'])->middleware('itso.perm:packages.write');
+            Route::get('hosting-packages/{id}/versions', [HostingPackageController::class, 'versions'])->middleware('itso.perm:packages.read');
+            Route::post('hosting-packages/{id}/versions/{version}:migrate-accounts', [HostingPackageController::class, 'migrateAccounts'])
+                ->middleware(['itso.perm:packages.write', 'itso.idempotent']);
+            Route::get('placement/suggestions', [HostingAccountController::class, 'placement'])->middleware('itso.perm:accounts.write');
+
+            Route::get('hosting-accounts', [HostingAccountController::class, 'index'])->middleware('itso.perm:accounts.read');
+            Route::post('hosting-accounts', [HostingAccountController::class, 'store'])->middleware(['itso.perm:accounts.write', 'itso.idempotent']);
+            Route::get('hosting-accounts/{id}', [HostingAccountController::class, 'show'])->middleware('itso.perm:accounts.read');
+            Route::patch('hosting-accounts/{id}', [HostingAccountController::class, 'update'])->middleware('itso.perm:accounts.write');
+            Route::get('hosting-accounts/{id}/features', [HostingAccountController::class, 'features'])->middleware('itso.perm:accounts.read');
+            Route::get('hosting-accounts/{id}/usage', [HostingAccountController::class, 'usage'])->middleware('itso.perm:accounts.read');
+            Route::get('hosting-accounts/{id}/lifecycle-events', [HostingAccountController::class, 'lifecycleEvents'])
+                ->middleware('itso.perm:accounts.read');
+            foreach (['suspend', 'unsuspend', 'change-package'] as $action) {
+                Route::post("hosting-accounts/{id}:$action", [HostingAccountController::class, lcfirst(str_replace('-', '', ucwords($action, '-')))])
+                    ->middleware(['itso.perm:accounts.write', 'itso.idempotent']);
+            }
+            Route::post('hosting-accounts/{id}:terminate', [HostingAccountController::class, 'terminate'])
+                ->middleware(['itso.perm:accounts.terminate', 'itso.step-up', 'itso.idempotent']);
+            foreach (['migrate', 'schedule-purge', 'confirm-purge'] as $action) {
+                Route::post("hosting-accounts/{id}:$action", [HostingAccountController::class, 'notAvailable'])
+                    ->middleware(['itso.perm:accounts.terminate', 'itso.step-up']);
+            }
         });
 
         // ---- /portal: realm portal (chỉ phiên cookie)
@@ -113,7 +146,13 @@ Route::prefix('v1')->group(function (): void {
             Route::get('notifications', [NotificationController::class, 'index']);
             Route::post('notifications/{id}:read', [NotificationController::class, 'read']);
             Route::post('notifications:read-all', [NotificationController::class, 'readAll']);
-            // Gói, account, overview: Prompt 3.5.
+            Route::get('overview', [PortalController::class, 'overview']);
+            Route::get('profile', [PortalController::class, 'profile']);
+            Route::patch('profile', [PortalController::class, 'updateProfile']);
+            Route::get('hosting-accounts', [PortalController::class, 'accounts']);
+            Route::get('hosting-accounts/{id}', [PortalController::class, 'account']);
+            Route::get('hosting-accounts/{id}/features', [PortalController::class, 'features']);
+            Route::get('hosting-accounts/{id}/usage', [PortalController::class, 'usage']);
         });
     });
 });

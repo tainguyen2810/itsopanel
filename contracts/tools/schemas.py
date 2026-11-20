@@ -73,7 +73,7 @@ COMMON = {
         "ip_not_allowed", "csrf_mismatch", "quota_exceeded", "package_limit_reached", "resource_locked",
         "invalid_state_transition", "server_not_accepting", "agent_unavailable", "job_failed",
         "legal_hold_active", "retention_not_elapsed", "backup_not_verified", "confirmation_mismatch",
-        "internal_error"),
+        "purge_not_available", "migration_not_available", "internal_error"),
     "CursorMeta": obj({"next_cursor": NS, "limit": i(minimum=1, maximum=200)}, required=["next_cursor"]),
     "CursorPage": obj({"meta": cref("CursorMeta")}, required=["meta"], extra=True),
     "ResourceRef": obj({"type": s(), "uuid": UUID}),
