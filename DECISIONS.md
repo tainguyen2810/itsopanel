@@ -60,6 +60,8 @@
 | D-51 | **Mới:** Không bắt buộc GitHub trước khi bắt đầu. Phase 1 khởi tạo **Git local**, sau đó kết nối GitHub | **APPROVED** (2026-11-20) |
 | D-52 | **Mới:** Phase 1 = Foundation + Architecture + Database (schema spec) + API Contracts + **Design System**; Phase 2 = demo UI hoàn chỉnh Admin Panel + User Hosting Portal | **APPROVED** (2026-11-20) |
 | D-53 | Giữ installer giống aaPanel (một lệnh, native Ubuntu, Web Wizard, systemd, CLI `itso`, không bắt buộc Docker) và toàn bộ yêu cầu bảo mật, cách ly, backup immutable, quota thực, multi-server | **APPROVED** (2026-11-20) |
+| D-54 | **Đề xuất (Phase 1):** Design token lấy `design/tokens/tokens.json` làm nguồn; "preset" Tailwind v4 là khối `@theme inline` sinh ra (Tailwind 4 bỏ preset JS); Light mặc định ở `:root`, Dark bằng class `.dark`; mọi cặp màu khai báo phải đạt WCAG AA | **Proposed** (2026-11-20) |
+| D-55 | **Đề xuất (Phase 1):** Codegen từ contracts: TS bằng openapi-typescript + openapi-fetch (`apps/web/src/api/generated`), Go structs bằng generator Python trong `contracts/tools` (không thêm tool ngoài). File sinh được commit và kiểm bằng `make codegen-check` | **Proposed** (2026-11-20) |
 
 ---
 

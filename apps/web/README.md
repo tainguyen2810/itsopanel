@@ -42,4 +42,4 @@ Nguyên tắc màu, spacing, trạng thái, a11y: [design/docs/README.md](../../
 - ESLint cấm `dangerouslySetInnerHTML`, gán `innerHTML`/`outerHTML`, `eval`.
 - Portal không gọi endpoint `/api/v1/admin/*` (có test kiểm).
 - Phiên bản dependency phải phát hành ≥ 14 ngày (`minimumReleaseAge` trong `pnpm-workspace.yaml`).
-- Type API hiện viết tay trong `src/shared/api/client.ts`; Prompt 1.7 thay bằng type sinh từ OpenAPI.
+- Type API sinh từ OpenAPI (`make codegen` → `src/api/generated/{admin,portal}`); gọi API qua `src/api/{admin,portal,public}.ts` (openapi-fetch). Portal và `src/shared` không được import Admin API (ESLint chặn).

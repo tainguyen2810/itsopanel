@@ -12,7 +12,8 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 ## 2. Quy tắc bắt buộc
 
 - **Không tự chuyển Phase hoặc Prompt.** Cuối mỗi prompt: cập nhật `PHASE_STATUS.md` và `TEST_REPORT.md`, commit, báo cáo, rồi **dừng chờ duyệt**.
-- **Contracts trước code:** sửa `contracts/` (OpenAPI, JSON Schema) trước khi hiện thực endpoint/op; chạy codegen; không để diff.
+- **Contracts trước code:** sửa `contracts/` (OpenAPI, JSON Schema) trước khi hiện thực endpoint/op; chạy `make contracts` rồi `make codegen`; `make codegen-check` phải xanh. Không sửa tay file sinh (`src/api/generated`, `types_gen.go`, `tokens.css`).
+- **UI:** chỉ dùng token màu (ESLint chặn màu cứng); chuỗi giao diện qua i18n có cả VI và EN; nguyên tắc ở `design/docs/README.md`.
 - **Laravel không bao giờ chạy lệnh hệ thống:** cấm `exec`, `shell_exec`, `proc_open`, `system`, `passthru`, backtick trong `apps/api/app`. Mọi thao tác Linux đi qua Go Agent bằng typed operation.
 - **Agent:** không có op "chạy lệnh tùy ý"; không dùng `sh -c`; validate lại mọi tham số; thao tác dữ liệu của account chạy dưới UID account.
 - **Không thay đổi cấu hình máy chủ thật, không deploy,** trừ khi prompt của Phase cho phép rõ ràng (Phase 4+ chỉ trên VM test).
@@ -38,8 +39,10 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Chạy dev (web + api + mock agent) | `make dev` | 1.5 |
 | Test / Lint / Build | `make test` · `make lint` · `make build` | 1.5 |
 | PostgreSQL + Redis dev (Docker, tùy chọn) · fuzz agent | `make services-up` · `make test-fuzz` | 1.5 |
+| Token màu · Playwright · cập nhật ảnh Design System | `make tokens` / `make tokens-check` · `make test-e2e` · `make screenshots` | 1.6 |
+| Pest với PostgreSQL + Redis thật | `make test-api-pg` | 1.7 |
 | Codegen từ contracts | `make codegen` · `make codegen-check` | 1.7 |
-| Toàn bộ kiểm tra | `make check` | 1.7 |
+| Toàn bộ kiểm tra (như CI, in bảng kết quả) | `make check` | 1.7 |
 
 ## 5. Tài liệu
 
