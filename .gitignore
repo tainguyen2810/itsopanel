@@ -1,0 +1,39 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Node / web
+node_modules/
+dist/
+.vite/
+coverage/
+playwright-report/
+test-results/
+.pnpm-store/
+
+# PHP / Laravel
+apps/api/vendor/
+apps/api/storage/*.key
+apps/api/storage/logs/
+apps/api/bootstrap/cache/*.php
+.phpunit.result.cache
+
+# Go
+agent/bin/
+*.test
+*.out
+
+# Build artifacts
+build/
+release/
+*.tar.zst
