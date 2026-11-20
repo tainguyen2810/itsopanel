@@ -10,7 +10,7 @@ endef
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check setup dev test lint build codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify setup dev test lint build codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -23,6 +23,26 @@ docs-check: ## Lint Markdown, kiểm tra link nội bộ và cú pháp Mermaid
 	@$(PNPX) markdownlint-cli2@0.17.2
 	@node scripts/check-links.mjs .
 	@bash scripts/check-mermaid.sh
+
+DBML_CLI ?= $(PNPX) -p @dbml/cli@3.9.0
+DBML_RENDERER ?= $(PNPX) @softwaretechnik/dbml-renderer@1.0.31
+
+db-schema: ## Sinh itso.dbml → itso.sql (DBML là nguồn sự thật)
+	@python3 database/tools/gen_dbml.py
+	@$(DBML_CLI) dbml2sql database/schema/itso.dbml --postgres -o database/schema/itso.sql
+	@python3 database/tools/postprocess_sql.py database/schema/itso.sql
+
+ERD_TMP ?= .cache/erd-dbml
+
+db-erd: ## Vẽ ERD SVG (toàn bộ + từng nhóm) vào database/docs/erd/
+	@mkdir -p database/docs/erd
+	@$(DBML_RENDERER) -i database/schema/itso.dbml -o database/docs/erd/erd-full.svg
+	@for g in $$(python3 database/tools/gen_dbml.py --erd-groups $(ERD_TMP)); do \
+	  $(DBML_RENDERER) -i $(ERD_TMP)/$$g.dbml -o database/docs/erd/erd-$$g.svg || exit 1; \
+	done
+
+db-verify: ## Áp schema vào PostgreSQL 16 tạm và chạy test SQL
+	@bash scripts/db-verify.sh
 
 setup: ## Cài dependency (web, api, agent)
 	$(call todo,setup,1.5)

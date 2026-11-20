@@ -2,6 +2,21 @@
 
 > Thiết kế đầy đủ ở `docs/planning/04-DATABASE.md` (quy ước, desired/observed, index, migrations), vẫn còn hiệu lực. File này ghi **các thay đổi** cho phạm vi nội bộ.
 
+## 0. Đặc tả chính thức (Prompt 1.3)
+
+| Nội dung | File |
+|---|---|
+| Schema DBML (78 bảng, nguồn sự thật) | [database/schema/itso.dbml](database/schema/itso.dbml) |
+| SQL PostgreSQL 16 sinh ra | [database/schema/itso.sql](database/schema/itso.sql) |
+| CHECK, partial unique, trigger, partition | [database/schema/extras.sql](database/schema/extras.sql) |
+| ERD toàn bộ / theo nhóm | [erd-full.svg](database/docs/erd/erd-full.svg) · [erd-hosting.svg](database/docs/erd/erd-hosting.svg) · [các nhóm khác](database/docs/README.md) |
+| Ownership và phạm vi | [database/docs/ownership.md](database/docs/ownership.md) |
+| Vòng đời account, purge D-46 | [database/docs/lifecycle.md](database/docs/lifecycle.md) |
+| Kế hoạch migrations | [database/docs/migration-plan.md](database/docs/migration-plan.md) |
+| Kiểm chứng | `make db-verify` (`scripts/db-verify.sh`, test ở `database/tests/`) |
+
+Khi bảng dưới đây khác đặc tả, **đặc tả DBML + extras.sql là chuẩn**.
+
 ## 1. Giữ nguyên từ 04
 
 - Quy ước: `id` identity + `uuid` (UUIDv7) public; secret mã hóa bằng libsodium; JSONB có schema; soft-delete cho tài nguyên người dùng.
@@ -14,14 +29,14 @@
 | Bảng | Thay đổi | Lý do |
 |---|---|---|
 | `users` | Thêm `realm text check (realm in ('admin','portal'))`, **không đổi được sau khi tạo** (trigger chặn update). Role SUPER_ADMIN/ADMIN chỉ thuộc realm `admin`; USER chỉ thuộc realm `portal` (CHECK + trigger) | Tách hai bề mặt đăng nhập mà vẫn dùng một bảng |
-| `hosting_packages` | Thêm `inode_limit`, `tasks_max`, `php_workers_max`, `io_read_bps`, `io_write_bps`, `subdomain_limit`, `alias_domain_limit`, `db_user_limit`, `retention_days_after_terminate` | Package đầy đủ |
-| `hosting_package_versions` (mới) | `package_id`, `version`, `limits jsonb` + các cột chính, bất biến | Đổi gói có kiểm soát |
+| `hosting_packages` | Chỉ giữ định danh gói (`code`, `name`, `current_version`, `is_active`); mọi giới hạn nằm ở `hosting_package_versions` | Đổi gói có kiểm soát, account trỏ tới phiên bản |
+| `hosting_package_versions` (mới) | `package_id`, `version`, toàn bộ giới hạn là cột riêng (disk, inode, CPU, RAM, tasks, PHP workers, IO, số website/domain/DB/FTP/cron, backup), `retention_days_after_terminate ≥ 30`; bất biến (trigger) | Đổi gói có kiểm soát |
 | `hosting_accounts` | Thêm `package_version_id`, `lifecycle_state` (pending/provisioning/active/suspended/migrating/terminated/purged/failed), `suspended_reason`, `terminated_at`, `purge_after`, `legal_hold bool`, `migrated_from_account_id` | Vòng đời nội bộ + chuyển server |
 | `account_lifecycle_events` (mới) | `hosting_account_id`, `from_state`, `to_state`, `reason`, `actor_user_id`, `job_id`, `at` | Lịch sử khóa/mở/chuyển/xóa |
-| `account_migrations` (mới) | `hosting_account_id`, `source_server_id`, `target_server_id`, `target_account_id`, `state` (preflight/syncing/cutover/completed/rolled_back/failed), `bytes_synced`, `downtime_sec`, `job_id`, `cleanup_after` | Chuyển tài khoản giữa server |
+| `account_migrations` (mới) | `hosting_account_id`, `source_server_id`, `target_server_id`, `target_account_id`, `state` (preflight/syncing/verifying/cutover/completed/rolled_back/failed), `verification jsonb`, `bytes_synced`, `downtime_sec`, `job_id`, `cleanup_after` | Chuyển tài khoản giữa server |
 | `server_capacity` (mới) | `server_id` PK, `cpu_cores`, `ram_mb`, `disk_mb`, `allocated_cpu_pct`, `allocated_ram_mb`, `allocated_disk_mb`, `account_count`, `max_accounts`, `accepting_new bool`, `updated_at` | Gợi ý server khi tạo account, khóa khi cấp |
 | `uid_allocations` (mới) | `server_id`, `uid`, `hosting_account_id`, `released_at` — unique(server_id, uid) | Không tái dùng UID trong 90 ngày |
-| `purge_records` (mới) | `hosting_account_id`, `requested_by`, `confirmed_by`, `objects jsonb` (đường dẫn, DB, repo, hash), `completed_at` | Biên bản xóa |
+| `purge_records` (mới) | `hosting_account_id`, `requested_by_user_id`, `confirmed_by_user_id` (khác người yêu cầu), `final_backup_snapshot_id`, `backup_verified_at`, `objects jsonb` (đường dẫn, DB, repo, hash), `scheduled_for`, `completed_at`; trigger `hosting_purge_guard` | Biên bản xóa (D-46) |
 | `backup_destinations` / `backup_snapshots` | Thêm `hosting_account_id` cho repo theo account (D-23) | Backup theo tài khoản |
 | `impersonation_sessions` (mới) | `staff_user_id`, `target_user_id`, `reason`, `started_at`, `ended_at` | Kiểm soát truy cập dữ liệu USER |
 | `tos_acceptances` (tùy chọn) | `user_id`, `version`, `accepted_at` | Quy định sử dụng nội bộ cho USER portal |
@@ -35,6 +50,8 @@
 `hosting_accounts.owner_user_id` → `users` (realm portal). ADMIN thấy account qua `user_scopes` (server hoặc account được giao). Mọi tài nguyên con mang `hosting_account_id`. Query ở portal luôn có global scope `owner_user_id = auth()->id()`, kèm test ma trận quyền. RLS PostgreSQL được đánh giá ở Phase 12.
 
 ## 5. Migrations theo Phase
+
+Chi tiết đầy đủ 78 bảng và nguyên tắc expand/contract: [database/docs/migration-plan.md](database/docs/migration-plan.md).
 
 | Phase | Bảng |
 |---|---|

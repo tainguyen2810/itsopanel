@@ -37,3 +37,4 @@ agent/bin/
 build/
 release/
 *.tar.zst
+.cache/

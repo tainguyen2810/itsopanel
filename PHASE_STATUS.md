@@ -5,10 +5,10 @@
 ## Hiện tại
 
 - **Phase:** 1 — Foundation, Architecture, Database, API Contracts, Design System (đang làm)
-- **Prompt hiện tại:** 1.2 ✓ hoàn tất, chờ duyệt
-- **Task đang làm:** — (dừng chờ duyệt Prompt 1.2)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.1)
-- **Bước tiếp theo:** Người dùng duyệt 1.2 → Prompt 1.3 (Database schema)
+- **Prompt hiện tại:** 1.3 ✓ hoàn tất, chờ duyệt
+- **Task đang làm:** — (dừng chờ duyệt Prompt 1.3)
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.3)
+- **Bước tiếp theo:** Người dùng duyệt 1.3 → Prompt 1.4 (API Contracts)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -35,7 +35,7 @@ Phase 1 (đang làm)
 
 - ✓ 1.1 Git local, cấu trúc repo, file tiến độ, CLAUDE.md
 - ✓ 1.2 Architecture & ADR trong repo
-- ○ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
+- ✓ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
 - ○ 1.4 API Contracts (OpenAPI admin/portal, agent schemas, test vectors)
 - ○ 1.5 Scaffold web/api/agent + mock agent + dev env
 - ○ 1.6 Design System (tokens, Light/Dark, i18n, component nền, app shell 2 entry)
@@ -52,3 +52,4 @@ Phase 1 (đang làm)
 | 2026-11-20 | 0 | Người dùng APPROVED kế hoạch (D-24, D-25, D-46…D-53); chuẩn bị prompt Phase 1 | — |
 | 2026-11-20 | 1 / 1.1 | Git local, cấu trúc repo, CLAUDE.md, Makefile, check-structure; đưa kế hoạch vào repo | f7ccc70, ece3ec8 |
 | 2026-11-20 | 1 / 1.2 | ARCHITECTURE.md (6 sơ đồ Mermaid), 10 ADR, threat model, sitemap UI; scripts docs-check | b6ac081 |
+| 2026-11-20 | 1 / 1.3 | DBML 78 bảng, itso.sql + extras.sql (trigger realm, purge guard D-46, audit append-only + hash chain, partition), ERD 9 SVG, ownership/lifecycle/migration-plan, db-verify 41 test | (xem commit feat(p1) 1.3) |
