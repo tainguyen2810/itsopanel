@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/result.schema.json",
+  "title": "Kết quả agent trả về",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "v",
+    "op_id",
+    "ok",
+    "duration_ms",
+    "agent_version"
+  ],
+  "properties": {
+    "v": {
+      "const": 1
+    },
+    "op_id": {
+      "type": "string"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "error": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "errors.schema.json#/$defs/ErrorCode"
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "agent_version": {
+      "type": "string"
+    },
+    "cached": {
+      "type": "boolean",
+      "description": "true nếu trả lại kết quả cũ theo op_id."
+    }
+  },
+  "if": {
+    "properties": {
+      "ok": {
+        "const": false
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "error"
+    ],
+    "properties": {
+      "error": {
+        "type": "object"
+      }
+    }
+  }
+}

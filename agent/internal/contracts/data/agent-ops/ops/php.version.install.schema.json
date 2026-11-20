@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/php.version.install.schema.json",
+  "title": "php.version.install",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "$ref": "../defs.schema.json#/$defs/PhpVersion"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "installed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "installed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.pg.import.schema.json",
+  "title": "db.pg.import",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "name": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "source": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        }
+      },
+      "required": [
+        "account",
+        "name",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "statements": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "statements"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

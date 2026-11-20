@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/account.ensure.schema.json",
+  "title": "account.ensure",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "home_path": {
+          "type": "string",
+          "pattern": "^/home/[a-z][a-z0-9]{2,15}$"
+        },
+        "shell": {
+          "type": "string",
+          "enum": [
+            "/usr/sbin/nologin",
+            "/bin/bash"
+          ]
+        },
+        "limits": {
+          "$ref": "../defs.schema.json#/$defs/Limits"
+        }
+      },
+      "required": [
+        "account",
+        "home_path",
+        "shell",
+        "limits"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "boolean"
+        },
+        "uid": {
+          "$ref": "../defs.schema.json#/$defs/Uid"
+        }
+      },
+      "required": [
+        "created",
+        "uid"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.list.schema.json",
+  "title": "fs.list",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "show_hidden": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "file",
+                  "dir",
+                  "symlink"
+                ]
+              },
+              "size": {
+                "$ref": "../defs.schema.json#/$defs/Bytes"
+              },
+              "mode": {
+                "$ref": "../defs.schema.json#/$defs/Mode"
+              },
+              "modified_at": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "size",
+              "mode",
+              "modified_at"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "entries"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
