@@ -3,14 +3,16 @@
 > File này là nguồn sự thật cho "đang ở đâu". Cập nhật sau MỖI task (commit cùng code).
 
 ## Hiện tại
+
 - **Phase:** 1 — Foundation, Architecture, Database, API Contracts, Design System (đang làm)
-- **Prompt hiện tại:** 1.1 ✓ hoàn tất, chờ duyệt
-- **Task đang làm:** — (dừng chờ duyệt Prompt 1.1)
+- **Prompt hiện tại:** 1.2 ✓ hoàn tất, chờ duyệt
+- **Task đang làm:** — (dừng chờ duyệt Prompt 1.2)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.1)
-- **Bước tiếp theo:** Người dùng duyệt 1.1 → Prompt 1.2 (Architecture & ADR)
+- **Bước tiếp theo:** Người dùng duyệt 1.2 → Prompt 1.3 (Database schema)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
+
 | Phase | Tên | Trạng thái |
 |---|---|---|
 | 0 | Planning | ✓ APPROVED |
@@ -28,9 +30,11 @@
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
+
 Phase 1 (đang làm)
+
 - ✓ 1.1 Git local, cấu trúc repo, file tiến độ, CLAUDE.md
-- ○ 1.2 Architecture & ADR trong repo
+- ✓ 1.2 Architecture & ADR trong repo
 - ○ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
 - ○ 1.4 API Contracts (OpenAPI admin/portal, agent schemas, test vectors)
 - ○ 1.5 Scaffold web/api/agent + mock agent + dev env
@@ -38,6 +42,7 @@ Phase 1 (đang làm)
 - ○ 1.7 CI, codegen, kiểm tra tổng và báo cáo Phase 1
 
 ## Nhật ký
+
 | Thời điểm | Phase/Prompt | Việc | Commit |
 |---|---|---|---|
 | 2026-11-20 | 0 | Hoàn tất bộ tài liệu planning | — |
@@ -46,3 +51,4 @@ Phase 1 (đang làm)
 | 2026-11-20 | 0 | Chốt phạm vi NỘI BỘ: billing/WooCommerce/storefront → OUT OF SCOPE, Provisioning API → DEFERRED; viết lại PROJECT_PLAN, ARCHITECTURE, ROADMAP, DATABASE, API, DECISIONS (D-46…D-50) | — |
 | 2026-11-20 | 0 | Người dùng APPROVED kế hoạch (D-24, D-25, D-46…D-53); chuẩn bị prompt Phase 1 | — |
 | 2026-11-20 | 1 / 1.1 | Git local, cấu trúc repo, CLAUDE.md, Makefile, check-structure; đưa kế hoạch vào repo | f7ccc70, ece3ec8 |
+| 2026-11-20 | 1 / 1.2 | ARCHITECTURE.md (6 sơ đồ Mermaid), 10 ADR, threat model, sitemap UI; scripts docs-check | (commit 1.2) |

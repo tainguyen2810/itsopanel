@@ -1,72 +1,248 @@
-# ARCHITECTURE — ITSO Panel (phạm vi nội bộ, chốt 2026-11-20)
+# ARCHITECTURE — ITSO Panel
 
-> Bản tổng hợp hiện hành. Chi tiết kỹ thuật vẫn nằm ở `docs/planning/02` (kiến trúc), `06` (agent security), `07` (cách ly), `08` (backup), `09` (docker), `10` (installer). Các phần về Customer, Subscription, Provisioning công khai và Billing trong `02 §11`, `14` và `15` đã **DEFERRED**.
+> Phạm vi: hệ thống quản trị máy chủ và Hosting **dùng nội bộ** (APPROVED 2026-11-20).
+> Chi tiết kỹ thuật thêm: [02 Kiến trúc](docs/planning/02-ARCHITECTURE.md), [06 Agent security](docs/planning/06-AGENT-SECURITY.md), [07 Cách ly và quota](docs/planning/07-HOSTING-ISOLATION.md), [08 Backup](docs/planning/08-BACKUP.md), [09 Docker](docs/planning/09-DOCKER.md), [10 Installer](docs/planning/10-INSTALLER.md).
+> Quyết định: [DECISIONS.md](DECISIONS.md) và [docs/adr](docs/adr/README.md). Mô hình đe dọa: [docs/security/threat-model.md](docs/security/threat-model.md).
 
-## 1. Sơ đồ
+## 1. Tổng quan thành phần
 
+```mermaid
+flowchart TB
+  subgraph Clients["Người dùng"]
+    staff["Nhân viên<br/>(IP allowlist / VPN)"]
+    user["USER được cấp tài khoản<br/>(Internet)"]
+  end
+
+  subgraph CP["Control plane"]
+    web["itso-web<br/>FrankenPHP/Caddy: TLS, SPA, rate limit"]
+    adminApi["Admin API<br/>/api/v1/admin/*"]
+    portalApi["Portal API<br/>/api/v1/portal/*"]
+    gw["itso-gateway (Go)<br/>WebSocket / SSE"]
+    prov["Hosting Provisioning Service"]
+    worker["Workers + Scheduler"]
+    pg[("PostgreSQL 'itso'")]
+    redis[("Redis riêng")]
+    ca["CA nội bộ"]
+  end
+
+  subgraph Node1["Server 1 (all-in-one)"]
+    agent1["itso-agent (root)<br/>typed operations"]
+    rt1["Nginx · PHP-FPM/account · MariaDB<br/>quota · slice · sandbox"]
+  end
+
+  subgraph NodeN["Server 2..N (node)"]
+    agentN["itso-agent (root)"]
+    rtN["Hosting runtime · Docker (admin)"]
+  end
+
+  backup[("Backup: local · SFTP/NAS · S3 Object Lock")]
+
+  staff -->|admin.domain| web
+  user -->|my.domain| web
+  web --> adminApi
+  web --> portalApi
+  web --> gw
+  adminApi --> prov
+  portalApi --> prov
+  prov --> pg
+  prov --> worker
+  worker --> redis
+  worker -->|unix socket + HMAC| agent1
+  worker -->|mTLS, agent kết nối ra| agentN
+  gw --> agent1
+  ca -.->|cấp cert| agentN
+  agent1 --> rt1
+  agentN --> rtN
+  agent1 --> backup
+  agentN --> backup
 ```
-           Nhân viên (IP allowlist/VPN)            USER được cấp tài khoản (Internet)
-                     │ admin.<domain>                         │ my.<domain>
-                     ▼                                        ▼
-┌──────────────────────────── CONTROL PLANE ────────────────────────────────┐
-│ itso-web (FrankenPHP/Caddy: TLS, SPA admin + portal, WAF/rate limit)      │
-│   ├─ /api/v1/admin/*   guard "admin"  (SUPER_ADMIN, ADMIN)                │
-│   ├─ /api/v1/portal/*  guard "portal" (USER)                              │
-│   └─ /ws, /sse → itso-gateway (Go, không đặc quyền)                       │
-│ Laravel: Hosting Provisioning Service · RBAC · Jobs · Audit · Scheduler   │
-│ PostgreSQL "itso" · Redis riêng · Internal CA (cho node)                  │
-└───────────────┬───────────────────────────────┬──────────────────────────┘
-                │ all-in-one: unix socket        │ multi-server: mTLS, agent kết nối ra
-                ▼                               ▼
-     ┌──────────────────────┐        ┌──────────────────────┐
-     │ Server 1 (all-in-one)│        │ Server 2..N (node)   │
-     │ itso-agent (root)    │        │ itso-agent (root)    │
-     │ Nginx · PHP-FPM/acct │        │ Nginx · PHP-FPM/acct │
-     │ MariaDB · PostgreSQL │        │ MariaDB · …          │
-     │ quota · slice · sandbox       │ Docker (admin apps)  │
-     └──────────────────────┘        └──────────────────────┘
-                                           Backup: local + SFTP/NAS + S3 (Object Lock)
-```
 
-## 2. Thành phần (không đổi so với 02, có bổ sung)
-| Thành phần | Ghi chú |
-|---|---|
-| Frontend | Một codebase React, **hai entry build**: `admin` (Private Admin Panel) và `portal` (User Hosting Portal), dùng chung design system và i18n |
-| Laravel API | Hai guard theo **realm** (`admin`, `portal`) trên cùng bảng `users`. Realm của user không thay đổi được, nên user portal không thể đăng nhập vào khu admin |
-| **Hosting Provisioning Service** | Domain service duy nhất cho vòng đời tài khoản: create, change-package, suspend, unsuspend, migrate, terminate, purge. Admin controller, CLI và job đều gọi qua đây. Đây là điểm mở rộng cho Public API sau này |
-| Worker / Scheduler | Chạy jobs, backup theo lịch, drift check, thông báo |
-| itso-gateway | Terminal, log stream, tiến độ job |
-| Go Agent | Root, typed ops, policy cục bộ, audit cục bộ (xem 06) |
-| CLI `itso` | Go; install / update / rollback / repair / uninstall / node join |
+| Thành phần | User Linux | Trách nhiệm | Không được làm |
+|---|---|---|---|
+| Frontend (`apps/web`, entry `admin` + `portal`) | — | UI, i18n, theme, gọi API, hiển thị job | Chứa secret; tự quyết định quyền |
+| Admin API / Portal API (Laravel) | `itso` | Auth theo realm, RBAC, validation, desired state, tạo job, audit | Chạy lệnh hệ thống; có root/sudo |
+| Hosting Provisioning Service | `itso` | Duy nhất xử lý vòng đời account (tạo, đổi gói, khóa/mở, chuyển server, xóa) | Bị bỏ qua bởi controller hay CLI |
+| Workers / Scheduler | `itso` | Thực thi job, gọi agent, cập nhật observed state, lịch backup, drift check | Như API |
+| itso-gateway (Go) | `itso-gw` | Terminal, log stream, tiến độ job; xác thực ticket ngắn hạn | Tự quyết định quyền |
+| itso-agent (Go) | `root` (hardened) | Typed operations, reconcile, metrics, policy cục bộ, audit cục bộ | Nhận shell/path tùy ý |
+| CLI `itso` (Go) | root (sudo) | install, update, rollback, repair, uninstall, node join, policy | — |
+| PostgreSQL `itso`, Redis riêng | hệ thống | Trạng thái panel, queue, lock | Phục vụ dữ liệu của USER |
 
-## 3. Topology
-- **Mặc định all-in-one**: control plane và hosting nằm trên cùng một server, giao tiếp agent qua unix socket. Đây là trải nghiệm "một lệnh" giống aaPanel.
-- **Multi-server** (Phase 9): thêm server bằng `install.sh --role node --join <token>`. Agent dùng mTLS và kết nối ra control plane. Có thể (không bắt buộc) chuyển control plane sang máy riêng bằng `--role control-plane`.
-- Super Admin **chọn server** khi tạo tài khoản. Panel gợi ý server theo tài nguyên còn trống (gợi ý đơn giản, không tự động cấp).
+## 2. Hai bề mặt truy cập (D-25, D-40)
 
-## 4. Cách ly và quota (giữ nguyên đầy đủ)
-UID/GID riêng cho mỗi account · PHP-FPM master riêng chạy dưới UID account · systemd slice với CPUQuota, MemoryHigh/Max, TasksMax, IO · user quota cho block và inode · DB user riêng theo tiền tố, không có quyền global · SFTP chroot · sandbox systemd (ProtectSystem, ProtectHome, ProtectProc, PrivateTmp, NoNewPrivileges) · egress per UID (chặn port 25, chặn dải nội bộ) · `/proc` hidepid. Chi tiết ở 07 và mục cách ly của 14.
-
-## 5. Chuyển tài khoản giữa các server (mới, Phase 9)
-Job `account.migrate` do Hosting Provisioning Service điều phối:
-1. Preflight: server đích đủ tài nguyên, có cùng phiên bản PHP/DB engine, UID trống.
-2. Tạo account ở server đích (cùng username, UID mới nếu cần), áp limits.
-3. Đồng bộ file bằng rsync qua kênh agent-agent (mTLS) hoặc qua backup restic. Dump và import DB.
-4. Sao chép cert, vhost, cron, SFTP.
-5. **Cutover**: khóa ghi ở nguồn (suspend tạm), rsync lần cuối, đổi DNS (nếu dùng DNS provider) hoặc hướng dẫn đổi IP, rồi bật ở đích.
-6. Giữ account nguồn ở trạng thái `migrated_source` N ngày, sau đó dọn có xác nhận.
-7. Rollback: nếu cutover lỗi thì bật lại nguồn.
-
-## 6. Vòng đời tài khoản (nội bộ, đơn giản)
-`pending → provisioning → active ⇄ suspended → terminated (giữ dữ liệu N ngày) → purged`, cộng thêm các trạng thái `migrating` và `failed`. Suspend và unsuspend làm thủ công, có ghi lý do. Không có quá hạn thanh toán. Purge chạy 2 bước có xác nhận và để lại biên bản.
-
-## 7. Bảo mật hai bề mặt
-| | Admin Panel | User Hosting Portal |
+| | Private Admin Panel | User Hosting Portal |
 |---|---|---|
-| Mạng | IP allowlist / VPN | Public |
-| Auth | MFA bắt buộc, session 8h | MFA khuyến khích (bắt buộc nếu có SSH/Terminal), session 12h, khóa lũy tiến, CAPTCHA |
-| Bảo vệ | CSRF, CSP, rate limit | Như Admin, cộng WAF (CRS) trước portal |
-| Truy cập dữ liệu USER | Impersonate cần ghi lý do, có banner, có audit | — |
+| Origin | `admin.<domain>` | `my.<domain>` |
+| Mạng | IP allowlist / VPN | Public Internet |
+| Người dùng | `users.realm = admin` (SUPER_ADMIN, ADMIN) | `users.realm = portal` (USER) |
+| Auth | Session cookie + CSRF, MFA bắt buộc, step-up cho thao tác nguy hiểm | Session cookie + CSRF, MFA (bắt buộc nếu có SSH/Terminal), khóa lũy tiến, CAPTCHA |
+| Bảo vệ | CSP, rate limit | CSP, rate limit, WAF (OWASP CRS) |
+| API | `/api/v1/admin/*` | `/api/v1/portal/*` |
 
-## 8. Điểm mở rộng tương lai (DEFERRED)
-Public Provisioning API (`/api/provisioning/v1`), Customer/Subscription, Billing Adapter, Placement Engine tự động, Docker Hosting trên VM. Thiết kế tham khảo ở `15-HOSTING-PROVIDER.md`.
+`realm` không đổi được sau khi tạo (trigger DB). Guard `admin` chỉ chấp nhận realm `admin`, guard `portal` chỉ chấp nhận realm `portal`. Truy cập tài nguyên ngoài phạm vi trả `404`.
+
+## 3. Luồng tạo website
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant SPA as Portal SPA
+  participant API as Portal API
+  participant PS as Provisioning/Website service
+  participant DB as PostgreSQL
+  participant Q as Redis queue
+  participant W as Worker
+  participant A as itso-agent
+  participant GW as itso-gateway
+
+  SPA->>API: POST /portal/websites (Idempotency-Key)
+  API->>PS: kiểm tra quyền, quota website/domain
+  PS->>DB: websites (desired, spec_version=1), jobs (queued), audit_logs
+  API-->>SPA: 202 {job, website}
+  PS->>Q: enqueue website.provision
+  W->>Q: lấy job
+  loop Từng bước typed op
+    W->>A: {op, op_id, params, deadline}
+    A->>A: validate schema + policy, thực thi idempotent
+    A-->>W: kết quả + observed facts
+    W->>DB: job_steps, observed_*
+    W->>GW: publish tiến độ
+    GW-->>SPA: SSE /jobs/{id}/events
+  end
+  W->>DB: job succeeded, observed_version = spec_version
+```
+
+Các bước của `website.provision`: `fs.site_layout.ensure` → `php.pool.apply` → `nginx.vhost.apply` (render → `nginx -t` → đổi file nguyên tử → reload, lỗi thì khôi phục) → `cert.issue` (nếu bật SSL). Lỗi tạm thời được retry có backoff. Lỗi validation hoặc policy thì không retry, chạy compensation.
+
+## 4. Desired / Observed / Job state
+
+```mermaid
+stateDiagram-v2
+  [*] --> pending: API ghi desired (spec_version++)
+  pending --> provisioning: worker nhận job
+  provisioning --> ready: agent apply OK (observed_version = spec_version)
+  provisioning --> failed: lỗi không retry được
+  failed --> provisioning: retry
+  ready --> provisioning: thay đổi desired (spec_version++)
+  ready --> degraded: drift / service lỗi
+  degraded --> provisioning: reconcile
+  ready --> suspended: suspend
+  suspended --> provisioning: unsuspend
+```
+
+| Loại | Lưu ở đâu | Ai ghi |
+|---|---|---|
+| Desired | Cột cấu hình + `spec_version` | API / Provisioning Service |
+| Observed | `observed_version`, `status`, `observed_facts`, `drift`, `observed_at` | Worker, từ kết quả agent |
+| Job | `jobs`, `job_steps`, `job_logs` | Worker |
+
+Agent không giữ desired state lâu dài: mỗi lần apply nhận spec đầy đủ, nên `itso repair --reapply-all` chỉ việc gửi lại toàn bộ desired state.
+
+## 5. Vòng đời Hosting Account (D-46)
+
+```mermaid
+stateDiagram-v2
+  [*] --> pending
+  pending --> provisioning
+  provisioning --> active
+  provisioning --> failed
+  failed --> provisioning: retry
+  active --> suspended: khóa (lý do)
+  suspended --> active: mở khóa
+  active --> migrating: chuyển server (D-48)
+  migrating --> active: cutover OK / rollback
+  active --> terminated: xóa
+  suspended --> terminated: xóa
+  terminated --> active: khôi phục trong 30 ngày
+  terminated --> purged: sau 30 ngày + backup đã xác minh + xác nhận 2 bước
+  purged --> [*]
+```
+
+Trước khi purge bắt buộc phải: gửi cảnh báo cho người dùng và admin (lúc terminate, T-7, T-1); ghi audit mọi bước; xác minh backup cuối hợp lệ (`restic check` + restore thử vào sandbox); khôi phục được bất kỳ lúc nào trước purge. `legal_hold` chặn purge. Purge xong sinh biên bản (`purge_records`).
+
+## 6. Ranh giới đặc quyền
+
+```mermaid
+flowchart LR
+  subgraph Unpriv["Không đặc quyền"]
+    browser["Trình duyệt"]
+    api["Laravel (itso)"]
+    gwp["gateway (itso-gw)"]
+  end
+  subgraph Priv["Đặc quyền"]
+    agent["itso-agent (root)<br/>typed ops + policy cục bộ"]
+  end
+  subgraph AcctN["Account UID 2xxxx (slice + sandbox)"]
+    fpm["PHP-FPM master riêng"]
+    cron["cron timers"]
+    fs["fs ops đã hạ quyền<br/>openat2 RESOLVE_BENEATH"]
+  end
+  browser -->|HTTPS| api
+  api -->|socket: SO_PEERCRED + HMAC| agent
+  gwp -->|stream socket + ticket| agent
+  agent -->|setresuid / systemd unit| AcctN
+```
+
+- Laravel bị chiếm vẫn chỉ gọi được typed ops. Các op nguy hiểm (root terminal, `backup.forget`, docker) bị tắt bằng policy cục bộ `/etc/itso/agent-policy.yaml`, chỉ root sửa được qua CLI.
+- Mọi thao tác trên dữ liệu của account chạy dưới UID của account, không bao giờ dưới root.
+
+## 7. Cách ly và quota (giữ nguyên đầy đủ)
+
+| Lớp | Cơ chế |
+|---|---|
+| Danh tính | UID/GID riêng, dải 20000–59999, không tái dùng trong 90 ngày (D-45) |
+| PHP | PHP-FPM master riêng chạy dưới UID account, `pm=ondemand` (D-12) |
+| CPU/RAM/process/IO | `itso-acct-<id>.slice`: `CPUQuota`, `MemoryHigh/Max`, `TasksMax`, `IOWeight`, `IO*BandwidthMax` |
+| Disk/inode | Kernel user quota (ext4/XFS) |
+| Sandbox | `ProtectSystem=strict`, `ProtectHome=tmpfs` + BindPaths, `ProtectProc=invisible`, `PrivateTmp`, `NoNewPrivileges` (D-29) |
+| Database | DB user riêng theo tiền tố, không quyền global, `MAX_USER_CONNECTIONS` |
+| SFTP/SSH | `internal-sftp` chroot; SSH mặc định tắt, khi bật thì jail (D-21) |
+| Mạng | Egress per UID: chặn port 25 và dải nội bộ/metadata (D-10, D-17) |
+| Backup | Repo restic riêng cho mỗi account (D-23); offsite immutable (D-19) |
+
+## 8. Topology và multi-server (D-41, D-48)
+
+```mermaid
+flowchart LR
+  inst["install.sh"] -->|"--role all-in-one (mặc định)"| aio["Control plane + hosting trên 1 server"]
+  inst -->|"--role control-plane"| cp["Control plane riêng (tùy chọn)"]
+  inst -->|"--role node --join token"| node["Node hosting"]
+  node -->|"mTLS, kết nối ra"| cp
+  node -->|"mTLS, kết nối ra"| aio
+```
+
+Chuyển account giữa các server: preflight → tạo account ở đích → sync file (rsync) và DB (dump/import) → sao chép SSL, cron, cấu hình nginx/php/sftp, ownership/UID → kiểm tra dữ liệu (checksum file, row count + checksum bảng, HTTP check) → cutover (khóa ghi ở nguồn, sync lần cuối, bật ở đích) → giữ nguồn N ngày → dọn dẹp. Có rollback ở mọi bước trước khi dọn dẹp.
+
+## 9. Bố cục filesystem
+
+| Đường dẫn | Nội dung | Update ghi đè | Uninstall xóa |
+|---|---|---|---|
+| `/opt/itso/releases/<ver>/`, `/opt/itso/current` | Release và symlink bản đang chạy | Thêm bản mới, đổi symlink nguyên tử | Có |
+| `/etc/itso/` | Cấu hình, policy agent, PKI | Không (merge) | Giữ bản sao |
+| `/var/lib/itso/` | PostgreSQL panel, master key, state | Không | Chỉ khi `--purge-panel-data` |
+| `/var/log/itso/` | Log, audit cục bộ | Không | Hỏi |
+| `/var/backups/itso/` | Backup trước update, repo local | Không | **Không bao giờ** |
+| `/home/<account>/` | Dữ liệu hosting | Không | **Không bao giờ** |
+| `/var/lib/mysql`, `/var/lib/postgresql/16/main` | DB của hosting | Không | **Không bao giờ** |
+
+## 10. systemd units
+
+| Unit | Mô tả |
+|---|---|
+| `itso.target` | Gom mọi service panel |
+| `itso-agent.service` | Agent root, socket `/run/itso/agent.sock` |
+| `itso-web.service` | FrankenPHP + Laravel Octane (D-01, Proposed) |
+| `itso-worker@.service` | Queue workers |
+| `itso-scheduler.service` | Scheduler |
+| `itso-gateway.service` | Realtime |
+| `postgresql@16-itso.service`, `itso-redis.service` | DB và Redis của panel |
+| `itso-php@<ver>-<acct>.service` | PHP-FPM master của account, trong `itso-acct-<id>.slice` |
+| `itso-cron-<id>.timer/.service` | Cron của account |
+
+## 11. Cấu trúc repository
+
+Xem [README.md](README.md). Nguồn sự thật: `contracts/` (API, agent ops) → codegen cho `apps/web` (TypeScript) và `agent` (Go).
+
+## 12. Mở rộng tương lai (DEFERRED)
+
+Public Provisioning API (`/api/provisioning/*` giữ chỗ), Customer/Subscription, Placement Engine tự động, Docker Hosting trên VM. Tham khảo [15-HOSTING-PROVIDER.md](docs/planning/15-HOSTING-PROVIDER.md).

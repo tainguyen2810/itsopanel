@@ -3,6 +3,7 @@
 > Thiết kế đầy đủ ở `docs/planning/04-DATABASE.md` (quy ước, desired/observed, index, migrations), vẫn còn hiệu lực. File này ghi **các thay đổi** cho phạm vi nội bộ.
 
 ## 1. Giữ nguyên từ 04
+
 - Quy ước: `id` identity + `uuid` (UUIDv7) public; secret mã hóa bằng libsodium; JSONB có schema; soft-delete cho tài nguyên người dùng.
 - Desired/Observed: `spec_version`, `observed_version`, `status`, `observed_facts`, `drift`, `observed_at`, `last_job_id`.
 - Nhóm bảng: identity (`users`, `roles`, `permissions`, `user_scopes`, `mfa_credentials`, `sessions`, `api_tokens`, `login_attempts`, `ip_allowlist`); infrastructure (`servers`, `agents`, `server_services`, `software_catalog`, `server_software`, `php_versions`); hosting (`hosting_packages`, `hosting_accounts`, `websites`, `domains`, `website_settings`, `certificates`, `databases`, `database_users`, `database_grants`, `sftp_accounts`, `ssh_keys`, `cron_jobs`, `cron_runs`, `dns_*`); docker; backup; jobs; security/audit/notifications/settings/metrics.
@@ -26,12 +27,15 @@
 | `tos_acceptances` (tùy chọn) | `user_id`, `version`, `accepted_at` | Quy định sử dụng nội bộ cho USER portal |
 
 ## 3. Không tạo (DEFERRED / OUT OF SCOPE)
+
 `customers`, `customer_users`, `hosting_services`, `subscriptions`, `service_lifecycle_events` (thay bằng `account_lifecycle_events`), `integration_clients`, `outbox_events` cho webhook bán hàng, `capacity_reservations`/`placement_decisions` (thay bằng gợi ý + khóa trên `server_capacity`), `abuse_cases`, mọi bảng order/invoice/payment. Thiết kế tham khảo vẫn giữ trong `15-HOSTING-PROVIDER.md`.
 
 ## 4. Ownership
+
 `hosting_accounts.owner_user_id` → `users` (realm portal). ADMIN thấy account qua `user_scopes` (server hoặc account được giao). Mọi tài nguyên con mang `hosting_account_id`. Query ở portal luôn có global scope `owner_user_id = auth()->id()`, kèm test ma trận quyền. RLS PostgreSQL được đánh giá ở Phase 12.
 
 ## 5. Migrations theo Phase
+
 | Phase | Bảng |
 |---|---|
 | 3 | identity, `servers`, `agents`, `hosting_packages`, `hosting_package_versions`, `hosting_accounts`, `account_lifecycle_events`, `uid_allocations`, `jobs*`, `audit_logs`, `notifications`, `settings`, `impersonation_sessions` |

@@ -2,7 +2,29 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 1 / Prompt 1.2 — nhánh `phase-1`
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Markdown lint | `npx markdownlint-cli2@0.17.2` (41 file, trừ `docs/planning/` là bản lịch sử) | PASS: 0 lỗi |
+| Link nội bộ | `node scripts/check-links.mjs .` | PASS: 58/58 link hợp lệ |
+| Mermaid | `bash scripts/check-mermaid.sh` (mermaid-cli 11.4.2 + Chromium) | PASS: 6/6 khối render được |
+| Tổng hợp | `make check` | PASS (structure + docs-check) |
+| Âm tính: link hỏng | bản sao repo, thêm link tới file không tồn tại | PASS: exit 1, báo đúng file |
+| Âm tính: Mermaid sai | bản sao repo, thêm khối `a -->\|( b` | PASS: exit 1 |
+| Âm tính: lint | bản sao repo, thêm `#Sai heading` | PASS: báo 2 lỗi |
+| Độ phủ sitemap | script đếm cột Module trong phần Admin | PASS: đủ 30/30 module |
+
+Ghi chú: checker Mermaid đã bắt được 1 lỗi thật trong ARCHITECTURE.md (nhãn cạnh có `--` chưa đặt trong ngoặc kép) và đã sửa.
+
+### Acceptance Prompt 1.2
+
+- ✓ ≥ 10 ADR (10), mỗi ADR có Bối cảnh / Quyết định / Hệ quả / Trạng thái và mã D-xx
+- ✓ Sitemap đủ 30 module (Admin) và portal USER
+- ✓ Lint + link check + Mermaid check pass
+
 ## 2026-11-20 — Phase 1 / Prompt 1.1 — nhánh `phase-1`
+
 Môi trường: Linux (container cloud), GNU Make 4.x, bash, git.
 
 | Bộ test | Lệnh | Kết quả |
@@ -17,6 +39,7 @@ Môi trường: Linux (container cloud), GNU Make 4.x, bash, git.
 **Test bị bỏ qua:** không.
 
 ### Acceptance Prompt 1.1
+
 - ✓ Repo Git local, nhánh `phase-1`, working tree sạch
 - ✓ 8 file kế hoạch ở gốc + `CLAUDE.md` + `README.md`
 - ✓ `scripts/check-structure.sh` exit 0 (và exit 1 khi thiếu)

@@ -8,7 +8,9 @@ define todo
 	@echo "[$(1)] chưa hiện thực — sẽ có ở Prompt $(2)"
 endef
 
-.PHONY: help structure setup dev test lint build codegen codegen-check check
+PNPX ?= npx -y
+
+.PHONY: help structure docs-check setup dev test lint build codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -16,6 +18,11 @@ help: ## Liệt kê các lệnh
 
 structure: ## Kiểm tra cấu trúc repository
 	@bash scripts/check-structure.sh
+
+docs-check: ## Lint Markdown, kiểm tra link nội bộ và cú pháp Mermaid
+	@$(PNPX) markdownlint-cli2@0.17.2
+	@node scripts/check-links.mjs .
+	@bash scripts/check-mermaid.sh
 
 setup: ## Cài dependency (web, api, agent)
 	$(call todo,setup,1.5)
@@ -38,5 +45,5 @@ codegen: ## Sinh code từ contracts
 codegen-check: ## Kiểm tra codegen không tạo diff
 	$(call todo,codegen-check,1.7)
 
-check: structure ## Chạy toàn bộ kiểm tra (đầy đủ ở Prompt 1.7)
+check: structure docs-check ## Chạy toàn bộ kiểm tra (đầy đủ ở Prompt 1.7)
 	$(call todo,check (đầy đủ),1.7)

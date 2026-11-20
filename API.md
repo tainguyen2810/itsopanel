@@ -14,10 +14,12 @@
 **Không có:** Public Provisioning API, HMAC integration với website bán hàng, webhook cho billing, endpoint order/invoice/payment.
 
 ## 2. Hosting Provisioning Service (lớp nội bộ)
+
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.
 Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục bộ) và scheduler đều đi qua lớp này. Một Public API trong tương lai chỉ cần thêm controller mỏng gọi lại lớp này.
 
 ## 3. Admin API (chính)
+
 | Nhóm | Endpoint |
 |---|---|
 | Servers | `GET/POST /admin/servers`, `GET/PATCH /admin/servers/{id}`, `POST /admin/servers/enrollment-tokens`, `GET /admin/servers/{id}/capacity`, services, software, reboot |
@@ -35,6 +37,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | Terminal | `POST /admin/terminal/sessions` (root terminal chỉ chạy khi policy cục bộ cho phép) |
 
 ## 4. Portal API (USER, chỉ trên tài nguyên của mình)
+
 | Nhóm | Endpoint |
 |---|---|
 | Tổng quan | `GET /portal/overview`: usage so với quota, cảnh báo |
@@ -52,4 +55,5 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 Portal **không có**: servers, packages, users, firewall, docker, software, settings hệ thống. Truy cập tài nguyên không thuộc mình trả `404`.
 
 ## 5. Thao tác bất đồng bộ
+
 Mọi thao tác chạm Linux (tạo/khóa/mở/đổi gói/chuyển server/xóa, website, DB, backup…) trả `202` kèm `job`. Bắt buộc `Idempotency-Key`. Hủy qua `POST /…/jobs/{id}:cancel`. Theo dõi tiến độ qua SSE `/…/jobs/{id}/events`. Mọi thao tác đều được audit.
