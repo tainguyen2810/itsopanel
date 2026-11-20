@@ -235,8 +235,7 @@ function recordError(b: Partial<S['DnsRecordInput']>, zone: S['DnsZone']): strin
     return 'Tên record không hợp lệ.';
   const e = contentError(type, b.content ?? '');
   if (e) return `Nội dung không hợp lệ cho record ${type}.`;
-  if (b.ttl === undefined || !(b.ttl === 1 || (b.ttl >= 60 && b.ttl <= 86400)))
-    return 'TTL 60–86400 giây (1 = tự động).';
+  if (b.ttl === undefined || b.ttl < 60 || b.ttl > 86400) return 'TTL 60–86400 giây.';
   if ((type === 'MX' || type === 'SRV') && b.priority === undefined)
     return 'Record MX/SRV cần độ ưu tiên.';
   if (b.proxied && (!PROXIABLE.includes(type) || zone.provider !== 'cloudflare')) {
@@ -901,7 +900,7 @@ export function registerSites(realm: 'admin' = 'admin') {
     return startJob(ctx, {
       type: 'database.import',
       resource: { type: 'database', uuid: d.uuid },
-      ops: ['backup.run', d.engine === 'postgresql' ? 'db.pg.restore' : 'db.mysql.import'],
+      ops: ['backup.run', d.engine === 'postgresql' ? 'db.pg.import' : 'db.mysql.import'],
       server: d.server,
       changes: { path },
     });
@@ -948,7 +947,7 @@ export function registerSites(realm: 'admin' = 'admin') {
     return startJob(ctx, {
       type: 'database_user.delete',
       resource: { type: 'database_user', uuid: u.uuid },
-      ops: [u.engine === 'postgresql' ? 'db.pg.user_remove' : 'db.mysql.user_remove'],
+      ops: [u.engine === 'postgresql' ? 'db.pg.user_drop' : 'db.mysql.user_drop'],
       server: a?.server ?? null,
       onDone: (db) => {
         db.data.db_users = db.data.db_users.filter((x) => x.uuid !== u.uuid);
@@ -1585,7 +1584,7 @@ export function registerSites(realm: 'admin' = 'admin') {
     return startJob(ctx, {
       type: 'cron.run',
       resource: { type: 'cron_job', uuid: c.uuid },
-      ops: ['cron.run'],
+      ops: ['cron.run_once'],
       server: a?.server ?? null,
       onDone: (db) => {
         const now = db.now();

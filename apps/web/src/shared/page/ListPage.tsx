@@ -37,7 +37,7 @@ interface Props<T> {
   empty?: ReactNode;
   /** Nội dung phía trên bảng (thẻ thống kê…). */
   children?: ReactNode;
-  /** Không render PageHeader (dùng trong tab của trang chi tiết). */
+  /** Không render PageHeader (dùng trong tab): chỉ hiện mô tả và nút thao tác phía trên bảng. */
   embedded?: boolean;
 }
 
@@ -136,6 +136,15 @@ export function ListPage<T>({
   return (
     <>
       {!embedded && <PageHeader title={title} description={description} actions={actions} />}
+      {embedded && (description !== undefined || actions !== undefined) && (
+        // Trong tab: không lặp tiêu đề trang, chỉ hiện mô tả ngắn và nút thao tác.
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          {description !== undefined && (
+            <p className="max-w-prose text-sm text-muted">{description}</p>
+          )}
+          {actions !== undefined && <div className="ml-auto flex flex-wrap gap-2">{actions}</div>}
+        </div>
+      )}
       {children}
       {query.isPending ? (
         <TableSkeleton />

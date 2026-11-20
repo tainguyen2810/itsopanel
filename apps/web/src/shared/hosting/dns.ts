@@ -60,7 +60,7 @@ export const dnsRecordSchema = z
     ttl: z
       .number({ error: 'admin:dns.errors.ttl' })
       .int('admin:dns.errors.ttl')
-      .refine((v) => v === 1 || (v >= 60 && v <= 86400), 'admin:dns.errors.ttl'),
+      .refine((v) => v >= 60 && v <= 86400, 'admin:dns.errors.ttl'),
     priority: z.number().int().min(0).max(65535).optional(),
     proxied: z.boolean(),
   })

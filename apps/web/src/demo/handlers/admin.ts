@@ -102,7 +102,7 @@ export const ADMIN_LISTS: ListSpec[] = [
   {
     path: '/api/v1/admin/certificates',
     rows: d('certs'),
-    scope: 'none',
+    scope: 'account',
     search: ['website.primary_domain', 'issuer'],
     sort: 'not_after',
   },
@@ -231,8 +231,14 @@ function visibleRows(ctx: Ctx, spec: ListSpec): Row[] | Reply {
   const v = visibility(ctx.db, ctx.actor);
   const rows = spec.rows(ctx.db);
   switch (spec.scope) {
-    case 'account':
-      return byAccount(v, rows, (r) => (r.username ? r.uuid : ACC(r)));
+    case 'account': {
+      // Bản ghi chỉ gắn website (chứng chỉ SSL): suy ra account qua website.
+      const siteAcc = (r: Row) => {
+        const w = (r.website as { uuid: string } | undefined)?.uuid;
+        return ctx.db.data.websites.find((x) => x.uuid === w)?.hosting_account.uuid;
+      };
+      return byAccount(v, rows, (r) => (r.username ? r.uuid : (ACC(r) ?? siteAcc(r))));
+    }
     case 'server':
       return v.all
         ? rows

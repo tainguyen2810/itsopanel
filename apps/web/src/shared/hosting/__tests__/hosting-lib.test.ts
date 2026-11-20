@@ -171,7 +171,9 @@ describe('form record DNS', () => {
       name: 'admin:dns.errors.cnameApex',
     });
     expect(err({ ttl: 30 })).toEqual({ ttl: 'admin:dns.errors.ttl' });
-    expect(err({ ttl: 1 })).toEqual({});
+    // Contract DnsRecordInput: TTL 60–86400 (Cloudflare "auto" không có trong contract).
+    expect(err({ ttl: 1 })).toEqual({ ttl: 'admin:dns.errors.ttl' });
+    expect(err({ ttl: 60 })).toEqual({});
     expect(err({ name: 'a b' })).toEqual({ name: 'admin:dns.errors.name' });
     expect(err({ name: '_dmarc' })).toEqual({});
     expect(err({ name: '*.dev' })).toEqual({});

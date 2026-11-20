@@ -76,7 +76,8 @@
     "syncing": "Syncing",
     "cutover": "Cutting over",
     "completed": "Completed",
-    "rolled_back": "Rolled back"
+    "rolled_back": "Rolled back",
+    "deleting": "Deleting"
   },
   "table": {
     "selected_one": "{{count}} row selected",
@@ -134,7 +135,10 @@
       "update": "Backup policy updated"
     },
     "database": {
-      "create": "Database created"
+      "create": "Database created",
+      "delete": "Delete database",
+      "export": "Export database",
+      "import": "Import into database"
     },
     "firewall": {
       "apply": "Firewall applied",
@@ -189,7 +193,14 @@
       "create": "Website created",
       "ssl": {
         "renew": "SSL renewed"
-      }
+      },
+      "update": "Update website",
+      "delete": "Delete website",
+      "domain_add": "Add website domain",
+      "domain_remove": "Remove website domain",
+      "nginx_update": "Update website Nginx settings",
+      "php_update": "Update website PHP settings",
+      "waf_update": "Update website WAF"
     },
     "job": {
       "cancel": "Job cancelled"
@@ -217,6 +228,59 @@
     },
     "terminal": {
       "open": "Open terminal"
+    },
+    "certificate": {
+      "issue": "Issue SSL certificate",
+      "upload": "Install uploaded certificate",
+      "delete": "Remove SSL certificate"
+    },
+    "database_user": {
+      "create": "Create database user",
+      "delete": "Delete database user",
+      "grant": "Update database user grants"
+    },
+    "file": {
+      "mkdir": "Create folder",
+      "move": "Move files",
+      "copy": "Copy files",
+      "delete": "Delete files",
+      "chmod": "Change file permissions",
+      "compress": "Compress files",
+      "extract": "Extract archive"
+    },
+    "sftp": {
+      "create": "Create SFTP account",
+      "delete": "Delete SFTP account"
+    },
+    "ssh_key": {
+      "create": "Add SSH key",
+      "delete": "Remove SSH key"
+    },
+    "dns": {
+      "record": {
+        "create": "Add DNS record",
+        "update": "Update DNS record",
+        "delete": "Delete DNS record"
+      }
+    },
+    "cron": {
+      "create": "Create cron job",
+      "update": "Update cron job",
+      "delete": "Delete cron job",
+      "run": "Run cron job now"
+    },
+    "wordpress": {
+      "install": "Install WordPress",
+      "update": "Update WordPress",
+      "clone_staging": "Create WordPress staging",
+      "harden": "Harden WordPress"
+    },
+    "git": {
+      "deploy": "Deploy from Git",
+      "rollback": "Roll back release"
+    },
+    "security": {
+      "scan": "Malware scan"
     }
   },
   "ops": {
@@ -254,15 +318,31 @@
     "db": {
       "pg": {
         "create": "Create PostgreSQL database",
-        "user_ensure": "Ensure PostgreSQL user"
+        "user_ensure": "Ensure PostgreSQL user",
+        "drop": "Drop PostgreSQL database",
+        "user_drop": "Drop PostgreSQL user",
+        "grant": "Grant PostgreSQL privileges",
+        "dump": "Dump PostgreSQL database",
+        "import": "Import into PostgreSQL"
       },
       "mysql": {
-        "create": "Create MariaDB database"
+        "create": "Create MariaDB database",
+        "drop": "Drop MariaDB database",
+        "user_ensure": "Create MariaDB user",
+        "user_drop": "Drop MariaDB user",
+        "grant": "Grant MariaDB privileges",
+        "dump": "Dump MariaDB database",
+        "import": "Import into MariaDB"
       }
     },
     "fs": {
       "mkdir": "Create directory",
-      "archive": "Archive files"
+      "archive": "Archive files",
+      "move": "Move",
+      "copy": "Copy",
+      "delete": "Delete",
+      "chmod": "Change permissions",
+      "extract": "Extract"
     },
     "backup": {
       "run": "Run backup (restic)",
@@ -308,6 +388,36 @@
       "verify": "Verify data",
       "cutover": "Switch vhosts, cron, SSL to target",
       "rollback": "Roll back to source"
+    },
+    "cron": {
+      "apply": "Write account crontab",
+      "run_once": "Run cron command once"
+    },
+    "dns": {
+      "records": {
+        "apply": "Push records to DNS provider"
+      }
+    },
+    "sftp": {
+      "user": {
+        "ensure": "Create chrooted SFTP user",
+        "remove": "Remove SFTP user"
+      }
+    },
+    "ssh": {
+      "keys": {
+        "apply": "Write authorized_keys"
+      }
+    },
+    "waf": {
+      "apply": "Apply WAF rules"
+    },
+    "malware": {
+      "scan": "Malware scan (ClamAV)"
+    },
+    "git": {
+      "deploy": "Fetch, build and switch release",
+      "rollback": "Point symlink to previous release"
     }
   },
   "wizard": {

@@ -76,7 +76,8 @@
     "syncing": "Đang đồng bộ",
     "cutover": "Đang cutover",
     "completed": "Hoàn tất",
-    "rolled_back": "Đã hoàn tác"
+    "rolled_back": "Đã hoàn tác",
+    "deleting": "Đang xóa"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",
@@ -134,7 +135,10 @@
       "update": "Cập nhật chính sách sao lưu"
     },
     "database": {
-      "create": "Tạo cơ sở dữ liệu"
+      "create": "Tạo cơ sở dữ liệu",
+      "delete": "Xóa cơ sở dữ liệu",
+      "export": "Xuất cơ sở dữ liệu",
+      "import": "Nhập dữ liệu vào cơ sở dữ liệu"
     },
     "firewall": {
       "apply": "Áp dụng tường lửa",
@@ -189,7 +193,14 @@
       "create": "Tạo website",
       "ssl": {
         "renew": "Gia hạn SSL"
-      }
+      },
+      "update": "Cập nhật website",
+      "delete": "Xóa website",
+      "domain_add": "Thêm domain cho website",
+      "domain_remove": "Gỡ domain khỏi website",
+      "nginx_update": "Cập nhật cấu hình Nginx của website",
+      "php_update": "Cập nhật cấu hình PHP của website",
+      "waf_update": "Cập nhật WAF của website"
     },
     "job": {
       "cancel": "Hủy tác vụ"
@@ -217,6 +228,59 @@
     },
     "terminal": {
       "open": "Mở terminal"
+    },
+    "certificate": {
+      "issue": "Cấp chứng chỉ SSL",
+      "upload": "Cài chứng chỉ SSL tải lên",
+      "delete": "Gỡ chứng chỉ SSL"
+    },
+    "database_user": {
+      "create": "Tạo user database",
+      "delete": "Xóa user database",
+      "grant": "Cập nhật quyền user database"
+    },
+    "file": {
+      "mkdir": "Tạo thư mục",
+      "move": "Di chuyển file",
+      "copy": "Sao chép file",
+      "delete": "Xóa file",
+      "chmod": "Đổi quyền file",
+      "compress": "Nén file",
+      "extract": "Giải nén file"
+    },
+    "sftp": {
+      "create": "Tạo tài khoản SFTP",
+      "delete": "Xóa tài khoản SFTP"
+    },
+    "ssh_key": {
+      "create": "Thêm SSH key",
+      "delete": "Gỡ SSH key"
+    },
+    "dns": {
+      "record": {
+        "create": "Thêm record DNS",
+        "update": "Sửa record DNS",
+        "delete": "Xóa record DNS"
+      }
+    },
+    "cron": {
+      "create": "Tạo cron job",
+      "update": "Sửa cron job",
+      "delete": "Xóa cron job",
+      "run": "Chạy cron job thủ công"
+    },
+    "wordpress": {
+      "install": "Cài WordPress",
+      "update": "Cập nhật WordPress",
+      "clone_staging": "Tạo bản staging WordPress",
+      "harden": "Hardening WordPress"
+    },
+    "git": {
+      "deploy": "Deploy từ Git",
+      "rollback": "Quay về release trước"
+    },
+    "security": {
+      "scan": "Quét mã độc"
     }
   },
   "ops": {
@@ -254,15 +318,31 @@
     "db": {
       "pg": {
         "create": "Tạo database PostgreSQL",
-        "user_ensure": "Tạo user PostgreSQL"
+        "user_ensure": "Tạo user PostgreSQL",
+        "drop": "Xóa database PostgreSQL",
+        "user_drop": "Xóa user PostgreSQL",
+        "grant": "Cấp quyền PostgreSQL",
+        "dump": "Xuất dữ liệu PostgreSQL",
+        "import": "Nhập dữ liệu PostgreSQL"
       },
       "mysql": {
-        "create": "Tạo database MariaDB"
+        "create": "Tạo database MariaDB",
+        "drop": "Xóa database MariaDB",
+        "user_ensure": "Tạo user MariaDB",
+        "user_drop": "Xóa user MariaDB",
+        "grant": "Cấp quyền MariaDB",
+        "dump": "Xuất dữ liệu MariaDB",
+        "import": "Nhập dữ liệu MariaDB"
       }
     },
     "fs": {
       "mkdir": "Tạo thư mục",
-      "archive": "Nén file"
+      "archive": "Nén file",
+      "move": "Di chuyển",
+      "copy": "Sao chép",
+      "delete": "Xóa",
+      "chmod": "Đổi quyền",
+      "extract": "Giải nén"
     },
     "backup": {
       "run": "Chạy sao lưu (restic)",
@@ -308,6 +388,36 @@
       "verify": "Kiểm tra dữ liệu",
       "cutover": "Chuyển vhost, cron, SSL sang máy đích",
       "rollback": "Hoàn tác về máy nguồn"
+    },
+    "cron": {
+      "apply": "Ghi crontab của tài khoản",
+      "run_once": "Chạy lệnh cron một lần"
+    },
+    "dns": {
+      "records": {
+        "apply": "Đẩy record lên nhà cung cấp DNS"
+      }
+    },
+    "sftp": {
+      "user": {
+        "ensure": "Tạo người dùng SFTP (chroot)",
+        "remove": "Gỡ người dùng SFTP"
+      }
+    },
+    "ssh": {
+      "keys": {
+        "apply": "Ghi authorized_keys"
+      }
+    },
+    "waf": {
+      "apply": "Áp dụng luật WAF"
+    },
+    "malware": {
+      "scan": "Quét mã độc (ClamAV)"
+    },
+    "git": {
+      "deploy": "Kéo code, build và chuyển release",
+      "rollback": "Chuyển symlink về release cũ"
     }
   },
   "wizard": {
