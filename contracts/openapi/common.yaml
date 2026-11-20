@@ -3193,6 +3193,18 @@ components:
       schema:
         type: string
       description: ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412.
+    Realm:
+      name: X-ITSO-Realm
+      in: header
+      required: false
+      schema:
+        type: string
+        enum:
+        - admin
+        - portal
+        default: portal
+      description: Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production),
+        host quyết định và header bị bỏ qua (D-58).
     ContentRange:
       name: Content-Range
       in: header
@@ -3207,11 +3219,16 @@ components:
       schema:
         type: string
   securitySchemes:
-    cookieSession:
+    adminSession:
       type: apiKey
       in: cookie
-      name: itso_session
-      description: Laravel Sanctum session, cookie Secure; HttpOnly; SameSite=Strict.
+      name: itso_admin_session
+      description: Session realm admin (D-58), cookie Secure; HttpOnly; SameSite=Strict.
+    portalSession:
+      type: apiKey
+      in: cookie
+      name: itso_portal_session
+      description: Session realm portal (D-58), cookie Secure; HttpOnly; SameSite=Strict.
     csrfToken:
       type: apiKey
       in: header

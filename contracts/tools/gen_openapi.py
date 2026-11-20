@@ -69,8 +69,8 @@ def auth_paths(api: Api, realm: str):
     api.add("post", "/api/v1/auth/login", "login", "Đăng nhập (realm theo origin)", "Auth", public=True,
             security=csrf_only, body=cref("LoginRequest"), body_example=login_ex, ok=cref("LoginResult"),
             ok_example=one({"mfa_required": True, "mfa_methods": ["totp", "recovery"]}),
-            desc="Origin admin chỉ chấp nhận user realm `admin`, origin portal chỉ chấp nhận realm `portal`. "
-                 "Sai realm trả cùng lỗi như sai mật khẩu.")
+            desc="Origin admin chỉ chấp nhận user realm `admin`, origin portal chỉ chấp nhận realm `portal` "
+                 "(một origin: theo header `X-ITSO-Realm`, D-58). Sai realm trả cùng lỗi như sai mật khẩu.")
     api.add("post", "/api/v1/auth/mfa/verify", "verifyMfa", "Xác minh MFA sau đăng nhập", "Auth", public=True,
             security=csrf_only, body=cref("MfaVerifyRequest"), body_example={"code": "492817", "method": "totp"},
             ok=cref("Me"), ok_example=one(me))
@@ -100,6 +100,11 @@ def auth_paths(api: Api, realm: str):
                                           "password": s(minLength=12, maxLength=200, writeOnly=True)}),
             body_example={"token": "8f1c2a7b9e3d4f6a0b5c8d2e7f1a3b6c9d0e4f7a", "email": me["user"]["email"],
                           "password": "************"}, no_content=True)
+    # Realm của /auth/*: production theo origin (host admin / portal); một origin (dev, demo) theo header.
+    for path, ops in api.paths.items():
+        if path.startswith("/api/v1/auth/"):
+            for op in ops.values():
+                op.setdefault("parameters", []).append(Api.p("Realm"))
     api.add("get", "/api/v1/system/health", "getHealth", "Kiểm tra sống", "System", public=True,
             ok=cref("Health"), ok_example=one({"status": "ok"}))
 
@@ -799,12 +804,17 @@ def common_components():
         "IdempotencyKey": qp("Idempotency-Key", {"type": "string", "format": "uuid"},
                              "Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409.", True, "header"),
         "IfMatch": qp("If-Match", {"type": "string"}, "ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412.", False, "header"),
+        "Realm": qp("X-ITSO-Realm", {"type": "string", "enum": ["admin", "portal"], "default": "portal"},
+                    "Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình "
+                    "host riêng (production), host quyết định và header bị bỏ qua (D-58).", False, "header"),
         "ContentRange": qp("Content-Range", {"type": "string", "pattern": "^bytes [0-9]+-[0-9]+/[0-9]+$"}, "Vị trí chunk.", True, "header"),
     }
     headers = {"ETag": {"description": "Phiên bản tài nguyên (spec_version).", "schema": {"type": "string"}}}
     security = {
-        "cookieSession": {"type": "apiKey", "in": "cookie", "name": "itso_session",
-                          "description": "Laravel Sanctum session, cookie Secure; HttpOnly; SameSite=Strict."},
+        "adminSession": {"type": "apiKey", "in": "cookie", "name": "itso_admin_session",
+                         "description": "Session realm admin (D-58), cookie Secure; HttpOnly; SameSite=Strict."},
+        "portalSession": {"type": "apiKey", "in": "cookie", "name": "itso_portal_session",
+                          "description": "Session realm portal (D-58), cookie Secure; HttpOnly; SameSite=Strict."},
         "csrfToken": {"type": "apiKey", "in": "header", "name": "X-XSRF-TOKEN",
                       "description": "Giá trị cookie XSRF-TOKEN, bắt buộc cho request thay đổi trạng thái."},
         "bearerToken": {"type": "http", "scheme": "bearer",
@@ -828,7 +838,7 @@ def build(realm: str) -> dict:
     api = Api(f"/api/v1/{realm}", realm)
     (admin_paths if realm == "admin" else portal_paths)(api)
     tags = sorted({t for p in api.paths.values() for op in p.values() for t in op["tags"]})
-    sec = [{"cookieSession": [], "csrfToken": []}] + ([{"bearerToken": []}] if realm == "admin" else [])
+    sec = [{f"{realm}Session": [], "csrfToken": []}] + ([{"bearerToken": []}] if realm == "admin" else [])
     doc = {
         "openapi": "3.1.0",
         "info": {"title": f"ITSO Panel {'Admin' if realm == 'admin' else 'Portal'} API", "version": "1.0.0-p1",

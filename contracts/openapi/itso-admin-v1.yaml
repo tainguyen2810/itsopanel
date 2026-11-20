@@ -13,7 +13,7 @@ servers:
 - url: https://admin.itso.local
   description: Origin admin
 security:
-- cookieSession: []
+- adminSession: []
   csrfToken: []
 - bearerToken: []
 tags:
@@ -13387,14 +13387,16 @@ paths:
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
       security: []
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/login:
     post:
       operationId: login
       summary: Đăng nhập (realm theo origin)
       tags:
       - Auth
-      description: Origin admin chỉ chấp nhận user realm `admin`, origin portal chỉ chấp nhận realm `portal`. Sai realm trả
-        cùng lỗi như sai mật khẩu.
+      description: 'Origin admin chỉ chấp nhận user realm `admin`, origin portal chỉ chấp nhận realm `portal` (một origin:
+        theo header `X-ITSO-Realm`, D-58). Sai realm trả cùng lỗi như sai mật khẩu.'
       requestBody:
         required: true
         content:
@@ -13429,6 +13431,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
       security:
       - csrfToken: []
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/logout:
     post:
       operationId: logout
@@ -13448,6 +13452,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/me:
     get:
       operationId: getMe
@@ -13492,6 +13498,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/mfa/totp:confirm:
     post:
       operationId: confirmTotp
@@ -13520,6 +13528,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/mfa/totp:enroll:
     post:
       operationId: enrollTotp
@@ -13555,6 +13565,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/mfa/verify:
     post:
       operationId: verifyMfa
@@ -13608,6 +13620,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
       security:
       - csrfToken: []
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/password:change:
     post:
       operationId: changePassword
@@ -13636,6 +13650,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/password:forgot:
     post:
       operationId: forgotPassword
@@ -13667,6 +13683,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
       security:
       - csrfToken: []
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/password:reset:
     post:
       operationId: resetPassword
@@ -13710,6 +13728,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
       security:
       - csrfToken: []
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/sessions:
     get:
       operationId: listSessions
@@ -13721,6 +13741,7 @@ paths:
       - $ref: ./common.yaml#/components/parameters/Limit
       - $ref: ./common.yaml#/components/parameters/Sort
       - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Realm
       responses:
         '200':
           description: Thành công
@@ -13770,6 +13791,7 @@ paths:
       - Auth
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/Realm
       responses:
         '204':
           description: Thành công, không có nội dung
@@ -13840,6 +13862,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/system/health:
     get:
       operationId: getHealth
@@ -13866,11 +13890,16 @@ paths:
       security: []
 components:
   securitySchemes:
-    cookieSession:
+    adminSession:
       type: apiKey
       in: cookie
-      name: itso_session
-      description: Laravel Sanctum session, cookie Secure; HttpOnly; SameSite=Strict.
+      name: itso_admin_session
+      description: Session realm admin (D-58), cookie Secure; HttpOnly; SameSite=Strict.
+    portalSession:
+      type: apiKey
+      in: cookie
+      name: itso_portal_session
+      description: Session realm portal (D-58), cookie Secure; HttpOnly; SameSite=Strict.
     csrfToken:
       type: apiKey
       in: header
