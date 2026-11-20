@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Exceptions\ApiProblem;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
@@ -23,6 +24,8 @@ final class ProblemRenderer
     public static function render(Throwable $e): JsonResponse
     {
         return match (true) {
+            $e instanceof ApiProblem => Problem::response($e->status, $e->problemCode, $e->title, $e->detail,
+                $e->errors, $e->headers),
             $e instanceof ValidationException => Problem::response(422, 'validation_failed', 'Dữ liệu không hợp lệ',
                 'Một hoặc nhiều trường không hợp lệ.', self::errors($e)),
             $e instanceof AuthenticationException => Problem::response(401, 'unauthenticated', 'Chưa đăng nhập'),
@@ -50,6 +53,7 @@ final class ProblemRenderer
             404 => ['not_found', 'Không tìm thấy'],
             409 => ['conflict', 'Xung đột'],
             412 => ['precondition_failed', 'Phiên bản đã thay đổi'],
+            419 => ['csrf_mismatch', 'CSRF token không hợp lệ'],
             423 => ['resource_locked', 'Tài nguyên đang bị khóa'],
             429 => ['rate_limited', 'Quá nhiều yêu cầu'],
             503 => ['agent_unavailable', 'Dịch vụ tạm thời không sẵn sàng'],

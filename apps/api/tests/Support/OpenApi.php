@@ -60,6 +60,12 @@ final class OpenApi
         return ['schema' => $resp['content'][$contentType]['schema'], 'contentType' => (string) $contentType, 'file' => $ctx];
     }
 
+    /** (method, path) có khai báo response `$status` trong file realm. */
+    public static function declares(string $file, string $method, string $path, int $status): bool
+    {
+        return isset(self::doc($file)['paths'][$path][$method]['responses'][(string) $status]);
+    }
+
     /** Trả về null nếu hợp lệ, ngược lại là thông báo lỗi. */
     public static function validate(string $file, mixed $schema, mixed $data): ?string
     {

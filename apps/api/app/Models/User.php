@@ -27,6 +27,8 @@ use Illuminate\Support\Carbon;
  * @property bool $must_change_password
  * @property int|null $created_by_user_id
  * @property Carbon|null $last_login_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class User extends Authenticatable
 {

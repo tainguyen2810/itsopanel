@@ -5,9 +5,9 @@
 ## Hiện tại
 
 - **Phase:** 3 — Auth, RBAC, Users, Packages, Accounts, Jobs, Audit (đang làm; Phase 2 ✓ hoàn tất và merge 2026-11-20, chờ duyệt cùng D-56/D-57)
-- **Prompt hiện tại:** 3.2 Xác thực. Người dùng yêu cầu (2026-11-20) lên kế hoạch và thực hiện Phase 3; làm hàng loạt 3.1 → 3.6, tự merge local
-- **Task đang làm:** 3.2 — bắt đầu
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-2`
+- **Prompt hiện tại:** 3.3 Phân quyền và người dùng. Người dùng yêu cầu (2026-11-20) lên kế hoạch và thực hiện Phase 3; làm hàng loạt 3.1 → 3.6, tự merge local
+- **Task đang làm:** 3.3 — bắt đầu (3.2 ✓)
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-3`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_3_PROMPTS.md`; cuối 3.6 báo cáo Phase 3 và DỪNG (không bắt đầu Phase 4)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
@@ -34,8 +34,8 @@
 Phase 3 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_3_PROMPTS.md`
 
 - ✓ 3.1 Schema Phase 3 (migrations), model, Pest trên PostgreSQL
-- ✱ 3.2 Auth theo realm, MFA, phiên, mật khẩu, API token
-- ○ 3.3 RBAC, phạm vi ADMIN, Policies, Users API
+- ✓ 3.2 Auth theo realm, MFA, phiên, mật khẩu, API token
+- ✱ 3.3 RBAC, phạm vi ADMIN, Policies, Users API
 - ○ 3.4 Jobs, mock agent, idempotency, audit, thông báo, cài đặt
 - ○ 3.5 Gói, Hosting Provisioning Service, tài khoản, API Portal
 - ○ 3.6 Nối UI vào API thật, e2e, báo cáo Phase 3
@@ -71,3 +71,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-20 | 2 / 2.7 | User Hosting Portal: contract `GET /hosting-accounts/{id}/features` (D-57 ĐỀ XUẤT, admin + portal); lớp API trung lập realm (`shared/api/realm.ts`, đường dẫn không tiền tố, kiểu theo contract Portal) nên trang hosting/website/database/file/SFTP/cron/WordPress/sao lưu/khôi phục/đăng nhập/hồ sơ/job/thông báo dùng chung `shared/`, phần chỉ Admin cắm qua slot; API giả lập Portal (`handlers/portal.ts`) chỉ trả dữ liệu account user sở hữu, job/thông báo theo user, terminal theo gói có SSH; 18 route Portal (Tổng quan usage/quota, chi tiết gói, tạo website, sao lưu 3 tab, terminal, quên mật khẩu); sửa đổi user demo không tải lại dữ liệu đang hiện, chuông thông báo đếm từ dữ liệu thật; Vitest 452, Playwright 129 | 3ab0fe1 |
 | 2026-11-20 | 2 / 2.8 | Kiểm tra tổng: 74 route axe light/dark + 390px + EN không lẫn tiếng Việt; số liệu nhất quán (5 test); 56 ảnh trang chính `docs/screenshots/phase-2/`; bản demo tĩnh; `make check` (2 bước đỏ lần đầu do môi trường/markdown, sửa và chạy lại PASS); sửa 5 lỗi a11y; báo cáo `docs/reports/phase-2.md` | b7f6bd9 |
 | 2026-11-20 | 3 / 3.1 | Migration Phase 3 sinh từ đặc tả (`database/tools/gen_migrations.py`, `make db-migrations`): 26 bảng + trigger/CHECK của extras.sql; `db-verify` kiểm file khớp đặc tả và Phase 3 → 11 áp lần lượt = itso.sql + extras.sql; 22 model Eloquent (uuid công khai, cast `text[]`), factory, RoleSeeder, hash argon2id; Pest chạy trên PostgreSQL 16 (D-59), CI/Makefile/compose cập nhật; 9 test schema | 3afe712 |
+| 2026-11-20 | 3 / 3.2 | Xác thực (D-58): contract thêm header `X-ITSO-Realm` + cookie phiên theo realm; middleware realm → cookie `itso_{realm}_session` (chạy trước StartSession), phiên bảng `sessions` có realm + `mfa_verified_at`, CSRF cookie `XSRF-TOKEN-{REALM}` → 419; login argon2id, cùng lỗi cho sai realm/khóa, khóa lũy tiến email + IP (`login_attempts`); TOTP RFC 6238 tự viết + 10 mã khôi phục argon2id, SA bắt buộc MFA, step-up 10 phút; phiên của tôi (uuid băm), đổi/quên/đặt lại mật khẩu (token SHA-256 trong cache, một lần, 60 phút, mail log); IP allowlist realm admin/api; guard API token SHA-256 + scope + CIDR; route admin/system chuyển sau đăng nhập admin. Pest 65 (42 mới) | (commit 3.2) |

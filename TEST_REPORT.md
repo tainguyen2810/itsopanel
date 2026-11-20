@@ -2,6 +2,34 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 3 / Prompt 3.2 — nhánh `phase-3`
+
+Môi trường: như 3.1 (PostgreSQL 16 + Redis 7 cục bộ).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (thêm header `X-ITSO-Realm`, scheme `adminSession`/`portalSession`) |
+| TOTP | `php artisan test tests/Unit/Auth` | PASS: 10 test — 6 vector RFC 6238 (SHA-1, 8 số), 10 vector HOTP RFC 4226, base32, cửa sổ ±1 bước, otpauth URI |
+| Auth (Feature) | `php artisan test tests/Feature/Auth` | PASS: 32 test. Mọi endpoint `/auth/*` kiểm response theo schema OpenAPI (200/204/401/409/422/429). Khóa sau 5 lần sai (429 + Retry-After, khóa tăng 1 → 2 phút, đúng mật khẩu xóa bộ đếm), khóa theo IP; sai realm = sai mật khẩu; CSRF thiếu/sai → 419 `csrf_mismatch` (cả khi đã đăng nhập); phiên admin không gọi được API portal và ngược lại (kể cả đổi tên cookie, đổi header realm); realm theo host; MFA enroll/confirm/verify, chặn dùng lại mã, mã khôi phục một lần, 429 sau 5 lần sai; SA chưa bật MFA bị chặn; step-up hết hạn sau 10 phút; danh sách/thu hồi phiên; đổi/quên/đặt lại mật khẩu (token một lần, hết hạn 60 phút); IP allowlist; API token (sai, hết hạn, CIDR, scope, user portal/khóa) |
+| Pest toàn bộ | `make test-api` | PASS: 65 test, 431 assertion |
+| Thử thật qua HTTP | `php artisan serve` + `curl` (csrf → login SA → me → admin/system/version) | PASS: cookie `XSRF-TOKEN-ADMIN`, `itso_admin_session` mã hóa; SA chưa bật MFA nhận `403 mfa_required` |
+| Lint | `make lint-api` · `make docs-check` · `make structure` | PASS (Pint, Larastan 0 lỗi) |
+
+**Test bị bỏ qua:** không.
+
+Phát hiện và sửa trong lúc test:
+
+- `ResolveRealm` (đặt tên cookie phiên theo realm) bị Laravel xếp sau `StartSession` theo middleware priority → request admin ngay sau một request portal đọc nhầm cookie portal. Thêm `ResolveRealm` vào priority trước `EncryptCookies`; test "phiên admin và portal xen kẽ" bắt được lỗi này.
+- Test giả lập trình duyệt (`tests/Support/Spa.php`) dựng lại session store và guard mỗi request để không dùng trạng thái session trong bộ nhớ của test.
+
+### Acceptance Prompt 3.2
+
+- ✓ Đăng nhập theo realm, khóa lũy tiến, argon2id, logout, me
+- ✓ MFA TOTP + mã khôi phục, SUPER_ADMIN bắt buộc MFA, step-up
+- ✓ Phiên (liệt kê, thu hồi), đổi/quên/đặt lại mật khẩu
+- ✓ IP allowlist realm admin, guard API token
+- ✓ Pest khớp OpenAPI; vector RFC 6238; khóa sau N lần sai; tách realm; CSRF 419
+
 ## 2026-11-20 — Phase 3 / Prompt 3.1 — nhánh `phase-3`
 
 Môi trường: PHP 8.3.6, Laravel 13, Pest 4; PostgreSQL 16 (cluster tạm `initdb`, database `itso` và `itso_test`) + Redis 7 chạy cục bộ.

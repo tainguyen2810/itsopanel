@@ -28,6 +28,21 @@ Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so v
 
 **Không có:** Public Provisioning API, HMAC integration với website bán hàng, webhook cho billing, endpoint order/invoice/payment.
 
+## 1a. Xác thực (D-58, hiện thực Prompt 3.2)
+
+| Mục | Cách làm |
+|---|---|
+| Realm | `/api/v1/admin/*` → admin, `/api/v1/portal/*` → portal. `/api/v1/auth/*`: host khớp `ITSO_ADMIN_HOST` / `ITSO_PORTAL_HOST` (production hai origin), ngược lại header `X-ITSO-Realm: admin\|portal` (một origin: dev, demo), mặc định portal. User chỉ được tìm trong đúng realm nên header giả mạo không mở được tài khoản realm khác |
+| Phiên | Cookie `itso_admin_session` / `itso_portal_session` (HttpOnly, SameSite=Lax), driver `itso` ghi bảng `sessions` kèm `realm`, `mfa_verified_at`. Hai SPA chung origin không ghi đè phiên của nhau. `remember=false` → cookie hết khi đóng trình duyệt |
+| CSRF | `GET /auth/csrf` gắn cookie `XSRF-TOKEN-ADMIN` / `XSRF-TOKEN-PORTAL`; mọi request ghi gửi lại giá trị cookie qua header `X-XSRF-TOKEN`. Thiếu hoặc sai → `419 csrf_mismatch` |
+| Đăng nhập | argon2id. Sai email, sai mật khẩu, sai realm, tài khoản khóa: cùng một lỗi `422` (`errors.email`). Khóa lũy tiến theo (realm, email) từ lần sai thứ 5 và theo IP từ lần thứ 20: khóa 1, 2, 4… phút (tối đa 60), trả `429 rate_limited` + `Retry-After` |
+| MFA | TOTP RFC 6238 (SHA-1, 6 số, 30 giây, lệch ±1 bước, chặn dùng lại bước đã dùng) + 10 mã khôi phục dùng một lần (băm argon2id). `enroll` trả secret một lần, `confirm` mới lưu (secret mã hóa APP_KEY). User đã bật TOTP phải `mfa/verify` sau login, nếu không mọi API khác trả `403 mfa_required`. SUPER_ADMIN chưa bật MFA: login trả `mfa_required: true, mfa_methods: []`, chỉ còn `me`, đăng ký TOTP, đăng xuất. Nhập sai quá 5 lần/phút → `429` |
+| Step-up | `POST /auth/step-up` đặt mốc xác thực lại; route nhạy cảm gắn middleware `itso.step-up` yêu cầu mốc trong 10 phút, ngược lại `403 mfa_step_up_required`. Token API không dùng được thao tác nhạy cảm |
+| Phiên của tôi | `GET /auth/sessions` (realm hiện tại, `uuid` là băm của session id, không lộ id thật), `DELETE /auth/sessions/{id}` thu hồi phiên khác (phiên hiện tại → `409`, dùng logout) |
+| Mật khẩu | `password:change` thu hồi các phiên khác. `password:forgot` luôn `204`, gửi mail (driver `log` ở dev) link `{ITSO_PORTAL_URL\|ITSO_ADMIN_URL}/reset-password?token=…&email=…`; token 64 ký tự, chỉ lưu SHA-256 trong cache, dùng một lần, hết hạn 60 phút; đặt lại xong thu hồi mọi phiên |
+| IP allowlist | Bảng `ip_allowlist`: scope `admin` áp cho realm admin (cả `/auth/*` khi realm admin), scope `api` áp thêm cho request bằng token. Danh sách trống = không giới hạn. Ngoài danh sách → `403 ip_not_allowed` |
+| API token | `Authorization: Bearer itso_…` chỉ cho realm admin; lưu SHA-256, kiểm `expires_at`, `allowed_cidrs`, user admin còn active; không cần CSRF/MFA. Route kiểm scope bằng `itso.scope:<nhóm>:read\|write` (`write` bao gồm `read`). Tạo/thu hồi token qua `/admin/api-tokens` (Prompt 3.3) |
+
 ## 2. Hosting Provisioning Service (lớp nội bộ)
 
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.

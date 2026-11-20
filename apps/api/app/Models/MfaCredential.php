@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\Bytea;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -29,6 +30,7 @@ class MfaCredential extends Model
     protected function casts(): array
     {
         return [
+            'secret_encrypted' => Bytea::class,
             'last_used_at' => 'datetime',
         ];
     }
