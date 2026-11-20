@@ -15,6 +15,7 @@ interface Props {
   description?: ReactNode;
   meta?: ReactNode;
   actions?: ReactNode;
+  nav?: ReactNode;
   tabs: DetailTab[];
 }
 

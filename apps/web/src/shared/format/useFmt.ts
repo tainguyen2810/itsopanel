@@ -9,6 +9,7 @@ import {
   formatNumber,
   formatPercent,
   formatRelative,
+  formatTime,
 } from '@/shared/i18n/format';
 
 /** Định dạng theo ngôn ngữ đang chọn (số, %, dung lượng, ngày giờ, thời gian tương đối). */
@@ -26,6 +27,7 @@ export function useFmt() {
       mb: (mb: number) => formatMegabytes(mb, l),
       date: (iso: string) => formatDate(iso, l),
       dateTime: (iso: string) => formatDateTime(iso, l),
+      time: (iso: string) => formatTime(iso, l),
       rel: (iso: string) => formatRelative(iso, l),
       opt: (iso: string | null | undefined, empty = '—') => (iso ? formatDateTime(iso, l) : empty),
     }),

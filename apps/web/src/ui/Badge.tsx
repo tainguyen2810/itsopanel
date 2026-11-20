@@ -34,6 +34,8 @@ export function Badge({
 /** Trạng thái vòng đời/job/server dùng chung (khóa trong common:status). */
 export type StatusKey =
   | 'active'
+  | 'drift'
+  | 'inSync'
   | 'pending'
   | 'provisioning'
   | 'suspended'
@@ -77,6 +79,8 @@ export type StatusKey =
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
+  drift: 'warning',
+  inSync: 'success',
   succeeded: 'success',
   online: 'success',
   pending: 'neutral',

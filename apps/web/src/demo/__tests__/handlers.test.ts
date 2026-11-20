@@ -27,7 +27,10 @@ const ID_BY_SEGMENT: Record<string, string> = {
   zones: first('dns_zones'),
   'cron-jobs': first('cron'),
 };
-const OTHER: Record<string, string> = { group: 'general' };
+const OTHER: Record<string, string> = {
+  group: 'general',
+  container: (dataset.containers as { id: string }[])[0]?.id ?? 'missing',
+};
 /** Tham số query bắt buộc theo contract. */
 const QUERY: Record<string, string> = {
   '/api/v1/admin/metrics/servers/{id}': '?metric=cpu_pct&range=24h',

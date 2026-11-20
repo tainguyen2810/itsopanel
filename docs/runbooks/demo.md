@@ -19,6 +19,8 @@ cd apps/web && pnpm preview:demo   # xem bản build demo
 - Dữ liệu: bản sao trong bộ nhớ của `contracts/examples/demo-dataset.json` (sinh bởi
   `contracts/tools/demo.py`, kiểm nhất quán bởi `check_demo.py`). Tải lại trang là về dữ liệu gốc.
 - Thao tác ghi trả `202` + Job; job tự chạy từng bước theo thời gian và hiện trong drawer theo dõi job.
+- Mô phỏng hạ tầng: thêm server thì agent "kết nối" sau 6 giây; tường lửa áp dụng an toàn tự hoàn tác nếu
+  không xác nhận trong thời hạn; terminal chỉ mô phỏng, không chạy lệnh.
 - Vai trò: nút **Demo** trên topbar chuyển người dùng mẫu. Admin: Super Admin hoặc Admin (Trần Minh, chỉ
   thấy server srv-hn-01 và account lehoa). Portal: An Phát, Phòng Marketing, Lê Hoa. Route ngoài quyền hiện
   trang 403.

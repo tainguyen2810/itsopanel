@@ -105,8 +105,8 @@
     "steps": "Steps",
     "elapsed": "Running for {{time}}",
     "track": "Job progress",
-    "done": "Job {{type}} finished",
-    "failed": "Job {{type}} failed"
+    "done": "Finished: {{type}}",
+    "failed": "Failed: {{type}}"
   },
   "breadcrumb": "Breadcrumb",
   "pagination": "Pagination",
@@ -131,7 +131,9 @@
       "create": "Database created"
     },
     "firewall": {
-      "apply": "Firewall applied"
+      "apply": "Firewall applied",
+      "confirm": "Confirm firewall",
+      "rollback": "Firewall auto-rollback"
     },
     "hosting_account": {
       "create": "Hosting account created",
@@ -151,13 +153,19 @@
     },
     "server": {
       "update": "Server updated",
-      "reboot": "Server reboot"
+      "reboot": "Server reboot",
+      "enroll": "Create server enrollment token"
     },
     "service": {
-      "restart": "Service restarted"
+      "restart": "Service restarted",
+      "start": "Start service",
+      "stop": "Stop service",
+      "reload": "Reload service"
     },
     "software": {
-      "install": "Software installed"
+      "install": "Software installed",
+      "remove": "Remove software",
+      "upgrade": "Upgrade software"
     },
     "user": {
       "update": "User updated",
@@ -171,6 +179,30 @@
     },
     "job": {
       "cancel": "Job cancelled"
+    },
+    "nginx": {
+      "update": "Update Nginx configuration"
+    },
+    "container": {
+      "start": "Start container",
+      "stop": "Stop container",
+      "restart": "Restart container"
+    },
+    "compose": {
+      "create": "Create compose project",
+      "update": "Update compose project",
+      "delete": "Delete compose project",
+      "up": "Start compose project",
+      "down": "Stop compose project",
+      "pull": "Pull compose images",
+      "validate": "Validate compose project"
+    },
+    "registry": {
+      "create": "Add Docker registry",
+      "delete": "Delete Docker registry"
+    },
+    "terminal": {
+      "open": "Open terminal"
     }
   },
   "ops": {
@@ -187,12 +219,18 @@
       "pool": {
         "apply": "Configure PHP-FPM pool",
         "remove": "Remove PHP-FPM pool"
+      },
+      "version": {
+        "install": "Install PHP version"
       }
     },
     "nginx": {
       "vhost": {
         "apply": "Apply Nginx vhost",
         "remove": "Remove Nginx vhost"
+      },
+      "global": {
+        "apply": "Apply global Nginx config"
       }
     },
     "cert": {
@@ -217,19 +255,37 @@
       "check": "Verify backup"
     },
     "service": {
-      "control": "Control service"
+      "control": "Control service",
+      "status": "Check service status"
     },
     "software": {
       "install": "Install software"
     },
     "firewall": {
-      "apply": "Apply firewall rules"
+      "apply": "Apply firewall rules",
+      "confirm": "Confirm firewall"
     },
     "wp": {
       "install": "Install WordPress",
       "update": "Update WordPress",
       "clone": "Clone to staging",
       "harden": "Harden WordPress"
+    },
+    "system": {
+      "reboot": "Reboot server",
+      "ping": "Check agent responds"
+    },
+    "docker": {
+      "container": {
+        "control": "Control container"
+      }
+    },
+    "compose": {
+      "validate": "Validate compose.yaml",
+      "apply": "Write compose config",
+      "up": "Start services",
+      "down": "Stop services",
+      "pull": "Pull images"
     }
   }
 }

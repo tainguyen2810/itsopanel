@@ -105,8 +105,8 @@
     "steps": "Các bước",
     "elapsed": "Đã chạy {{time}}",
     "track": "Theo dõi tác vụ",
-    "done": "Tác vụ {{type}} đã xong",
-    "failed": "Tác vụ {{type}} thất bại"
+    "done": "Đã xong: {{type}}",
+    "failed": "Thất bại: {{type}}"
   },
   "breadcrumb": "Đường dẫn",
   "pagination": "Phân trang",
@@ -131,7 +131,9 @@
       "create": "Tạo cơ sở dữ liệu"
     },
     "firewall": {
-      "apply": "Áp dụng tường lửa"
+      "apply": "Áp dụng tường lửa",
+      "confirm": "Xác nhận tường lửa",
+      "rollback": "Tự hoàn tác tường lửa"
     },
     "hosting_account": {
       "create": "Tạo tài khoản hosting",
@@ -151,13 +153,19 @@
     },
     "server": {
       "update": "Cập nhật máy chủ",
-      "reboot": "Khởi động lại máy chủ"
+      "reboot": "Khởi động lại máy chủ",
+      "enroll": "Tạo token thêm máy chủ"
     },
     "service": {
-      "restart": "Khởi động lại dịch vụ"
+      "restart": "Khởi động lại dịch vụ",
+      "start": "Khởi động dịch vụ",
+      "stop": "Dừng dịch vụ",
+      "reload": "Nạp lại dịch vụ"
     },
     "software": {
-      "install": "Cài phần mềm"
+      "install": "Cài phần mềm",
+      "remove": "Gỡ phần mềm",
+      "upgrade": "Nâng cấp phần mềm"
     },
     "user": {
       "update": "Cập nhật người dùng",
@@ -171,6 +179,30 @@
     },
     "job": {
       "cancel": "Hủy tác vụ"
+    },
+    "nginx": {
+      "update": "Cập nhật cấu hình Nginx"
+    },
+    "container": {
+      "start": "Khởi động container",
+      "stop": "Dừng container",
+      "restart": "Khởi động lại container"
+    },
+    "compose": {
+      "create": "Tạo compose project",
+      "update": "Cập nhật compose project",
+      "delete": "Xóa compose project",
+      "up": "Khởi động compose project",
+      "down": "Dừng compose project",
+      "pull": "Kéo image compose",
+      "validate": "Kiểm tra compose project"
+    },
+    "registry": {
+      "create": "Thêm Docker registry",
+      "delete": "Xóa Docker registry"
+    },
+    "terminal": {
+      "open": "Mở terminal"
     }
   },
   "ops": {
@@ -187,12 +219,18 @@
       "pool": {
         "apply": "Cấu hình PHP-FPM pool",
         "remove": "Gỡ PHP-FPM pool"
+      },
+      "version": {
+        "install": "Cài phiên bản PHP"
       }
     },
     "nginx": {
       "vhost": {
         "apply": "Áp dụng vhost Nginx",
         "remove": "Gỡ vhost Nginx"
+      },
+      "global": {
+        "apply": "Áp dụng cấu hình Nginx chung"
       }
     },
     "cert": {
@@ -217,19 +255,37 @@
       "check": "Kiểm chứng bản sao lưu"
     },
     "service": {
-      "control": "Điều khiển dịch vụ"
+      "control": "Điều khiển dịch vụ",
+      "status": "Kiểm tra trạng thái dịch vụ"
     },
     "software": {
       "install": "Cài phần mềm"
     },
     "firewall": {
-      "apply": "Áp dụng rule tường lửa"
+      "apply": "Áp dụng rule tường lửa",
+      "confirm": "Xác nhận tường lửa"
     },
     "wp": {
       "install": "Cài WordPress",
       "update": "Cập nhật WordPress",
       "clone": "Tạo bản staging",
       "harden": "Hardening WordPress"
+    },
+    "system": {
+      "reboot": "Khởi động lại máy chủ",
+      "ping": "Kiểm tra agent phản hồi"
+    },
+    "docker": {
+      "container": {
+        "control": "Điều khiển container"
+      }
+    },
+    "compose": {
+      "validate": "Kiểm tra compose.yaml",
+      "apply": "Ghi cấu hình compose",
+      "up": "Khởi động các service",
+      "down": "Dừng các service",
+      "pull": "Kéo image mới"
     }
   }
 }

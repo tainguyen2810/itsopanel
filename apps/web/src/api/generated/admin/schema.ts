@@ -3728,6 +3728,7 @@ export interface components {
                 ok: boolean;
                 warnings: string[];
             };
+            compose_yaml: string;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -7501,6 +7502,7 @@ export interface operations {
                      *             "ok": true,
                      *             "warnings": []
                      *           },
+                     *           "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         },
@@ -7520,6 +7522,7 @@ export interface operations {
                      *               "Service metabase không giới hạn memory"
                      *             ]
                      *           },
+                     *           "compose_yaml": "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"127.0.0.1:3000:3000\"\n    environment:\n      MB_DB_TYPE: postgres\n  postgres:\n    image: postgres:16-alpine\n    volumes:\n      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
@@ -7670,6 +7673,7 @@ export interface operations {
                      *           "ok": true,
                      *           "warnings": []
                      *         },
+                     *         "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n",
                      *         "created_at": "2026-11-18T09:30:00+07:00",
                      *         "updated_at": "2026-11-19T14:05:00+07:00"
                      *       }

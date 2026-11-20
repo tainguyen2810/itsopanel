@@ -276,28 +276,6 @@ export function registerAdminLists() {
       : ok({ group: ctx.params.group, values: s });
   });
 
-  // Trang con của server: dùng dữ liệu mẫu chung, kiểm quyền theo server.
-  const perServer: [ApiPath, string][] = [
-    ['/api/v1/admin/servers/{id}/services', 'services'],
-    ['/api/v1/admin/servers/{id}/software', 'software'],
-    ['/api/v1/admin/servers/{id}/php-versions', 'php_versions'],
-    ['/api/v1/admin/servers/{id}/firewall/rules', 'firewall_rules'],
-    ['/api/v1/admin/servers/{id}/docker/containers', 'containers'],
-    ['/api/v1/admin/servers/{id}/docker/images', 'docker_images'],
-    ['/api/v1/admin/servers/{id}/docker/volumes', 'docker_volumes'],
-    ['/api/v1/admin/servers/{id}/docker/networks', 'docker_networks'],
-  ];
-  for (const [path, key] of perServer) {
-    on('get', path, (ctx) => {
-      const deny = serverGuard(ctx);
-      return deny ?? page(ctx, ctx.db.data[key] as Row[]);
-    });
-  }
-  on(
-    'get',
-    '/api/v1/admin/servers/{id}/nginx',
-    (ctx) => serverGuard(ctx) ?? ok(ctx.db.data.nginx_global),
-  );
   on('get', '/api/v1/admin/servers/{id}/capacity', (ctx) => {
     const deny = serverGuard(ctx);
     if (deny) return deny;

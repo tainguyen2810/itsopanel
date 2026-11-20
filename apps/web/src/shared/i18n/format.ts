@@ -57,6 +57,14 @@ export function formatDateTime(iso: string | Date, locale: Locale, timeZone?: st
   }).format(new Date(iso));
 }
 
+/** "14:30" / "2:30 PM". */
+export function formatTime(iso: string | Date, locale: Locale, timeZone?: string): string {
+  return new Intl.DateTimeFormat(TAG[locale], {
+    timeStyle: 'short',
+    ...(timeZone ? { timeZone } : {}),
+  }).format(new Date(iso));
+}
+
 /** "3 phút trước" / "in 2 days". */
 export function formatRelative(iso: string | Date, locale: Locale, now: Date = new Date()): string {
   const diff = (new Date(iso).getTime() - now.getTime()) / 1000;

@@ -56,8 +56,9 @@ export function JobDrawerHost({ fetchJob }: { fetchJob: (uuid: string) => Promis
   useEffect(() => {
     if (!job || !TERMINAL.has(job.state) || announced.current === job.uuid) return;
     announced.current = job.uuid;
-    if (job.state === 'succeeded') toast.success(t('job.done', { type: job.type }));
-    else if (job.state === 'failed') toast.error(t('job.failed', { type: job.type }));
+    const type = t(`events.${job.type}` as never, { defaultValue: job.type }) as string;
+    if (job.state === 'succeeded') toast.success(t('job.done', { type }));
+    else if (job.state === 'failed') toast.error(t('job.failed', { type }));
     void qc.invalidateQueries({ predicate: (x) => x.queryKey[0] !== 'job' });
   }, [job, qc, t]);
 

@@ -12,6 +12,12 @@ export function setStepMs(ms: number) {
   stepMs = ms;
 }
 
+/** Việc chạy sau mỗi tick (vd. agent server mới "kết nối" sau khi tạo token đăng ký). */
+const tickHooks: ((db: DemoDb) => void)[] = [];
+export function onTick(fn: (db: DemoDb) => void) {
+  tickHooks.push(fn);
+}
+
 interface PendingJob {
   uuid: string;
   createdAt: number;
@@ -184,6 +190,7 @@ export class DemoDb {
         p.onDone?.(this);
       }
     }
+    for (const h of tickHooks) h(this);
   }
 }
 

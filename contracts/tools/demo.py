@@ -434,9 +434,11 @@ CONTAINERS = [
 
 COMPOSE = [
     {"uuid": u("compose", 1), "server": server_ref(0), "name": "cache", "status": "running", "services": 1,
-     "revision": 3, "validation": {"ok": True, "warnings": []}, **ts()},
+     "revision": 3, "validation": {"ok": True, "warnings": []},
+     "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n", **ts()},
     {"uuid": u("compose", 2), "server": server_ref(0), "name": "bi", "status": "stopped", "services": 2,
-     "revision": 1, "validation": {"ok": True, "warnings": ["Service metabase không giới hạn memory"]}, **ts()},
+     "revision": 1, "validation": {"ok": True, "warnings": ["Service metabase không giới hạn memory"]},
+     "compose_yaml": "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"127.0.0.1:3000:3000\"\n    environment:\n      MB_DB_TYPE: postgres\n  postgres:\n    image: postgres:16-alpine\n    volumes:\n      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n", **ts()},
 ]
 
 DOCKER_IMAGES = [{"id": "sha256:1a2b3c4d5e6f", "tags": ["redis:7.4-alpine"], "size_mb": 41.2, "created_at": T0}]

@@ -10,10 +10,12 @@ interface Props {
   /** Badge/trạng thái cạnh tiêu đề. */
   meta?: ReactNode;
   actions?: ReactNode;
+  /** Điều hướng phụ dưới tiêu đề (vd. các mục của một server). */
+  nav?: ReactNode;
 }
 
 /** Đầu trang: breadcrumb tự sinh, tiêu đề h1, mô tả, hành động. */
-export function PageHeader({ title, crumb, description, meta, actions }: Props) {
+export function PageHeader({ title, crumb, description, meta, actions, nav }: Props) {
   const crumbs = useBreadcrumbs(crumb ?? (typeof title === 'string' ? title : undefined));
   return (
     <header className="mb-5 flex flex-col gap-3">
@@ -30,6 +32,7 @@ export function PageHeader({ title, crumb, description, meta, actions }: Props) 
         </div>
         {actions !== undefined && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
+      {nav}
     </header>
   );
 }
