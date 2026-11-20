@@ -517,6 +517,8 @@ def admin_paths(api: Api):
                                  server=2 if "purge" in action else 0))
     api.add("get", "/hosting-accounts/{id}/usage", "getHostingAccountUsage", "Usage so với quota", "Accounts",
             params=idp, ok=cref("Usage"), ok_example=one(acc["usage"]))
+    api.add("get", "/hosting-accounts/{id}/features", "getHostingAccountFeatures", "Tính năng theo gói (PHP, SSH, cron, backup)",
+            "Accounts", params=idp, ok=cref("AccountFeatures"), ok_example=one(features_of(acc)))
     api.add("get", "/hosting-accounts/{id}/lifecycle-events", "listHostingAccountLifecycleEvents", "Lịch sử vòng đời",
             "Accounts", params=idp, list_=True, ok=cref("LifecycleEvent"), ok_example=page(D.LIFECYCLE))
     api.add("get", "/purge-records", "listPurgeRecords", "Yêu cầu purge đang chờ", "Accounts", list_=True,
@@ -702,6 +704,17 @@ def admin_paths(api: Api):
             ok_example=one(D.SETTINGS["general"]), step_up=True)
 
 
+
+def features_of(acc: dict) -> dict:
+    """AccountFeatures từ phiên bản gói hiện hành của account (ví dụ trong contract)."""
+    ver = next((v for v in D.PACKAGE_VERSIONS if v["package_uuid"] == acc["package"]["uuid"]
+                and v["version"] == acc["package"]["version"]), None)
+    lim = ver["limits"] if ver else next(p for p in D.PACKAGES if p["uuid"] == acc["package"]["uuid"])["limits"]
+    return {"package": acc["package"], "php_versions": lim["php_versions"], "php_workers_max": lim["php_workers_max"],
+            "ssh_allowed": lim["ssh_allowed"],
+            "cron_min_interval_min": lim["cron_min_interval_min"], "backup_quota_mb": lim["backup_quota_mb"],
+            "backup_retention": lim["backup_retention"]}
+
 # ---------------------------------------------------------------- portal
 def portal_paths(api: Api):
     jobs = JobSeq(300)
@@ -715,6 +728,9 @@ def portal_paths(api: Api):
             params=idp, ok=cref("HostingAccount"), ok_example=one(D.ACCOUNTS[0]))
     api.add("get", "/hosting-accounts/{id}/usage", "portalGetHostingAccountUsage", "Usage so với quota", "Accounts",
             params=idp, ok=cref("Usage"), ok_example=one(D.ACCOUNTS[0]["usage"]))
+    api.add("get", "/hosting-accounts/{id}/features", "portalGetHostingAccountFeatures",
+            "Tính năng theo gói (PHP, SSH, cron, backup)", "Accounts", params=idp, ok=cref("AccountFeatures"),
+            ok_example=one(features_of(D.ACCOUNTS[0])))
     resource_paths(api, "portal", jobs)
     api.add("get", "/profile", "portalGetProfile", "Hồ sơ", "Profile", ok=cref("User"), ok_example=one(D.USERS[2]))
     api.add("patch", "/profile", "portalUpdateProfile", "Đổi hồ sơ", "Profile",

@@ -18,13 +18,13 @@ import type { ColumnDef } from '@/ui/DataTable';
 import { FormField } from '@/ui/FormField';
 import { Label } from '@/ui/Label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
-import { list, send, type Row } from '../api';
-import { useAction } from '../useAction';
+import { list, send, type Row } from '@/shared/api/realm';
+import { useAction } from '@/shared/api/useAction';
 import { Mono, RowMenu, SecretDialog, useAccountFilter, useActiveAccounts } from './common';
 import { databaseSchema, dbUserSchema, type DatabaseForm, type DbUserForm } from './forms';
 
-type Db = Row<'/api/v1/admin/databases'>;
-type DbUser = Row<'/api/v1/admin/database-users'>;
+type Db = Row<'/databases'>;
+type DbUser = Row<'/database-users'>;
 const ENGINES = ['mariadb', 'mysql', 'postgresql'] as const;
 const PRIVS = [
   'ALL',
@@ -69,12 +69,11 @@ function Databases() {
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<Db | null>(null);
   const exp = useAction((d: Db) =>
-    send('POST', '/api/v1/admin/databases/{id}:export', { path: { id: d.uuid }, body: {} }),
+    send('POST', '/databases/{id}:export', { path: { id: d.uuid }, body: {} }),
   );
-  const remove = useAction(
-    (d: Db) => send('DELETE', '/api/v1/admin/databases/{id}', { path: { id: d.uuid } }),
-    { onSuccess: () => setRemoving(null) },
-  );
+  const remove = useAction((d: Db) => send('DELETE', '/databases/{id}', { path: { id: d.uuid } }), {
+    onSuccess: () => setRemoving(null),
+  });
   const columns: ColumnDef<Db, unknown>[] = [
     {
       id: 'name',
@@ -124,7 +123,7 @@ function Databases() {
           </Button>
         }
         queryKey={['admin', 'databases']}
-        fetch={(q) => list('/api/v1/admin/databases', q)}
+        fetch={(q) => list('/databases', q)}
         filters={[accountFilter]}
         columns={columns}
         getRowId={(d) => d.uuid}
@@ -174,10 +173,9 @@ function CreateDatabase({
     if (!o) reset(empty);
     onOpenChange(o);
   };
-  const create = useAction(
-    (v: DatabaseForm) => send('POST', '/api/v1/admin/databases', { body: v }),
-    { onSuccess: () => close(false) },
-  );
+  const create = useAction((v: DatabaseForm) => send('POST', '/databases', { body: v }), {
+    onSuccess: () => close(false),
+  });
   return (
     <FormDialog
       open={open}
@@ -243,14 +241,14 @@ function Users() {
   const [secret, setSecret] = useState<string | null>(null);
   const rotate = useAction(
     (u: DbUser) =>
-      send<{ secret: string }>('POST', '/api/v1/admin/database-users/{id}:rotate-password', {
+      send<{ secret: string }>('POST', '/database-users/{id}:rotate-password', {
         path: { id: u.uuid },
         body: {},
       }),
     { onSuccess: (r) => setSecret(r.secret) },
   );
   const remove = useAction(
-    (u: DbUser) => send('DELETE', '/api/v1/admin/database-users/{id}', { path: { id: u.uuid } }),
+    (u: DbUser) => send('DELETE', '/database-users/{id}', { path: { id: u.uuid } }),
     { onSuccess: () => setRemoving(null) },
   );
   const columns: ColumnDef<DbUser, unknown>[] = [
@@ -309,7 +307,7 @@ function Users() {
           </Button>
         }
         queryKey={['admin', 'database-users']}
-        fetch={(q) => list('/api/v1/admin/database-users', q)}
+        fetch={(q) => list('/database-users', q)}
         filters={[accountFilter]}
         columns={columns}
         getRowId={(u) => u.uuid}
@@ -355,7 +353,7 @@ function CreateUser({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
   };
   const create = useAction(
     (v: DbUserForm) =>
-      send('POST', '/api/v1/admin/database-users', {
+      send('POST', '/database-users', {
         body: {
           hosting_account_uuid: v.hosting_account_uuid,
           engine: v.engine,
@@ -417,8 +415,7 @@ function GrantsDialog({ user, onClose }: { user: DbUser; onClose: () => void }) 
   );
   const q = useQuery({
     queryKey: ['admin', 'databases', { filters: { hosting_account: user.hosting_account.uuid } }],
-    queryFn: () =>
-      list('/api/v1/admin/databases', { filters: { hosting_account: user.hosting_account.uuid } }),
+    queryFn: () => list('/databases', { filters: { hosting_account: user.hosting_account.uuid } }),
   });
   // PostgreSQL và MariaDB/MySQL là hai máy chủ CSDL khác nhau: chỉ cấp quyền cùng loại.
   const pg = user.engine === 'postgresql';
@@ -435,7 +432,7 @@ function GrantsDialog({ user, onClose }: { user: DbUser; onClose: () => void }) 
     });
   const save = useAction(
     () =>
-      send('PUT', '/api/v1/admin/database-users/{id}/grants', {
+      send('PUT', '/database-users/{id}/grants', {
         path: { id: user.uuid },
         body: {
           grants: Object.entries(grants)

@@ -10,7 +10,7 @@ const OUT = process.env.SCREENSHOT_DIR
 const PAGES = [
   { name: 'design', path: '/design/', ready: '#sec-jobs' },
   { name: 'admin-shell', path: '/admin/', ready: '[data-testid="status-Agent"][data-state="ok"]' },
-  { name: 'portal-shell', path: '/portal/', ready: '[data-testid="status-API"][data-state="ok"]' },
+  { name: 'portal-shell', path: '/portal/', ready: '[data-testid="portal-account"]' },
 ] as const;
 const WIDTHS = [1440, 390] as const;
 const THEMES = ['light', 'dark'] as const;

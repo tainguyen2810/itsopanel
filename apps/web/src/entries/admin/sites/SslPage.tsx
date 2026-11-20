@@ -11,8 +11,8 @@ import { StatCard } from '@/ui/StatCard';
 import { useQuery } from '@tanstack/react-query';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
-import { RowMenu } from './common';
-import { certDaysLeft } from './forms';
+import { RowMenu } from '@/shared/hosting/pages/common';
+import { certDaysLeft } from '@/shared/hosting/pages/forms';
 
 type Cert = Row<'/api/v1/admin/certificates'>;
 const STATUSES = ['valid', 'expiring', 'expired', 'pending', 'failed'] as const;

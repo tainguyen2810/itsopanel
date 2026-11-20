@@ -12,12 +12,12 @@ import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import type { ColumnDef } from '@/ui/DataTable';
-import { list, send, type Row } from '../api';
-import { useAction } from '../useAction';
-import { RowMenu, useAccountFilter, useWebsites } from './common';
+import { list, send, type Row } from '@/shared/api/realm';
+import { useAction } from '@/shared/api/useAction';
+import { RowMenu, useAccountFilter, useRealmLinks, useWebsites } from './common';
 import { wpInstallSchema, type WpInstallForm } from './forms';
 
-type Wp = Row<'/api/v1/admin/wordpress/sites'>;
+type Wp = Row<'/wordpress/sites'>;
 type Action = 'update' | 'clone-staging' | 'harden';
 const HARDENING = [
   'xmlrpc_disabled',
@@ -30,18 +30,15 @@ export default function WordPressPage() {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const accountFilter = useAccountFilter();
+  const links = useRealmLinks();
   const [installing, setInstalling] = useState(false);
   const [confirm, setConfirm] = useState<{ wp: Wp; action: Action } | null>(null);
   const act = useAction(
     ({ wp, action }: { wp: Wp; action: Action }) =>
-      send(
-        'POST',
-        `/api/v1/admin/wordpress/sites/{id}:${action}` as '/api/v1/admin/wordpress/sites/{id}:update',
-        {
-          path: { id: wp.uuid },
-          body: {},
-        },
-      ),
+      send('POST', `/wordpress/sites/{id}:${action}` as '/wordpress/sites/{id}:update', {
+        path: { id: wp.uuid },
+        body: {},
+      }),
     { onSuccess: () => setConfirm(null) },
   );
   const outdated = (w: Wp) =>
@@ -54,7 +51,7 @@ export default function WordPressPage() {
       cell: ({ row }) => (
         <div className="min-w-0">
           <AppLink
-            href={`/admin/websites/${row.original.website.uuid}`}
+            href={links.website(row.original.website.uuid)}
             className="font-medium break-all hover:underline"
           >
             {row.original.website.primary_domain}
@@ -164,7 +161,7 @@ export default function WordPressPage() {
           </Button>
         }
         queryKey={['admin', 'wordpress']}
-        fetch={(q) => list('/api/v1/admin/wordpress/sites', q)}
+        fetch={(q) => list('/wordpress/sites', q)}
         filters={[accountFilter]}
         columns={columns}
         getRowId={(w) => w.uuid}
@@ -206,12 +203,9 @@ function Install({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bool
     if (!o) reset(empty);
     onOpenChange(o);
   };
-  const install = useAction(
-    (v: WpInstallForm) => send('POST', '/api/v1/admin/wordpress/sites', { body: v }),
-    {
-      onSuccess: () => close(false),
-    },
-  );
+  const install = useAction((v: WpInstallForm) => send('POST', '/wordpress/sites', { body: v }), {
+    onSuccess: () => close(false),
+  });
   return (
     <FormDialog
       open={open}

@@ -178,7 +178,10 @@
     "verify": "Xác nhận",
     "mfaFailed": "Mã không đúng",
     "useRecovery": "Dùng mã khôi phục",
-    "useTotp": "Dùng ứng dụng xác thực"
+    "useTotp": "Dùng ứng dụng xác thực",
+    "portalArea": "Hosting",
+    "portalLoginHint": "Đăng nhập để quản lý website, database, file và sao lưu của bạn.",
+    "forgot": "Quên mật khẩu?"
   },
   "install": {
     "title": "Cài đặt ITSO Panel",
@@ -2172,5 +2175,69 @@
       "mfa": "MFA quản trị viên là bắt buộc",
       "scopes": "Chọn ít nhất một quyền"
     }
+  },
+  "pt": {
+    "overview": "Tổng quan",
+    "hello": "Xin chào, {{name}}",
+    "overviewHint": "Mức dùng so với quota của gói, cảnh báo và các thao tác gần đây.",
+    "warnings": "Cảnh báo",
+    "quickLinks": "Lối tắt",
+    "quick": {
+      "websites": "Website",
+      "databases": "Database",
+      "files": "Quản lý file",
+      "backups": "Sao lưu"
+    },
+    "noAccounts": "Bạn chưa có gói hosting nào",
+    "noAccountsHint": "Liên hệ quản trị để được cấp tài khoản hosting.",
+    "usageHint": "Đo lần cuối theo agent trên máy chủ.",
+    "viewAccount": "Chi tiết {{name}}",
+    "details": "Chi tiết",
+    "recentJobs": "Thao tác gần đây",
+    "noJobs": "Chưa có thao tác nào.",
+    "account": "Gói hosting của tôi",
+    "accountHint": "Gói {{name}}. Giới hạn do quản trị đặt; cần nâng gói thì liên hệ quản trị.",
+    "usage": "Mức dùng tài nguyên",
+    "websites": "Website",
+    "noWebsites": "Chưa có website nào.",
+    "info": "Thông tin",
+    "package": "Gói",
+    "home": "Thư mục home",
+    "since": "Ngày tạo",
+    "features": "Tính năng của gói",
+    "yes": "Có",
+    "no": "Không",
+    "cronMin": "Cron chạy dày nhất",
+    "backupQuota": "Dung lượng sao lưu",
+    "backupRetention": "Giữ bản sao lưu",
+    "units": {
+      "daily": "hằng ngày",
+      "weekly": "hằng tuần",
+      "monthly": "hằng tháng"
+    },
+    "backups": "Sao lưu",
+    "backupsHint": "Bản sao lưu của các gói hosting của bạn. Khôi phục chạy thành job dưới UID của account.",
+    "backupTabs": {
+      "history": "Bản sao lưu",
+      "restore": "Khôi phục",
+      "restores": "Lịch sử khôi phục"
+    },
+    "terminal": "Terminal",
+    "terminalHint": "Shell của account (không có quyền root), mọi phiên được ghi nhật ký.",
+    "terminalHost": "hosting",
+    "noSsh": "Gói hosting này không có SSH",
+    "noSshHint": "Dùng File Manager hoặc SFTP, hoặc liên hệ quản trị để đổi sang gói có SSH.",
+    "forgotTitle": "Quên mật khẩu",
+    "forgotHint": "Nhập email đăng nhập, chúng tôi gửi link đặt lại mật khẩu.",
+    "forgotSubmit": "Gửi link đặt lại",
+    "forgotSent": "Đã gửi yêu cầu",
+    "forgotSentHint": "Nếu email có tài khoản, link đặt lại sẽ đến trong vài phút. Link có hạn 30 phút.",
+    "backToLogin": "Quay lại đăng nhập",
+    "unread_one": "{{count}} thông báo chưa đọc",
+    "unread_other": "{{count}} thông báo chưa đọc",
+    "retention_one": "{{count}} bản {{unit}}",
+    "retention_other": "{{count}} bản {{unit}}",
+    "minutes_one": "{{count}} phút/lần",
+    "minutes_other": "{{count}} phút/lần"
   }
 }

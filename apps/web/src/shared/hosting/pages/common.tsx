@@ -14,16 +14,50 @@ import {
 } from '@/ui/DropdownMenu';
 import { Label } from '@/ui/Label';
 import { Select } from '@/ui/Select';
-import { list, type Row } from '../api';
+import { useParams } from '@tanstack/react-router';
+import { get, list, type Row } from '@/shared/api/realm';
+import { useRoutesInfo } from '@/shared/routing/RoutesContext';
 
-export type Account = Row<'/api/v1/admin/hosting-accounts'>;
-export type Website = Row<'/api/v1/admin/websites'>;
+export type Account = Row<'/hosting-accounts'>;
+export type Website = Row<'/websites'>;
+
+/** `$id` của route hiện tại. */
+export function useRouteId(): string {
+  return (useParams({ strict: false }) as { id: string }).id;
+}
+
+/**
+ * Đường dẫn theo realm cho trang dùng chung: Portal không có trang server/gói, account nằm ở
+ * `/portal/accounts/:id`. `isAdmin` bật phần chỉ Admin có (cột server, WAF…).
+ */
+export function useRealmLinks() {
+  const { realm, basepath } = useRoutesInfo();
+  return {
+    realm,
+    base: basepath,
+    isAdmin: realm === 'admin',
+    website: (id: string) => `${basepath}/websites/${id}`,
+    account: (id: string) =>
+      realm === 'admin' ? `${basepath}/hosting-accounts/${id}` : `${basepath}/accounts/${id}`,
+    files: (account: string) => `${basepath}/files?account=${account}`,
+    job: (id: string) => `${basepath}/jobs/${id}`,
+  };
+}
+
+/** Tính năng theo gói hiện hành của account (PHP, SSH, cron, backup) — D-57. */
+export function useFeatures(account: string | undefined) {
+  return useQuery({
+    queryKey: ['features', account],
+    queryFn: () => get('/hosting-accounts/{id}/features', { path: { id: account ?? '' } }),
+    enabled: account !== undefined && account !== '',
+  });
+}
 
 /** Tài khoản hosting đang hoạt động trong phạm vi người dùng (dùng cho ô chọn ở các form). */
 export function useActiveAccounts(enabled = true) {
   const q = useQuery({
     queryKey: ['admin', 'accounts', 'active'],
-    queryFn: () => list('/api/v1/admin/hosting-accounts'),
+    queryFn: () => list('/hosting-accounts'),
     enabled,
   });
   const accounts = (q.data ?? []).filter((a) => a.lifecycle_state === 'active');
@@ -39,10 +73,7 @@ export function useWebsites(account?: string, enabled = true) {
   const q = useQuery({
     queryKey: ['admin', 'websites', 'options', account ?? ''],
     queryFn: () =>
-      list(
-        '/api/v1/admin/websites',
-        account ? { filters: { hosting_account: account } } : undefined,
-      ),
+      list('/websites', account ? { filters: { hosting_account: account } } : undefined),
     enabled,
   });
   return {

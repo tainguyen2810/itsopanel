@@ -506,8 +506,56 @@ function registerBackups() {
     });
   });
 
+  on('delete', P('/backup-snapshots/{id}'), (ctx) => {
+    const deny = saOnly(ctx);
+    if (deny) return deny;
+    const s = snapshotOf(ctx);
+    if (isReply(s)) return s;
+    const until = lockedUntil(ctx.db, s);
+    if (until)
+      return conflict(
+        `Snapshot nằm trên đích bất biến, chỉ xóa được sau ${until.slice(0, 10)}.`,
+        'immutable_locked',
+      );
+    if (s.tags.includes('pre-purge'))
+      return conflict(
+        'Snapshot cuối trước khi purge được giữ theo chính sách, không xóa tay.',
+        'immutable_locked',
+      );
+    return startJob(ctx, {
+      type: 'backup.snapshot.delete',
+      resource: { type: 'backup_snapshot', uuid: s.uuid },
+      ops: ['backup.forget'],
+      server: SERVER_HN(ctx.db),
+      onDone: (db) => {
+        db.data.snapshots = db.data.snapshots.filter((x) => x.uuid !== s.uuid);
+      },
+    });
+  });
+
+  on('post', P('/backup-snapshots/{id}:verify'), (ctx) => {
+    const s = snapshotOf(ctx);
+    if (isReply(s)) return s;
+    return startJob(ctx, {
+      type: 'backup.snapshot.verify',
+      resource: { type: 'backup_snapshot', uuid: s.uuid },
+      ops: ['backup.restore_test'],
+      server: SERVER_HN(ctx.db),
+      onDone: (db) => {
+        s.verified_at = db.now();
+      },
+    });
+  });
+}
+
+/**
+ * Backup thủ công, duyệt snapshot, link tải và khôi phục: Admin (trong phạm vi) và Portal (account
+ * của chính mình) dùng chung handler.
+ */
+export function registerBackupAccess(realm: 'admin' | 'portal') {
+  const R = (p: string) => `/api/v1/${realm}${p}` as Parameters<typeof on>[1];
   // Backup thủ công một account (ADMIN trong phạm vi được phép).
-  on('post', P('/backups'), (ctx) => {
+  on('post', R('/backups'), (ctx) => {
     const b = body<S['BackupRequest']>(ctx);
     const v = visibility(ctx.db, ctx.actor);
     const a = ctx.db.data.accounts.find((x) => x.uuid === b.hosting_account_uuid);
@@ -549,34 +597,7 @@ function registerBackups() {
     });
   });
 
-  on('delete', P('/backup-snapshots/{id}'), (ctx) => {
-    const deny = saOnly(ctx);
-    if (deny) return deny;
-    const s = snapshotOf(ctx);
-    if (isReply(s)) return s;
-    const until = lockedUntil(ctx.db, s);
-    if (until)
-      return conflict(
-        `Snapshot nằm trên đích bất biến, chỉ xóa được sau ${until.slice(0, 10)}.`,
-        'immutable_locked',
-      );
-    if (s.tags.includes('pre-purge'))
-      return conflict(
-        'Snapshot cuối trước khi purge được giữ theo chính sách, không xóa tay.',
-        'immutable_locked',
-      );
-    return startJob(ctx, {
-      type: 'backup.snapshot.delete',
-      resource: { type: 'backup_snapshot', uuid: s.uuid },
-      ops: ['backup.forget'],
-      server: SERVER_HN(ctx.db),
-      onDone: (db) => {
-        db.data.snapshots = db.data.snapshots.filter((x) => x.uuid !== s.uuid);
-      },
-    });
-  });
-
-  on('get', P('/backup-snapshots/{id}/browse'), (ctx) => {
+  on('get', R('/backup-snapshots/{id}/browse'), (ctx) => {
     const s = snapshotOf(ctx);
     if (isReply(s)) return s;
     const q = (ctx.query.get('path') ?? '.').replace(/\/+$/, '');
@@ -593,7 +614,7 @@ function registerBackups() {
     return page(ctx, rows, { sort: 'name' });
   });
 
-  on('post', P('/backup-snapshots/{id}:download-link'), (ctx) => {
+  on('post', R('/backup-snapshots/{id}:download-link'), (ctx) => {
     const s = snapshotOf(ctx);
     if (isReply(s)) return s;
     ctx.db.audit({
@@ -608,21 +629,7 @@ function registerBackups() {
     });
   });
 
-  on('post', P('/backup-snapshots/{id}:verify'), (ctx) => {
-    const s = snapshotOf(ctx);
-    if (isReply(s)) return s;
-    return startJob(ctx, {
-      type: 'backup.snapshot.verify',
-      resource: { type: 'backup_snapshot', uuid: s.uuid },
-      ops: ['backup.restore_test'],
-      server: SERVER_HN(ctx.db),
-      onDone: (db) => {
-        s.verified_at = db.now();
-      },
-    });
-  });
-
-  on('post', P('/restores'), (ctx) => {
+  on('post', R('/restores'), (ctx) => {
     const b = body<S['RestoreRequest']>(ctx);
     const v = visibility(ctx.db, ctx.actor);
     const s = ctx.db.data.snapshots.find((x) => x.uuid === b.snapshot_uuid);
@@ -1237,6 +1244,7 @@ export function settingsError(group: string, v: Record<string, unknown>): string
 }
 
 export function registerGovernance() {
+  registerBackupAccess('admin');
   registerSecurity();
   registerBackups();
   registerUsers();

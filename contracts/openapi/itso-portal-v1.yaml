@@ -2852,6 +2852,56 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+  /api/v1/portal/hosting-accounts/{id}/features:
+    get:
+      operationId: portalGetHostingAccountFeatures
+      summary: Tính năng theo gói (PHP, SSH, cron, backup)
+      tags:
+      - Accounts
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/AccountFeatures
+                required:
+                - data
+              example:
+                data:
+                  package:
+                    uuid: 01938a03-0002-7000-8000-000003000002
+                    code: business
+                    name: Business
+                    version: 1
+                  php_versions:
+                  - '8.1'
+                  - '8.2'
+                  - '8.3'
+                  php_workers_max: 10
+                  ssh_allowed: true
+                  cron_min_interval_min: 5
+                  backup_quota_mb: 40960
+                  backup_retention:
+                    daily: 7
+                    weekly: 4
+                    monthly: 3
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
   /api/v1/portal/hosting-accounts/{id}/files:
     get:
       operationId: portalListFiles

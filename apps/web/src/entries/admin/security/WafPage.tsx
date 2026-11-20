@@ -11,7 +11,7 @@ import { DataTable } from '@/ui/DataTable';
 import { StatCard } from '@/ui/StatCard';
 import { list, send } from '../api';
 import { useAction } from '../useAction';
-import type { Website } from '../sites/common';
+import type { Website } from '@/shared/hosting/pages/common';
 import { SecurityNav, useEventColumns } from './common';
 
 /** WAF (ModSecurity + OWASP CRS) theo từng website PHP; cấu hình chi tiết ở tab WAF của website. */

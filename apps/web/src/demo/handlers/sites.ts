@@ -4,7 +4,16 @@ import { contentError, PROXIABLE, type DnsType } from '@/shared/hosting/dns';
 import { isInside, isValidName, joinPath, normalizePath, parentPath } from '@/shared/hosting/paths';
 import type { DemoDb } from '../db';
 import { page } from '../list';
-import { created, noContent, ok, on, problem, type ApiPath, type Ctx, type Reply } from '../router';
+import {
+  created,
+  noContent,
+  ok,
+  on as onRoute,
+  problem,
+  type ApiPath,
+  type Ctx,
+  type Reply,
+} from '../router';
 import { canSeeAccount, visibility } from '../scope';
 import { actorRef, startJob } from './writes';
 
@@ -29,7 +38,7 @@ const DB_NAME = /^[a-z][a-z0-9_]{0,63}$/;
 const NGX_PID = ['2211', '2211'].join('#');
 const SIZE = /^[0-9]{1,5}[kmg]?$/;
 
-/** Đường dẫn API theo realm (admin trước; portal dùng lại ở Prompt 2.7). */
+/** Đường dẫn API theo realm (Admin và Portal dùng chung handler, lọc theo phạm vi người gọi). */
 const at = (realm: string, p: string) => `/api/v1/${realm}${p}` as ApiPath;
 
 function accountById(ctx: Ctx, uuid: string | undefined): Account | Reply {
@@ -326,8 +335,14 @@ const sha = () =>
     .slice(0, 7);
 
 /** Mock module Hosting II: website, domain, SSL, Nginx/PHP/WAF, log, DB, file, SFTP/SSH, DNS, cron, WordPress, Git. */
-export function registerSites(realm: 'admin' = 'admin') {
+/** Phần chỉ Admin có (DNS, WAF, quét mã độc theo yêu cầu): Portal không đăng ký. */
+const ADMIN_ONLY = /^\/api\/v1\/portal\/(dns\/|websites\/\{id\}\/(waf|scans))/;
+
+export function registerSites(realm: 'admin' | 'portal' = 'admin') {
   const P = (p: string) => at(realm, p);
+  const on: typeof onRoute = (method, path, fn) => {
+    if (!ADMIN_ONLY.test(path)) onRoute(method, path, fn);
+  };
 
   // ============================================================ website
   on('post', P('/websites'), (ctx) => {

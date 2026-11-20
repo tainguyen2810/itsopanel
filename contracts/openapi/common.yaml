@@ -642,6 +642,42 @@ components:
       - used
       - limit
       additionalProperties: false
+    AccountFeatures:
+      type: object
+      properties:
+        package:
+          $ref: '#/components/schemas/PackageRef'
+        php_versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhpVersion'
+        php_workers_max:
+          type: integer
+          minimum: 1
+        ssh_allowed:
+          type: boolean
+        cron_min_interval_min:
+          type: integer
+          minimum: 1
+        backup_quota_mb:
+          type: integer
+          minimum: 0
+        backup_retention:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      required:
+      - package
+      - php_versions
+      - php_workers_max
+      - ssh_allowed
+      - cron_min_interval_min
+      - backup_quota_mb
+      - backup_retention
+      additionalProperties: false
+      description: Tính năng theo phiên bản gói hiện hành của account (đã áp limits_override); tập con an toàn cho Portal
+        (D-57).
     Usage:
       type: object
       properties:

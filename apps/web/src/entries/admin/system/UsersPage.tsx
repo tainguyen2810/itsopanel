@@ -11,7 +11,7 @@ import type { ColumnDef } from '@/ui/DataTable';
 import { Avatar } from '@/ui/Feedback';
 import { list, send } from '../api';
 import { useAction } from '../useAction';
-import { RowMenu } from '../sites/common';
+import { RowMenu } from '@/shared/hosting/pages/common';
 import { CreateUserDialog, ImpersonateDialog, useUserPolicy, type User } from './users';
 
 type Act = 'lock' | 'unlock' | 'reset-mfa';

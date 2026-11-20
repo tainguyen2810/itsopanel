@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BellOff, CheckCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useRoutesInfo } from '@/shared/routing/RoutesContext';
 import { useFmt } from '@/shared/format/useFmt';
 import { PageHeader } from '@/shared/page/PageHeader';
 import { ErrorState, TableSkeleton } from '@/shared/page/states';
@@ -13,12 +14,12 @@ import { Checkbox, Switch } from '@/ui/Checkbox';
 import { EmptyState } from '@/ui/Feedback';
 import { Label } from '@/ui/Label';
 import { Tabs, TabsList, TabsTrigger } from '@/ui/Tabs';
-import { get, list, send, type Data, type Row } from '../api';
-import { useAction } from '../useAction';
+import { get, list, send, type Data, type Row } from '@/shared/api/realm';
+import { useAction } from '@/shared/api/useAction';
 import { cn } from '@/shared/lib/utils';
 
-type Note = Row<'/api/v1/admin/notifications'>;
-type Prefs = Data<'/api/v1/admin/notification-preferences'>;
+type Note = Row<'/notifications'>;
+type Prefs = Data<'/notification-preferences'>;
 const CHANNELS = ['email', 'telegram', 'in_app'] as const;
 const EVENTS = [
   'backup.failed',
@@ -28,22 +29,24 @@ const EVENTS = [
   'alert.firing',
 ] as const;
 
-/** Đường dẫn trong thông báo là đường dẫn của Admin Panel (không có tiền tố /admin). */
-const adminHref = (link: string) => (link.startsWith('/admin') ? link : `/admin${link}`);
+/** Đường dẫn trong thông báo không kèm tiền tố realm (`/websites/…`): ghép với basepath. */
+const linkHref = (base: string, link: string) =>
+  link.startsWith('/admin/') || link.startsWith('/portal/') ? link : `${base}${link}`;
 
 export default function NotificationsPage() {
   const { t } = useTranslation('admin');
+  const { basepath } = useRoutesInfo();
   const fmt = useFmt();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const q = useQuery({
     queryKey: ['admin', 'notifications'],
-    queryFn: () => list('/api/v1/admin/notifications'),
+    queryFn: () => list('/notifications'),
   });
   const read = useAction(
-    (n: Note) => send('POST', '/api/v1/admin/notifications/{id}:read', { path: { id: n.uuid } }),
+    (n: Note) => send('POST', '/notifications/{id}:read', { path: { id: n.uuid } }),
     { invalidate: [['admin', 'notifications']] },
   );
-  const readAll = useAction(() => send('POST', '/api/v1/admin/notifications:read-all'), {
+  const readAll = useAction(() => send('POST', '/notifications:read-all'), {
     success: t('notif.allRead'),
     invalidate: [['admin', 'notifications']],
   });
@@ -105,7 +108,7 @@ export default function NotificationsPage() {
                       <SeverityBadge severity={n.severity} />
                       {n.link ? (
                         <AppLink
-                          href={adminHref(n.link)}
+                          href={linkHref(basepath, n.link)}
                           className="wrap-anywhere hover:underline"
                           onClick={() => n.read_at === null && read.mutate(n)}
                         >
@@ -143,7 +146,7 @@ export default function NotificationsPage() {
 function PreferencesCard() {
   const q = useQuery({
     queryKey: ['admin', 'notification-prefs'],
-    queryFn: () => get('/api/v1/admin/notification-preferences'),
+    queryFn: () => get('/notification-preferences'),
   });
   if (!q.data)
     return (
@@ -162,7 +165,7 @@ function PreferencesForm({ initial }: { initial: Prefs }) {
   const [draft, setDraft] = useState<Prefs>(() => structuredClone(initial));
   const save = useAction(
     (p: Prefs) =>
-      send('PATCH', '/api/v1/admin/notification-preferences', {
+      send('PATCH', '/notification-preferences', {
         body: p,
         headers: { 'If-Match': `"${p.updated_at}"` },
       }),

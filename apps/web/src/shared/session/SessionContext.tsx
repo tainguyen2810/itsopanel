@@ -39,8 +39,9 @@ export function SessionProvider({ realm, children }: { realm: Realm; children: R
       personas: PERSONAS[realm],
       switchTo: (id) => {
         setPersona(realm, id);
-        // Dữ liệu phụ thuộc phạm vi người dùng: xóa cache để tải lại theo vai trò mới.
-        qc.clear();
+        // Dữ liệu phụ thuộc phạm vi người dùng: bỏ dữ liệu cũ và tải lại theo người dùng mới.
+        // (clear() chỉ xóa cache, trang đang mở vẫn giữ dữ liệu của người trước tới khi remount.)
+        void qc.resetQueries();
       },
       can: (roles) => roles === undefined || roles.includes(user.role),
     };

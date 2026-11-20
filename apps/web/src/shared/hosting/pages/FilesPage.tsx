@@ -30,11 +30,11 @@ import { EmptyState } from '@/ui/Feedback';
 import { Input, Textarea } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { Select } from '@/ui/Select';
-import { get, list, send, type Row } from '../api';
-import { errorText, useAction } from '../useAction';
+import { get, list, send, type Row } from '@/shared/api/realm';
+import { errorText, useAction } from '@/shared/api/useAction';
 import { AccountSelect, RowMenu, useActiveAccounts } from './common';
 
-type Entry = Row<'/api/v1/admin/hosting-accounts/{id}/files'>;
+type Entry = Row<'/hosting-accounts/{id}/files'>;
 type Op = 'mkdir' | 'move' | 'copy' | 'delete' | 'chmod' | 'compress' | 'extract';
 
 export default function FilesPage() {
@@ -82,7 +82,7 @@ function useDir(account: string, path: string, enabled = true) {
   return useQuery({
     queryKey: filesKey(account, path),
     queryFn: () =>
-      list('/api/v1/admin/hosting-accounts/{id}/files', undefined, {
+      list('/hosting-accounts/{id}/files', undefined, {
         path: { id: account },
         query: { path },
       }),
@@ -126,7 +126,7 @@ function Browser({
 
   const download = async (p: string) => {
     try {
-      const r = await get('/api/v1/admin/hosting-accounts/{id}/files/download', {
+      const r = await get('/hosting-accounts/{id}/files/download', {
         path: { id: account },
         query: { path: p },
       });
@@ -144,13 +144,13 @@ function Browser({
     try {
       const s = await send<{ uuid: string; size: number }>(
         'POST',
-        '/api/v1/admin/hosting-accounts/{id}/files/uploads',
+        '/hosting-accounts/{id}/files/uploads',
         {
           path: { id: account },
           body: { path: target, size: Math.max(1, f.size), overwrite: false },
         },
       );
-      await send('PATCH', '/api/v1/admin/hosting-accounts/{id}/files/uploads/{upload}', {
+      await send('PATCH', '/hosting-accounts/{id}/files/uploads/{upload}', {
         path: { id: account, upload: s.uuid },
         body: f,
         headers: {
@@ -519,7 +519,7 @@ function OperateDialog({
   }
   const run = useAction(
     () =>
-      send('POST', '/api/v1/admin/hosting-accounts/{id}/files:operate', {
+      send('POST', '/hosting-accounts/{id}/files:operate', {
         path: { id: account },
         body: {
           op,
@@ -607,7 +607,7 @@ function Editor({
   const q = useQuery({
     queryKey: ['admin', 'file', account, path],
     queryFn: () =>
-      get('/api/v1/admin/hosting-accounts/{id}/files/content', {
+      get('/hosting-accounts/{id}/files/content', {
         path: { id: account },
         query: { path },
       }),
@@ -617,7 +617,7 @@ function Editor({
   const [conflict, setConflict] = useState(false);
   const save = useAction(
     () =>
-      send('PUT', '/api/v1/admin/hosting-accounts/{id}/files/content', {
+      send('PUT', '/hosting-accounts/{id}/files/content', {
         path: { id: account },
         body: {
           path,

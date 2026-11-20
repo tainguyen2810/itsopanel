@@ -23,3 +23,9 @@ export function useRoutesInfo(): RoutesInfo {
   if (!v) throw new Error('useRoutesInfo cần RoutesContext');
   return v;
 }
+
+/** Đường dẫn trang chủ của realm (Admin: /dashboard, Portal: /). */
+export function useHomePath(): string {
+  const { defs, homeId } = useRoutesInfo();
+  return defs.find((d) => d.id === homeId)?.path ?? '/';
+}

@@ -30,7 +30,7 @@ import { FormField } from '@/ui/FormField';
 import { Select } from '@/ui/Select';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
-import { RowMenu } from './common';
+import { RowMenu } from '@/shared/hosting/pages/common';
 
 type Zone = Row<'/api/v1/admin/dns/zones'>;
 type Rec = Row<'/api/v1/admin/dns/zones/{id}/records'>;

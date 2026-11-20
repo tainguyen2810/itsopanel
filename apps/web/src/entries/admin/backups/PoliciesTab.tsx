@@ -16,8 +16,8 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import type { ColumnDef } from '@/ui/DataTable';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
-import { useCronText } from '../sites/CronPage';
-import { Mono, RowMenu, useActiveAccounts } from '../sites/common';
+import { useCronText } from '@/shared/hosting/pages/CronPage';
+import { Mono, RowMenu, useActiveAccounts } from '@/shared/hosting/pages/common';
 import { policySchema, type PolicyForm } from './forms';
 
 type Policy = Row<'/api/v1/admin/backup-policies'>;

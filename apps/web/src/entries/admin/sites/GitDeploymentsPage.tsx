@@ -24,8 +24,8 @@ import { FormField } from '@/ui/FormField';
 import { Textarea } from '@/ui/Input';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
-import { RowMenu, SecretDialog, useWebsites } from './common';
-import { gitRepoSchema, splitLines, type GitRepoForm } from './forms';
+import { RowMenu, SecretDialog, useWebsites } from '@/shared/hosting/pages/common';
+import { gitRepoSchema, splitLines, type GitRepoForm } from '@/shared/hosting/pages/forms';
 
 type Repo = Row<'/api/v1/admin/git-repositories'>;
 type Deploy = Row<'/api/v1/admin/git-repositories/{id}/deployments'>;

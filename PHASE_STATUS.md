@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 2 — Complete UI Demo (đang làm; Phase 1 ✓ APPROVED 2026-11-20)
-- **Prompt hiện tại:** 2.7 User Hosting Portal. Chạy hàng loạt 2.1 → 2.8, tự merge local cuối Phase
-- **Task đang làm:** 2.7 — bắt đầu
+- **Prompt hiện tại:** 2.8 Kiểm tra tổng, báo cáo Phase 2. Chạy hàng loạt 2.1 → 2.8, tự merge local cuối Phase
+- **Task đang làm:** 2.8 — bắt đầu
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-2`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_2_PROMPTS.md`; cuối 2.8 báo cáo Phase 2 và DỪNG (không bắt đầu Phase 3)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
@@ -39,8 +39,8 @@ Phase 2 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_2_PROMPTS.
 - ✓ 2.4 Hosting I: gói, tài khoản hosting
 - ✓ 2.5 Hosting II: website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git
 - ✓ 2.6 Bảo mật, sao lưu, quản trị
-- ✱ 2.7 User Hosting Portal
-- ○ 2.8 Kiểm tra tổng, báo cáo Phase 2
+- ✓ 2.7 User Hosting Portal
+- ✱ 2.8 Kiểm tra tổng, báo cáo Phase 2
 
 Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 
@@ -68,3 +68,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-20 | 2 / 2.4 | Dataset: thêm Super Admin thứ hai (Nguyễn Hải) cho purge 2 bước; API giả lập gói và tài khoản hosting (tạo/sửa gói tạo phiên bản bất biến D-43, chuyển account lên phiên bản mới, tạo account qua job, khóa/mở khóa, đổi gói, chấm dứt, purge 2 SA D-46 + legal hold, chuyển server preflight → sync → verify → cutover/rollback), gợi ý đặt account tính theo tài nguyên và phạm vi; 8 trang: gói (danh sách, thêm, chi tiết + lịch sử phiên bản + so sánh), tài khoản (danh sách, wizard tạo, chi tiết 7 tab, wizard chuyển server, đã chấm dứt); Stepper dùng chung; Vitest 233, Playwright 120 | be4a5a0 |
 | 2026-11-20 | 2 / 2.5 | Contract + DB: Git deploy (bảng `git_repositories`, `git_deployments`; 9 endpoint admin/portal; op `git.deploy`, `git.rollback`; D-56 ĐỀ XUẤT), dataset thêm 2 zone DNS; thư viện dùng chung đường dẫn File Manager / cron / record DNS; API giả lập Hosting II (website + domain/SSL/Nginx/PHP/WAF/log, DB + user + quyền, File Manager ảo trong home có etag, SFTP/SSH key, DNS, cron theo giới hạn gói, WordPress, Git deploy/rollback); 10 trang: website (+chi tiết 8 tab), database, File Manager 2 khung, SFTP/SSH, SSL, DNS, cron (+lịch sử), WordPress, Git deploy; ListPage nhúng hiện mô tả + nút; Vitest 326, Playwright 124 | 01e004e, b067733, 3887735 |
 | 2026-11-20 | 2 / 2.6 | Dataset thêm quy tắc/cảnh báo/uptime/quét mã độc, chính sách sao lưu cấu hình panel, lần khôi phục lỗi; API giả lập quản trị (`handlers/governance.ts`: SSH/fail2ban có If-Match, allowlist chặn rỗng/CIDR sai/xung đột, quarantine; đích sao lưu không hạ Object Lock và không lưu bí mật, chính sách, snapshot khóa bất biến, duyệt cây, kiểm chứng, khôi phục ghi đè phải gõ username; người dùng tạo/sửa/phạm vi ADMIN/khóa/MFA/impersonate có lý do vào audit; quy tắc cảnh báo; xuất audit CSV; thông báo; cài đặt chỉ SA); 18 trang: Bảo mật (tổng quan + WAF, mã độc, SSH, fail2ban, FIM, IP được phép), Sao lưu (checklist 3-2-1-1-0, lịch sử, chính sách, đích, kiểm chứng), Khôi phục (+ wizard 4 bước), Người dùng (+ chi tiết, phạm vi), Vai trò (ma trận chỉ xem), Giám sát (+ cảnh báo), Nhật ký kiểm toán (lọc, chi tiết, CSV chống chèn công thức), Thông báo, Cài đặt 5 tab; Vitest 383, Playwright 127 | 715bebf, 957f0f8 |
+| 2026-11-20 | 2 / 2.7 | User Hosting Portal: contract `GET /hosting-accounts/{id}/features` (D-57 ĐỀ XUẤT, admin + portal); lớp API trung lập realm (`shared/api/realm.ts`, đường dẫn không tiền tố, kiểu theo contract Portal) nên trang hosting/website/database/file/SFTP/cron/WordPress/sao lưu/khôi phục/đăng nhập/hồ sơ/job/thông báo dùng chung `shared/`, phần chỉ Admin cắm qua slot; API giả lập Portal (`handlers/portal.ts`) chỉ trả dữ liệu account user sở hữu, job/thông báo theo user, terminal theo gói có SSH; 18 route Portal (Tổng quan usage/quota, chi tiết gói, tạo website, sao lưu 3 tab, terminal, quên mật khẩu); sửa đổi user demo không tải lại dữ liệu đang hiện, chuông thông báo đếm từ dữ liệu thật; Vitest 452, Playwright 129 | (commit 2.7) |

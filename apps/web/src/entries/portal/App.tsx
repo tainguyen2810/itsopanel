@@ -1,9 +1,12 @@
 import type { RouterHistory } from '@tanstack/react-router';
 import { unwrap } from '@/api/http';
 import { portalApi } from '@/api/portal';
+import { configureRealmApi } from '@/shared/api/realm';
 import { RoutedApp } from '@/shared/routing/RoutedApp';
 import { PORTAL_PAGES } from './pages';
 import { PORTAL_ROUTES } from './routes';
+
+configureRealmApi('portal', portalApi);
 
 const fetchJob = async (id: string) =>
   unwrap(await portalApi.GET('/api/v1/portal/jobs/{id}', { params: { path: { id } } }));

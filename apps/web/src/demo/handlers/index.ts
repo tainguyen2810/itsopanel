@@ -6,6 +6,7 @@ import { registerDashboard } from './dashboard';
 import { registerGovernance } from './governance';
 import { registerHosting } from './hosting';
 import { registerInfra } from './infra';
+import { registerFeatures, registerPortal } from './portal';
 import { registerSites } from './sites';
 import { jobActions, registerAuthWrites } from './writes';
 
@@ -21,6 +22,8 @@ export function registerAll() {
   registerHosting();
   registerSites();
   registerGovernance();
+  registerFeatures();
+  registerPortal();
   registerAuthWrites(on);
 
   // Hủy / chạy lại job: ADMIN chỉ job thuộc server hoặc account trong phạm vi.

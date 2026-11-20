@@ -17,13 +17,13 @@ import type { ColumnDef } from '@/ui/DataTable';
 import { FormField } from '@/ui/FormField';
 import { Textarea } from '@/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
-import { list, send, type Row } from '../api';
-import { useAction } from '../useAction';
+import { list, send, type Row } from '@/shared/api/realm';
+import { useAction } from '@/shared/api/useAction';
 import { Mono, RowMenu, useAccountFilter, useActiveAccounts } from './common';
 import { sftpSchema, sshKeySchema, type SftpForm, type SshKeyForm } from './forms';
 
-type Sftp = Row<'/api/v1/admin/sftp-accounts'>;
-type Key = Row<'/api/v1/admin/ssh-keys'>;
+type Sftp = Row<'/sftp-accounts'>;
+type Key = Row<'/ssh-keys'>;
 
 export default function SftpPage() {
   const { t } = useTranslation('admin');
@@ -55,7 +55,7 @@ function Accounts() {
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<Sftp | null>(null);
   const remove = useAction(
-    (s: Sftp) => send('DELETE', '/api/v1/admin/sftp-accounts/{id}', { path: { id: s.uuid } }),
+    (s: Sftp) => send('DELETE', '/sftp-accounts/{id}', { path: { id: s.uuid } }),
     { onSuccess: () => setRemoving(null) },
   );
   const columns: ColumnDef<Sftp, unknown>[] = [
@@ -119,7 +119,7 @@ function Accounts() {
           </Button>
         }
         queryKey={['admin', 'sftp']}
-        fetch={(q) => list('/api/v1/admin/sftp-accounts', q)}
+        fetch={(q) => list('/sftp-accounts', q)}
         filters={[accountFilter]}
         columns={columns}
         getRowId={(s) => s.uuid}
@@ -163,8 +163,7 @@ function CreateSftp({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
     onOpenChange(o);
   };
   const create = useAction(
-    (v: SftpForm) =>
-      send('POST', '/api/v1/admin/sftp-accounts', { body: { ...v, password: null } }),
+    (v: SftpForm) => send('POST', '/sftp-accounts', { body: { ...v, password: null } }),
     { onSuccess: () => close(false) },
   );
   return (
@@ -240,10 +239,9 @@ function Keys() {
   const accountFilter = useAccountFilter();
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<Key | null>(null);
-  const remove = useAction(
-    (k: Key) => send('DELETE', '/api/v1/admin/ssh-keys/{id}', { path: { id: k.uuid } }),
-    { onSuccess: () => setRemoving(null) },
-  );
+  const remove = useAction((k: Key) => send('DELETE', '/ssh-keys/{id}', { path: { id: k.uuid } }), {
+    onSuccess: () => setRemoving(null),
+  });
   const columns: ColumnDef<Key, unknown>[] = [
     {
       id: 'name',
@@ -287,7 +285,7 @@ function Keys() {
           </Button>
         }
         queryKey={['admin', 'ssh-keys']}
-        fetch={(q) => list('/api/v1/admin/ssh-keys', q)}
+        fetch={(q) => list('/ssh-keys', q)}
         filters={[accountFilter]}
         columns={columns}
         getRowId={(k) => k.uuid}
@@ -320,7 +318,7 @@ function AddKey({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boole
     if (!o) reset(empty);
     onOpenChange(o);
   };
-  const add = useAction((v: SshKeyForm) => send('POST', '/api/v1/admin/ssh-keys', { body: v }), {
+  const add = useAction((v: SshKeyForm) => send('POST', '/ssh-keys', { body: v }), {
     onSuccess: () => close(false),
   });
   return (

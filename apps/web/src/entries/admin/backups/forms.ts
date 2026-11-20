@@ -94,31 +94,6 @@ export function destBody(v: DestForm) {
   };
 }
 
-export const backupNowSchema = z
-  .object({
-    hosting_account_uuid: z.string().min(1, 'admin:sites.pickAccount'),
-    files: z.boolean(),
-    databases: z.boolean(),
-    config: z.boolean(),
-    note: z.string().max(200, 'form.maxLength|200'),
-  })
-  .refine((v) => v.files || v.databases || v.config, {
-    path: ['files'],
-    message: 'admin:bk.errors.contents',
-  });
-export type BackupNowForm = z.infer<typeof backupNowSchema>;
+export { backupNowSchema, type BackupNowForm } from '@/shared/hosting/backup';
 
-/** Mục khôi phục từ lựa chọn trên cây snapshot: thư mục/file → files:<path>, dump → database:<tên>, config. */
-export function restoreItem(path: string): string {
-  const db = /^databases\/([a-z][a-z0-9_]{0,63})\.sql\.zst$/.exec(path);
-  if (db) return `database:${db[1]}`;
-  if (path === 'config' || path.startsWith('config/')) return 'config';
-  return `files:${path}`;
-}
-
-/** Bỏ mục con khi đã chọn thư mục cha; gộp config; giữ thứ tự. */
-export function normalizeItems(paths: string[]): string[] {
-  const sorted = [...new Set(paths)].sort();
-  const keep = sorted.filter((p) => !sorted.some((q) => q !== p && p.startsWith(`${q}/`)));
-  return [...new Set(keep.map(restoreItem))];
-}
+export { normalizeItems, restoreItem } from '@/shared/hosting/backup';

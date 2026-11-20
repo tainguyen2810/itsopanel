@@ -223,7 +223,7 @@ export default function MonitoringPage() {
                 <Select
                   aria-label={t('mon.server')}
                   className="w-40"
-                  {...(current ? { value: current } : {})}
+                  value={current ?? ''}
                   onValueChange={setServerId}
                   options={srv.map((s) => ({ value: s.uuid, label: s.name }))}
                 />

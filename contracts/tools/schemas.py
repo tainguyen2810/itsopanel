@@ -113,6 +113,12 @@ COMMON = {
     "PasswordChange": obj({"current_password": s(writeOnly=True), "new_password": s(minLength=12, writeOnly=True)}),
     # -- quota & account
     "UsageItem": obj({"used": n(minimum=0), "limit": n(minimum=0)}),
+    "AccountFeatures": obj({
+        "package": cref("PackageRef"), "php_versions": arr(cref("PhpVersion")), "php_workers_max": i(minimum=1),
+        "ssh_allowed": b(),
+        "cron_min_interval_min": i(minimum=1), "backup_quota_mb": i(minimum=0),
+        "backup_retention": map_of(i(minimum=0)),
+    }, desc="Tính năng theo phiên bản gói hiện hành của account (đã áp limits_override); tập con an toàn cho Portal (D-57)."),
     "Usage": obj({k: cref("UsageItem") for k in ["disk_mb", "inodes", "cpu_percent", "ram_mb", "websites", "databases",
                                                  "ftp_accounts", "cron_jobs", "backup_mb"]}
                  | {"bandwidth_mb_30d": n(minimum=0), "measured_at": DT}),

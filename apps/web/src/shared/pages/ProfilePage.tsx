@@ -19,7 +19,7 @@ import { CodeBlock } from '@/ui/CodeBlock';
 import { Input } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { Skeleton } from '@/ui/Feedback';
-import { get, send } from '../api';
+import { getAuth, sendAuth } from '@/shared/api/realm';
 
 const pwSchema = z
   .object({
@@ -41,7 +41,7 @@ function PasswordCard() {
   });
   const m = useMutation({
     mutationFn: (v: Pw) =>
-      send('POST', '/api/v1/auth/password:change', {
+      sendAuth('POST', '/api/v1/auth/password:change', {
         body: { current_password: v.current_password, new_password: v.new_password },
       }),
     onSuccess: () => {
@@ -98,7 +98,7 @@ function MfaCard({ enabled }: { enabled: boolean }) {
   const [code, setCode] = useState('');
   const enroll = useMutation({
     mutationFn: () =>
-      send<{ secret: string; otpauth_uri: string; recovery_codes: string[] }>(
+      sendAuth<{ secret: string; otpauth_uri: string; recovery_codes: string[] }>(
         'POST',
         '/api/v1/auth/mfa/totp:enroll',
       ),
@@ -106,7 +106,7 @@ function MfaCard({ enabled }: { enabled: boolean }) {
   });
   const confirm = useMutation({
     mutationFn: () =>
-      send('POST', '/api/v1/auth/mfa/totp:confirm', { body: { code, method: 'totp' } }),
+      sendAuth('POST', '/api/v1/auth/mfa/totp:confirm', { body: { code, method: 'totp' } }),
     onSuccess: () => {
       toast.success(t('profile.mfaEnabled'));
       enroll.reset();
@@ -182,10 +182,10 @@ function SessionsCard() {
   const fmt = useFmt();
   const q = useQuery({
     queryKey: ['admin', 'sessions'],
-    queryFn: () => get('/api/v1/auth/sessions'),
+    queryFn: () => getAuth('/api/v1/auth/sessions'),
   });
   const revoke = useMutation({
-    mutationFn: (id: string) => send('DELETE', '/api/v1/auth/sessions/{id}', { path: { id } }),
+    mutationFn: (id: string) => sendAuth('DELETE', '/api/v1/auth/sessions/{id}', { path: { id } }),
     onSuccess: () => {
       toast.success(t('profile.sessionRevoked'));
       void q.refetch();
@@ -238,7 +238,7 @@ function SessionsCard() {
 export default function ProfilePage() {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
-  const me = useQuery({ queryKey: ['me'], queryFn: () => get('/api/v1/auth/me') });
+  const me = useQuery({ queryKey: ['me'], queryFn: () => getAuth('/api/v1/auth/me') });
   const u = me.data?.user;
   return (
     <>

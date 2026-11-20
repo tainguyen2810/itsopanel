@@ -733,6 +733,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal/hosting-accounts/{id}/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tính năng theo gói (PHP, SSH, cron, backup) */
+        get: operations["portalGetHostingAccountFeatures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portal/hosting-accounts/{id}/files": {
         parameters: {
             query?: never;
@@ -2007,6 +2024,18 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        /** @description Tính năng theo phiên bản gói hiện hành của account (đã áp limits_override); tập con an toàn cho Portal (D-57). */
+        AccountFeatures: {
+            package: components["schemas"]["PackageRef"];
+            php_versions: components["schemas"]["PhpVersion"][];
+            php_workers_max: number;
+            ssh_allowed: boolean;
+            cron_min_interval_min: number;
+            backup_quota_mb: number;
+            backup_retention: {
+                [key: string]: number;
+            };
         };
         FileContent: {
             path: components["schemas"]["RelPath"];
@@ -5842,6 +5871,62 @@ export interface operations {
                      */
                     "application/json": {
                         data: components["schemas"]["HostingAccount"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalGetHostingAccountFeatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "package": {
+                     *           "uuid": "01938a03-0002-7000-8000-000003000002",
+                     *           "code": "business",
+                     *           "name": "Business",
+                     *           "version": 1
+                     *         },
+                     *         "php_versions": [
+                     *           "8.1",
+                     *           "8.2",
+                     *           "8.3"
+                     *         ],
+                     *         "php_workers_max": 10,
+                     *         "ssh_allowed": true,
+                     *         "cron_min_interval_min": 5,
+                     *         "backup_quota_mb": 40960,
+                     *         "backup_retention": {
+                     *           "daily": 7,
+                     *           "weekly": 4,
+                     *           "monthly": 3
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["AccountFeatures"];
                     };
                 };
             };

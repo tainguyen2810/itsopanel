@@ -8,7 +8,7 @@ type Coll = (db: DemoDb) => Row[];
 
 const ACC = (r: Row) => (r.hosting_account as { uuid: string } | null | undefined)?.uuid;
 
-interface ListSpec extends ListOptions {
+export interface ListSpec extends ListOptions {
   path: ApiPath;
   rows: Coll;
   /** Cách lọc theo phạm vi vai trò: theo account, theo server, hoặc chỉ SUPER_ADMIN thấy. */
@@ -258,8 +258,9 @@ function visibleRows(ctx: Ctx, spec: ListSpec): Row[] | Reply {
   }
 }
 
-export function registerAdminLists() {
-  for (const spec of ADMIN_LISTS) {
+/** Đăng ký GET danh sách (+ chi tiết) theo bảng spec. Portal dùng lại với đường dẫn portal. */
+export function registerListSpecs(specs: ListSpec[]) {
+  for (const spec of specs) {
     on('get', spec.path, (ctx) => {
       const rows = visibleRows(ctx, spec);
       return isReply(rows) ? rows : page(ctx, rows, spec);
@@ -274,6 +275,10 @@ export function registerAdminLists() {
       });
     }
   }
+}
+
+export function registerAdminLists() {
+  registerListSpecs(ADMIN_LISTS);
 
   const singletons: [ApiPath, string][] = [
     ['/api/v1/admin/security/overview', 'security_overview'],
@@ -359,7 +364,7 @@ function serverGuard(ctx: Ctx): Reply | null {
     : problem(404, 'not_found', 'Không tìm thấy server');
 }
 
-function accountOr404(ctx: Ctx) {
+export function accountOr404(ctx: Ctx) {
   const v = visibility(ctx.db, ctx.actor);
   const a = ctx.db.data.accounts.find((x) => x.uuid === ctx.params.id);
   return a && canSeeAccount(v, a.uuid)
@@ -368,7 +373,7 @@ function accountOr404(ctx: Ctx) {
 }
 
 /** Log job: log mẫu cho job có sẵn, log sinh theo bước cho job mới. */
-function logsOf(j: DemoDb['data']['jobs'][number]): Row[] {
+export function logsOf(j: DemoDb['data']['jobs'][number]): Row[] {
   const out: Row[] = [];
   for (const s of j.steps) {
     if (s.started_at)

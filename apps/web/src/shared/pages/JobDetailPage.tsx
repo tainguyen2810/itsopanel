@@ -9,31 +9,33 @@ import { JobView } from '@/shared/jobs/JobDrawer';
 import { PageHeader } from '@/shared/page/PageHeader';
 import { ErrorState, PageSkeleton } from '@/shared/page/states';
 import { useCrumbName } from '@/shared/routing/crumbs';
+import { useRoutesInfo } from '@/shared/routing/RoutesContext';
 import { AppLink } from '@/ui/AppLink';
 import { StatusBadge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { Card, CardContent, CardHeader } from '@/ui/Card';
 import { EmptyState } from '@/ui/Feedback';
 import { ScrollText } from 'lucide-react';
-import { get, send, type JobAccepted } from '../api';
-import { auditLabel, resourceHref } from '../labels';
+import { get, send, type JobAccepted } from '@/shared/api/realm';
+import { auditLabel, resourceHref } from '@/shared/lib/labels';
 
 const ACTIVE = new Set(['queued', 'running', 'cancel_requested']);
 const RETRYABLE = new Set(['failed', 'cancelled', 'timed_out']);
 
 export default function JobDetailPage() {
   const { t } = useTranslation('admin');
+  const { realm } = useRoutesInfo();
   const fmt = useFmt();
   const navigate = useNavigate();
   const { id } = useParams({ strict: false }) as { id: string };
   const job = useQuery({
     queryKey: ['admin', 'job', id],
-    queryFn: () => get('/api/v1/admin/jobs/{id}', { path: { id } }),
+    queryFn: () => get('/jobs/{id}', { path: { id } }),
     refetchInterval: (q) => (q.state.data && ACTIVE.has(q.state.data.state) ? 1000 : false),
   });
   const logs = useQuery({
     queryKey: ['admin', 'job', id, 'logs'],
-    queryFn: () => get('/api/v1/admin/jobs/{id}/logs', { path: { id }, query: { limit: 200 } }),
+    queryFn: () => get('/jobs/{id}/logs', { path: { id }, query: { limit: 200 } }),
     refetchInterval: () => (job.data && ACTIVE.has(job.data.state) ? 1500 : false),
   });
   const title = job.data ? auditLabel(t, job.data.type) : undefined;
@@ -41,7 +43,7 @@ export default function JobDetailPage() {
 
   const onError = (e: unknown) => toast.error(e instanceof ApiError ? e.problem.title : String(e));
   const cancel = useMutation({
-    mutationFn: () => send('POST', '/api/v1/admin/jobs/{id}:cancel', { path: { id } }),
+    mutationFn: () => send('POST', '/jobs/{id}:cancel', { path: { id } }),
     onSuccess: () => {
       toast.success(t('jobs.cancelRequested'));
       void job.refetch();
@@ -49,7 +51,7 @@ export default function JobDetailPage() {
     onError,
   });
   const retry = useMutation({
-    mutationFn: () => send<JobAccepted>('POST', '/api/v1/admin/jobs/{id}:retry', { path: { id } }),
+    mutationFn: () => send<JobAccepted>('POST', '/jobs/{id}:retry', { path: { id } }),
     onSuccess: (r) => void navigate({ to: '/jobs/$id', params: { id: r.job.uuid } }),
     onError,
   });
@@ -64,7 +66,7 @@ export default function JobDetailPage() {
     );
   }
   const j = job.data;
-  const res = resourceHref(j.resource);
+  const res = resourceHref(j.resource, realm);
   const info: [string, React.ReactNode][] = [
     [
       t('jobs.uuid'),

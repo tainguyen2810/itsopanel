@@ -43,6 +43,8 @@ const QUERY: Record<string, string> = {
   '/api/v1/admin/websites/{id}/logs': '?kind=access',
   '/api/v1/admin/backup-snapshots/{id}/browse': '?path=.',
 };
+// Portal dùng cùng tham số (người gọi mặc định là chủ account anphat).
+for (const [k, v] of Object.entries(QUERY)) QUERY[k.replace('/admin/', '/portal/')] = v;
 
 function urlFor(path: string): string {
   return path.replace(/\{(\w+)\}/g, (_, k: string, offset: number) => {

@@ -14,7 +14,7 @@ import { Button } from '@/ui/Button';
 import type { ColumnDef } from '@/ui/DataTable';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
-import { Mono, RowMenu } from '../sites/common';
+import { Mono, RowMenu } from '@/shared/hosting/pages/common';
 import { DEST_FIELDS, destBody, destSchema, type DestForm, type DestType } from './forms';
 
 type Dest = Row<'/api/v1/admin/backup-destinations'>;

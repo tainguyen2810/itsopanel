@@ -178,7 +178,10 @@
     "verify": "Verify",
     "mfaFailed": "Invalid code",
     "useRecovery": "Use a recovery code",
-    "useTotp": "Use authenticator app"
+    "useTotp": "Use authenticator app",
+    "portalArea": "Hosting",
+    "portalLoginHint": "Sign in to manage your websites, databases, files and backups.",
+    "forgot": "Forgot password?"
   },
   "install": {
     "title": "Set up ITSO Panel",
@@ -2172,5 +2175,69 @@
       "mfa": "Administrator MFA is mandatory",
       "scopes": "Choose at least one permission"
     }
+  },
+  "pt": {
+    "overview": "Overview",
+    "hello": "Hello, {{name}}",
+    "overviewHint": "Usage against your plan quota, warnings and recent operations.",
+    "warnings": "Warnings",
+    "quickLinks": "Shortcuts",
+    "quick": {
+      "websites": "Websites",
+      "databases": "Databases",
+      "files": "File manager",
+      "backups": "Backups"
+    },
+    "noAccounts": "You have no hosting plan yet",
+    "noAccountsHint": "Contact an administrator to get a hosting account.",
+    "usageHint": "Last measured by the server agent.",
+    "viewAccount": "Details {{name}}",
+    "details": "Details",
+    "recentJobs": "Recent operations",
+    "noJobs": "No operations yet.",
+    "account": "My hosting plan",
+    "accountHint": "Plan {{name}}. Limits are set by administrators; contact them to upgrade.",
+    "usage": "Resource usage",
+    "websites": "Websites",
+    "noWebsites": "No websites yet.",
+    "info": "Information",
+    "package": "Plan",
+    "home": "Home directory",
+    "since": "Created",
+    "features": "Plan features",
+    "yes": "Yes",
+    "no": "No",
+    "cronMin": "Most frequent cron",
+    "backupQuota": "Backup quota",
+    "backupRetention": "Backup retention",
+    "units": {
+      "daily": "daily",
+      "weekly": "weekly",
+      "monthly": "monthly"
+    },
+    "backups": "Backups",
+    "backupsHint": "Backups of your hosting plans. Restores run as a job under the account UID.",
+    "backupTabs": {
+      "history": "Snapshots",
+      "restore": "Restore",
+      "restores": "Restore history"
+    },
+    "terminal": "Terminal",
+    "terminalHint": "Account shell (no root access); every session is logged.",
+    "terminalHost": "hosting",
+    "noSsh": "This hosting plan has no SSH access",
+    "noSshHint": "Use the File Manager or SFTP, or ask an administrator for a plan with SSH.",
+    "forgotTitle": "Forgot password",
+    "forgotHint": "Enter your sign-in email and we will send a reset link.",
+    "forgotSubmit": "Send reset link",
+    "forgotSent": "Request sent",
+    "forgotSentHint": "If the email has an account, a reset link arrives within minutes. It expires in 30 minutes.",
+    "backToLogin": "Back to sign in",
+    "unread_one": "{{count}} unread notification",
+    "unread_other": "{{count}} unread notifications",
+    "retention_one": "{{count}} {{unit}}",
+    "retention_other": "{{count}} {{unit}}",
+    "minutes_one": "every {{count}} minute",
+    "minutes_other": "every {{count}} minutes"
   }
 }

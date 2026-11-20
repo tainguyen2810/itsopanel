@@ -20,7 +20,7 @@ import { DataTable, type ColumnDef } from '@/ui/DataTable';
 import { list, send, type Row } from '../api';
 import { resourceHref } from '../labels';
 import { useAction } from '../useAction';
-import { RowMenu } from '../sites/common';
+import { RowMenu } from '@/shared/hosting/pages/common';
 import { MonitoringNav } from './MonitoringPage';
 
 type Rule = Row<'/api/v1/admin/alert-rules'>;

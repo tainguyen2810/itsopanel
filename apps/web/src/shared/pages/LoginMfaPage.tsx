@@ -4,28 +4,31 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '@/api/http';
 import { AuthLayout } from '@/shared/page/AuthLayout';
+import { useHomePath, useRoutesInfo } from '@/shared/routing/RoutesContext';
 import { Alert } from '@/ui/Alert';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Label } from '@/ui/Label';
-import { send } from '../api';
+import { sendAuth } from '@/shared/api/realm';
 
 /** Bước 2 đăng nhập: mã TOTP 6 số hoặc mã khôi phục 10 ký tự. */
 export default function LoginMfaPage() {
   const { t } = useTranslation('admin');
   const navigate = useNavigate();
+  const home = useHomePath();
+  const { realm } = useRoutesInfo();
   const [method, setMethod] = useState<'totp' | 'recovery'>('totp');
   const [code, setCode] = useState('');
   const valid = method === 'totp' ? /^[0-9]{6}$/.test(code) : /^[a-z0-9]{10}$/.test(code);
   const verify = useMutation({
-    mutationFn: () => send('POST', '/api/v1/auth/mfa/verify', { body: { code, method } }),
-    onSuccess: () => void navigate({ to: '/dashboard' }),
+    mutationFn: () => sendAuth('POST', '/api/v1/auth/mfa/verify', { body: { code, method } }),
+    onSuccess: () => void navigate({ to: home }),
   });
   return (
     <AuthLayout
       title={t('auth.mfaTitle')}
       description={method === 'totp' ? t('auth.mfaHint') : t('auth.recoveryHint')}
-      area={t('auth.adminArea')}
+      area={realm === 'admin' ? t('auth.adminArea') : t('auth.portalArea')}
     >
       <form
         noValidate

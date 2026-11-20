@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import { DataTable, type ColumnDef } from '@/ui/DataTable';
 import { get, list, send, type Row } from '../api';
 import { useAction } from '../useAction';
-import { Mono, SecretDialog } from '../sites/common';
+import { Mono, SecretDialog } from '@/shared/hosting/pages/common';
 
 const num = (min: number, max: number) =>
   z

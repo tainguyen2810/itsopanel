@@ -25,12 +25,12 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import type { ColumnDef } from '@/ui/DataTable';
 import { Dialog, DialogContent } from '@/ui/Dialog';
 import { FormField } from '@/ui/FormField';
-import { list, send, type Row } from '../api';
-import { useAction } from '../useAction';
+import { list, send, type Row } from '@/shared/api/realm';
+import { useAction } from '@/shared/api/useAction';
 import { Mono, RowMenu, useAccountFilter, useActiveAccounts } from './common';
 import { cronSchema, type CronForm } from './forms';
 
-type Cron = Row<'/api/v1/admin/cron-jobs'>;
+type Cron = Row<'/cron-jobs'>;
 
 /** Mô tả biểu thức cron bằng lời (VI/EN) từ `describeCron`. */
 export function useCronText() {
@@ -56,16 +56,16 @@ export default function CronPage() {
   const [history, setHistory] = useState<Cron | null>(null);
   const [removing, setRemoving] = useState<Cron | null>(null);
   const run = useAction((c: Cron) =>
-    send('POST', '/api/v1/admin/cron-jobs/{id}:run', { path: { id: c.uuid }, body: {} }),
+    send('POST', '/cron-jobs/{id}:run', { path: { id: c.uuid }, body: {} }),
   );
   const toggle = useAction((c: Cron) =>
-    send('PATCH', '/api/v1/admin/cron-jobs/{id}', {
+    send('PATCH', '/cron-jobs/{id}', {
       path: { id: c.uuid },
       body: { enabled: !c.enabled },
     }),
   );
   const remove = useAction(
-    (c: Cron) => send('DELETE', '/api/v1/admin/cron-jobs/{id}', { path: { id: c.uuid } }),
+    (c: Cron) => send('DELETE', '/cron-jobs/{id}', { path: { id: c.uuid } }),
     { onSuccess: () => setRemoving(null) },
   );
   const now = new Date();
@@ -156,7 +156,7 @@ export default function CronPage() {
           </Button>
         }
         queryKey={['admin', 'cron']}
-        fetch={(q) => list('/api/v1/admin/cron-jobs', q)}
+        fetch={(q) => list('/cron-jobs', q)}
         filters={[accountFilter]}
         columns={columns}
         getRowId={(c) => c.uuid}
@@ -210,7 +210,7 @@ function CronDialog({ cron, onClose }: { cron: Cron | null; onClose: () => void 
   const save = useAction(
     (v: CronForm) =>
       cron
-        ? send('PATCH', '/api/v1/admin/cron-jobs/{id}', {
+        ? send('PATCH', '/cron-jobs/{id}', {
             path: { id: cron.uuid },
             body: {
               schedule: v.schedule,
@@ -219,7 +219,7 @@ function CronDialog({ cron, onClose }: { cron: Cron | null; onClose: () => void 
               enabled: v.enabled,
             },
           })
-        : send('POST', '/api/v1/admin/cron-jobs', {
+        : send('POST', '/cron-jobs', {
             body: { ...v, website_uuid: null, php_version: null },
           }),
     { onSuccess: onClose },
@@ -312,8 +312,7 @@ function History({ cron, onClose }: { cron: Cron; onClose: () => void }) {
   const fmt = useFmt();
   const q = useQuery({
     queryKey: ['admin', 'cron', cron.uuid, 'runs'],
-    queryFn: () =>
-      list('/api/v1/admin/cron-jobs/{id}/runs', undefined, { path: { id: cron.uuid } }),
+    queryFn: () => list('/cron-jobs/{id}/runs', undefined, { path: { id: cron.uuid } }),
   });
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>

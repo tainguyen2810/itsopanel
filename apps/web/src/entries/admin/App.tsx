@@ -3,10 +3,14 @@ import type { RouterHistory } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { adminApi } from '@/api/admin';
 import { unwrap } from '@/api/http';
+import { configureRealmApi } from '@/shared/api/realm';
 import { RoutedApp } from '@/shared/routing/RoutedApp';
 import { ADMIN_PAGES } from './pages';
 import { ADMIN_ROUTES } from './routes';
 import { createSearch } from './search';
+
+// Trang dùng chung (website, database, file…) gọi API qua client Admin.
+configureRealmApi('admin', adminApi);
 
 const fetchJob = async (id: string) =>
   unwrap(await adminApi.GET('/api/v1/admin/jobs/{id}', { params: { path: { id } } }));
