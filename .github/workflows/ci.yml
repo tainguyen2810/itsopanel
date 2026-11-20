@@ -102,6 +102,8 @@ jobs:
         run: |
           make build-web
           test ! -e apps/web/dist/design
+      - name: Build demo (build thường không chứa MSW)
+        run: make build-demo
       - name: Cài Chromium cho Playwright
         working-directory: apps/web
         run: corepack pnpm exec playwright install --with-deps chromium

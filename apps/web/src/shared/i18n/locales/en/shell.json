@@ -38,7 +38,9 @@
     "settings": "Settings",
     "overview": "Overview",
     "terminal": "Terminal",
-    "profile": "Profile"
+    "profile": "Profile",
+    "registries": "Registries",
+    "gitDeployments": "Git deploy"
   },
   "topbar": {
     "search": "Search servers, accounts, websites…",
@@ -68,5 +70,9 @@
     "empty": "Nothing found",
     "pages": "Pages",
     "title": "Quick search"
+  },
+  "demo": {
+    "badge": "Demo",
+    "switchRole": "View as"
   }
 }

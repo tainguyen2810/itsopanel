@@ -23,6 +23,9 @@ import {
   UserCog,
   Users,
   Bell,
+  GitBranch,
+  Library,
+  Blocks,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,12 +42,12 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Theo docs/ui/sitemap.md mục A. Route thật có ở Phase 2 (router). */
+/** Theo docs/ui/sitemap.md mục A. `href` là đường dẫn đầy đủ (gồm basepath của entry). */
 export const ADMIN_NAV: NavGroup[] = [
   {
     key: 'overview',
     items: [
-      { key: 'dashboard', href: '/admin/', icon: LayoutDashboard },
+      { key: 'dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
       { key: 'jobs', href: '/admin/jobs', icon: ListChecks },
     ],
   },
@@ -53,6 +56,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { key: 'servers', href: '/admin/servers', icon: Server, badge: 3 },
       { key: 'docker', href: '/admin/compose-projects', icon: Container },
+      { key: 'registries', href: '/admin/docker/registries', icon: Library },
     ],
   },
   {
@@ -67,6 +71,8 @@ export const ADMIN_NAV: NavGroup[] = [
       { key: 'ssl', href: '/admin/ssl', icon: Lock },
       { key: 'dns', href: '/admin/dns', icon: Network },
       { key: 'cron', href: '/admin/cron', icon: CalendarClock },
+      { key: 'wordpress', href: '/admin/wordpress', icon: Blocks },
+      { key: 'gitDeployments', href: '/admin/git-deployments', icon: GitBranch },
     ],
   },
   {
@@ -84,6 +90,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { key: 'roles', href: '/admin/roles', icon: UserCog },
       { key: 'monitoring', href: '/admin/monitoring', icon: Activity },
       { key: 'audit', href: '/admin/audit-logs', icon: FileClock },
+      { key: 'notifications', href: '/admin/notifications', icon: Bell },
       { key: 'settings', href: '/admin/settings', icon: Settings },
     ],
   },
@@ -101,6 +108,7 @@ export const PORTAL_NAV: NavGroup[] = [
       { key: 'sftp', href: '/portal/sftp', icon: KeyRound },
       { key: 'cron', href: '/portal/cron', icon: CalendarClock },
       { key: 'backups', href: '/portal/backups', icon: Archive },
+      { key: 'wordpress', href: '/portal/wordpress', icon: Blocks },
       { key: 'terminal', href: '/portal/terminal', icon: SquareTerminal },
     ],
   },

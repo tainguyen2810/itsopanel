@@ -43,6 +43,7 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Pest với PostgreSQL + Redis thật | `make test-api-pg` | 1.7 |
 | Codegen từ contracts | `make codegen` · `make codegen-check` | 1.7 |
 | Toàn bộ kiểm tra (như CI, in bảng kết quả) | `make check` | 1.7 |
+| Giao diện demo (API giả lập MSW theo OpenAPI, không cần Laravel) · build demo + kiểm build thường không có MSW | `make dev-demo` · `make build-demo` | 2.1 |
 
 ## 5. Tài liệu
 

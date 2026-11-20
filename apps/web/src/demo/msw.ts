@@ -4,9 +4,11 @@ import { dispatch } from './router';
 
 registerAll();
 
-/** Một handler MSW cho mọi /api/*: chuyển cho bộ định tuyến theo OpenAPI của demo. */
+/** Một handler MSW cho mọi /api/v1/*: chuyển cho bộ định tuyến theo OpenAPI của demo. */
 export const handlers = [
-  http.all('*/api/*', async ({ request }) => {
+  http.all('*/api/v1/*', async ({ request }) => {
+    // Chỉ đường dẫn bắt đầu bằng /api/v1/ (không bắt nhầm module Vite như /src/api/x.ts).
+    if (!new URL(request.url).pathname.startsWith('/api/v1/')) return passthrough();
     const r = await dispatch(request);
     if (r === null) {
       return HttpResponse.json(

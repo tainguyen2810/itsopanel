@@ -74,6 +74,7 @@ run tokens-check     make -s tokens-check
 run lint-web         make -s lint-web
 run test-web         make -s test-web
 run build-web        bash -c 'make -s build-web && test ! -e apps/web/dist/design'
+run build-demo       make -s build-demo
 if [[ "${CHECK_SKIP_E2E:-0}" == 1 ]]; then
   skip test-e2e      "CHECK_SKIP_E2E=1"
 else

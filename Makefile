@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -116,6 +116,12 @@ build: build-web build-agent ## Build web và mock agent
 
 build-web:
 	@cd apps/web && $(PNPM) build
+
+build-demo: ## Build bản demo (API giả lập MSW) vào apps/web/dist-demo; kiểm build thường không có MSW
+	@bash scripts/check-demo-build.sh
+
+dev-demo: ## Chạy giao diện demo với API giả lập (không cần Laravel/agent)
+	@cd apps/web && $(PNPM) dev:demo
 
 build-agent:
 	@cd agent && go build -o bin/itso-mock-agent ./cmd/itso-mock-agent

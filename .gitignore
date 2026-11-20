@@ -15,6 +15,7 @@ Thumbs.db
 # Node / web
 node_modules/
 dist/
+dist-demo/
 .vite/
 coverage/
 playwright-report/

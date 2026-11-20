@@ -1,6 +1,7 @@
 import { HardDrive, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
+import { useAppLink } from '@/ui/AppLink';
 import { ProgressBar } from '@/ui/ProgressBar';
 import type { NavGroup } from './nav';
 
@@ -50,6 +51,7 @@ export function SidebarNav({
   onNavigate,
 }: Omit<Props, 'areaLabel'>) {
   const { t } = useTranslation('shell');
+  const Link = useAppLink();
   return (
     <>
       <nav aria-label={t('nav.label')} className="flex-1 overflow-y-auto px-2 py-3">
@@ -66,7 +68,7 @@ export function SidebarNav({
                 const label = t(`nav.${it.key}` as 'nav.dashboard');
                 return (
                   <li key={it.key}>
-                    <a
+                    <Link
                       href={it.href}
                       onClick={onNavigate}
                       aria-current={active ? 'page' : undefined}
@@ -91,7 +93,7 @@ export function SidebarNav({
                           )}
                         </>
                       )}
-                    </a>
+                    </Link>
                   </li>
                 );
               })}

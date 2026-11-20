@@ -13,13 +13,18 @@
     "copied": "Copied",
     "clearFilter": "Clear filter",
     "viewAll": "View all",
-    "more": "More"
+    "more": "More",
+    "back": "Go back"
   },
   "state": {
     "loading": "Loading…",
     "empty": "No data yet",
     "error": "Something went wrong",
-    "noResults": "No matching results"
+    "noResults": "No matching results",
+    "forbidden": "You do not have access to this page",
+    "forbiddenHint": "This page needs a different role or is outside your assigned scope. Contact a Super Admin if you need access.",
+    "notFound": "Page not found",
+    "notFoundHint": "The link does not exist or has moved."
   },
   "status": {
     "active": "Active",
@@ -51,7 +56,8 @@
     "sortAsc": "Sort ascending",
     "sortDesc": "Sort descending",
     "selectAll": "Select all",
-    "selectRow": "Select row"
+    "selectRow": "Select row",
+    "all": "All"
   },
   "confirm": {
     "typeToConfirm": "Type <strong>{{name}}</strong> to confirm",
@@ -68,7 +74,10 @@
   "job": {
     "step": "Step {{current}} of {{total}}",
     "steps": "Steps",
-    "elapsed": "Running for {{time}}"
+    "elapsed": "Running for {{time}}",
+    "track": "Job progress",
+    "done": "Job {{type}} finished",
+    "failed": "Job {{type}} failed"
   },
   "breadcrumb": "Breadcrumb",
   "pagination": "Pagination"

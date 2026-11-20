@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import { mockFetch, renderWithProviders } from '@/test/render';
+import { createMemoryHistory } from '@tanstack/react-router';
 import { App } from './App';
+
+const at = (path: string) => createMemoryHistory({ initialEntries: [path] });
 
 describe('portal entry', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -11,8 +14,8 @@ describe('portal entry', () => {
       mockFetch({ '/api/v1/system/health': [200, { data: { status: 'ok' } }] }),
     );
     vi.stubGlobal('fetch', fetchMock);
-    renderWithProviders(<App />);
-    expect(screen.getByRole('heading', { level: 1, name: 'Tổng quan' })).toBeInTheDocument();
+    renderWithProviders(<App history={at('/portal/')} />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Tổng quan' })).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByTestId('status-API')).toHaveAttribute('data-state', 'ok'),
     );
@@ -24,10 +27,10 @@ describe('portal entry', () => {
     }
   });
 
-  it('menu portal chỉ có chức năng của USER, không tìm kiếm toàn hệ thống', () => {
+  it('menu portal chỉ có chức năng của USER, không tìm kiếm toàn hệ thống', async () => {
     vi.stubGlobal('fetch', vi.fn(mockFetch({})));
-    renderWithProviders(<App />);
-    const nav = screen.getByRole('navigation', { name: 'Điều hướng chính' });
+    renderWithProviders(<App history={at('/portal/')} />);
+    const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
     const hrefs = within(nav)
       .getAllByRole('link')
       .map((a) => a.getAttribute('href') ?? '');

@@ -45,12 +45,16 @@ test.describe('ảnh chụp Design System', () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await prepare(page, { theme });
       await page.goto('/admin/');
+      // Chờ router chuyển /admin/ → /admin/dashboard và trang tải xong rồi mới mở menu.
+      await page.locator('[data-testid="status-Agent"][data-state="ok"]').waitFor();
       await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeHidden();
       await page.getByRole('button', { name: 'Mở menu' }).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog.getByRole('link', { name: /Máy chủ/ })).toBeVisible();
       // Chờ hiệu ứng mở drawer chạy xong để ảnh không bị mờ giữa chừng.
-      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+      await page.evaluate(() =>
+        Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+      );
       // Drawer phải nằm trên lớp phủ (z-index token): điểm giữa drawer thuộc về dialog.
       const onTop = await dialog.evaluate((el) => {
         const r = el.getBoundingClientRect();
