@@ -81,8 +81,8 @@ test-agent:
 test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự bật Vite)
 	@cd apps/web && $(PNPM) e2e
 
-screenshots: ## Chụp lại ảnh Design System vào docs/screenshots/design-system/
-	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system $(PNPM) e2e
+screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/) và trang chính Phase 2 (docs/screenshots/phase-2/)
+	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system SCREENSHOT_DIR_P2=$(CURDIR)/docs/screenshots/phase-2 $(PNPM) e2e
 
 tokens: ## Sinh tokens.css từ design/tokens/tokens.json
 	@node design/tools/gen-tokens.mjs

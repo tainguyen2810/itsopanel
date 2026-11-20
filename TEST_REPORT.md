@@ -2,6 +2,33 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 2 / Prompt 2.8 — nhánh `phase-2` (kiểm tra tổng)
+
+Môi trường: như 2.1; PostgreSQL 16 (cluster tạm `initdb`) và Redis 7 chạy cục bộ cho `test-api-pg`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Số liệu nhất quán | `npx vitest run src/demo/__tests__/consistency.test.ts` | PASS: 5 test — dashboard = tổng danh sách (server, account đang sống, website, database, user, gói, phân bổ gói); số account theo server; usage website/DB/SFTP/cron = danh sách; Portal và Admin cùng usage, số thông báo chưa đọc khớp; tạo website ở Portal → usage, dashboard, danh sách cùng tăng |
+| Kiểm tra mọi route | `npx playwright test e2e/demo-audit.spec.ts` | PASS: 74 route (56 Admin + 18 Portal, bỏ 2 route chuyển hướng) — axe light + dark 0 critical/serious, không tràn ngang 390px, giao diện EN không lẫn tiếng Việt (trừ dataset, nội dung API trả về, tên "Tiếng Việt"). Lần đầu 59/74: sửa 5 lỗi a11y (xem dưới) và bộ lọc dữ liệu API trong test |
+| Ảnh trang chính | `make screenshots` | PASS: 56 ảnh `docs/screenshots/phase-2/` (14 trang × 1440/390 × light/dark) + Design System; cả bộ Playwright 259 test |
+| Toàn bộ | `make check` | Lần đầu 19 PASS · 1 SKIP · 2 FAIL: `docs-check` (dấu gạch đứng trong code span ở bảng TEST_REPORT) và `test-api-pg` (cluster tạm chưa có database `itso_test`). Sửa và chạy lại riêng hai bước: `make docs-check` PASS, `make test-api-pg` PASS 14/14. Còn lại: Vitest 457, Playwright 259, db-verify 41, fuzz 212.940 lần, git-clean PASS |
+| Bản demo tĩnh | `python3 -m http.server` trên `apps/web/dist-demo` + script Playwright | PASS: `/admin/` và `/portal/` hiện H1, điều hướng sidebar tới Website thấy dữ liệu giả lập, không lỗi trang |
+
+Phát hiện và sửa:
+
+- Bộ lọc Thông báo dùng tab không có panel (`aria-controls` trỏ tới phần tử không tồn tại) → nhóm nút bật/tắt `aria-pressed`.
+- Nút "Đã đọc" và link trạng thái ở danh sách Khôi phục có `aria-label` không chứa chữ hiển thị → chữ bổ sung `sr-only`.
+- Link "Quên mật khẩu" (đăng nhập Portal) thiếu tương phản ở dark, link "Quay lại đăng nhập" vùng bấm < 24px → `text-primary-text`, `min-h-6`.
+
+**Test bị bỏ qua:** không. `staticcheck` SKIP vì chưa cài được (như Phase 1).
+
+### Acceptance Prompt 2.8 / Phase 2
+
+- ✓ Mọi mục sidebar mở trang có nội dung thật
+- ✓ VI/EN không chuỗi cứng; dark/light đúng; không tràn ngang 390px
+- ✓ Số liệu nhất quán giữa các trang
+- ✓ Screenshot trong repo; bản demo tĩnh build được; báo cáo `docs/reports/phase-2.md`
+
 ## 2026-11-20 — Phase 2 / Prompt 2.7 — nhánh `phase-2`
 
 Môi trường: như 2.1. Không chạy `make check` đầy đủ ở prompt này (chạy ở 2.8); đã chạy các bước liên quan bên dưới.
@@ -10,7 +37,7 @@ Môi trường: như 2.1. Không chạy `make check` đầy đủ ở prompt nà
 |---|---|---|
 | Contract | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS: thêm `AccountFeatures` + `GET /hosting-accounts/{id}/features` cho admin (220 op) và portal (101 op) |
 | API giả lập Portal | `npx vitest run src/demo/__tests__/portal.test.ts` | PASS: 12 test — An Phát chỉ thấy anphat/oldshop, Marketing chỉ thấy mktitso/pending01; website, database, SFTP, cron, snapshot, khôi phục chỉ thuộc account của mình; account/usage/tính năng/website/job của người khác → 404 và không lộ tên; job và thông báo tách theo user; không tạo website trên account người khác; không có endpoint admin trong realm portal |
-| Portal không gọi /admin/ | `npx vitest run src/entries/portal` | PASS: 22 test — render từng route trong 18 route Portal trên API giả lập, ghi lại mọi request: không request nào chứa `/admin/`, chỉ `/api/v1/portal|system|auth`, trang dữ liệu đều có gọi API; đăng nhập portal gọi `/auth/login` rồi vào Portal; menu chỉ chức năng USER; chuông đếm thông báo chưa đọc thật |
+| Portal không gọi /admin/ | `npx vitest run src/entries/portal` | PASS: 22 test — render từng route trong 18 route Portal trên API giả lập, ghi lại mọi request: không request nào chứa `/admin/`, chỉ `/api/v1/portal`, `/api/v1/system`, `/api/v1/auth`, trang dữ liệu đều có gọi API; đăng nhập portal gọi `/auth/login` rồi vào Portal; menu chỉ chức năng USER; chuông đếm thông báo chưa đọc thật |
 | Vitest toàn bộ | `npx vitest run` | PASS: 452 test (26 file) |
 | Đổi user demo (Portal) | `npx playwright test e2e/demo-portal.spec.ts` | PASS: 2 test — An Phát thấy anphat.vn/shop.anphat.vn, không có cột WAF; đổi sang Phòng Marketing thì website, database, Tổng quan chỉ còn dữ liệu mktitso, menu không có link admin; đổi lại thấy dữ liệu An Phát; mở thẳng URL account/website của An Phát khi là Marketing → "Không tìm thấy" |
 | Playwright toàn bộ | `npx playwright test --trace off` | PASS: 129 test (smoke 18 route Portal, axe shell Portal 4 tổ hợp theme/ngôn ngữ) |

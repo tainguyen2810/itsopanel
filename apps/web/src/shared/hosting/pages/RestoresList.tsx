@@ -82,11 +82,12 @@ export function RestoresList({
       accessorKey: 'state',
       cell: ({ row }) =>
         row.original.job_uuid ? (
-          <AppLink
-            href={links.job(row.original.job_uuid)}
-            aria-label={t('rs.jobOf', { name: row.original.hosting_account.username })}
-          >
+          <AppLink href={links.job(row.original.job_uuid)}>
             <StatusBadge status={row.original.state} />
+            <span className="sr-only">
+              {' '}
+              ({t('rs.jobOf', { name: row.original.hosting_account.username })})
+            </span>
           </AppLink>
         ) : (
           <StatusBadge status={row.original.state} />

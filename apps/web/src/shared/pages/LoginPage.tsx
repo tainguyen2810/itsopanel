@@ -79,7 +79,7 @@ export default function LoginPage() {
         ) : (
           <AppLink
             href={`${basepath}/forgot-password`}
-            className="text-center text-sm text-primary hover:underline"
+            className="inline-flex min-h-6 items-center justify-center self-center text-sm text-primary-text hover:underline"
           >
             {t('auth.forgot')}
           </AppLink>

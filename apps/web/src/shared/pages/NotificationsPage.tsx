@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader } from '@/ui/Card';
 import { Checkbox, Switch } from '@/ui/Checkbox';
 import { EmptyState } from '@/ui/Feedback';
 import { Label } from '@/ui/Label';
-import { Tabs, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { get, list, send, type Data, type Row } from '@/shared/api/realm';
 import { useAction } from '@/shared/api/useAction';
 import { cn } from '@/shared/lib/utils';
@@ -78,12 +77,24 @@ export default function NotificationsPage() {
           <CardHeader
             title={t('notif.inbox')}
             action={
-              <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-                <TabsList>
-                  <TabsTrigger value="all">{t('notif.all')}</TabsTrigger>
-                  <TabsTrigger value="unread">{t('notif.onlyUnread')}</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              // Bộ lọc (không phải tab: không có panel riêng) → nhóm nút bật/tắt aria-pressed.
+              <div
+                role="group"
+                aria-label={t('notif.inbox')}
+                className="inline-flex rounded-md border border-border p-0.5"
+              >
+                {(['all', 'unread'] as const).map((f) => (
+                  <Button
+                    key={f}
+                    size="sm"
+                    variant={filter === f ? 'secondary' : 'ghost'}
+                    aria-pressed={filter === f}
+                    onClick={() => setFilter(f)}
+                  >
+                    {f === 'all' ? t('notif.all') : t('notif.onlyUnread')}
+                  </Button>
+                ))}
+              </div>
             }
           />
           <CardContent>
@@ -123,13 +134,9 @@ export default function NotificationsPage() {
                     <p className="text-xs font-normal text-subtle">{fmt.rel(n.created_at)}</p>
                   </div>
                   {n.read_at === null && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => read.mutate(n)}
-                      aria-label={t('notif.markRead', { title: n.title })}
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => read.mutate(n)}>
                       {t('notif.read')}
+                      <span className="sr-only">: {n.title}</span>
                     </Button>
                   )}
                 </li>

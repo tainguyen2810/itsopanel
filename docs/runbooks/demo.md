@@ -11,6 +11,8 @@ make build-demo        # build vào apps/web/dist-demo + kiểm build thường 
 cd apps/web && pnpm preview:demo   # xem bản build demo
 ```
 
+`dist-demo` là file tĩnh, chạy được trên server tĩnh bất kỳ (vd. `python3 -m http.server`). Mở từ `/admin/` hoặc `/portal/`; muốn tải lại trực tiếp đường dẫn sâu thì server phải trả `index.html` của entry (Nginx: `try_files $uri /admin/index.html;` cho `/admin/`).
+
 ## Cách hoạt động
 
 - `vite --mode demo` đặt `import.meta.env.VITE_DEMO = '1'`; `main.tsx` gọi `startDemoIfEnabled()` để bật

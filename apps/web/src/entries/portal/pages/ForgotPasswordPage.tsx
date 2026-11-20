@@ -66,7 +66,10 @@ export default function ForgotPasswordPage() {
           </Button>
         </form>
       )}
-      <AppLink href="/portal/login" className="text-sm text-primary hover:underline">
+      <AppLink
+        href="/portal/login"
+        className="inline-flex min-h-6 items-center self-start text-sm text-primary-text hover:underline"
+      >
         {t('pt.backToLogin')}
       </AppLink>
     </AuthLayout>
