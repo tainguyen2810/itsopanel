@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -36,6 +36,9 @@ db-erd: ## Vẽ ERD SVG (toàn bộ + từng nhóm) vào database/docs/erd/
 	@for g in $$(python3 database/tools/gen_dbml.py --erd-groups $(ERD_TMP)); do \
 	  $(DBML_RENDERER) -i $(ERD_TMP)/$$g.dbml -o database/docs/erd/erd-$$g.svg || exit 1; \
 	done
+
+db-migrations: ## Sinh Laravel migration của Phase PHASE (mặc định 3) từ đặc tả schema
+	@python3 database/tools/gen_migrations.py $(or $(PHASE),3)
 
 db-verify: ## Áp schema vào PostgreSQL 16 tạm và chạy test SQL
 	@bash scripts/db-verify.sh
@@ -72,8 +75,8 @@ test: test-web test-api test-agent no-exec ## Chạy toàn bộ test (web, api, 
 test-web:
 	@cd apps/web && $(PNPM) test
 
-test-api:
-	@cd apps/api && php artisan config:clear --ansi >/dev/null && php vendor/bin/pest
+test-api: ## Pest trên PostgreSQL 16 + Redis (D-59; đọc DB_HOST, DB_PORT, DB_DATABASE=itso_test, DB_USERNAME, DB_PASSWORD)
+	@cd apps/api && php artisan config:clear --ansi >/dev/null && bash ../../scripts/pest-pg.sh
 
 test-agent:
 	@cd agent && go test -race ./...
@@ -91,8 +94,7 @@ tokens-check: ## Kiểm tokens.css khớp nguồn và tương phản WCAG AA
 	@node design/tools/gen-tokens.mjs --check
 	@node design/tools/check-contrast.mjs
 
-test-api-pg: ## Pest với PostgreSQL 16 + Redis thật (đọc DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD)
-	@cd apps/api && php artisan config:clear --ansi >/dev/null && bash ../../scripts/pest-pg.sh
+test-api-pg: test-api ## Tên cũ của test-api (từ Phase 3 Pest luôn chạy trên PostgreSQL)
 
 test-fuzz: ## Fuzz parser envelope của agent (FUZZTIME=30s)
 	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope

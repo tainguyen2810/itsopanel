@@ -2,6 +2,25 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 3 / Prompt 3.1 — nhánh `phase-3`
+
+Môi trường: PHP 8.3.6, Laravel 13, Pest 4; PostgreSQL 16 (cluster tạm `initdb`, database `itso` và `itso_test`) + Redis 7 chạy cục bộ.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Đặc tả DB + migration | `make db-verify` | PASS: 41 test SQL; `2026_11_20_000003_phase_3_schema.php` khớp đặc tả; áp lần lượt SQL Phase 3 → 11 vào DB rỗng cho `pg_dump --schema-only` giống hệt itso.sql + extras.sql. Đã thử cả chế độ `DB_VERIFY_URL` (như CI) |
+| Pest | `make test-api` | PASS: 23 test (9 test schema mới + 14 cũ) — đủ 26 bảng Phase 3, partition mặc định audit; 3 vai trò đúng realm, CHECK chặn vai trò lạ; uuid do DB sinh có ngay sau create; realm bất biến; vai trò khác realm bị chặn; email citext duy nhất; chủ account phải là USER portal, username/UID sai bị chặn, terminated thiếu purge_after bị chặn; phiên bản gói bất biến, retention < 30 ngày bị chặn, cột `text[]` đọc/ghi đúng; audit append-only và chuỗi hash nối tiếp; lịch sử vòng đời append-only; job sai trạng thái/tiến độ bị chặn |
+| Migrate thật | `php artisan migrate:fresh --seed`, `migrate:rollback`, `migrate` (DB `itso`) | PASS |
+| Lint | `make lint-api` · `make docs-check` · `make structure` · `python3 scripts/check-ci.py` | PASS (Larastan 0 lỗi) |
+
+**Test bị bỏ qua:** không.
+
+### Acceptance Prompt 3.1
+
+- ✓ Migrations 26 bảng Phase 3 + phần extras.sql tương ứng (purge guard để Phase 8 vì cần `purge_records`)
+- ✓ Model, cast, factory; Pest chạy trên PostgreSQL 16 (D-59)
+- ✓ So khớp schema migrate với đặc tả; test trigger/CHECK
+
 ## 2026-11-20 — Phase 2 / Prompt 2.8 — nhánh `phase-2` (kiểm tra tổng)
 
 Môi trường: như 2.1; PostgreSQL 16 (cluster tạm `initdb`) và Redis 7 chạy cục bộ cho `test-api-pg`.
