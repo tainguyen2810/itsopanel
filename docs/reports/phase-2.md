@@ -15,7 +15,7 @@
 | 2.5 Hosting II | Website, database, File Manager, SFTP/SSH, SSL, DNS, cron, WordPress, Git deploy (D-56) | 01e004e, b067733, 3887735 |
 | 2.6 Quản trị | Bảo mật (WAF, mã độc, SSH, fail2ban, FIM, IP được phép), sao lưu 3-2-1-1-0, khôi phục (wizard), người dùng/phạm vi/impersonate, vai trò, giám sát, audit (CSV), thông báo, cài đặt | 715bebf, 957f0f8 |
 | 2.7 User Portal | 18 route mục B sitemap; trang dùng chung với Admin qua `shared/api/realm.ts`; chỉ dữ liệu của user đang đăng nhập; tính năng gói (D-57) | 3ab0fe1 |
-| 2.8 Kiểm tra tổng | Kiểm mọi route (axe, 390px, EN), số liệu nhất quán, 56 ảnh trang chính, bản demo tĩnh, báo cáo này | (commit 2.8) |
+| 2.8 Kiểm tra tổng | Kiểm mọi route (axe, 390px, EN), số liệu nhất quán, 56 ảnh trang chính, bản demo tĩnh, báo cáo này | b7f6bd9 |
 
 Tổng: Admin 56 trang (58 route, 2 route chuyển hướng), Portal 18 trang, mọi mục sidebar mở trang có nội dung thật (không "coming soon").
 
