@@ -56,6 +56,8 @@ const (
 	OpFsMove                 = "fs.move"
 	OpFsRead                 = "fs.read"
 	OpFsWrite                = "fs.write"
+	OpGitDeploy              = "git.deploy"
+	OpGitRollback            = "git.rollback"
 	OpMalwareRestore         = "malware.restore"
 	OpMalwareScan            = "malware.scan"
 	OpMetricsSnapshot        = "metrics.snapshot"

@@ -2,7 +2,7 @@
 
 | File | Vai trò | Sửa thế nào |
 |---|---|---|
-| `itso.dbml` | Đặc tả schema (78 bảng, 8 nhóm) | **Sinh** từ `database/tools/gen_dbml.py` |
+| `itso.dbml` | Đặc tả schema (80 bảng, 8 nhóm) | **Sinh** từ `database/tools/gen_dbml.py` |
 | `itso.sql` | SQL PostgreSQL 16 sinh từ DBML (`@dbml/cli` 3.9.0) + hậu xử lý partition/extension | **Sinh**, không sửa tay |
 | `extras.sql` | CHECK, partial unique, trigger (realm, purge guard, append-only, hash chain), partition mặc định | Viết tay |
 

@@ -102,7 +102,9 @@
         "wp.clone",
         "wp.harden",
         "pty.open",
-        "audit.tail"
+        "audit.tail",
+        "git.deploy",
+        "git.rollback"
       ]
     },
     "op_id": {

@@ -22,7 +22,7 @@ erDiagram
 
 - Gốc sở hữu là `hosting_accounts`. Chủ của account là `owner_user_id`, bắt buộc là user realm `portal` (trigger `hosting_owner_portal`).
 - Mọi tài nguyên của account mang `hosting_account_id NOT NULL`: `websites`, `databases`, `database_users`, `sftp_accounts`, `ssh_keys`, `cron_jobs`, `upload_sessions`, `account_lifecycle_events`, `account_usage_snapshots`, `account_migrations`, `purge_records`.
-- Tài nguyên cấp 2 sở hữu qua cha: `domains`, `website_settings`, `certificates`, `wordpress_sites` → `website_id`; `database_grants` → `database_id`; `cron_runs` → `cron_job_id`; `dns_records` → `zone_id`.
+- Tài nguyên cấp 2 sở hữu qua cha: `domains`, `website_settings`, `certificates`, `wordpress_sites`, `git_repositories` → `website_id`; `git_deployments` → `git_repository_id`; `database_grants` → `database_id`; `cron_runs` → `cron_job_id`; `dns_records` → `zone_id`.
 - Có `hosting_account_id` **nullable** (bản ghi có thể thuộc server hoặc toàn hệ thống): `uid_allocations` (đã release), `dns_zones`, `terminal_sessions` (terminal root của admin), `backup_destinations`, `backup_snapshots` (backup cấp server), `malware_scans`, `quarantine_items`, `metric_samples`, `metric_rollups`.
 - Chỉ admin: nhóm `docker`, `firewall_rules`, `fim_baselines`, `software_catalog`, `server_*`, `agents`, `settings`, `audit_logs`.
 

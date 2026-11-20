@@ -62,6 +62,7 @@
 | D-53 | Giữ installer giống aaPanel (một lệnh, native Ubuntu, Web Wizard, systemd, CLI `itso`, không bắt buộc Docker) và toàn bộ yêu cầu bảo mật, cách ly, backup immutable, quota thực, multi-server | **APPROVED** (2026-11-20) |
 | D-54 | Design token lấy `design/tokens/tokens.json` làm nguồn; "preset" Tailwind v4 là khối `@theme inline` sinh ra (Tailwind 4 bỏ preset JS); Light mặc định ở `:root`, Dark bằng class `.dark`; mọi cặp màu khai báo phải đạt WCAG AA | **APPROVED** (2026-11-20, duyệt cùng Phase 1) |
 | D-55 | Codegen từ contracts: TS bằng openapi-typescript + openapi-fetch (`apps/web/src/api/generated`), Go structs bằng generator Python trong `contracts/tools` (không thêm tool ngoài). File sinh được commit và kiểm bằng `make codegen-check` | **APPROVED** (2026-11-20, duyệt cùng Phase 1) |
+| D-56 | **Mới (Phase 2.5):** Đặc tả sớm Git deploy (module 22) để có giao diện demo: bảng `git_repositories`, `git_deployments`; API `/git-repositories`, `/git-deployments/{id}:rollback`; op khai báo `git.deploy`, `git.rollback` (schema chi tiết ở Phase 10). Webhook công khai chưa có trong contract | **ĐỀ XUẤT** (chờ duyệt cùng Phase 2) |
 
 ---
 

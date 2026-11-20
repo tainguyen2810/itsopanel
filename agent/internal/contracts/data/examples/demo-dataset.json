@@ -4903,6 +4903,153 @@
       "updated_at": "2026-11-19T14:05:00+07:00"
     }
   ],
+  "git_deployments": [
+    {
+      "uuid": "01938a2f-0001-7000-8000-00002f000001",
+      "repository_uuid": "01938a2e-0001-7000-8000-00002e000001",
+      "commit_sha": "a41c9e2",
+      "commit_message": "Trang liên hệ mới",
+      "commit_author": "Nguyễn Văn Bảo",
+      "trigger": "manual",
+      "state": "succeeded",
+      "release_path": "sites/anphat.vn/releases/202611171012",
+      "rollback_of": null,
+      "job_uuid": null,
+      "requested_by": {
+        "uuid": "01938a01-0001-7000-8000-000001000001",
+        "name": "Quản trị hệ thống",
+        "email": "superadmin@itso.local"
+      },
+      "started_at": "2026-11-17T10:12:00+07:00",
+      "finished_at": "2026-11-17T10:12:48+07:00",
+      "created_at": "2026-11-17T10:12:00+07:00"
+    },
+    {
+      "uuid": "01938a2f-0002-7000-8000-00002f000002",
+      "repository_uuid": "01938a2e-0001-7000-8000-00002e000001",
+      "commit_sha": "5d0b7f3",
+      "commit_message": "Sửa lỗi form đặt hàng",
+      "commit_author": "Nguyễn Văn Bảo",
+      "trigger": "webhook",
+      "state": "succeeded",
+      "release_path": "sites/anphat.vn/releases/202611191540",
+      "rollback_of": null,
+      "job_uuid": null,
+      "requested_by": null,
+      "started_at": "2026-11-19T15:40:00+07:00",
+      "finished_at": "2026-11-19T15:40:48+07:00",
+      "created_at": "2026-11-19T15:40:00+07:00"
+    },
+    {
+      "uuid": "01938a2f-0003-7000-8000-00002f000003",
+      "repository_uuid": "01938a2e-0002-7000-8000-00002e000002",
+      "commit_sha": "e9f2a10",
+      "commit_message": "Banner chiến dịch tháng 11",
+      "commit_author": "Phòng Marketing",
+      "trigger": "manual",
+      "state": "succeeded",
+      "release_path": "sites/marketing.itso.vn/releases/202611180905",
+      "rollback_of": null,
+      "job_uuid": null,
+      "requested_by": {
+        "uuid": "01938a01-0001-7000-8000-000001000001",
+        "name": "Quản trị hệ thống",
+        "email": "superadmin@itso.local"
+      },
+      "started_at": "2026-11-18T09:05:00+07:00",
+      "finished_at": "2026-11-18T09:05:48+07:00",
+      "created_at": "2026-11-18T09:05:00+07:00"
+    },
+    {
+      "uuid": "01938a2f-0004-7000-8000-00002f000004",
+      "repository_uuid": "01938a2e-0002-7000-8000-00002e000002",
+      "commit_sha": "c3b81d4",
+      "commit_message": "Thêm landing page Tết",
+      "commit_author": "Phòng Marketing",
+      "trigger": "manual",
+      "state": "failed",
+      "release_path": "sites/marketing.itso.vn/releases/202611191620",
+      "rollback_of": null,
+      "job_uuid": null,
+      "requested_by": {
+        "uuid": "01938a01-0001-7000-8000-000001000001",
+        "name": "Quản trị hệ thống",
+        "email": "superadmin@itso.local"
+      },
+      "started_at": "2026-11-19T16:20:00+07:00",
+      "finished_at": "2026-11-19T16:20:48+07:00",
+      "created_at": "2026-11-19T16:20:00+07:00"
+    }
+  ],
+  "git_repositories": [
+    {
+      "uuid": "01938a2e-0001-7000-8000-00002e000001",
+      "website": {
+        "uuid": "01938a06-0001-7000-8000-000006000001",
+        "primary_domain": "anphat.vn"
+      },
+      "hosting_account": {
+        "uuid": "01938a05-0001-7000-8000-000005000001",
+        "username": "anphat"
+      },
+      "repo_url": "git@github.com:anphat-it/website.git",
+      "branch": "main",
+      "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn",
+      "deploy_key_fingerprint": "SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW",
+      "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e",
+      "auto_deploy": true,
+      "build_command": "composer install --no-dev --optimize-autoloader",
+      "shared_paths": [
+        ".env",
+        "storage"
+      ],
+      "keep_releases": 5,
+      "current_deployment": {
+        "uuid": "01938a2f-0002-7000-8000-00002f000002",
+        "commit_sha": "5d0b7f3",
+        "finished_at": "2026-11-19T15:40:48+07:00"
+      },
+      "status": "ready",
+      "spec_version": 3,
+      "observed_version": 3,
+      "drift": null,
+      "observed_at": "2026-11-20T08:15:00+07:00",
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a2e-0002-7000-8000-00002e000002",
+      "website": {
+        "uuid": "01938a06-0003-7000-8000-000006000003",
+        "primary_domain": "marketing.itso.vn"
+      },
+      "hosting_account": {
+        "uuid": "01938a05-0002-7000-8000-000005000002",
+        "username": "mktitso"
+      },
+      "repo_url": "https://git.itso.local/marketing/site.git",
+      "branch": "production",
+      "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM4qRt itso-deploy-marketing.itso.vn",
+      "deploy_key_fingerprint": "SHA256:Zx9c7V5b3N1m2L4k6J8h0G2f4D6s8A0p1O3i5U7y9T1",
+      "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gl_3b8e6d1f4a",
+      "auto_deploy": false,
+      "build_command": "npm ci && npm run build",
+      "shared_paths": [],
+      "keep_releases": 3,
+      "current_deployment": {
+        "uuid": "01938a2f-0003-7000-8000-00002f000003",
+        "commit_sha": "e9f2a10",
+        "finished_at": "2026-11-18T09:05:48+07:00"
+      },
+      "status": "ready",
+      "spec_version": 3,
+      "observed_version": 3,
+      "drift": null,
+      "observed_at": "2026-11-20T08:15:00+07:00",
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    }
+  ],
   "metrics": {
     "resource": {
       "type": "server",

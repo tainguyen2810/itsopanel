@@ -28,6 +28,8 @@ tags:
   description: Databases
 - name: Files
   description: Files
+- name: Git
+  description: Git
 - name: Jobs
   description: Jobs
 - name: Notifications
@@ -2117,6 +2119,550 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/git-deployments/{id}:rollback:
+    post:
+      operationId: portalRollbackGitDeployment
+      summary: Quay về release này (đổi symlink)
+      tags:
+      - Git
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-014e-7000-8000-00000f00014e
+                  type: git.rollback
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: git_repository
+                    uuid: 01938a2e-0001-7000-8000-00002e000001
+                  steps:
+                  - seq: 1
+                    op: git.rollback
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e
+                    events: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e/events
+                resource:
+                  type: git_repository
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/git-repositories:
+    get:
+      operationId: portalListGitRepositories
+      summary: Repository Git gắn với website
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/FilterHostingAccount
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/GitRepository
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: true
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: portalCreateGitRepository
+      summary: Kết nối repository (sinh deploy key riêng)
+      tags:
+      - Git
+      description: Panel sinh cặp khóa ed25519 cho site; khóa riêng chỉ nằm ở agent. Thêm `deploy_key_public` vào repo (chỉ
+        đọc) trước khi deploy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/GitRepositoryCreate
+            example:
+              website_uuid: 01938a06-0002-7000-8000-000006000002
+              repo_url: git@github.com:anphat-it/shop.git
+              branch: main
+              auto_deploy: false
+              build_command: null
+              shared_paths:
+              - .env
+              keep_releases: 5
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/GitRepository
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: true
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/git-repositories/{id}:
+    get:
+      operationId: portalGetGitRepository
+      summary: Chi tiết repository
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/GitRepository
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: true
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+    patch:
+      operationId: portalUpdateGitRepository
+      summary: Sửa cấu hình deploy
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IfMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/GitRepositoryUpdate
+            example:
+              auto_deploy: false
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/GitRepository
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: false
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: portalDeleteGitRepository
+      summary: Ngắt kết nối repository (giữ release hiện tại)
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '204':
+          description: Thành công, không có nội dung
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/git-repositories/{id}/deployments:
+    get:
+      operationId: portalListGitDeployments
+      summary: Lịch sử deploy
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/GitDeployment
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a2f-0001-7000-8000-00002f000001
+                  repository_uuid: 01938a2e-0001-7000-8000-00002e000001
+                  commit_sha: a41c9e2
+                  commit_message: Trang liên hệ mới
+                  commit_author: Nguyễn Văn Bảo
+                  trigger: manual
+                  state: succeeded
+                  release_path: sites/anphat.vn/releases/202611171012
+                  rollback_of: null
+                  job_uuid: null
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  started_at: '2026-11-17T10:12:00+07:00'
+                  finished_at: '2026-11-17T10:12:48+07:00'
+                  created_at: '2026-11-17T10:12:00+07:00'
+                - uuid: 01938a2f-0002-7000-8000-00002f000002
+                  repository_uuid: 01938a2e-0001-7000-8000-00002e000001
+                  commit_sha: 5d0b7f3
+                  commit_message: Sửa lỗi form đặt hàng
+                  commit_author: Nguyễn Văn Bảo
+                  trigger: webhook
+                  state: succeeded
+                  release_path: sites/anphat.vn/releases/202611191540
+                  rollback_of: null
+                  job_uuid: null
+                  requested_by: null
+                  started_at: '2026-11-19T15:40:00+07:00'
+                  finished_at: '2026-11-19T15:40:48+07:00'
+                  created_at: '2026-11-19T15:40:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: portalCreateGitDeployment
+      summary: Deploy (commit mới nhất của branch hoặc commit chỉ định)
+      tags:
+      - Git
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/GitDeployRequest
+            example:
+              commit_sha: null
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-014d-7000-8000-00000f00014d
+                  type: git.deploy
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: git_repository
+                    uuid: 01938a2e-0001-7000-8000-00002e000001
+                  steps:
+                  - seq: 1
+                    op: git.deploy
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d
+                    events: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d/events
+                resource:
+                  type: git_repository
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/git-repositories/{id}:rotate-webhook-secret:
+    post:
+      operationId: portalRotateGitWebhookSecret
+      summary: Đổi secret webhook (HMAC-SHA256)
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/SecretOnce
+                required:
+                - data
+              example:
+                data:
+                  secret: whsec_4Tq9mZ2vL8xR1nB6
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/portal/hosting-accounts:
     get:
       operationId: portalListHostingAccounts
@@ -3174,7 +3720,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014d-7000-8000-00000f00014d
+                  uuid: 01938a0f-014f-7000-8000-00000f00014f
                   type: website.create
                   state: queued
                   progress: 0
@@ -3217,8 +3763,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d
-                    events: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d/events
+                    self: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f
+                    events: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f/events
                 resource:
                   type: website
                   uuid: 01938a06-0002-7000-8000-000006000002

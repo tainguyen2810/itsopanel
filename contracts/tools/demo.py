@@ -10,7 +10,7 @@ user server package package_version account website domain certificate database 
 sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_record migration purge
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
-uptime_check impersonation scope channel""".split())}
+uptime_check impersonation scope channel git_repository git_deployment""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -454,6 +454,43 @@ WORDPRESS = [
      "latest_version": "6.7.1", "plugins_total": 14, "plugins_outdated": 3, "themes_outdated": 1,
      "auto_update": "minor", "hardening": {"xmlrpc_disabled": True, "file_edit_disabled": True},
      "staging_of": None, "updated_at": T1},
+]
+
+# ---------------------------------------------------------------- Git deploy (module 22)
+def _deploy(n, repo, sha, msg, author, when, state="succeeded", trigger="manual", rollback_of=None, by=0):
+    return {"uuid": u("git_deployment", n), "repository_uuid": u("git_repository", repo), "commit_sha": sha,
+            "commit_message": msg, "commit_author": author, "trigger": trigger, "state": state,
+            "release_path": f"sites/{_GIT_SITE[repo]}/releases/{when[:10].replace('-', '')}{when[11:13]}{when[14:16]}",
+            "rollback_of": rollback_of, "job_uuid": None, "requested_by": None if trigger == "webhook" else user_ref(by),
+            "started_at": when, "finished_at": when[:17] + "48" + when[19:], "created_at": when}
+
+
+_GIT_SITE = {1: "anphat.vn", 2: "marketing.itso.vn"}
+GIT_DEPLOYMENTS = [
+    _deploy(1, 1, "a41c9e2", "Trang liên hệ mới", "Nguyễn Văn Bảo", "2026-11-17T10:12:00+07:00"),
+    _deploy(2, 1, "5d0b7f3", "Sửa lỗi form đặt hàng", "Nguyễn Văn Bảo", "2026-11-19T15:40:00+07:00", trigger="webhook"),
+    _deploy(3, 2, "e9f2a10", "Banner chiến dịch tháng 11", "Phòng Marketing", "2026-11-18T09:05:00+07:00"),
+    _deploy(4, 2, "c3b81d4", "Thêm landing page Tết", "Phòng Marketing", "2026-11-19T16:20:00+07:00", state="failed"),
+]
+GIT_REPOSITORIES = [
+    {"uuid": u("git_repository", 1), "website": site_ref(0), "hosting_account": acc_ref(0),
+     "repo_url": "git@github.com:anphat-it/website.git", "branch": "main",
+     "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn",
+     "deploy_key_fingerprint": "SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW",
+     "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e",
+     "auto_deploy": True, "build_command": "composer install --no-dev --optimize-autoloader",
+     "shared_paths": [".env", "storage"], "keep_releases": 5,
+     "current_deployment": {"uuid": u("git_deployment", 2), "commit_sha": "5d0b7f3",
+                            "finished_at": "2026-11-19T15:40:48+07:00"}, **do(), **ts()},
+    {"uuid": u("git_repository", 2), "website": site_ref(2), "hosting_account": acc_ref(1),
+     "repo_url": "https://git.itso.local/marketing/site.git", "branch": "production",
+     "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM4qRt itso-deploy-marketing.itso.vn",
+     "deploy_key_fingerprint": "SHA256:Zx9c7V5b3N1m2L4k6J8h0G2f4D6s8A0p1O3i5U7y9T1",
+     "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gl_3b8e6d1f4a",
+     "auto_deploy": False, "build_command": "npm ci && npm run build",
+     "shared_paths": [], "keep_releases": 3,
+     "current_deployment": {"uuid": u("git_deployment", 3), "commit_sha": "e9f2a10",
+                            "finished_at": "2026-11-18T09:05:48+07:00"}, **do(), **ts()},
 ]
 
 # ---------------------------------------------------------------- giám sát, thông báo, audit

@@ -338,6 +338,39 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
                 label, "WordPress", params=idp, job=True,
                 job_example=jobs(f"wordpress.{action.replace('-', '_')}", "wordpress_site", wp["uuid"], steps, realm=realm,
                                  server=2))
+    # -- Git deploy (module 22). Webhook công khai POST /hooks/git/{token} để Phase 10.
+    g = D.GIT_REPOSITORIES[0]
+    api.add("get", "/git-repositories", oid("listGitRepositories"), "Repository Git gắn với website", "Git",
+            list_=True, params=acc_filter, ok=cref("GitRepository"),
+            ok_example=page(D.GIT_REPOSITORIES[:1] if realm == "portal" else D.GIT_REPOSITORIES))
+    api.add("post", "/git-repositories", oid("createGitRepository"), "Kết nối repository (sinh deploy key riêng)", "Git",
+            body=cref("GitRepositoryCreate"),
+            body_example={"website_uuid": D.WEBSITES[1]["uuid"], "repo_url": "git@github.com:anphat-it/shop.git",
+                          "branch": "main", "auto_deploy": False, "build_command": None, "shared_paths": [".env"],
+                          "keep_releases": 5},
+            ok=cref("GitRepository"), ok_example=one(g), status="201",
+            desc="Panel sinh cặp khóa ed25519 cho site; khóa riêng chỉ nằm ở agent. Thêm `deploy_key_public` vào repo "
+                 "(chỉ đọc) trước khi deploy.")
+    api.add("get", "/git-repositories/{id}", oid("getGitRepository"), "Chi tiết repository", "Git", params=idp,
+            ok=cref("GitRepository"), ok_example=one(g))
+    api.add("patch", "/git-repositories/{id}", oid("updateGitRepository"), "Sửa cấu hình deploy", "Git", params=idp,
+            body=cref("GitRepositoryUpdate"), body_example={"auto_deploy": False}, ok=cref("GitRepository"),
+            ok_example=one(g | {"auto_deploy": False}))
+    api.add("delete", "/git-repositories/{id}", oid("deleteGitRepository"),
+            "Ngắt kết nối repository (giữ release hiện tại)", "Git", params=idp, no_content=True)
+    api.add("post", "/git-repositories/{id}:rotate-webhook-secret", oid("rotateGitWebhookSecret"),
+            "Đổi secret webhook (HMAC-SHA256)", "Git", params=idp, ok=cref("SecretOnce"),
+            ok_example=one({"secret": "whsec_4Tq9mZ2vL8xR1nB6"}))
+    api.add("get", "/git-repositories/{id}/deployments", oid("listGitDeployments"), "Lịch sử deploy", "Git",
+            params=idp, list_=True, ok=cref("GitDeployment"),
+            ok_example=page([x for x in D.GIT_DEPLOYMENTS if x["repository_uuid"] == g["uuid"]]))
+    api.add("post", "/git-repositories/{id}/deployments", oid("createGitDeployment"),
+            "Deploy (commit mới nhất của branch hoặc commit chỉ định)", "Git", params=idp,
+            body=cref("GitDeployRequest"), body_example={"commit_sha": None}, job=True,
+            job_example=jobs("git.deploy", "git_repository", g["uuid"], ["git.deploy"], realm=realm))
+    api.add("post", "/git-deployments/{id}:rollback", oid("rollbackGitDeployment"),
+            "Quay về release này (đổi symlink)", "Git", params=idp, job=True,
+            job_example=jobs("git.rollback", "git_repository", g["uuid"], ["git.rollback"], realm=realm))
     # -- jobs
     jp = "/jobs"
     jobs_ex = copy.deepcopy(D.JOBS)

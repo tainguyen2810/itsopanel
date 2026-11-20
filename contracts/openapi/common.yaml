@@ -2259,6 +2259,271 @@ components:
       - admin_email
       - locale
       additionalProperties: false
+    GitRepository:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        website:
+          $ref: '#/components/schemas/WebsiteRef'
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        repo_url:
+          type: string
+          maxLength: 500
+        branch:
+          type: string
+          maxLength: 100
+        deploy_key_public:
+          type: string
+        deploy_key_fingerprint:
+          type: string
+        webhook_url:
+          type: string
+        auto_deploy:
+          type: boolean
+        build_command:
+          oneOf:
+          - $ref: '#/components/schemas/CronCommand'
+          - type: 'null'
+        shared_paths:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelPath'
+          maxItems: 20
+        keep_releases:
+          type: integer
+          minimum: 1
+          maximum: 20
+        current_deployment:
+          oneOf:
+          - $ref: '#/components/schemas/GitDeploymentRef'
+          - type: 'null'
+        status:
+          type: string
+          enum:
+          - pending
+          - provisioning
+          - ready
+          - degraded
+          - failed
+          - suspended
+          - deleting
+          description: Trạng thái quan sát được (observed).
+        spec_version:
+          type: integer
+          minimum: 1
+          description: 'Desired: tăng mỗi lần đổi cấu hình.'
+        observed_version:
+          type: integer
+          minimum: 0
+          description: Phiên bản agent đã áp dụng.
+        drift:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: string
+        observed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - website
+      - hosting_account
+      - repo_url
+      - branch
+      - deploy_key_public
+      - deploy_key_fingerprint
+      - webhook_url
+      - auto_deploy
+      - build_command
+      - shared_paths
+      - keep_releases
+      - current_deployment
+      - status
+      - spec_version
+      - observed_version
+      - drift
+      - observed_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    GitDeploymentRef:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        commit_sha:
+          type: string
+          pattern: ^[0-9a-f]{7,40}$
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - uuid
+      - commit_sha
+      - finished_at
+      additionalProperties: false
+    GitRepositoryCreate:
+      type: object
+      properties:
+        website_uuid:
+          type: string
+          format: uuid
+        repo_url:
+          type: string
+          maxLength: 500
+          pattern: ^(ssh://[^\s]+|git@[^\s:]+:[^\s]+|https://[^\s]+)$
+        branch:
+          type: string
+          maxLength: 100
+          pattern: ^[A-Za-z0-9._/-]+$
+        auto_deploy:
+          type: boolean
+        build_command:
+          oneOf:
+          - $ref: '#/components/schemas/CronCommand'
+          - type: 'null'
+        shared_paths:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelPath'
+          maxItems: 20
+        keep_releases:
+          type: integer
+          minimum: 1
+          maximum: 20
+      required:
+      - website_uuid
+      - repo_url
+      - branch
+      additionalProperties: false
+    GitRepositoryUpdate:
+      type: object
+      properties:
+        branch:
+          type: string
+          maxLength: 100
+          pattern: ^[A-Za-z0-9._/-]+$
+        auto_deploy:
+          type: boolean
+        build_command:
+          oneOf:
+          - $ref: '#/components/schemas/CronCommand'
+          - type: 'null'
+        shared_paths:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelPath'
+          maxItems: 20
+        keep_releases:
+          type: integer
+          minimum: 1
+          maximum: 20
+      additionalProperties: false
+    GitDeployment:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        repository_uuid:
+          type: string
+          format: uuid
+        commit_sha:
+          type: string
+          pattern: ^[0-9a-f]{7,40}$
+        commit_message:
+          type:
+          - string
+          - 'null'
+        commit_author:
+          type:
+          - string
+          - 'null'
+        trigger:
+          type: string
+          enum:
+          - manual
+          - webhook
+          - rollback
+        state:
+          type: string
+          enum:
+          - queued
+          - running
+          - succeeded
+          - failed
+          - rolled_back
+        release_path:
+          oneOf:
+          - $ref: '#/components/schemas/RelPath'
+          - type: 'null'
+        rollback_of:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        job_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        requested_by:
+          oneOf:
+          - $ref: '#/components/schemas/UserRef'
+          - type: 'null'
+        started_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - repository_uuid
+      - commit_sha
+      - commit_message
+      - commit_author
+      - trigger
+      - state
+      - release_path
+      - rollback_of
+      - job_uuid
+      - requested_by
+      - started_at
+      - finished_at
+      - created_at
+      additionalProperties: false
+    GitDeployRequest:
+      type: object
+      properties:
+        commit_sha:
+          type:
+          - string
+          - 'null'
+          pattern: ^[0-9a-f]{7,40}$
+      additionalProperties: false
     Notification:
       type: object
       properties:
