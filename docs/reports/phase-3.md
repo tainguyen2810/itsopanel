@@ -14,7 +14,7 @@
 | 3.3 RBAC | Vai trò/quyền, phạm vi ADMIN (server, account), Policies, global scope Portal, Users API (khóa/mở, reset MFA, scopes), giả danh có lý do, ma trận quyền tự động | 4406e7e |
 | 3.4 Nền vận hành | JobRunner (bước, retry backoff, hủy, timeout, op_id `uuid:seq:attempt`), Idempotency-Key, audit hash chain + xuất CSV + `itso:audit-verify`, thông báo in-app, cài đặt (ETag, step-up), servers (seed `srv-local` từ mock agent), dashboard | c322082 |
 | 3.5 Hosting | Gói + phiên bản bất biến, Hosting Provisioning Service (tạo/khóa/mở/chấm dứt/khôi phục/đổi gói/override), cấp UID (không tái dùng 90 ngày), quota phía panel (422 `quota_exceeded`), API Portal (account, overview, profile, job, thông báo), `itso:usage-refresh` | bff7f16 |
-| 3.6 Nối UI | Client gửi CSRF + header realm, thử lại một lần khi 419, 401 → về đăng nhập đúng realm; phiên thật thay persona ở bản build thường (loading/anonymous/mfa/enroll/ready); trang của Phase sau hiện "Chưa có ở bản này" (404 `not_available`, 501); DemoSeeder; `make dev` thêm queue worker + đăng ký server + reconcile; `itso:reconcile`; Playwright trên stack thật | (commit 3.6) |
+| 3.6 Nối UI | Client gửi CSRF + header realm, thử lại một lần khi 419, 401 → về đăng nhập đúng realm; phiên thật thay persona ở bản build thường (loading/anonymous/mfa/enroll/ready); trang của Phase sau hiện "Chưa có ở bản này" (404 `not_available`, 501); DemoSeeder; `make dev` thêm queue worker + đăng ký server + reconcile; `itso:reconcile`; Playwright trên stack thật | 59cb935 |
 
 ## 2. File chính
 
