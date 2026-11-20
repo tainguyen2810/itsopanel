@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+
+/* Token tạm cho scaffold. Design System đầy đủ (Light/Dark) ở Prompt 1.6. */
+@theme {
+  --color-bg: #0a1120;
+  --color-card: #111a2c;
+  --color-line: #1e2a42;
+  --color-fg: #e8edf7;
+  --color-muted: #8a96ad;
+  --color-ok: #22c55e;
+  --color-bad: #ef4444;
+  --color-brand: #2f7cf6;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: 'Be Vietnam Pro', Inter, system-ui, sans-serif;
+}

@@ -1,0 +1,4 @@
+packages:
+  - apps/web
+# Chỉ cài bản phát hành đã ít nhất 14 ngày (giảm rủi ro supply chain).
+minimumReleaseAge: 20160
