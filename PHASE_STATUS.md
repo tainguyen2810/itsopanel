@@ -3,18 +3,18 @@
 > File này là nguồn sự thật cho "đang ở đâu". Cập nhật sau MỖI task (commit cùng code).
 
 ## Hiện tại
-- **Phase:** 0 — Planning (**APPROVED 2026-11-20**)
-- **Prompt hiện tại:** —
-- **Task đang làm:** —
-- **Commit cuối:** — (chưa có repository)
-- **Bước tiếp theo:** Chờ người dùng ra lệnh bắt đầu Phase 1 → Prompt 1.1 (`PHASE_1_PROMPTS.md`)
+- **Phase:** 1 — Foundation, Architecture, Database, API Contracts, Design System (đang làm)
+- **Prompt hiện tại:** 1.1 ✓ hoàn tất, chờ duyệt
+- **Task đang làm:** — (dừng chờ duyệt Prompt 1.1)
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.1)
+- **Bước tiếp theo:** Người dùng duyệt 1.1 → Prompt 1.2 (Architecture & ADR)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
 | Phase | Tên | Trạng thái |
 |---|---|---|
 | 0 | Planning | ✓ APPROVED |
-| 1 | Foundation, Architecture, Database, API Contracts, Design System | ○ |
+| 1 | Foundation, Architecture, Database, API Contracts, Design System | ✱ |
 | 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ○ |
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ○ |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ○ |
@@ -28,8 +28,8 @@
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
-Phase 1 (chưa bắt đầu)
-- ○ 1.1 Git local, cấu trúc repo, file tiến độ, CLAUDE.md
+Phase 1 (đang làm)
+- ✓ 1.1 Git local, cấu trúc repo, file tiến độ, CLAUDE.md
 - ○ 1.2 Architecture & ADR trong repo
 - ○ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
 - ○ 1.4 API Contracts (OpenAPI admin/portal, agent schemas, test vectors)
@@ -45,3 +45,4 @@ Phase 1 (chưa bắt đầu)
 | 2026-11-20 | 0 | Định hướng Hosting Provider (file 15, D-32…D-45, 15 Phase / 3 giai đoạn) | — |
 | 2026-11-20 | 0 | Chốt phạm vi NỘI BỘ: billing/WooCommerce/storefront → OUT OF SCOPE, Provisioning API → DEFERRED; viết lại PROJECT_PLAN, ARCHITECTURE, ROADMAP, DATABASE, API, DECISIONS (D-46…D-50) | — |
 | 2026-11-20 | 0 | Người dùng APPROVED kế hoạch (D-24, D-25, D-46…D-53); chuẩn bị prompt Phase 1 | — |
+| 2026-11-20 | 1 / 1.1 | Git local, cấu trúc repo, CLAUDE.md, Makefile, check-structure; đưa kế hoạch vào repo | f7ccc70, ece3ec8 |
