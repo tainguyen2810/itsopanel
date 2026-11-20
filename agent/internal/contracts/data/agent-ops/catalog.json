@@ -902,6 +902,28 @@
       "timeout_sec": null,
       "schema": null,
       "status": "declared"
+    },
+    {
+      "op": "git.deploy",
+      "domain": "git",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "git.rollback",
+      "domain": "git",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
     }
   ],
   "panel_steps": [

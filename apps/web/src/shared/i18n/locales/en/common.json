@@ -13,13 +13,18 @@
     "copied": "Copied",
     "clearFilter": "Clear filter",
     "viewAll": "View all",
-    "more": "More"
+    "more": "More",
+    "back": "Go back"
   },
   "state": {
     "loading": "Loading…",
     "empty": "No data yet",
     "error": "Something went wrong",
-    "noResults": "No matching results"
+    "noResults": "No matching results",
+    "forbidden": "You do not have access to this page",
+    "forbiddenHint": "This page needs a different role or is outside your assigned scope. Contact a Super Admin if you need access.",
+    "notFound": "Page not found",
+    "notFoundHint": "The link does not exist or has moved."
   },
   "status": {
     "active": "Active",
@@ -38,7 +43,43 @@
     "inSync": "In sync",
     "desired": "Desired",
     "observed": "Observed",
-    "degraded": "Degraded"
+    "degraded": "Degraded",
+    "ready": "Ready",
+    "locked": "Locked",
+    "disabled": "Disabled",
+    "expiring": "Expiring",
+    "expired": "Expired",
+    "valid": "Valid",
+    "stopped": "Stopped",
+    "exited": "Exited",
+    "installed": "Installed",
+    "available": "Available",
+    "upgradable": "Update available",
+    "verifying": "Verifying",
+    "verified": "Verified",
+    "firing": "Firing",
+    "resolved": "Resolved",
+    "migrating": "Migrating",
+    "purged": "Purged",
+    "timed_out": "Timed out",
+    "cancel_requested": "Cancelling",
+    "pass": "Pass",
+    "warn": "Warning",
+    "fail": "Fail",
+    "success": "Success",
+    "failure": "Failure",
+    "error": "Error",
+    "skipped": "Skipped",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "preflight": "Preflight",
+    "syncing": "Syncing",
+    "cutover": "Cutting over",
+    "completed": "Completed",
+    "rolled_back": "Rolled back",
+    "deleting": "Deleting",
+    "denied": "Denied",
+    "acknowledged": "Acknowledged"
   },
   "table": {
     "selected_one": "{{count}} row selected",
@@ -51,7 +92,8 @@
     "sortAsc": "Sort ascending",
     "sortDesc": "Sort descending",
     "selectAll": "Select all",
-    "selectRow": "Select row"
+    "selectRow": "Select row",
+    "all": "All"
   },
   "confirm": {
     "typeToConfirm": "Type <strong>{{name}}</strong> to confirm",
@@ -63,13 +105,397 @@
     "invalid": "Invalid value",
     "minLength": "At least {{min}} characters",
     "email": "Invalid email",
-    "optional": "optional"
+    "optional": "optional",
+    "mismatch": "Does not match",
+    "maxLength": "At most {{max}} characters"
   },
   "job": {
     "step": "Step {{current}} of {{total}}",
     "steps": "Steps",
-    "elapsed": "Running for {{time}}"
+    "elapsed": "Running for {{time}}",
+    "track": "Job progress",
+    "done": "Finished: {{type}}",
+    "failed": "Failed: {{type}}"
   },
   "breadcrumb": "Breadcrumb",
-  "pagination": "Pagination"
+  "pagination": "Pagination",
+  "severity": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "info": "Info"
+  },
+  "events": {
+    "auth": {
+      "login": "Signed in"
+    },
+    "backup": {
+      "run": "Backup run",
+      "manual": "Manual backup",
+      "restore": "Restore from backup",
+      "policy": {
+        "run": "Run backup policy"
+      },
+      "snapshot": {
+        "delete": "Delete snapshot",
+        "verify": "Verify snapshot",
+        "download_link": "Create snapshot download link"
+      }
+    },
+    "backup_policy": {
+      "update": "Backup policy updated",
+      "create": "Create backup policy",
+      "delete": "Delete backup policy"
+    },
+    "database": {
+      "create": "Database created",
+      "delete": "Delete database",
+      "export": "Export database",
+      "import": "Import into database"
+    },
+    "firewall": {
+      "apply": "Firewall applied",
+      "confirm": "Confirm firewall",
+      "rollback": "Firewall auto-rollback"
+    },
+    "hosting_account": {
+      "create": "Hosting account created",
+      "suspend": "Hosting account suspended",
+      "unsuspend": "Hosting account unsuspended",
+      "change_package": "Package changed",
+      "migrate": "Server migration",
+      "terminate": "Account terminated",
+      "purge": "Account purged",
+      "update": "Update hosting account",
+      "schedule_purge": "Schedule account purge",
+      "confirm_purge": "Confirm account purge",
+      "migrate_preflight": "Server move dry run",
+      "migrate_cutover": "Server move cutover",
+      "migrate_rollback": "Server move rollback"
+    },
+    "hosting_package": {
+      "update": "Hosting package updated",
+      "create": "Hosting package created",
+      "migrate_accounts": "Move accounts to new package version",
+      "delete": "Delete hosting package"
+    },
+    "impersonation": {
+      "start": "Impersonation started"
+    },
+    "server": {
+      "update": "Server updated",
+      "reboot": "Server reboot",
+      "enroll": "Create server enrollment token"
+    },
+    "service": {
+      "restart": "Service restarted",
+      "start": "Start service",
+      "stop": "Stop service",
+      "reload": "Reload service"
+    },
+    "software": {
+      "install": "Software installed",
+      "remove": "Remove software",
+      "upgrade": "Upgrade software"
+    },
+    "user": {
+      "update": "User updated",
+      "password_change": "Password changed",
+      "create": "Create user",
+      "lock": "Lock user",
+      "unlock": "Unlock user",
+      "reset_mfa": "Reset MFA",
+      "scopes": {
+        "update": "Update admin scope"
+      }
+    },
+    "website": {
+      "create": "Website created",
+      "ssl": {
+        "renew": "SSL renewed"
+      },
+      "update": "Update website",
+      "delete": "Delete website",
+      "domain_add": "Add website domain",
+      "domain_remove": "Remove website domain",
+      "nginx_update": "Update website Nginx settings",
+      "php_update": "Update website PHP settings",
+      "waf_update": "Update website WAF"
+    },
+    "job": {
+      "cancel": "Job cancelled"
+    },
+    "nginx": {
+      "update": "Update Nginx configuration"
+    },
+    "container": {
+      "start": "Start container",
+      "stop": "Stop container",
+      "restart": "Restart container"
+    },
+    "compose": {
+      "create": "Create compose project",
+      "update": "Update compose project",
+      "delete": "Delete compose project",
+      "up": "Start compose project",
+      "down": "Stop compose project",
+      "pull": "Pull compose images",
+      "validate": "Validate compose project"
+    },
+    "registry": {
+      "create": "Add Docker registry",
+      "delete": "Delete Docker registry"
+    },
+    "terminal": {
+      "open": "Open terminal"
+    },
+    "certificate": {
+      "issue": "Issue SSL certificate",
+      "upload": "Install uploaded certificate",
+      "delete": "Remove SSL certificate"
+    },
+    "database_user": {
+      "create": "Create database user",
+      "delete": "Delete database user",
+      "grant": "Update database user grants"
+    },
+    "file": {
+      "mkdir": "Create folder",
+      "move": "Move files",
+      "copy": "Copy files",
+      "delete": "Delete files",
+      "chmod": "Change file permissions",
+      "compress": "Compress files",
+      "extract": "Extract archive"
+    },
+    "sftp": {
+      "create": "Create SFTP account",
+      "delete": "Delete SFTP account"
+    },
+    "ssh_key": {
+      "create": "Add SSH key",
+      "delete": "Remove SSH key"
+    },
+    "dns": {
+      "record": {
+        "create": "Add DNS record",
+        "update": "Update DNS record",
+        "delete": "Delete DNS record"
+      }
+    },
+    "cron": {
+      "create": "Create cron job",
+      "update": "Update cron job",
+      "delete": "Delete cron job",
+      "run": "Run cron job now"
+    },
+    "wordpress": {
+      "install": "Install WordPress",
+      "update": "Update WordPress",
+      "clone_staging": "Create WordPress staging",
+      "harden": "Harden WordPress"
+    },
+    "git": {
+      "deploy": "Deploy from Git",
+      "rollback": "Roll back release"
+    },
+    "security": {
+      "scan": "Malware scan",
+      "ssh": {
+        "update": "Update SSH settings"
+      },
+      "fail2ban": {
+        "update": "Update Fail2ban"
+      },
+      "allowlist": {
+        "update": "Update IP allowlist"
+      },
+      "quarantine": {
+        "restore": "Restore file from quarantine"
+      }
+    },
+    "security_event": {
+      "acknowledge": "Acknowledge security event"
+    },
+    "backup_destination": {
+      "create": "Add backup destination",
+      "update": "Update backup destination",
+      "test": "Test backup destination"
+    },
+    "alert_rule": {
+      "create": "Create alert rule",
+      "update": "Update alert rule",
+      "delete": "Delete alert rule"
+    },
+    "audit_log": {
+      "export": "Export audit log"
+    },
+    "settings": {
+      "general": {
+        "update": "Update general settings"
+      },
+      "security": {
+        "update": "Update security settings"
+      },
+      "smtp": {
+        "update": "Update SMTP settings"
+      }
+    },
+    "api_token": {
+      "create": "Create API token",
+      "revoke": "Revoke API token"
+    }
+  },
+  "ops": {
+    "account": {
+      "ensure": "Create Linux user and home",
+      "suspend": "Suspend account",
+      "unsuspend": "Unsuspend account",
+      "remove": "Remove account"
+    },
+    "quota": {
+      "apply": "Apply disk and inode quota"
+    },
+    "php": {
+      "pool": {
+        "apply": "Configure PHP-FPM pool",
+        "remove": "Remove PHP-FPM pool"
+      },
+      "version": {
+        "install": "Install PHP version"
+      }
+    },
+    "nginx": {
+      "vhost": {
+        "apply": "Apply Nginx vhost",
+        "remove": "Remove Nginx vhost"
+      },
+      "global": {
+        "apply": "Apply global Nginx config"
+      }
+    },
+    "cert": {
+      "issue": "Issue SSL certificate",
+      "install": "Install SSL certificate"
+    },
+    "db": {
+      "pg": {
+        "create": "Create PostgreSQL database",
+        "user_ensure": "Ensure PostgreSQL user",
+        "drop": "Drop PostgreSQL database",
+        "user_drop": "Drop PostgreSQL user",
+        "grant": "Grant PostgreSQL privileges",
+        "dump": "Dump PostgreSQL database",
+        "import": "Import into PostgreSQL"
+      },
+      "mysql": {
+        "create": "Create MariaDB database",
+        "drop": "Drop MariaDB database",
+        "user_ensure": "Create MariaDB user",
+        "user_drop": "Drop MariaDB user",
+        "grant": "Grant MariaDB privileges",
+        "dump": "Dump MariaDB database",
+        "import": "Import into MariaDB"
+      }
+    },
+    "fs": {
+      "mkdir": "Create directory",
+      "archive": "Archive files",
+      "move": "Move",
+      "copy": "Copy",
+      "delete": "Delete",
+      "chmod": "Change permissions",
+      "extract": "Extract"
+    },
+    "backup": {
+      "run": "Run backup (restic)",
+      "check": "Verify backup",
+      "restore_test": "Test-restore the backup",
+      "forget": "Forget snapshot (restic)",
+      "restore": "Restore data (restic)"
+    },
+    "service": {
+      "control": "Control service",
+      "status": "Check service status"
+    },
+    "software": {
+      "install": "Install software"
+    },
+    "firewall": {
+      "apply": "Apply firewall rules",
+      "confirm": "Confirm firewall"
+    },
+    "wp": {
+      "install": "Install WordPress",
+      "update": "Update WordPress",
+      "clone": "Clone to staging",
+      "harden": "Harden WordPress"
+    },
+    "system": {
+      "reboot": "Reboot server",
+      "ping": "Check agent responds"
+    },
+    "docker": {
+      "container": {
+        "control": "Control container"
+      }
+    },
+    "compose": {
+      "validate": "Validate compose.yaml",
+      "apply": "Write compose config",
+      "up": "Start services",
+      "down": "Stop services",
+      "pull": "Pull images"
+    },
+    "migrate": {
+      "preflight": "Check target server",
+      "sync": "Sync files and databases",
+      "verify": "Verify data",
+      "cutover": "Switch vhosts, cron, SSL to target",
+      "rollback": "Roll back to source"
+    },
+    "cron": {
+      "apply": "Write account crontab",
+      "run_once": "Run cron command once"
+    },
+    "dns": {
+      "records": {
+        "apply": "Push records to DNS provider"
+      }
+    },
+    "sftp": {
+      "user": {
+        "ensure": "Create chrooted SFTP user",
+        "remove": "Remove SFTP user"
+      }
+    },
+    "ssh": {
+      "keys": {
+        "apply": "Write authorized_keys"
+      }
+    },
+    "waf": {
+      "apply": "Apply WAF rules"
+    },
+    "malware": {
+      "scan": "Malware scan (ClamAV)",
+      "restore": "Restore quarantined file"
+    },
+    "git": {
+      "deploy": "Fetch, build and switch release",
+      "rollback": "Point symlink to previous release"
+    },
+    "sshd": {
+      "config": {
+        "apply": "Apply sshd config"
+      }
+    },
+    "fail2ban": {
+      "apply": "Apply Fail2ban config"
+    }
+  },
+  "wizard": {
+    "stepOf": "Step {{current}} of {{total}}"
+  }
 }

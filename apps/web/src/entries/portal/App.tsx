@@ -1,26 +1,29 @@
-import { useTranslation } from 'react-i18next';
-import { HealthRow } from '@/shared/components/HealthRow';
-import { StatusPanel } from '@/shared/components/StatusPanel';
-import { DEMO_USER } from '@/shared/demo';
-import { PortalShell } from '@/shared/shell/AppShell';
+import type { RouterHistory } from '@tanstack/react-router';
+import { unwrap } from '@/api/http';
+import { portalApi } from '@/api/portal';
+import { configureRealmApi } from '@/shared/api/realm';
+import { RoutedApp } from '@/shared/routing/RoutedApp';
+import { PORTAL_PAGES } from './pages';
+import { PORTAL_ROUTES } from './routes';
+
+configureRealmApi('portal', portalApi);
+
+const fetchJob = async (id: string) =>
+  unwrap(await portalApi.GET('/api/v1/portal/jobs/{id}', { params: { path: { id } } }));
 
 /**
- * Portal: app shell + chỉ health API.
- * Chi tiết agent/hạ tầng là thông tin Admin-only, không lộ qua portal (realm separation).
+ * User Hosting Portal: chỉ chức năng của USER. Chi tiết agent/hạ tầng là thông tin Admin-only,
+ * không lộ qua portal (realm separation).
  */
-export function App() {
-  const { t } = useTranslation('shell');
+export function App({ history }: { history?: RouterHistory }) {
   return (
-    <PortalShell
-      activeKey="overview"
-      user={DEMO_USER}
-      unread={1}
-      storage={{ used: '3,1 GB', total: '10 GB', ratio: 0.31 }}
-    >
-      <h1 className="mb-4 text-2xl font-semibold">{t('nav.overview')}</h1>
-      <StatusPanel>
-        <HealthRow />
-      </StatusPanel>
-    </PortalShell>
+    <RoutedApp
+      realm="portal"
+      defs={PORTAL_ROUTES}
+      pages={PORTAL_PAGES}
+      homeId="overview"
+      fetchJob={fetchJob}
+      {...(history ? { history } : {})}
+    />
   );
 }

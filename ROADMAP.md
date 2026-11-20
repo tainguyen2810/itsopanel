@@ -7,7 +7,7 @@
 | Phase | Tên | Thay đổi so với bản đầu | Mốc |
 |---|---|---|---|
 | 1 | Foundation, Architecture, Database, API Contracts, Design System | Git local trước (D-51); schema DBML được kiểm chứng trên PostgreSQL; OpenAPI admin/portal; agent schemas + mock agent; design tokens theo mockup, Light/Dark, i18n, component nền, app shell 2 entry. Chi tiết: `PHASE_1_PROMPTS.md` | **✓ Hoàn tất, chờ duyệt** (2026-11-20) · báo cáo `docs/reports/phase-1.md` |
-| 2 | Complete UI Demo (**ưu tiên**) | Demo **hoàn chỉnh** Admin Panel + User Hosting Portal trên Design System của Phase 1; dữ liệu mẫu đầy đủ và nhất quán; Light/Dark; responsive 390–1440px; screenshot thật bằng Playwright trong `docs/screenshots/`. Không có trang mua hàng/thanh toán | `v0.0.1-demo` |
+| 2 | Complete UI Demo (**ưu tiên**) | Demo **hoàn chỉnh** Admin Panel + User Hosting Portal trên Design System của Phase 1; dữ liệu mẫu đầy đủ và nhất quán; Light/Dark; responsive 390–1440px; screenshot thật bằng Playwright trong `docs/screenshots/`. Không có trang mua hàng/thanh toán | **✓ Hoàn tất** (2026-11-20) · `v0.0.1-demo` · báo cáo `docs/reports/phase-2.md` |
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | Realm admin/portal; **Hosting Provisioning Service**; package version; vòng đời account | |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | Sandbox systemd, egress per UID, quota inode | |
 | 5 | Website / Nginx / PHP / SSL / DNS | DNS provider API (Cloudflare) đưa vào đây | |

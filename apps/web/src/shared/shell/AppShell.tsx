@@ -2,10 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { readStorage, writeStorage } from '@/shared/lib/storage';
 import { Drawer, DrawerContent } from '@/ui/Dialog';
-import { CommandPalette } from './CommandPalette';
+import { CommandPalette, type SearchFn } from './CommandPalette';
 import { ADMIN_NAV, PORTAL_NAV, type NavGroup } from './nav';
 import { Sidebar, SidebarNav, type StorageInfo } from './Sidebar';
-import { Topbar, type ShellUser } from './Topbar';
+import { Topbar, type DemoSwitch, type ShellUser } from './Topbar';
 
 const COLLAPSE_KEY = 'itso.sidebar.collapsed';
 
@@ -14,6 +14,15 @@ interface ShellProps {
   user: ShellUser;
   unread?: number;
   storage?: StorageInfo;
+  demo?: DemoSwitch;
+  onOpenNotifications?: () => void;
+  onOpenProfile?: () => void;
+  onSignOut?: () => void;
+  /** Phần tử toàn cục thêm vào cuối shell (ví dụ drawer theo dõi job). */
+  overlay?: ReactNode;
+  /** Ctrl+K tìm dữ liệu thật; điều hướng trong app. */
+  searchFn?: SearchFn;
+  onNavigate?: (href: string) => void;
   children: ReactNode;
 }
 
@@ -25,6 +34,13 @@ function Shell({
   user,
   unread = 0,
   storage,
+  demo,
+  onOpenNotifications,
+  onOpenProfile,
+  onSignOut,
+  overlay,
+  searchFn,
+  onNavigate,
   children,
 }: ShellProps & { groups: NavGroup[]; areaLabel: string; search: boolean }) {
   const { t } = useTranslation('shell');
@@ -75,6 +91,10 @@ function Shell({
           onToggleCollapse={toggle}
           onOpenMenu={() => setMenuOpen(true)}
           {...(search ? { onOpenSearch: () => setSearchOpen(true) } : {})}
+          {...(demo ? { demo } : {})}
+          {...(onOpenNotifications ? { onOpenNotifications } : {})}
+          {...(onOpenProfile ? { onOpenProfile } : {})}
+          {...(onSignOut ? { onSignOut } : {})}
         />
         <main
           id="main"
@@ -84,7 +104,16 @@ function Shell({
           {children}
         </main>
       </div>
-      {search && <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} groups={groups} />}
+      {overlay}
+      {search && (
+        <CommandPalette
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          groups={groups}
+          {...(searchFn ? { search: searchFn } : {})}
+          {...(onNavigate ? { onNavigate } : {})}
+        />
+      )}
     </div>
   );
 }

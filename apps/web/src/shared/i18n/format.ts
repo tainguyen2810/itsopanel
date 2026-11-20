@@ -57,6 +57,14 @@ export function formatDateTime(iso: string | Date, locale: Locale, timeZone?: st
   }).format(new Date(iso));
 }
 
+/** "14:30" / "2:30 PM". */
+export function formatTime(iso: string | Date, locale: Locale, timeZone?: string): string {
+  return new Intl.DateTimeFormat(TAG[locale], {
+    timeStyle: 'short',
+    ...(timeZone ? { timeZone } : {}),
+  }).format(new Date(iso));
+}
+
 /** "3 phút trước" / "in 2 days". */
 export function formatRelative(iso: string | Date, locale: Locale, now: Date = new Date()): string {
   const diff = (new Date(iso).getTime() - now.getTime()) / 1000;
@@ -82,4 +90,17 @@ export function formatRelative(iso: string | Date, locale: Locale, now: Date = n
     prev = limit;
   }
   return rtf.format(Math.round(diff / div), unit);
+}
+
+/** Khoảng thời gian (giây) theo đơn vị lớn nhất chia hết: 3600 → "1 giờ" / "1 hour". */
+export function formatDuration(sec: number, locale: Locale): string {
+  const units: [Intl.NumberFormatOptions['unit'], number][] = [
+    ['day', 86_400],
+    ['hour', 3_600],
+    ['minute', 60],
+  ];
+  const [unit, size] = units.find(([, n]) => sec >= n && sec % n === 0) ?? ['second', 1];
+  return new Intl.NumberFormat(TAG[locale], { style: 'unit', unit, unitDisplay: 'long' }).format(
+    sec / size,
+  );
 }

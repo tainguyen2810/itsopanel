@@ -10,7 +10,7 @@ const OUT = process.env.SCREENSHOT_DIR
 const PAGES = [
   { name: 'design', path: '/design/', ready: '#sec-jobs' },
   { name: 'admin-shell', path: '/admin/', ready: '[data-testid="status-Agent"][data-state="ok"]' },
-  { name: 'portal-shell', path: '/portal/', ready: '[data-testid="status-API"][data-state="ok"]' },
+  { name: 'portal-shell', path: '/portal/', ready: '[data-testid="portal-account"]' },
 ] as const;
 const WIDTHS = [1440, 390] as const;
 const THEMES = ['light', 'dark'] as const;
@@ -45,12 +45,19 @@ test.describe('ảnh chụp Design System', () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await prepare(page, { theme });
       await page.goto('/admin/');
+      // Chờ router chuyển /admin/ → /admin/dashboard và trang tải xong rồi mới mở menu.
+      await page.locator('[data-testid="status-Agent"][data-state="ok"]').waitFor();
       await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeHidden();
       await page.getByRole('button', { name: 'Mở menu' }).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog.getByRole('link', { name: /Máy chủ/ })).toBeVisible();
       // Chờ hiệu ứng mở drawer chạy xong để ảnh không bị mờ giữa chừng.
-      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+      // Chỉ chờ animation của drawer (skeleton của trang chạy vô hạn khi API không được giả lập).
+      await dialog.evaluate((el) =>
+        Promise.all(
+          el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)),
+        ),
+      );
       // Drawer phải nằm trên lớp phủ (z-index token): điểm giữa drawer thuộc về dialog.
       const onTop = await dialog.evaluate((el) => {
         const r = el.getBoundingClientRect();
@@ -99,11 +106,11 @@ test.describe('hành vi shell', () => {
     await expect(page.locator('html')).toHaveClass(/dark/);
     await page.getByRole('button', { name: /^Ngôn ngữ/ }).click();
     await page.getByRole('menuitemradio', { name: 'English' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /^Welcome back/ })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await page.reload();
     await expect(page.locator('html')).toHaveClass(/dark/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /^Welcome back/ })).toBeVisible();
   });
 
   test('thu gọn sidebar ở desktop', async ({ page }) => {

@@ -313,6 +313,31 @@ t("hosting", "wordpress_sites", [
     "auto_update text [not null, default: 'minor']", "hardened boolean [not null, default: false]",
     "components jsonb [not null, default: `'[]'::jsonb`]", "observed_at timestamptz",
 ])
+t("hosting", "git_repositories", ID + [
+    "website_id bigint [not null, unique, ref: - websites.id]",
+    "repo_url text [not null, note: 'ssh://git@host/owner/repo.git hoặc https://']",
+    "branch text [not null, default: 'main']",
+    "deploy_key_public text [not null, note: 'ed25519, sinh cho từng site; khóa riêng ở vault của agent']",
+    "deploy_key_fingerprint text [not null]",
+    "webhook_secret_encrypted bytea [not null, note: 'HMAC-SHA256 cho POST /hooks/git/{token}']",
+    "webhook_token text [not null, unique]",
+    "auto_deploy boolean [not null, default: false]",
+    "build_command text [note: 'chạy dưới UID account trong slice; một dòng']",
+    "shared_paths jsonb [not null, default: `'[]'::jsonb`, note: 'đường dẫn giữ qua các release, vd .env, storage']",
+    "keep_releases int [not null, default: 5]",
+    "current_deployment_id bigint",
+] + DO + TS + SOFT, [], "Git deploy theo site (module 22): releases + symlink, rollback.")
+t("hosting", "git_deployments", ID + [
+    "git_repository_id bigint [not null, ref: > git_repositories.id]",
+    "commit_sha text [not null]", "commit_message text", "commit_author text",
+    "trigger text [not null, note: 'manual|webhook|rollback']",
+    "state text [not null, default: 'queued', note: 'queued|running|succeeded|failed|rolled_back']",
+    "release_path text [note: 'releases/<timestamp> tương đối home']",
+    "rollback_of_id bigint [ref: > git_deployments.id]",
+    "job_id bigint [ref: > jobs.id]",
+    "requested_by_user_id bigint [ref: > users.id]",
+    "started_at timestamptz", "finished_at timestamptz",
+] + TS, ["(git_repository_id, created_at)"])
 
 # ---------------------------------------------------------------- Docker (chỉ admin)
 t("docker", "docker_hosts", [

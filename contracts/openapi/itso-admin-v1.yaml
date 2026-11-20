@@ -37,6 +37,8 @@ tags:
   description: Files
 - name: Firewall
   description: Firewall
+- name: Git
+  description: Git
 - name: Jobs
   description: Jobs
 - name: Malware
@@ -142,6 +144,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/account-migrations/{id}:
     get:
       operationId: getAccountMigration
@@ -381,6 +385,36 @@ paths:
                   enabled: true
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a20-0002-7000-8000-000020000002
+                  name: Disk server > 90%
+                  metric: disk_pct
+                  scope_type: server
+                  scope_uuid: null
+                  operator: gt
+                  threshold: 90
+                  for_sec: 300
+                  severity: critical
+                  channels:
+                  - email
+                  - telegram
+                  - in_app
+                  enabled: true
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a20-0003-7000-8000-000020000003
+                  name: RAM server > 90% trong 15 phút
+                  metric: ram_pct
+                  scope_type: server
+                  scope_uuid: null
+                  operator: gt
+                  threshold: 90
+                  for_sec: 900
+                  severity: medium
+                  channels:
+                  - email
+                  enabled: true
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -390,6 +424,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createAlertRule
       summary: Tạo alertRule
@@ -620,6 +656,30 @@ paths:
                   value: 91.3
                   started_at: '2026-11-20T08:15:00+07:00'
                   resolved_at: null
+                - uuid: 01938a21-0002-7000-8000-000021000002
+                  rule:
+                    uuid: 01938a20-0002-7000-8000-000020000002
+                    name: Disk server > 90%
+                  severity: critical
+                  state: resolved
+                  resource:
+                    type: server
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                  value: 91.8
+                  started_at: '2026-11-19T02:10:00+07:00'
+                  resolved_at: '2026-11-19T02:40:00+07:00'
+                - uuid: 01938a21-0003-7000-8000-000021000003
+                  rule:
+                    uuid: 01938a20-0004-7000-8000-000020000004
+                    name: Quota disk account > 95%
+                  severity: medium
+                  state: acknowledged
+                  resource:
+                    type: hosting_account
+                    uuid: 01938a05-0008-7000-8000-000005000008
+                  value: 96.4
+                  started_at: '2026-11-20T07:40:00+07:00'
+                  resolved_at: null
                 meta:
                   next_cursor: null
                   limit: 50
@@ -629,6 +689,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/api-tokens:
     get:
       operationId: listApiTokens
@@ -675,6 +737,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createApiToken
       summary: Tạo API token (trả secret một lần)
@@ -793,6 +857,50 @@ paths:
                     - active
                     - suspended
                   hash: 5e8f0c6b1d2a7e9f4c3b8a1d6e0f2c7b9a4d1e3f5c7b9d0e2f4a6c8e1b3d5f70
+                - uuid: 01938a1f-0002-7000-8000-00001f000002
+                  at: '2026-11-12T09:10:00+07:00'
+                  actor:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  impersonator: null
+                  actor_ip: 10.10.5.20
+                  action: hosting_account.create
+                  resource:
+                    type: hosting_account
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  job_uuid: null
+                  result: success
+                  changes:
+                    updated_at:
+                    - '2026-11-18T09:30:00+07:00'
+                    - '2026-11-19T14:05:00+07:00'
+                  hash: 0000000000000000000000000000000000000000000000013c6ef372fe94f82a
+                - uuid: 01938a1f-0003-7000-8000-00001f000003
+                  at: '2026-11-13T10:20:00+07:00'
+                  actor:
+                    uuid: 01938a01-0002-7000-8000-000001000002
+                    name: Trần Minh
+                    email: minh.tran@itso.local
+                  impersonator: null
+                  actor_ip: 10.10.5.21
+                  action: website.create
+                  resource:
+                    type: website
+                    uuid: 01938a06-0007-7000-8000-000006000007
+                  server:
+                    uuid: 01938a02-0002-7000-8000-000002000002
+                    name: srv-hn-02
+                  job_uuid: null
+                  result: success
+                  changes:
+                    updated_at:
+                    - '2026-11-18T09:30:00+07:00'
+                    - '2026-11-19T14:05:00+07:00'
+                  hash: 000000000000000000000000000000000000000000000001daa66d2c7ddf743f
                 meta:
                   next_cursor: null
                   limit: 50
@@ -802,6 +910,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/audit-logs/export:
     get:
       operationId: exportAuditLogs
@@ -895,6 +1005,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createBackupDestination
       summary: Tạo backupDestination
@@ -1077,7 +1189,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0097-7000-8000-00000f000097
+                  uuid: 01938a0f-009a-7000-8000-00000f00009a
                   type: backup.destination_test
                   state: queued
                   progress: 0
@@ -1105,8 +1217,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097
-                    events: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events
+                    self: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a
+                    events: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events
                 resource:
                   type: backup_destination
                   uuid: 01938a17-0002-7000-8000-000017000002
@@ -1168,6 +1280,21 @@ paths:
                   last_status: succeeded
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a18-0002-7000-8000-000018000002
+                  name: Cấu hình panel hằng tuần
+                  scope_type: panel
+                  scope_uuid: null
+                  schedule: 30 2 * * 0
+                  destination_uuids:
+                  - 01938a17-0002-7000-8000-000017000002
+                  retention:
+                    weekly: 8
+                    monthly: 12
+                  enabled: true
+                  last_run_at: '2026-11-15T02:30:00+07:00'
+                  last_status: succeeded
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -1177,6 +1304,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createBackupPolicy
       summary: Tạo backupPolicy
@@ -1391,7 +1520,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0098-7000-8000-00000f000098
+                  uuid: 01938a0f-009b-7000-8000-00000f00009b
                   type: backup.policy_run
                   state: queued
                   progress: 0
@@ -1424,8 +1553,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098
-                    events: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events
+                    self: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b
+                    events: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b/events
                 resource:
                   type: backup_policy
                   uuid: 01938a18-0001-7000-8000-000018000001
@@ -1508,6 +1637,24 @@ paths:
                   tags:
                   - final
                   - pre-purge
+                - uuid: 01938a0e-0003-7000-8000-00000e000003
+                  hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  destination:
+                    uuid: 01938a17-0002-7000-8000-000017000002
+                    name: S3 Object Lock (offsite)
+                  scope_type: hosting_account
+                  restic_snapshot_id: 5a005ccd
+                  size_mb: 1500.0
+                  taken_at: '2026-11-20T01:14:00+07:00'
+                  verified_at: '2026-11-20T03:00:00+07:00'
+                  contents:
+                  - files
+                  - databases
+                  - config
+                  tags:
+                  - daily
                 meta:
                   next_cursor: null
                   limit: 50
@@ -1517,6 +1664,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/backup-snapshots/{id}:
     delete:
       operationId: deleteBackupSnapshot
@@ -1540,7 +1689,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009a-7000-8000-00000f00009a
+                  uuid: 01938a0f-009d-7000-8000-00000f00009d
                   type: backup.forget
                   state: queued
                   progress: 0
@@ -1568,8 +1717,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a
-                    events: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events
+                    self: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d
+                    events: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events
                 resource:
                   type: backup_snapshot
                   uuid: 01938a0e-0001-7000-8000-00000e000001
@@ -1639,6 +1788,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/backup-snapshots/{id}:download-link:
     post:
       operationId: backupDownloadLink
@@ -1694,7 +1845,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0099-7000-8000-00000f000099
+                  uuid: 01938a0f-009c-7000-8000-00000f00009c
                   type: backup.verify
                   state: queued
                   progress: 0
@@ -1727,8 +1878,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099
-                    events: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events
+                    self: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c
+                    events: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events
                 resource:
                   type: backup_snapshot
                   uuid: 01938a0e-0001-7000-8000-00000e000001
@@ -1881,6 +2032,20 @@ paths:
                   status: expiring
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a08-0003-7000-8000-000008000003
+                  website:
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                    primary_domain: shop.anphat.vn
+                  source: acme
+                  domains:
+                  - shop.anphat.vn
+                  issuer: Let's Encrypt R11
+                  not_before: '2026-11-18T07:00:00+07:00'
+                  not_after: '2027-02-16T07:00:00+07:00'
+                  auto_renew: true
+                  status: valid
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -1890,6 +2055,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/certificates/{id}:
     delete:
       operationId: deleteCertificate
@@ -2061,6 +2228,8 @@ paths:
                   validation:
                     ok: true
                     warnings: []
+                  compose_yaml: "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\"\
+                    , \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n"
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
                 - uuid: 01938a1e-0002-7000-8000-00001e000002
@@ -2075,6 +2244,9 @@ paths:
                     ok: true
                     warnings:
                     - Service metabase không giới hạn memory
+                  compose_yaml: "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"127.0.0.1:3000:3000\"\
+                    \n    environment:\n      MB_DB_TYPE: postgres\n  postgres:\n    image: postgres:16-alpine\n    volumes:\n\
+                    \      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n"
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
@@ -2086,6 +2258,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createComposeProject
       summary: Tạo composeProject
@@ -2114,7 +2288,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a3-7000-8000-00000f0000a3
+                  uuid: 01938a0f-00a6-7000-8000-00000f0000a6
                   type: compose.create
                   state: queued
                   progress: 0
@@ -2147,8 +2321,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3
-                    events: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events
+                    self: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6
+                    events: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events
                 resource:
                   type: compose_project
                   uuid: 01938a1e-0001-7000-8000-00001e000001
@@ -2195,6 +2369,8 @@ paths:
                   validation:
                     ok: true
                     warnings: []
+                  compose_yaml: "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\"\
+                    , \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n"
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
           headers:
@@ -2236,7 +2412,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a4-7000-8000-00000f0000a4
+                  uuid: 01938a0f-00a7-7000-8000-00000f0000a7
                   type: compose.update
                   state: queued
                   progress: 0
@@ -2251,266 +2427,6 @@ paths:
                     finished_at: null
                   - seq: 2
                     op: compose.apply
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4
-                    events: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-        '412':
-          $ref: ./common.yaml#/components/responses/PreconditionFailed
-    delete:
-      operationId: deleteComposeProject
-      summary: Xóa composeProject
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00a5-7000-8000-00000f0000a5
-                  type: compose.delete
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.validate
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  - seq: 2
-                    op: compose.apply
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5
-                    events: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:down:
-    post:
-      operationId: downComposeProject
-      summary: Compose down
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00a8-7000-8000-00000f0000a8
-                  type: compose.down
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.down
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8
-                    events: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:pull:
-    post:
-      operationId: pullComposeProject
-      summary: Compose pull
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00a9-7000-8000-00000f0000a9
-                  type: compose.pull
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.pull
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9
-                    events: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:up:
-    post:
-      operationId: upComposeProject
-      summary: Compose up
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00a7-7000-8000-00000f0000a7
-                  type: compose.up
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.up
                     state: pending
                     started_at: null
                     finished_at: null
@@ -2546,6 +2462,266 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: deleteComposeProject
+      summary: Xóa composeProject
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00a8-7000-8000-00000f0000a8
+                  type: compose.delete
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.validate
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: compose.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8
+                    events: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:down:
+    post:
+      operationId: downComposeProject
+      summary: Compose down
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00ab-7000-8000-00000f0000ab
+                  type: compose.down
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.down
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab
+                    events: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:pull:
+    post:
+      operationId: pullComposeProject
+      summary: Compose pull
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00ac-7000-8000-00000f0000ac
+                  type: compose.pull
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.pull
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac
+                    events: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:up:
+    post:
+      operationId: upComposeProject
+      summary: Compose up
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00aa-7000-8000-00000f0000aa
+                  type: compose.up
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.up
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa
+                    events: /api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/compose-projects/{id}:validate:
     post:
       operationId: validateComposeProject
@@ -2565,7 +2741,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a6-7000-8000-00000f0000a6
+                  uuid: 01938a0f-00a9-7000-8000-00000f0000a9
                   type: compose.validate
                   state: queued
                   progress: 0
@@ -2593,8 +2769,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6
-                    events: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events
+                    self: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9
+                    events: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events
                 resource:
                   type: compose_project
                   uuid: 01938a1e-0001-7000-8000-00001e000001
@@ -2682,6 +2858,25 @@ paths:
                   observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a0d-0003-7000-8000-00000d000003
+                  hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  website: null
+                  schedule: 0 3 * * *
+                  command: php artisan backup:clean
+                  working_dir: .
+                  php_version: '8.3'
+                  enabled: true
+                  last_run_at: '2026-11-20T03:00:00+07:00'
+                  last_status: succeeded
+                  status: ready
+                  spec_version: 1
+                  observed_version: 1
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-12T09:10:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -2691,6 +2886,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createCronJob
       summary: Tạo cron job
@@ -2948,6 +3145,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/cron-jobs/{id}:run:
     post:
       operationId: runCronJob
@@ -3034,10 +3233,10 @@ paths:
                 data:
                   counts:
                     servers: 3
-                    hosting_accounts: 4
-                    websites: 4
-                    databases: 3
-                    users: 5
+                    hosting_accounts: 11
+                    websites: 21
+                    databases: 10
+                    users: 14
                     packages: 3
                   servers:
                   - server:
@@ -3063,14 +3262,14 @@ paths:
                     disk_pct: 90.4
                   package_distribution:
                   - code: basic
-                    accounts: 1
+                    accounts: 4
                   - code: business
-                    accounts: 3
+                    accounts: 5
                   - code: pro
-                    accounts: 0
+                    accounts: 2
                   alerts_firing: 1
                   security_events_24h: 38
-                  jobs_running: 1
+                  jobs_running: 2
                   updated_at: '2026-11-20T08:15:00+07:00'
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
@@ -3137,6 +3336,19 @@ paths:
                     - DELETE
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a0a-0003-7000-8000-00000a000003
+                  hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  engine: mariadb
+                  username: binhminh_web
+                  host: localhost
+                  grants:
+                  - database: binhminh_web
+                    privileges:
+                    - ALL
+                  created_at: '2026-11-12T09:10:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -3146,6 +3358,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createDatabaseUser
       summary: Tạo DB user
@@ -3495,6 +3709,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createDatabase
       summary: Tạo database
@@ -3876,8 +4092,24 @@ paths:
                   hosting_account:
                     uuid: 01938a05-0001-7000-8000-000005000001
                     username: anphat
-                  records_count: 6
+                  records_count: 3
                   created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a13-0002-7000-8000-000013000002
+                  name: binhminh.vn
+                  provider: manual
+                  hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  records_count: 4
+                  created_at: '2026-11-13T10:20:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a13-0003-7000-8000-000013000003
+                  name: itso.vn
+                  provider: powerdns
+                  hosting_account: null
+                  records_count: 4
+                  created_at: '2026-11-12T09:10:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
@@ -3888,6 +4120,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/dns/zones/{id}/records:
     get:
       operationId: listDnsRecords
@@ -3948,6 +4182,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createDnsRecord
       summary: Thêm record
@@ -4154,6 +4390,577 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/git-deployments/{id}:rollback:
+    post:
+      operationId: rollbackGitDeployment
+      summary: Quay về release này (đổi symlink)
+      tags:
+      - Git
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0098-7000-8000-00000f000098
+                  type: git.rollback
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: git_repository
+                    uuid: 01938a2e-0001-7000-8000-00002e000001
+                  steps:
+                  - seq: 1
+                    op: git.rollback
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098
+                    events: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events
+                resource:
+                  type: git_repository
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/git-repositories:
+    get:
+      operationId: listGitRepositories
+      summary: Repository Git gắn với website
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/FilterHostingAccount
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/GitRepository
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: true
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a2e-0002-7000-8000-00002e000002
+                  website:
+                    uuid: 01938a06-0003-7000-8000-000006000003
+                    primary_domain: marketing.itso.vn
+                  hosting_account:
+                    uuid: 01938a05-0002-7000-8000-000005000002
+                    username: mktitso
+                  repo_url: https://git.itso.local/marketing/site.git
+                  branch: production
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM4qRt itso-deploy-marketing.itso.vn
+                  deploy_key_fingerprint: SHA256:Zx9c7V5b3N1m2L4k6J8h0G2f4D6s8A0p1O3i5U7y9T1
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gl_3b8e6d1f4a
+                  auto_deploy: false
+                  build_command: npm ci && npm run build
+                  shared_paths: []
+                  keep_releases: 3
+                  current_deployment:
+                    uuid: 01938a2f-0003-7000-8000-00002f000003
+                    commit_sha: e9f2a10
+                    finished_at: '2026-11-18T09:05:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: createGitRepository
+      summary: Kết nối repository (sinh deploy key riêng)
+      tags:
+      - Git
+      description: Panel sinh cặp khóa ed25519 cho site; khóa riêng chỉ nằm ở agent. Thêm `deploy_key_public` vào repo (chỉ
+        đọc) trước khi deploy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/GitRepositoryCreate
+            example:
+              website_uuid: 01938a06-0002-7000-8000-000006000002
+              repo_url: git@github.com:anphat-it/shop.git
+              branch: main
+              auto_deploy: false
+              build_command: null
+              shared_paths:
+              - .env
+              keep_releases: 5
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/GitRepository
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: true
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/git-repositories/{id}:
+    get:
+      operationId: getGitRepository
+      summary: Chi tiết repository
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/GitRepository
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: true
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+    patch:
+      operationId: updateGitRepository
+      summary: Sửa cấu hình deploy
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IfMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/GitRepositoryUpdate
+            example:
+              auto_deploy: false
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/GitRepository
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  repo_url: git@github.com:anphat-it/website.git
+                  branch: main
+                  deploy_key_public: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn
+                  deploy_key_fingerprint: SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW
+                  webhook_url: https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e
+                  auto_deploy: false
+                  build_command: composer install --no-dev --optimize-autoloader
+                  shared_paths:
+                  - .env
+                  - storage
+                  keep_releases: 5
+                  current_deployment:
+                    uuid: 01938a2f-0002-7000-8000-00002f000002
+                    commit_sha: 5d0b7f3
+                    finished_at: '2026-11-19T15:40:48+07:00'
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: deleteGitRepository
+      summary: Ngắt kết nối repository (giữ release hiện tại)
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '204':
+          description: Thành công, không có nội dung
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/git-repositories/{id}/deployments:
+    get:
+      operationId: listGitDeployments
+      summary: Lịch sử deploy
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/GitDeployment
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a2f-0001-7000-8000-00002f000001
+                  repository_uuid: 01938a2e-0001-7000-8000-00002e000001
+                  commit_sha: a41c9e2
+                  commit_message: Trang liên hệ mới
+                  commit_author: Nguyễn Văn Bảo
+                  trigger: manual
+                  state: succeeded
+                  release_path: sites/anphat.vn/releases/202611171012
+                  rollback_of: null
+                  job_uuid: null
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  started_at: '2026-11-17T10:12:00+07:00'
+                  finished_at: '2026-11-17T10:12:48+07:00'
+                  created_at: '2026-11-17T10:12:00+07:00'
+                - uuid: 01938a2f-0002-7000-8000-00002f000002
+                  repository_uuid: 01938a2e-0001-7000-8000-00002e000001
+                  commit_sha: 5d0b7f3
+                  commit_message: Sửa lỗi form đặt hàng
+                  commit_author: Nguyễn Văn Bảo
+                  trigger: webhook
+                  state: succeeded
+                  release_path: sites/anphat.vn/releases/202611191540
+                  rollback_of: null
+                  job_uuid: null
+                  requested_by: null
+                  started_at: '2026-11-19T15:40:00+07:00'
+                  finished_at: '2026-11-19T15:40:48+07:00'
+                  created_at: '2026-11-19T15:40:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: createGitDeployment
+      summary: Deploy (commit mới nhất của branch hoặc commit chỉ định)
+      tags:
+      - Git
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/GitDeployRequest
+            example:
+              commit_sha: null
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0097-7000-8000-00000f000097
+                  type: git.deploy
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: git_repository
+                    uuid: 01938a2e-0001-7000-8000-00002e000001
+                  steps:
+                  - seq: 1
+                    op: git.deploy
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097
+                    events: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events
+                resource:
+                  type: git_repository
+                  uuid: 01938a2e-0001-7000-8000-00002e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/git-repositories/{id}:rotate-webhook-secret:
+    post:
+      operationId: rotateGitWebhookSecret
+      summary: Đổi secret webhook (HMAC-SHA256)
+      tags:
+      - Git
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/SecretOnce
+                required:
+                - data
+              example:
+                data:
+                  secret: whsec_4Tq9mZ2vL8xR1nB6
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/hosting-accounts:
     get:
       operationId: listHostingAccounts
@@ -4284,10 +5091,10 @@ paths:
                       used: 1
                       limit: 2
                     ftp_accounts:
-                      used: 1
+                      used: 0
                       limit: 2
                     cron_jobs:
-                      used: 1
+                      used: 0
                       limit: 3
                     backup_mb:
                       used: 6100
@@ -4339,7 +5146,7 @@ paths:
                       used: 1
                       limit: 10
                     databases:
-                      used: 1
+                      used: 0
                       limit: 10
                     ftp_accounts:
                       used: 0
@@ -4359,64 +5166,6 @@ paths:
                   observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
-                - uuid: 01938a05-0004-7000-8000-000005000004
-                  username: oldshop
-                  server:
-                    uuid: 01938a02-0003-7000-8000-000002000003
-                    name: srv-hcm-01
-                  package:
-                    uuid: 01938a03-0002-7000-8000-000003000002
-                    code: business
-                    name: Business
-                    version: 1
-                  owner:
-                    uuid: 01938a01-0003-7000-8000-000001000003
-                    name: Công ty An Phát
-                    email: it@anphat.vn
-                  uid: 20003
-                  home_path: /home/oldshop
-                  lifecycle_state: terminated
-                  suspended_reason: null
-                  terminated_at: '2026-11-01T10:00:00+07:00'
-                  purge_after: '2026-12-01T10:00:00+07:00'
-                  legal_hold: false
-                  usage:
-                    disk_mb:
-                      used: 950
-                      limit: 20480
-                    inodes:
-                      used: 21000
-                      limit: 400000
-                    cpu_percent:
-                      used: 0
-                      limit: 200
-                    ram_mb:
-                      used: 0
-                      limit: 4096
-                    websites:
-                      used: 0
-                      limit: 10
-                    databases:
-                      used: 0
-                      limit: 10
-                    ftp_accounts:
-                      used: 0
-                      limit: 5
-                    cron_jobs:
-                      used: 0
-                      limit: 10
-                    backup_mb:
-                      used: 1200
-                      limit: 40960
-                    bandwidth_mb_30d: 48213
-                    measured_at: '2026-11-20T08:15:00+07:00'
-                  status: suspended
-                  spec_version: 3
-                  observed_version: 3
-                  drift: null
-                  observed_at: '2026-11-20T08:15:00+07:00'
-                  created_at: '2026-11-18T09:30:00+07:00'
-                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -4426,6 +5175,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createHostingAccount
       summary: Tạo hostingAccount
@@ -4702,6 +5453,56 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
         '412':
           $ref: ./common.yaml#/components/responses/PreconditionFailed
+  /api/v1/admin/hosting-accounts/{id}/features:
+    get:
+      operationId: getHostingAccountFeatures
+      summary: Tính năng theo gói (PHP, SSH, cron, backup)
+      tags:
+      - Accounts
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/AccountFeatures
+                required:
+                - data
+              example:
+                data:
+                  package:
+                    uuid: 01938a03-0002-7000-8000-000003000002
+                    code: business
+                    name: Business
+                    version: 1
+                  php_versions:
+                  - '8.1'
+                  - '8.2'
+                  - '8.3'
+                  php_workers_max: 10
+                  ssh_allowed: true
+                  cron_min_interval_min: 5
+                  backup_quota_mb: 40960
+                  backup_retention:
+                    daily: 7
+                    weekly: 4
+                    monthly: 3
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
   /api/v1/admin/hosting-accounts/{id}/files:
     get:
       operationId: ListFiles
@@ -4765,6 +5566,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/hosting-accounts/{id}/files/content:
     get:
       operationId: ReadFile
@@ -5145,6 +5948,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/hosting-accounts/{id}/usage:
     get:
       operationId: getHostingAccountUsage
@@ -5797,7 +6602,7 @@ paths:
                   description: Website giới thiệu, blog nội bộ
                   current_version: 2
                   is_active: true
-                  account_count: 1
+                  account_count: 4
                   limits:
                     disk_mb: 5120
                     inode_limit: 150000
@@ -5834,7 +6639,7 @@ paths:
                   description: Website doanh nghiệp, shop nhỏ
                   current_version: 1
                   is_active: true
-                  account_count: 2
+                  account_count: 5
                   limits:
                     disk_mb: 20480
                     inode_limit: 400000
@@ -5872,7 +6677,7 @@ paths:
                   description: Ứng dụng lớn, nhiều website
                   current_version: 1
                   is_active: true
-                  account_count: 0
+                  account_count: 2
                   limits:
                     disk_mb: 102400
                     inode_limit: 2000000
@@ -5914,6 +6719,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createHostingPackage
       summary: Tạo hostingPackage
@@ -5979,7 +6786,7 @@ paths:
                   description: Website giới thiệu, blog nội bộ
                   current_version: 2
                   is_active: true
-                  account_count: 1
+                  account_count: 4
                   limits:
                     disk_mb: 5120
                     inode_limit: 150000
@@ -6048,7 +6855,7 @@ paths:
                   description: Website giới thiệu, blog nội bộ
                   current_version: 2
                   is_active: true
-                  account_count: 1
+                  account_count: 4
                   limits:
                     disk_mb: 5120
                     inode_limit: 150000
@@ -6153,7 +6960,7 @@ paths:
                   description: Website giới thiệu, blog nội bộ
                   current_version: 2
                   is_active: true
-                  account_count: 1
+                  account_count: 4
                   limits:
                     disk_mb: 5120
                     inode_limit: 150000
@@ -6316,7 +7123,7 @@ paths:
                     - '8.2'
                     - '8.3'
                     retention_days_after_terminate: 30
-                  account_count: 1
+                  account_count: 4
                   created_by:
                     uuid: 01938a01-0001-7000-8000-000001000001
                     name: Quản trị hệ thống
@@ -6333,6 +7140,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/hosting-packages/{id}/versions/{version}:migrate-accounts:
     post:
       operationId: migratePackageVersionAccounts
@@ -6513,6 +7322,46 @@ paths:
                   links:
                     self: /api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002
                     events: /api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002/events
+                - uuid: 01938a0f-0005-7000-8000-00000f000005
+                  type: hosting_account.create
+                  state: running
+                  progress: 40
+                  resource:
+                    type: hosting_account
+                    uuid: 01938a05-000c-7000-8000-00000500000c
+                  steps:
+                  - seq: 1
+                    op: account.ensure
+                    state: succeeded
+                    started_at: '2026-11-20T08:15:00+07:00'
+                    finished_at: '2026-11-20T08:15:00+07:00'
+                  - seq: 2
+                    op: quota.apply
+                    state: running
+                    started_at: '2026-11-20T08:15:00+07:00'
+                    finished_at: null
+                  - seq: 3
+                    op: php.pool.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 1
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0002-7000-8000-000002000002
+                    name: srv-hn-02
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: '2026-11-20T08:15:00+07:00'
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0005-7000-8000-00000f000005
+                    events: /api/v1/admin/jobs/01938a0f-0005-7000-8000-00000f000005/events
                 meta:
                   next_cursor: null
                   limit: 50
@@ -6522,6 +7371,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/jobs/{id}:
     get:
       operationId: getJob
@@ -6682,6 +7533,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/jobs/{id}:cancel:
     post:
       operationId: cancelJob
@@ -6749,6 +7602,88 @@ paths:
                   links:
                     self: /api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002
                     events: /api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002/events
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/jobs/{id}:retry:
+    post:
+      operationId: retryJob
+      summary: Chạy lại job thất bại/đã hủy (tạo job mới cùng tham số)
+      tags:
+      - Jobs
+      description: 'Chỉ job `failed`, `cancelled`, `timed_out`; job khác → 409 `conflict`. Job mới tham chiếu cùng tài nguyên.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0099-7000-8000-00000f000099
+                  type: website.create
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: website
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                  steps:
+                  - seq: 1
+                    op: fs.mkdir
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: php.pool.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 3
+                    op: nginx.vhost.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 4
+                    op: cert.issue
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099
+                    events: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events
+                resource:
+                  type: website
+                  uuid: 01938a06-0002-7000-8000-000006000002
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -7006,6 +7941,14 @@ paths:
                   link: /backups
                   read_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-20T03:05:00+07:00'
+                - uuid: 01938a12-0003-7000-8000-000012000003
+                  type: job.failed
+                  severity: high
+                  title: Tạo database intranet_web thất bại
+                  body: PostgreSQL không phản hồi; có thể thử lại.
+                  link: /jobs/01938a0f-0008-7000-8000-00000f000008
+                  read_at: null
+                  created_at: '2026-11-20T08:15:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -7015,6 +7958,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/notifications/{id}:read:
     post:
       operationId: markNotificationRead
@@ -7113,6 +8058,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/purge-records:
     get:
       operationId: listPurgeRecords
@@ -7167,6 +8114,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/registries:
     get:
       operationId: listRegistries
@@ -7211,6 +8160,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createRegistry
       summary: Tạo registry
@@ -7326,6 +8277,25 @@ paths:
                     email: it@anphat.vn
                   created_at: '2026-11-19T14:05:00+07:00'
                   finished_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a10-0002-7000-8000-000010000002
+                  snapshot_uuid: 01938a0e-0001-7000-8000-00000e000001
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  target_server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  mode: overwrite
+                  items:
+                  - database:anphat_shop
+                  state: failed
+                  job_uuid: null
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-18T16:20:00+07:00'
+                  finished_at: '2026-11-18T16:21:10+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -7335,6 +8305,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createRestore
       summary: Khôi phục
@@ -7526,6 +8498,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/events:
     get:
       operationId: listSecurityEvents
@@ -7583,6 +8557,19 @@ paths:
                   message: Phát hiện webshell wp-content/uploads/2026/11/x.php
                   acknowledged_at: '2026-11-19T14:05:00+07:00'
                   at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a1a-0003-7000-8000-00001a000003
+                  type: waf.block
+                  severity: medium
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  website:
+                    uuid: 01938a06-0007-7000-8000-000006000007
+                    primary_domain: docs.binhminh.vn
+                  source_ip: 203.0.113.77
+                  message: Chặn XSS tại /lien-he
+                  acknowledged_at: null
+                  at: '2026-11-15T14:00:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -7592,6 +8579,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/events/{id}:acknowledge:
     post:
       operationId: acknowledgeSecurityEvent
@@ -7709,7 +8698,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009e-7000-8000-00000f00009e
+                  uuid: 01938a0f-00a1-7000-8000-00000f0000a1
                   type: fail2ban.update
                   state: queued
                   progress: 0
@@ -7737,8 +8726,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e
-                    events: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events
+                    self: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1
+                    events: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -7878,6 +8867,32 @@ paths:
                   findings: 1
                   started_at: '2026-11-19T14:05:00+07:00'
                   finished_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a1b-0002-7000-8000-00001b000002
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  engine: clamav+yara
+                  state: succeeded
+                  files_scanned: 9120
+                  findings: 0
+                  started_at: '2026-11-20T02:00:00+07:00'
+                  finished_at: '2026-11-20T02:20:00+07:00'
+                - uuid: 01938a1b-0003-7000-8000-00001b000003
+                  website:
+                    uuid: 01938a06-0005-7000-8000-000006000005
+                    primary_domain: binhminh.vn
+                  hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  engine: clamav+yara
+                  state: succeeded
+                  files_scanned: 14388
+                  findings: 0
+                  started_at: '2026-11-20T02:00:00+07:00'
+                  finished_at: '2026-11-20T02:20:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -7887,6 +8902,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/overview:
     get:
       operationId: getSecurityOverview
@@ -7994,6 +9011,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/security/quarantine/{id}:restore:
     post:
       operationId: restoreQuarantineItem
@@ -8017,7 +9036,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a1-7000-8000-00000f0000a1
+                  uuid: 01938a0f-00a4-7000-8000-00000f0000a4
                   type: malware.restore
                   state: queued
                   progress: 0
@@ -8045,8 +9064,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1
-                    events: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events
+                    self: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4
+                    events: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events
                 resource:
                   type: quarantine_item
                   uuid: 01938a1c-0001-7000-8000-00001c000001
@@ -8128,7 +9147,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009d-7000-8000-00000f00009d
+                  uuid: 01938a0f-00a0-7000-8000-00000f0000a0
                   type: sshd.update
                   state: queued
                   progress: 0
@@ -8156,8 +9175,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d
-                    events: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events
+                    self: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0
+                    events: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -8225,7 +9244,7 @@ paths:
                     disk_used_mb: 812400
                     load_1m: 2.31
                     uptime_sec: 3888000
-                  account_count: 2
+                  account_count: 5
                   status: ready
                   spec_version: 3
                   observed_version: 3
@@ -8254,7 +9273,7 @@ paths:
                     disk_used_mb: 120300
                     load_1m: 0.42
                     uptime_sec: 864000
-                  account_count: 0
+                  account_count: 5
                   status: ready
                   spec_version: 1
                   observed_version: 1
@@ -8284,7 +9303,7 @@ paths:
                     disk_used_mb: 431000
                     load_1m: 6.8
                     uptime_sec: 1728000
-                  account_count: 2
+                  account_count: 1
                   status: degraded
                   spec_version: 5
                   observed_version: 4
@@ -8302,6 +9321,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/enrollment-tokens:
     post:
       operationId: createEnrollmentToken
@@ -8395,7 +9416,7 @@ paths:
                     disk_used_mb: 812400
                     load_1m: 2.31
                     uptime_sec: 3888000
-                  account_count: 2
+                  account_count: 5
                   status: ready
                   spec_version: 3
                   observed_version: 3
@@ -8467,7 +9488,7 @@ paths:
                     disk_used_mb: 812400
                     load_1m: 2.31
                     uptime_sec: 3888000
-                  account_count: 2
+                  account_count: 5
                   status: ready
                   spec_version: 3
                   observed_version: 3
@@ -8520,7 +9541,7 @@ paths:
                   allocated_cpu_pct: 300
                   allocated_ram_mb: 5120
                   allocated_disk_mb: 25600
-                  account_count: 2
+                  account_count: 5
                   max_accounts: 200
                   accepting_new: true
                   updated_at: '2026-11-20T08:15:00+07:00'
@@ -8597,6 +9618,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/docker/containers/{container}/logs:
     get:
       operationId: getContainerLogs
@@ -8656,7 +9679,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a2-7000-8000-00000f0000a2
+                  uuid: 01938a0f-00a5-7000-8000-00000f0000a5
                   type: docker.container_control
                   state: queued
                   progress: 0
@@ -8684,8 +9707,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2
-                    events: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events
+                    self: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5
+                    events: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -8747,6 +9770,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/docker/networks:
     get:
       operationId: listDockerNetworks
@@ -8792,6 +9817,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/docker/volumes:
     get:
       operationId: listDockerVolumes
@@ -8837,6 +9864,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/firewall/rules:
     get:
       operationId: listFirewallRules
@@ -8911,6 +9940,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createFirewallRule
       summary: Thêm rule (nháp, chưa áp dụng)
@@ -9023,7 +10054,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009b-7000-8000-00000f00009b
+                  uuid: 01938a0f-009e-7000-8000-00000f00009e
                   type: firewall.apply
                   state: queued
                   progress: 0
@@ -9051,8 +10082,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b
-                    events: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b/events
+                    self: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e
+                    events: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -9087,7 +10118,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009c-7000-8000-00000f00009c
+                  uuid: 01938a0f-009f-7000-8000-00000f00009f
                   type: firewall.confirm
                   state: queued
                   progress: 0
@@ -9115,8 +10146,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c
-                    events: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events
+                    self: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f
+                    events: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -9304,6 +10335,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/services:
     get:
       operationId: listServerServices
@@ -9349,11 +10382,6 @@ paths:
                   enabled: true
                   version: 11.4.4
                   since: '2026-11-18T09:30:00+07:00'
-                - name: fail2ban
-                  active: true
-                  enabled: true
-                  version: 1.1.0
-                  since: '2026-11-18T09:30:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -9365,6 +10393,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/services/{service}:{action}:
     post:
       operationId: controlServerService
@@ -9490,6 +10520,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/software/{key}:{action}:
     post:
       operationId: manageServerSoftware
@@ -9755,6 +10787,38 @@ paths:
                   observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a0b-0002-7000-8000-00000b000002
+                  hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  username: binhminh_ftp
+                  protocol: sftp
+                  root_path: .
+                  read_only: false
+                  last_login_at: null
+                  status: ready
+                  spec_version: 1
+                  observed_version: 1
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-12T09:10:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a0b-0003-7000-8000-00000b000003
+                  hosting_account:
+                    uuid: 01938a05-0006-7000-8000-000005000006
+                    username: saomai
+                  username: saomai_ftp
+                  protocol: sftp
+                  root_path: .
+                  read_only: false
+                  last_login_at: '2026-11-19T14:05:00+07:00'
+                  status: ready
+                  spec_version: 1
+                  observed_version: 1
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-13T10:20:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -9764,6 +10828,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createSftpAccount
       summary: Tạo tài khoản SFTP/FTPS
@@ -9948,6 +11014,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createSshKey
       summary: Thêm SSH key (gói phải cho phép SSH)
@@ -10242,6 +11310,26 @@ paths:
                   last_latency_ms: 182
                   uptime_30d: 99.97
                   last_checked_at: '2026-11-20T08:15:00+07:00'
+                - uuid: 01938a2a-0002-7000-8000-00002a000002
+                  website:
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                    primary_domain: shop.anphat.vn
+                  url: https://shop.anphat.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 240
+                  uptime_30d: 99.95
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
+                - uuid: 01938a2a-0003-7000-8000-00002a000003
+                  website:
+                    uuid: 01938a06-0005-7000-8000-000006000005
+                    primary_domain: binhminh.vn
+                  url: https://binhminh.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 310
+                  uptime_30d: 99.9
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -10251,6 +11339,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/users:
     get:
       operationId: listUsers
@@ -10317,30 +11407,6 @@ paths:
                   last_login_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
-                - uuid: 01938a01-0004-7000-8000-000001000004
-                  realm: portal
-                  name: Phòng Marketing
-                  email: marketing@itso.vn
-                  role: USER
-                  status: active
-                  mfa_enabled: false
-                  locale: vi
-                  timezone: Asia/Ho_Chi_Minh
-                  last_login_at: '2026-11-19T14:05:00+07:00'
-                  created_at: '2026-11-18T09:30:00+07:00'
-                  updated_at: '2026-11-19T14:05:00+07:00'
-                - uuid: 01938a01-0005-7000-8000-000001000005
-                  realm: portal
-                  name: Lê Hoa
-                  email: hoa.le@example.vn
-                  role: USER
-                  status: locked
-                  mfa_enabled: false
-                  locale: en
-                  timezone: Asia/Ho_Chi_Minh
-                  last_login_at: null
-                  created_at: '2026-11-18T09:30:00+07:00'
-                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -10350,6 +11416,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createUser
       summary: Tạo user
@@ -10552,6 +11620,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     put:
       operationId: setUserScopes
       summary: Đặt phạm vi ADMIN
@@ -10894,28 +11964,6 @@ paths:
                   observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
-                - uuid: 01938a06-0004-7000-8000-000006000004
-                  hosting_account:
-                    uuid: 01938a05-0003-7000-8000-000005000003
-                    username: lehoa
-                  server:
-                    uuid: 01938a02-0003-7000-8000-000002000003
-                    name: srv-hcm-01
-                  primary_domain: lehoa.blog
-                  type: php
-                  document_root: public
-                  php_version: '8.1'
-                  ssl_mode: acme
-                  waf_enabled: true
-                  domains_count: 1
-                  certificate_expires_at: '2026-12-02T07:00:00+07:00'
-                  status: suspended
-                  spec_version: 3
-                  observed_version: 3
-                  drift: null
-                  observed_at: '2026-11-20T08:15:00+07:00'
-                  created_at: '2026-11-18T09:30:00+07:00'
-                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -10925,6 +11973,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: createWebsite
       summary: Tạo website
@@ -11349,6 +12399,15 @@ paths:
                   verified_at: '2026-11-18T09:30:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a07-0003-7000-8000-000007000003
+                  website:
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                    primary_domain: shop.anphat.vn
+                  name: shop.anphat.vn
+                  type: primary
+                  verified_at: '2026-11-18T09:30:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -11360,6 +12419,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: addWebsiteDomain
       summary: Thêm domain phụ
@@ -11783,7 +12844,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a0-7000-8000-00000f0000a0
+                  uuid: 01938a0f-00a3-7000-8000-00000f0000a3
                   type: malware.scan
                   state: queued
                   progress: 0
@@ -11811,8 +12872,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0
-                    events: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events
+                    self: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3
+                    events: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events
                 resource:
                   type: website
                   uuid: 01938a06-0004-7000-8000-000006000004
@@ -11899,7 +12960,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009f-7000-8000-00000f00009f
+                  uuid: 01938a0f-00a2-7000-8000-00000f0000a2
                   type: waf.update
                   state: queued
                   progress: 0
@@ -11932,8 +12993,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f
-                    events: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events
+                    self: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2
+                    events: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -11998,6 +13059,42 @@ paths:
                     file_edit_disabled: true
                   staging_of: null
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a11-0002-7000-8000-000011000002
+                  website:
+                    uuid: 01938a06-0008-7000-8000-000006000008
+                    primary_domain: saomai.edu.vn
+                  hosting_account:
+                    uuid: 01938a05-0006-7000-8000-000005000006
+                    username: saomai
+                  wp_version: 6.7.1
+                  latest_version: 6.7.1
+                  plugins_total: 9
+                  plugins_outdated: 1
+                  themes_outdated: 1
+                  auto_update: minor
+                  hardening:
+                    xmlrpc_disabled: true
+                    file_edit_disabled: true
+                  staging_of: null
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a11-0003-7000-8000-000011000003
+                  website:
+                    uuid: 01938a06-000b-7000-8000-00000600000b
+                    primary_domain: thientam.vn
+                  hosting_account:
+                    uuid: 01938a05-0008-7000-8000-000005000008
+                    username: thientam
+                  wp_version: 6.7.1
+                  latest_version: 6.7.1
+                  plugins_total: 11
+                  plugins_outdated: 0
+                  themes_outdated: 1
+                  auto_update: minor
+                  hardening:
+                    xmlrpc_disabled: true
+                    file_edit_disabled: true
+                  staging_of: null
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -12007,6 +13104,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
     post:
       operationId: installWordPress
       summary: Cài WordPress vào website
@@ -12661,6 +13760,8 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/auth/sessions/{id}:
     delete:
       operationId: revokeSession
@@ -14684,6 +15785,9 @@ components:
           - ok
           - warnings
           additionalProperties: false
+        compose_yaml:
+          type: string
+          maxLength: 262144
         created_at:
           type: string
           format: date-time
@@ -14698,6 +15802,7 @@ components:
       - services
       - revision
       - validation
+      - compose_yaml
       - created_at
       - updated_at
       additionalProperties: false

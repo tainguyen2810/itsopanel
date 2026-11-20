@@ -38,7 +38,9 @@
     "settings": "Cài đặt",
     "overview": "Tổng quan",
     "terminal": "Terminal",
-    "profile": "Hồ sơ"
+    "profile": "Hồ sơ",
+    "registries": "Registry",
+    "gitDeployments": "Git deploy"
   },
   "topbar": {
     "search": "Tìm server, tài khoản, website…",
@@ -68,5 +70,9 @@
     "empty": "Không tìm thấy",
     "pages": "Trang",
     "title": "Tìm nhanh"
+  },
+  "demo": {
+    "badge": "Demo",
+    "switchRole": "Xem với vai trò"
   }
 }

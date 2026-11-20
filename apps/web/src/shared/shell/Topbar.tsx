@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Sun,
   UserRound,
+  Users,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
@@ -34,6 +35,13 @@ export interface ShellUser {
   roleLabel: string;
 }
 
+/** Chế độ demo: chuyển người dùng mẫu (vai trò) ngay trên topbar. */
+export interface DemoSwitch {
+  current: string;
+  personas: { uuid: string; name: string; label: string }[];
+  onSwitch: (uuid: string) => void;
+}
+
 interface Props {
   user: ShellUser;
   unread: number;
@@ -41,6 +49,10 @@ interface Props {
   onToggleCollapse: () => void;
   onOpenMenu: () => void;
   onOpenSearch?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenProfile?: () => void;
+  onSignOut?: () => void;
+  demo?: DemoSwitch;
 }
 
 const THEME_ICON = { light: Sun, dark: Moon, system: Monitor } as const;
@@ -52,6 +64,10 @@ export function Topbar({
   onToggleCollapse,
   onOpenMenu,
   onOpenSearch,
+  onOpenNotifications,
+  onOpenProfile,
+  onSignOut,
+  demo,
 }: Props) {
   const { t, i18n } = useTranslation('shell');
   const { theme, setTheme } = useTheme();
@@ -99,6 +115,33 @@ export function Topbar({
       )}
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        {demo && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5 px-2">
+                <Users aria-hidden />
+                <span className="sr-only sm:not-sr-only">{t('demo.badge')}</span>
+                <span className="sr-only">
+                  {t('demo.switchRole')}:{' '}
+                  {demo.personas.find((p) => p.uuid === demo.current)?.label}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t('demo.switchRole')}</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={demo.current} onValueChange={demo.onSwitch}>
+                {demo.personas.map((p) => (
+                  <DropdownMenuRadioItem key={p.uuid} value={p.uuid}>
+                    <span className="flex flex-col">
+                      <span>{p.name}</span>
+                      <span className="text-xs text-muted">{p.label}</span>
+                    </span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" aria-label={t('topbar.theme')}>
@@ -142,6 +185,7 @@ export function Topbar({
           variant="ghost"
           size="icon"
           className="relative"
+          onClick={onOpenNotifications}
           aria-label={`${t('topbar.notifications')}: ${t('topbar.unread', { count: unread })}`}
         >
           <Bell aria-hidden />
@@ -177,11 +221,11 @@ export function Topbar({
               <span className="block font-normal">{user.email}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onSelect={onOpenProfile}>
               <UserRound aria-hidden />
               {t('topbar.profile')}
             </DropdownMenuItem>
-            <DropdownMenuItem tone="danger">
+            <DropdownMenuItem tone="danger" onSelect={onSignOut}>
               <LogOut aria-hidden />
               {t('topbar.signOut')}
             </DropdownMenuItem>

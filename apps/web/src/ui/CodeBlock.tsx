@@ -8,10 +8,13 @@ export function CodeBlock({
   code,
   label,
   className,
+  wrap = false,
 }: {
   code: string;
   label?: string;
   className?: string;
+  /** Xuống dòng thay vì cuộn ngang (khóa, URL dài một dòng). */
+  wrap?: boolean;
 }) {
   const { t } = useTranslation('common');
   const [copied, setCopied] = useState(false);
@@ -34,14 +37,19 @@ export function CodeBlock({
         </figcaption>
       )}
       <div className="relative">
-        <pre className="overflow-x-auto p-3 pr-12 font-mono text-sm leading-relaxed text-fg">
+        <pre
+          className={cn(
+            'overflow-x-auto p-3 pr-12 font-mono text-sm leading-relaxed text-fg',
+            wrap && 'break-all whitespace-pre-wrap',
+          )}
+        >
           <code>{code}</code>
         </pre>
         <button
           type="button"
           onClick={() => void copy()}
           aria-label={copied ? t('actions.copied') : t('actions.copy')}
-          className="absolute top-2 right-2 grid size-8 cursor-pointer place-items-center rounded-md text-muted hover:bg-surface-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-ring"
+          className="absolute top-2 right-2 grid size-8 cursor-pointer place-items-center rounded-md bg-surface-2 text-muted hover:bg-surface-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-ring"
         >
           {copied ? (
             <Check aria-hidden className="size-4 text-success-text" />

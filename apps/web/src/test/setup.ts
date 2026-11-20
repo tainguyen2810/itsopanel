@@ -9,7 +9,8 @@ class ResizeObserverStub {
   disconnect() {}
 }
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;
-if (typeof window.matchMedia !== 'function') {
+const hasDom = typeof window !== 'undefined';
+if (hasDom && typeof window.matchMedia !== 'function') {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
@@ -21,11 +22,14 @@ if (typeof window.matchMedia !== 'function') {
     dispatchEvent: vi.fn(),
   }));
 }
-Element.prototype.scrollIntoView ??= vi.fn();
-Element.prototype.hasPointerCapture ??= vi.fn(() => false);
-Element.prototype.releasePointerCapture ??= vi.fn();
+if (hasDom) {
+  Element.prototype.scrollIntoView ??= vi.fn();
+  Element.prototype.hasPointerCapture ??= vi.fn(() => false);
+  Element.prototype.releasePointerCapture ??= vi.fn();
+}
 
 afterEach(() => {
+  if (!hasDom) return;
   cleanup();
   document.documentElement.classList.remove('dark');
   try {

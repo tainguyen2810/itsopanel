@@ -1,5 +1,6 @@
 // Component nền của ITSO Panel (Prompt 1.6). Chỉ dùng màu token; xem design/docs/README.md.
 export * from './Alert';
+export * from './AppLink';
 export * from './Badge';
 export * from './Button';
 export * from './Card';

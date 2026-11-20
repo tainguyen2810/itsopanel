@@ -14,10 +14,19 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
     deviceScaleFactor: 2,
   },
-  webServer: {
-    command: 'node node_modules/vite/bin/vite.js',
-    url: 'http://127.0.0.1:5173/design/',
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: 'node node_modules/vite/bin/vite.js',
+      url: 'http://127.0.0.1:5173/design/',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    {
+      // Chế độ demo (Phase 2): API giả lập MSW theo OpenAPI, dùng cho smoke test mọi route.
+      command: 'node node_modules/vite/bin/vite.js --mode demo --port 5174',
+      url: 'http://127.0.0.1:5174/admin/',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+  ],
 });

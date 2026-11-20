@@ -1,4 +1,24 @@
 import { test as base, type Page } from '@playwright/test';
+import data from '../../../contracts/examples/demo-dataset.json' with { type: 'json' };
+
+const anphat = data.accounts.find((a) => a.username === 'anphat');
+/** Tổng quan Portal mẫu (shell Portal ở build thường, không có MSW). */
+export const PORTAL_OVERVIEW = {
+  accounts: anphat
+    ? [
+        {
+          hosting_account: { uuid: anphat.uuid, username: anphat.username },
+          lifecycle_state: anphat.lifecycle_state,
+          usage: anphat.usage,
+        },
+      ]
+    : [],
+  warnings: [],
+  recent_jobs: data.jobs
+    .slice(0, 3)
+    .map((j) => ({ uuid: j.uuid, type: j.type, state: j.state, progress: j.progress })),
+  notifications_unread: 1,
+};
 
 export const STATUS = {
   api: 'ok',
@@ -24,6 +44,12 @@ export async function prepare(page: Page, opts: { theme: 'light' | 'dark'; lang?
     r.fulfill({ json: { data: { status: 'ok' } } }),
   );
   await page.route('**/api/v1/admin/system/status', (r) => r.fulfill({ json: { data: STATUS } }));
+  await page.route('**/api/v1/portal/overview', (r) =>
+    r.fulfill({ json: { data: PORTAL_OVERVIEW } }),
+  );
+  await page.route('**/api/v1/portal/notifications?*', (r) =>
+    r.fulfill({ json: { data: [], meta: { page: 1, per_page: 200, total: 0 } } }),
+  );
 }
 
 export const test = base;

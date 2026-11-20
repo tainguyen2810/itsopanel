@@ -43,10 +43,11 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Pest với PostgreSQL + Redis thật | `make test-api-pg` | 1.7 |
 | Codegen từ contracts | `make codegen` · `make codegen-check` | 1.7 |
 | Toàn bộ kiểm tra (như CI, in bảng kết quả) | `make check` | 1.7 |
+| Giao diện demo (API giả lập MSW theo OpenAPI, không cần Laravel) · build demo + kiểm build thường không có MSW | `make dev-demo` · `make build-demo` | 2.1 |
 
 ## 5. Tài liệu
 
 - Gốc repo: `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `DECISIONS.md`, `DATABASE.md`, `API.md`, `PHASE_STATUS.md`, `TEST_REPORT.md`.
-- Prompt Phase 1: `docs/planning/seed/PHASE_1_PROMPTS.md`.
+- Prompt Phase 1: `docs/planning/seed/PHASE_1_PROMPTS.md`. Prompt Phase 2: `docs/planning/seed/PHASE_2_PROMPTS.md`.
 - Chi tiết kỹ thuật: `docs/planning/01–13`. Lịch sử định hướng đã hoãn: `docs/planning/14`, `15`.
 - Khi tài liệu mâu thuẫn: file ở gốc repo > `docs/planning/seed/` > `docs/planning/01–13`.

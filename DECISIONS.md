@@ -60,8 +60,10 @@
 | D-51 | **Mới:** Không bắt buộc GitHub trước khi bắt đầu. Phase 1 khởi tạo **Git local**, sau đó kết nối GitHub | **APPROVED** (2026-11-20) |
 | D-52 | **Mới:** Phase 1 = Foundation + Architecture + Database (schema spec) + API Contracts + **Design System**; Phase 2 = demo UI hoàn chỉnh Admin Panel + User Hosting Portal | **APPROVED** (2026-11-20) |
 | D-53 | Giữ installer giống aaPanel (một lệnh, native Ubuntu, Web Wizard, systemd, CLI `itso`, không bắt buộc Docker) và toàn bộ yêu cầu bảo mật, cách ly, backup immutable, quota thực, multi-server | **APPROVED** (2026-11-20) |
-| D-54 | **Đề xuất (Phase 1):** Design token lấy `design/tokens/tokens.json` làm nguồn; "preset" Tailwind v4 là khối `@theme inline` sinh ra (Tailwind 4 bỏ preset JS); Light mặc định ở `:root`, Dark bằng class `.dark`; mọi cặp màu khai báo phải đạt WCAG AA | **Proposed** (2026-11-20) |
-| D-55 | **Đề xuất (Phase 1):** Codegen từ contracts: TS bằng openapi-typescript + openapi-fetch (`apps/web/src/api/generated`), Go structs bằng generator Python trong `contracts/tools` (không thêm tool ngoài). File sinh được commit và kiểm bằng `make codegen-check` | **Proposed** (2026-11-20) |
+| D-54 | Design token lấy `design/tokens/tokens.json` làm nguồn; "preset" Tailwind v4 là khối `@theme inline` sinh ra (Tailwind 4 bỏ preset JS); Light mặc định ở `:root`, Dark bằng class `.dark`; mọi cặp màu khai báo phải đạt WCAG AA | **APPROVED** (2026-11-20, duyệt cùng Phase 1) |
+| D-55 | Codegen từ contracts: TS bằng openapi-typescript + openapi-fetch (`apps/web/src/api/generated`), Go structs bằng generator Python trong `contracts/tools` (không thêm tool ngoài). File sinh được commit và kiểm bằng `make codegen-check` | **APPROVED** (2026-11-20, duyệt cùng Phase 1) |
+| D-56 | **Mới (Phase 2.5):** Đặc tả sớm Git deploy (module 22) để có giao diện demo: bảng `git_repositories`, `git_deployments`; API `/git-repositories`, `/git-deployments/{id}:rollback`; op khai báo `git.deploy`, `git.rollback` (schema chi tiết ở Phase 10). Webhook công khai chưa có trong contract | **ĐỀ XUẤT** (chờ duyệt cùng Phase 2) |
+| D-57 | **Mới (Phase 2.7):** Thêm `GET /hosting-accounts/{id}/features` (admin + portal, schema chung `AccountFeatures`): tập con an toàn của giới hạn gói hiện hành (phiên bản PHP, số PHP worker tối đa, SSH, khoảng cron tối thiểu, quota/retention backup) để Portal chọn PHP, biết gói có SSH mà không lộ `PackageLimits` đầy đủ (Admin-only) | **ĐỀ XUẤT** (chờ duyệt cùng Phase 2) |
 
 ---
 

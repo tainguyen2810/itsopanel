@@ -13,13 +13,18 @@
     "copied": "Đã sao chép",
     "clearFilter": "Xóa bộ lọc",
     "viewAll": "Xem tất cả",
-    "more": "Thêm"
+    "more": "Thêm",
+    "back": "Quay lại"
   },
   "state": {
     "loading": "Đang tải…",
     "empty": "Chưa có dữ liệu",
     "error": "Đã xảy ra lỗi",
-    "noResults": "Không có kết quả phù hợp"
+    "noResults": "Không có kết quả phù hợp",
+    "forbidden": "Bạn không có quyền xem trang này",
+    "forbiddenHint": "Trang này cần vai trò khác hoặc nằm ngoài phạm vi được giao. Liên hệ Super Admin nếu cần quyền.",
+    "notFound": "Không tìm thấy trang",
+    "notFoundHint": "Đường dẫn không tồn tại hoặc đã bị di chuyển."
   },
   "status": {
     "active": "Hoạt động",
@@ -38,7 +43,43 @@
     "inSync": "Đã đồng bộ",
     "desired": "Mong muốn",
     "observed": "Thực tế",
-    "degraded": "Suy giảm"
+    "degraded": "Suy giảm",
+    "ready": "Sẵn sàng",
+    "locked": "Bị khóa",
+    "disabled": "Vô hiệu",
+    "expiring": "Sắp hết hạn",
+    "expired": "Đã hết hạn",
+    "valid": "Hợp lệ",
+    "stopped": "Đã dừng",
+    "exited": "Đã thoát",
+    "installed": "Đã cài",
+    "available": "Có thể cài",
+    "upgradable": "Có bản mới",
+    "verifying": "Đang kiểm chứng",
+    "verified": "Đã kiểm chứng",
+    "firing": "Đang cảnh báo",
+    "resolved": "Đã xử lý",
+    "migrating": "Đang chuyển",
+    "purged": "Đã xóa vĩnh viễn",
+    "timed_out": "Quá thời gian",
+    "cancel_requested": "Đang hủy",
+    "pass": "Đạt",
+    "warn": "Cảnh báo",
+    "fail": "Không đạt",
+    "success": "Thành công",
+    "failure": "Thất bại",
+    "error": "Lỗi",
+    "skipped": "Bỏ qua",
+    "connected": "Đã kết nối",
+    "disconnected": "Mất kết nối",
+    "preflight": "Kiểm tra trước",
+    "syncing": "Đang đồng bộ",
+    "cutover": "Đang cutover",
+    "completed": "Hoàn tất",
+    "rolled_back": "Đã hoàn tác",
+    "deleting": "Đang xóa",
+    "denied": "Bị từ chối",
+    "acknowledged": "Đã xác nhận"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",
@@ -51,7 +92,8 @@
     "sortAsc": "Sắp xếp tăng dần",
     "sortDesc": "Sắp xếp giảm dần",
     "selectAll": "Chọn tất cả",
-    "selectRow": "Chọn dòng"
+    "selectRow": "Chọn dòng",
+    "all": "Tất cả"
   },
   "confirm": {
     "typeToConfirm": "Gõ <strong>{{name}}</strong> để xác nhận",
@@ -63,13 +105,397 @@
     "invalid": "Giá trị không hợp lệ",
     "minLength": "Tối thiểu {{min}} ký tự",
     "email": "Email không hợp lệ",
-    "optional": "không bắt buộc"
+    "optional": "không bắt buộc",
+    "mismatch": "Không khớp",
+    "maxLength": "Tối đa {{max}} ký tự"
   },
   "job": {
     "step": "Bước {{current}} / {{total}}",
     "steps": "Các bước",
-    "elapsed": "Đã chạy {{time}}"
+    "elapsed": "Đã chạy {{time}}",
+    "track": "Theo dõi tác vụ",
+    "done": "Đã xong: {{type}}",
+    "failed": "Thất bại: {{type}}"
   },
   "breadcrumb": "Đường dẫn",
-  "pagination": "Phân trang"
+  "pagination": "Phân trang",
+  "severity": {
+    "critical": "Nghiêm trọng",
+    "high": "Cao",
+    "medium": "Trung bình",
+    "low": "Thấp",
+    "info": "Thông tin"
+  },
+  "events": {
+    "auth": {
+      "login": "Đăng nhập hệ thống"
+    },
+    "backup": {
+      "run": "Chạy sao lưu",
+      "manual": "Sao lưu thủ công",
+      "restore": "Khôi phục từ bản sao lưu",
+      "policy": {
+        "run": "Chạy chính sách sao lưu"
+      },
+      "snapshot": {
+        "delete": "Xóa bản sao lưu",
+        "verify": "Kiểm chứng bản sao lưu",
+        "download_link": "Tạo link tải bản sao lưu"
+      }
+    },
+    "backup_policy": {
+      "update": "Cập nhật chính sách sao lưu",
+      "create": "Tạo chính sách sao lưu",
+      "delete": "Xóa chính sách sao lưu"
+    },
+    "database": {
+      "create": "Tạo cơ sở dữ liệu",
+      "delete": "Xóa cơ sở dữ liệu",
+      "export": "Xuất cơ sở dữ liệu",
+      "import": "Nhập dữ liệu vào cơ sở dữ liệu"
+    },
+    "firewall": {
+      "apply": "Áp dụng tường lửa",
+      "confirm": "Xác nhận tường lửa",
+      "rollback": "Tự hoàn tác tường lửa"
+    },
+    "hosting_account": {
+      "create": "Tạo tài khoản hosting",
+      "suspend": "Tạm khóa tài khoản hosting",
+      "unsuspend": "Mở khóa tài khoản hosting",
+      "change_package": "Đổi gói hosting",
+      "migrate": "Chuyển máy chủ",
+      "terminate": "Chấm dứt tài khoản",
+      "purge": "Xóa vĩnh viễn tài khoản",
+      "update": "Cập nhật tài khoản hosting",
+      "schedule_purge": "Lên lịch purge tài khoản",
+      "confirm_purge": "Xác nhận purge tài khoản",
+      "migrate_preflight": "Chạy thử chuyển máy chủ",
+      "migrate_cutover": "Cutover chuyển máy chủ",
+      "migrate_rollback": "Hoàn tác chuyển máy chủ"
+    },
+    "hosting_package": {
+      "update": "Cập nhật gói hosting",
+      "create": "Tạo gói hosting",
+      "migrate_accounts": "Chuyển tài khoản sang phiên bản gói mới",
+      "delete": "Xóa gói hosting"
+    },
+    "impersonation": {
+      "start": "Đăng nhập thay người dùng"
+    },
+    "server": {
+      "update": "Cập nhật máy chủ",
+      "reboot": "Khởi động lại máy chủ",
+      "enroll": "Tạo token thêm máy chủ"
+    },
+    "service": {
+      "restart": "Khởi động lại dịch vụ",
+      "start": "Khởi động dịch vụ",
+      "stop": "Dừng dịch vụ",
+      "reload": "Nạp lại dịch vụ"
+    },
+    "software": {
+      "install": "Cài phần mềm",
+      "remove": "Gỡ phần mềm",
+      "upgrade": "Nâng cấp phần mềm"
+    },
+    "user": {
+      "update": "Cập nhật người dùng",
+      "password_change": "Đổi mật khẩu",
+      "create": "Tạo người dùng",
+      "lock": "Khóa người dùng",
+      "unlock": "Mở khóa người dùng",
+      "reset_mfa": "Đặt lại MFA",
+      "scopes": {
+        "update": "Cập nhật phạm vi quản trị"
+      }
+    },
+    "website": {
+      "create": "Tạo website",
+      "ssl": {
+        "renew": "Gia hạn SSL"
+      },
+      "update": "Cập nhật website",
+      "delete": "Xóa website",
+      "domain_add": "Thêm domain cho website",
+      "domain_remove": "Gỡ domain khỏi website",
+      "nginx_update": "Cập nhật cấu hình Nginx của website",
+      "php_update": "Cập nhật cấu hình PHP của website",
+      "waf_update": "Cập nhật WAF của website"
+    },
+    "job": {
+      "cancel": "Hủy tác vụ"
+    },
+    "nginx": {
+      "update": "Cập nhật cấu hình Nginx"
+    },
+    "container": {
+      "start": "Khởi động container",
+      "stop": "Dừng container",
+      "restart": "Khởi động lại container"
+    },
+    "compose": {
+      "create": "Tạo compose project",
+      "update": "Cập nhật compose project",
+      "delete": "Xóa compose project",
+      "up": "Khởi động compose project",
+      "down": "Dừng compose project",
+      "pull": "Kéo image compose",
+      "validate": "Kiểm tra compose project"
+    },
+    "registry": {
+      "create": "Thêm Docker registry",
+      "delete": "Xóa Docker registry"
+    },
+    "terminal": {
+      "open": "Mở terminal"
+    },
+    "certificate": {
+      "issue": "Cấp chứng chỉ SSL",
+      "upload": "Cài chứng chỉ SSL tải lên",
+      "delete": "Gỡ chứng chỉ SSL"
+    },
+    "database_user": {
+      "create": "Tạo user database",
+      "delete": "Xóa user database",
+      "grant": "Cập nhật quyền user database"
+    },
+    "file": {
+      "mkdir": "Tạo thư mục",
+      "move": "Di chuyển file",
+      "copy": "Sao chép file",
+      "delete": "Xóa file",
+      "chmod": "Đổi quyền file",
+      "compress": "Nén file",
+      "extract": "Giải nén file"
+    },
+    "sftp": {
+      "create": "Tạo tài khoản SFTP",
+      "delete": "Xóa tài khoản SFTP"
+    },
+    "ssh_key": {
+      "create": "Thêm SSH key",
+      "delete": "Gỡ SSH key"
+    },
+    "dns": {
+      "record": {
+        "create": "Thêm record DNS",
+        "update": "Sửa record DNS",
+        "delete": "Xóa record DNS"
+      }
+    },
+    "cron": {
+      "create": "Tạo cron job",
+      "update": "Sửa cron job",
+      "delete": "Xóa cron job",
+      "run": "Chạy cron job thủ công"
+    },
+    "wordpress": {
+      "install": "Cài WordPress",
+      "update": "Cập nhật WordPress",
+      "clone_staging": "Tạo bản staging WordPress",
+      "harden": "Hardening WordPress"
+    },
+    "git": {
+      "deploy": "Deploy từ Git",
+      "rollback": "Quay về release trước"
+    },
+    "security": {
+      "scan": "Quét mã độc",
+      "ssh": {
+        "update": "Cập nhật cấu hình SSH"
+      },
+      "fail2ban": {
+        "update": "Cập nhật Fail2ban"
+      },
+      "allowlist": {
+        "update": "Cập nhật danh sách IP được phép"
+      },
+      "quarantine": {
+        "restore": "Khôi phục file khỏi khu cách ly"
+      }
+    },
+    "security_event": {
+      "acknowledge": "Xác nhận sự kiện bảo mật"
+    },
+    "backup_destination": {
+      "create": "Thêm đích sao lưu",
+      "update": "Cập nhật đích sao lưu",
+      "test": "Kiểm tra kết nối đích sao lưu"
+    },
+    "alert_rule": {
+      "create": "Tạo quy tắc cảnh báo",
+      "update": "Sửa quy tắc cảnh báo",
+      "delete": "Xóa quy tắc cảnh báo"
+    },
+    "audit_log": {
+      "export": "Xuất nhật ký kiểm toán"
+    },
+    "settings": {
+      "general": {
+        "update": "Cập nhật cài đặt chung"
+      },
+      "security": {
+        "update": "Cập nhật cài đặt bảo mật"
+      },
+      "smtp": {
+        "update": "Cập nhật cài đặt SMTP"
+      }
+    },
+    "api_token": {
+      "create": "Tạo API token",
+      "revoke": "Thu hồi API token"
+    }
+  },
+  "ops": {
+    "account": {
+      "ensure": "Tạo người dùng Linux và thư mục home",
+      "suspend": "Khóa tài khoản",
+      "unsuspend": "Mở khóa tài khoản",
+      "remove": "Gỡ tài khoản"
+    },
+    "quota": {
+      "apply": "Áp quota ổ đĩa và inode"
+    },
+    "php": {
+      "pool": {
+        "apply": "Cấu hình PHP-FPM pool",
+        "remove": "Gỡ PHP-FPM pool"
+      },
+      "version": {
+        "install": "Cài phiên bản PHP"
+      }
+    },
+    "nginx": {
+      "vhost": {
+        "apply": "Áp dụng vhost Nginx",
+        "remove": "Gỡ vhost Nginx"
+      },
+      "global": {
+        "apply": "Áp dụng cấu hình Nginx chung"
+      }
+    },
+    "cert": {
+      "issue": "Cấp chứng chỉ SSL",
+      "install": "Cài chứng chỉ SSL"
+    },
+    "db": {
+      "pg": {
+        "create": "Tạo database PostgreSQL",
+        "user_ensure": "Tạo user PostgreSQL",
+        "drop": "Xóa database PostgreSQL",
+        "user_drop": "Xóa user PostgreSQL",
+        "grant": "Cấp quyền PostgreSQL",
+        "dump": "Xuất dữ liệu PostgreSQL",
+        "import": "Nhập dữ liệu PostgreSQL"
+      },
+      "mysql": {
+        "create": "Tạo database MariaDB",
+        "drop": "Xóa database MariaDB",
+        "user_ensure": "Tạo user MariaDB",
+        "user_drop": "Xóa user MariaDB",
+        "grant": "Cấp quyền MariaDB",
+        "dump": "Xuất dữ liệu MariaDB",
+        "import": "Nhập dữ liệu MariaDB"
+      }
+    },
+    "fs": {
+      "mkdir": "Tạo thư mục",
+      "archive": "Nén file",
+      "move": "Di chuyển",
+      "copy": "Sao chép",
+      "delete": "Xóa",
+      "chmod": "Đổi quyền",
+      "extract": "Giải nén"
+    },
+    "backup": {
+      "run": "Chạy sao lưu (restic)",
+      "check": "Kiểm chứng bản sao lưu",
+      "restore_test": "Thử khôi phục bản sao lưu",
+      "forget": "Xóa snapshot (restic forget)",
+      "restore": "Khôi phục dữ liệu (restic)"
+    },
+    "service": {
+      "control": "Điều khiển dịch vụ",
+      "status": "Kiểm tra trạng thái dịch vụ"
+    },
+    "software": {
+      "install": "Cài phần mềm"
+    },
+    "firewall": {
+      "apply": "Áp dụng rule tường lửa",
+      "confirm": "Xác nhận tường lửa"
+    },
+    "wp": {
+      "install": "Cài WordPress",
+      "update": "Cập nhật WordPress",
+      "clone": "Tạo bản staging",
+      "harden": "Hardening WordPress"
+    },
+    "system": {
+      "reboot": "Khởi động lại máy chủ",
+      "ping": "Kiểm tra agent phản hồi"
+    },
+    "docker": {
+      "container": {
+        "control": "Điều khiển container"
+      }
+    },
+    "compose": {
+      "validate": "Kiểm tra compose.yaml",
+      "apply": "Ghi cấu hình compose",
+      "up": "Khởi động các service",
+      "down": "Dừng các service",
+      "pull": "Kéo image mới"
+    },
+    "migrate": {
+      "preflight": "Kiểm tra máy đích",
+      "sync": "Đồng bộ file và database",
+      "verify": "Kiểm tra dữ liệu",
+      "cutover": "Chuyển vhost, cron, SSL sang máy đích",
+      "rollback": "Hoàn tác về máy nguồn"
+    },
+    "cron": {
+      "apply": "Ghi crontab của tài khoản",
+      "run_once": "Chạy lệnh cron một lần"
+    },
+    "dns": {
+      "records": {
+        "apply": "Đẩy record lên nhà cung cấp DNS"
+      }
+    },
+    "sftp": {
+      "user": {
+        "ensure": "Tạo người dùng SFTP (chroot)",
+        "remove": "Gỡ người dùng SFTP"
+      }
+    },
+    "ssh": {
+      "keys": {
+        "apply": "Ghi authorized_keys"
+      }
+    },
+    "waf": {
+      "apply": "Áp dụng luật WAF"
+    },
+    "malware": {
+      "scan": "Quét mã độc (ClamAV)",
+      "restore": "Khôi phục file từ khu cách ly"
+    },
+    "git": {
+      "deploy": "Kéo code, build và chuyển release",
+      "rollback": "Chuyển symlink về release cũ"
+    },
+    "sshd": {
+      "config": {
+        "apply": "Áp dụng cấu hình sshd"
+      }
+    },
+    "fail2ban": {
+      "apply": "Áp dụng cấu hình Fail2ban"
+    }
+  },
+  "wizard": {
+    "stepOf": "Bước {{current}}/{{total}}"
+  }
 }

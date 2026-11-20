@@ -936,6 +936,104 @@ export interface paths {
         patch: operations["updateDnsRecord"];
         trace?: never;
     };
+    "/api/v1/admin/git-deployments/{id}:rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quay về release này (đổi symlink)
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["rollbackGitDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/git-repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Repository Git gắn với website */
+        get: operations["listGitRepositories"];
+        put?: never;
+        /**
+         * Kết nối repository (sinh deploy key riêng)
+         * @description Panel sinh cặp khóa ed25519 cho site; khóa riêng chỉ nằm ở agent. Thêm `deploy_key_public` vào repo (chỉ đọc) trước khi deploy.
+         */
+        post: operations["createGitRepository"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/git-repositories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chi tiết repository */
+        get: operations["getGitRepository"];
+        put?: never;
+        post?: never;
+        /** Ngắt kết nối repository (giữ release hiện tại) */
+        delete: operations["deleteGitRepository"];
+        options?: never;
+        head?: never;
+        /** Sửa cấu hình deploy */
+        patch: operations["updateGitRepository"];
+        trace?: never;
+    };
+    "/api/v1/admin/git-repositories/{id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lịch sử deploy */
+        get: operations["listGitDeployments"];
+        put?: never;
+        /**
+         * Deploy (commit mới nhất của branch hoặc commit chỉ định)
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["createGitDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/git-repositories/{id}:rotate-webhook-secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Đổi secret webhook (HMAC-SHA256) */
+        post: operations["rotateGitWebhookSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/hosting-accounts": {
         parameters: {
             query?: never;
@@ -973,6 +1071,23 @@ export interface paths {
         head?: never;
         /** Cập nhật hostingAccount */
         patch: operations["updateHostingAccount"];
+        trace?: never;
+    };
+    "/api/v1/admin/hosting-accounts/{id}/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tính năng theo gói (PHP, SSH, cron, backup) */
+        get: operations["getHostingAccountFeatures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/hosting-accounts/{id}/files": {
@@ -1419,6 +1534,28 @@ export interface paths {
         put?: never;
         /** Yêu cầu hủy job */
         post: operations["cancelJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jobs/{id}:retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chạy lại job thất bại/đã hủy (tạo job mới cùng tham số)
+         * @description Chỉ job `failed`, `cancelled`, `timed_out`; job khác → 409 `conflict`. Job mới tham chiếu cùng tài nguyên.
+         *
+         *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["retryJob"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3706,6 +3843,7 @@ export interface components {
                 ok: boolean;
                 warnings: string[];
             };
+            compose_yaml: string;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -4329,6 +4467,92 @@ export interface components {
             priority?: number;
             proxied?: boolean;
         };
+        GitDeploymentRef: {
+            /** Format: uuid */
+            uuid: string;
+            commit_sha: string;
+            /** Format: date-time */
+            finished_at: string | null;
+        };
+        GitRepository: {
+            /** Format: uuid */
+            uuid: string;
+            website: components["schemas"]["WebsiteRef"];
+            hosting_account: components["schemas"]["AccountRef"];
+            repo_url: string;
+            branch: string;
+            deploy_key_public: string;
+            deploy_key_fingerprint: string;
+            webhook_url: string;
+            auto_deploy: boolean;
+            build_command: components["schemas"]["CronCommand"] | null;
+            shared_paths: components["schemas"]["RelPath"][];
+            keep_releases: number;
+            current_deployment: components["schemas"]["GitDeploymentRef"] | null;
+            /**
+             * @description Trạng thái quan sát được (observed).
+             * @enum {string}
+             */
+            status: "pending" | "provisioning" | "ready" | "degraded" | "failed" | "suspended" | "deleting";
+            /** @description Desired: tăng mỗi lần đổi cấu hình. */
+            spec_version: number;
+            /** @description Phiên bản agent đã áp dụng. */
+            observed_version: number;
+            drift: {
+                [key: string]: string;
+            } | null;
+            /** Format: date-time */
+            observed_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        GitRepositoryCreate: {
+            /** Format: uuid */
+            website_uuid: string;
+            repo_url: string;
+            branch: string;
+            auto_deploy?: boolean;
+            build_command?: components["schemas"]["CronCommand"] | null;
+            shared_paths?: components["schemas"]["RelPath"][];
+            keep_releases?: number;
+        };
+        GitRepositoryUpdate: {
+            branch?: string;
+            auto_deploy?: boolean;
+            build_command?: components["schemas"]["CronCommand"] | null;
+            shared_paths?: components["schemas"]["RelPath"][];
+            keep_releases?: number;
+        };
+        GitDeployment: {
+            /** Format: uuid */
+            uuid: string;
+            /** Format: uuid */
+            repository_uuid: string;
+            commit_sha: string;
+            commit_message: string | null;
+            commit_author: string | null;
+            /** @enum {string} */
+            trigger: "manual" | "webhook" | "rollback";
+            /** @enum {string} */
+            state: "queued" | "running" | "succeeded" | "failed" | "rolled_back";
+            release_path: components["schemas"]["RelPath"] | null;
+            /** Format: uuid */
+            rollback_of: string | null;
+            /** Format: uuid */
+            job_uuid: string | null;
+            requested_by: components["schemas"]["UserRef"] | null;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        GitDeployRequest: {
+            commit_sha?: string | null;
+        };
         /** @enum {string} */
         LifecycleState: "pending" | "provisioning" | "active" | "suspended" | "migrating" | "terminated" | "purged" | "failed";
         PackageRef: {
@@ -4391,6 +4615,18 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        /** @description Tính năng theo phiên bản gói hiện hành của account (đã áp limits_override); tập con an toàn cho Portal (D-57). */
+        AccountFeatures: {
+            package: components["schemas"]["PackageRef"];
+            php_versions: components["schemas"]["PhpVersion"][];
+            php_workers_max: number;
+            ssh_allowed: boolean;
+            cron_min_interval_min: number;
+            backup_quota_mb: number;
+            backup_retention: {
+                [key: string]: number;
+            };
         };
         FileContent: {
             path: components["schemas"]["RelPath"];
@@ -4835,6 +5071,30 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description Dữ liệu không hợp lệ */
+        ValidationFailed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "https://docs.itso.local/errors/validation_failed",
+                 *       "title": "Dữ liệu không hợp lệ",
+                 *       "status": 422,
+                 *       "code": "validation_failed",
+                 *       "detail": "Một hoặc nhiều trường không hợp lệ.",
+                 *       "request_id": "req_01JD8K2M4N",
+                 *       "errors": {
+                 *         "username": [
+                 *           "Username đã tồn tại trên server này."
+                 *         ]
+                 *       }
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
         /** @description Quá nhiều yêu cầu */
         TooManyRequests: {
             headers: {
@@ -4889,30 +5149,6 @@ export interface components {
                  *       "code": "conflict",
                  *       "detail": "Tài nguyên đang có job khác hoặc Idempotency-Key đã dùng với body khác.",
                  *       "request_id": "req_01JD8K2M4N"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description Dữ liệu không hợp lệ */
-        ValidationFailed: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://docs.itso.local/errors/validation_failed",
-                 *       "title": "Dữ liệu không hợp lệ",
-                 *       "status": 422,
-                 *       "code": "validation_failed",
-                 *       "detail": "Một hoặc nhiều trường không hợp lệ.",
-                 *       "request_id": "req_01JD8K2M4N",
-                 *       "errors": {
-                 *         "username": [
-                 *           "Username đã tồn tại trên server này."
-                 *         ]
-                 *       }
                  *     }
                  */
                 "application/problem+json": components["schemas"]["Problem"];
@@ -5099,6 +5335,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -5377,6 +5614,42 @@ export interface operations {
                      *           "enabled": true,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a20-0002-7000-8000-000020000002",
+                     *           "name": "Disk server > 90%",
+                     *           "metric": "disk_pct",
+                     *           "scope_type": "server",
+                     *           "scope_uuid": null,
+                     *           "operator": "gt",
+                     *           "threshold": 90,
+                     *           "for_sec": 300,
+                     *           "severity": "critical",
+                     *           "channels": [
+                     *             "email",
+                     *             "telegram",
+                     *             "in_app"
+                     *           ],
+                     *           "enabled": true,
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a20-0003-7000-8000-000020000003",
+                     *           "name": "RAM server > 90% trong 15 phút",
+                     *           "metric": "ram_pct",
+                     *           "scope_type": "server",
+                     *           "scope_uuid": null,
+                     *           "operator": "gt",
+                     *           "threshold": 90,
+                     *           "for_sec": 900,
+                     *           "severity": "medium",
+                     *           "channels": [
+                     *             "email"
+                     *           ],
+                     *           "enabled": true,
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -5392,6 +5665,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -5650,6 +5924,38 @@ export interface operations {
                      *           "value": 91.3,
                      *           "started_at": "2026-11-20T08:15:00+07:00",
                      *           "resolved_at": null
+                     *         },
+                     *         {
+                     *           "uuid": "01938a21-0002-7000-8000-000021000002",
+                     *           "rule": {
+                     *             "uuid": "01938a20-0002-7000-8000-000020000002",
+                     *             "name": "Disk server > 90%"
+                     *           },
+                     *           "severity": "critical",
+                     *           "state": "resolved",
+                     *           "resource": {
+                     *             "type": "server",
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *           },
+                     *           "value": 91.8,
+                     *           "started_at": "2026-11-19T02:10:00+07:00",
+                     *           "resolved_at": "2026-11-19T02:40:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a21-0003-7000-8000-000021000003",
+                     *           "rule": {
+                     *             "uuid": "01938a20-0004-7000-8000-000020000004",
+                     *             "name": "Quota disk account > 95%"
+                     *           },
+                     *           "severity": "medium",
+                     *           "state": "acknowledged",
+                     *           "resource": {
+                     *             "type": "hosting_account",
+                     *             "uuid": "01938a05-0008-7000-8000-000005000008"
+                     *           },
+                     *           "value": 96.4,
+                     *           "started_at": "2026-11-20T07:40:00+07:00",
+                     *           "resolved_at": null
                      *         }
                      *       ],
                      *       "meta": {
@@ -5665,6 +5971,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -5720,6 +6027,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -5856,6 +6164,64 @@ export interface operations {
                      *             ]
                      *           },
                      *           "hash": "5e8f0c6b1d2a7e9f4c3b8a1d6e0f2c7b9a4d1e3f5c7b9d0e2f4a6c8e1b3d5f70"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1f-0002-7000-8000-00001f000002",
+                     *           "at": "2026-11-12T09:10:00+07:00",
+                     *           "actor": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "impersonator": null,
+                     *           "actor_ip": "10.10.5.20",
+                     *           "action": "hosting_account.create",
+                     *           "resource": {
+                     *             "type": "hosting_account",
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005"
+                     *           },
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "job_uuid": null,
+                     *           "result": "success",
+                     *           "changes": {
+                     *             "updated_at": [
+                     *               "2026-11-18T09:30:00+07:00",
+                     *               "2026-11-19T14:05:00+07:00"
+                     *             ]
+                     *           },
+                     *           "hash": "0000000000000000000000000000000000000000000000013c6ef372fe94f82a"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1f-0003-7000-8000-00001f000003",
+                     *           "at": "2026-11-13T10:20:00+07:00",
+                     *           "actor": {
+                     *             "uuid": "01938a01-0002-7000-8000-000001000002",
+                     *             "name": "Trần Minh",
+                     *             "email": "minh.tran@itso.local"
+                     *           },
+                     *           "impersonator": null,
+                     *           "actor_ip": "10.10.5.21",
+                     *           "action": "website.create",
+                     *           "resource": {
+                     *             "type": "website",
+                     *             "uuid": "01938a06-0007-7000-8000-000006000007"
+                     *           },
+                     *           "server": {
+                     *             "uuid": "01938a02-0002-7000-8000-000002000002",
+                     *             "name": "srv-hn-02"
+                     *           },
+                     *           "job_uuid": null,
+                     *           "result": "success",
+                     *           "changes": {
+                     *             "updated_at": [
+                     *               "2026-11-18T09:30:00+07:00",
+                     *               "2026-11-19T14:05:00+07:00"
+                     *             ]
+                     *           },
+                     *           "hash": "000000000000000000000000000000000000000000000001daa66d2c7ddf743f"
                      *         }
                      *       ],
                      *       "meta": {
@@ -5871,6 +6237,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -5981,6 +6348,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -6190,7 +6558,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0097-7000-8000-00000f000097",
+                     *         "uuid": "01938a0f-009a-7000-8000-00000f00009a",
                      *         "type": "backup.destination_test",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -6224,8 +6592,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -6292,6 +6660,25 @@ export interface operations {
                      *           "last_status": "succeeded",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a18-0002-7000-8000-000018000002",
+                     *           "name": "Cấu hình panel hằng tuần",
+                     *           "scope_type": "panel",
+                     *           "scope_uuid": null,
+                     *           "schedule": "30 2 * * 0",
+                     *           "destination_uuids": [
+                     *             "01938a17-0002-7000-8000-000017000002"
+                     *           ],
+                     *           "retention": {
+                     *             "weekly": 8,
+                     *             "monthly": 12
+                     *           },
+                     *           "enabled": true,
+                     *           "last_run_at": "2026-11-15T02:30:00+07:00",
+                     *           "last_status": "succeeded",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -6307,6 +6694,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -6557,7 +6945,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0098-7000-8000-00000f000098",
+                     *         "uuid": "01938a0f-009b-7000-8000-00000f00009b",
                      *         "type": "backup.policy_run",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -6598,8 +6986,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -6696,6 +7084,30 @@ export interface operations {
                      *             "final",
                      *             "pre-purge"
                      *           ]
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0e-0003-7000-8000-00000e000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "destination": {
+                     *             "uuid": "01938a17-0002-7000-8000-000017000002",
+                     *             "name": "S3 Object Lock (offsite)"
+                     *           },
+                     *           "scope_type": "hosting_account",
+                     *           "restic_snapshot_id": "5a005ccd",
+                     *           "size_mb": 1500,
+                     *           "taken_at": "2026-11-20T01:14:00+07:00",
+                     *           "verified_at": "2026-11-20T03:00:00+07:00",
+                     *           "contents": [
+                     *             "files",
+                     *             "databases",
+                     *             "config"
+                     *           ],
+                     *           "tags": [
+                     *             "daily"
+                     *           ]
                      *         }
                      *       ],
                      *       "meta": {
@@ -6711,6 +7123,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -6738,7 +7151,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009a-7000-8000-00000f00009a",
+                     *         "uuid": "01938a0f-009d-7000-8000-00000f00009d",
                      *         "type": "backup.forget",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -6772,8 +7185,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -6857,6 +7270,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -6923,7 +7337,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0099-7000-8000-00000f000099",
+                     *         "uuid": "01938a0f-009c-7000-8000-00000f00009c",
                      *         "type": "backup.verify",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -6964,8 +7378,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7146,6 +7560,24 @@ export interface operations {
                      *           "status": "expiring",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a08-0003-7000-8000-000008000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "source": "acme",
+                     *           "domains": [
+                     *             "shop.anphat.vn"
+                     *           ],
+                     *           "issuer": "Let's Encrypt R11",
+                     *           "not_before": "2026-11-18T07:00:00+07:00",
+                     *           "not_after": "2027-02-16T07:00:00+07:00",
+                     *           "auto_renew": true,
+                     *           "status": "valid",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -7161,6 +7593,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -7369,6 +7802,7 @@ export interface operations {
                      *             "ok": true,
                      *             "warnings": []
                      *           },
+                     *           "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         },
@@ -7388,6 +7822,7 @@ export interface operations {
                      *               "Service metabase không giới hạn memory"
                      *             ]
                      *           },
+                     *           "compose_yaml": "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"127.0.0.1:3000:3000\"\n    environment:\n      MB_DB_TYPE: postgres\n  postgres:\n    image: postgres:16-alpine\n    volumes:\n      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
@@ -7405,6 +7840,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -7441,7 +7877,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a3-7000-8000-00000f0000a3",
+                     *         "uuid": "01938a0f-00a6-7000-8000-00000f0000a6",
                      *         "type": "compose.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7482,8 +7918,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7537,6 +7973,7 @@ export interface operations {
                      *           "ok": true,
                      *           "warnings": []
                      *         },
+                     *         "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n",
                      *         "created_at": "2026-11-18T09:30:00+07:00",
                      *         "updated_at": "2026-11-19T14:05:00+07:00"
                      *       }
@@ -7577,7 +8014,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a5-7000-8000-00000f0000a5",
+                     *         "uuid": "01938a0f-00a8-7000-8000-00000f0000a8",
                      *         "type": "compose.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7618,8 +8055,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7675,7 +8112,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a4-7000-8000-00000f0000a4",
+                     *         "uuid": "01938a0f-00a7-7000-8000-00000f0000a7",
                      *         "type": "compose.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7716,8 +8153,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7762,7 +8199,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a8-7000-8000-00000f0000a8",
+                     *         "uuid": "01938a0f-00ab-7000-8000-00000f0000ab",
                      *         "type": "compose.down",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7796,8 +8233,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7841,7 +8278,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a9-7000-8000-00000f0000a9",
+                     *         "uuid": "01938a0f-00ac-7000-8000-00000f0000ac",
                      *         "type": "compose.pull",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7875,8 +8312,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7920,7 +8357,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a7-7000-8000-00000f0000a7",
+                     *         "uuid": "01938a0f-00aa-7000-8000-00000f0000aa",
                      *         "type": "compose.up",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7954,8 +8391,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7999,7 +8436,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a6-7000-8000-00000f0000a6",
+                     *         "uuid": "01938a0f-00a9-7000-8000-00000f0000a9",
                      *         "type": "compose.validate",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8033,8 +8470,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8132,6 +8569,28 @@ export interface operations {
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0d-0003-7000-8000-00000d000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "website": null,
+                     *           "schedule": "0 3 * * *",
+                     *           "command": "php artisan backup:clean",
+                     *           "working_dir": ".",
+                     *           "php_version": "8.3",
+                     *           "enabled": true,
+                     *           "last_run_at": "2026-11-20T03:00:00+07:00",
+                     *           "last_status": "succeeded",
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -8147,6 +8606,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -8462,6 +8922,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -8564,10 +9025,10 @@ export interface operations {
                      *       "data": {
                      *         "counts": {
                      *           "servers": 3,
-                     *           "hosting_accounts": 4,
-                     *           "websites": 4,
-                     *           "databases": 3,
-                     *           "users": 5,
+                     *           "hosting_accounts": 11,
+                     *           "websites": 21,
+                     *           "databases": 10,
+                     *           "users": 14,
                      *           "packages": 3
                      *         },
                      *         "servers": [
@@ -8605,20 +9066,20 @@ export interface operations {
                      *         "package_distribution": [
                      *           {
                      *             "code": "basic",
-                     *             "accounts": 1
+                     *             "accounts": 4
                      *           },
                      *           {
                      *             "code": "business",
-                     *             "accounts": 3
+                     *             "accounts": 5
                      *           },
                      *           {
                      *             "code": "pro",
-                     *             "accounts": 0
+                     *             "accounts": 2
                      *           }
                      *         ],
                      *         "alerts_firing": 1,
                      *         "security_events_24h": 38,
-                     *         "jobs_running": 1,
+                     *         "jobs_running": 2,
                      *         "updated_at": "2026-11-20T08:15:00+07:00"
                      *       }
                      *     }
@@ -8704,6 +9165,26 @@ export interface operations {
                      *           ],
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0a-0003-7000-8000-00000a000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "engine": "mariadb",
+                     *           "username": "binhminh_web",
+                     *           "host": "localhost",
+                     *           "grants": [
+                     *             {
+                     *               "database": "binhminh_web",
+                     *               "privileges": [
+                     *                 "ALL"
+                     *               ]
+                     *             }
+                     *           ],
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -8719,6 +9200,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -9139,6 +9621,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -9591,8 +10074,29 @@ export interface operations {
                      *             "uuid": "01938a05-0001-7000-8000-000005000001",
                      *             "username": "anphat"
                      *           },
-                     *           "records_count": 6,
+                     *           "records_count": 3,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a13-0002-7000-8000-000013000002",
+                     *           "name": "binhminh.vn",
+                     *           "provider": "manual",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "records_count": 4,
+                     *           "created_at": "2026-11-13T10:20:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a13-0003-7000-8000-000013000003",
+                     *           "name": "itso.vn",
+                     *           "provider": "powerdns",
+                     *           "hosting_account": null,
+                     *           "records_count": 4,
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
@@ -9609,6 +10113,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -9682,6 +10187,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -9940,6 +10446,671 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    rollbackGitDeployment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0098-7000-8000-00000f000098",
+                     *         "type": "git.rollback",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "git_repository",
+                     *           "uuid": "01938a2e-0001-7000-8000-00002e000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "git.rollback",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "git_repository",
+                     *         "uuid": "01938a2e-0001-7000-8000-00002e000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listGitRepositories: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+                /** @description Lọc theo account. */
+                "filter[hosting_account]"?: components["parameters"]["FilterHostingAccount"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a2e-0001-7000-8000-00002e000001",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "repo_url": "git@github.com:anphat-it/website.git",
+                     *           "branch": "main",
+                     *           "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn",
+                     *           "deploy_key_fingerprint": "SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW",
+                     *           "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e",
+                     *           "auto_deploy": true,
+                     *           "build_command": "composer install --no-dev --optimize-autoloader",
+                     *           "shared_paths": [
+                     *             ".env",
+                     *             "storage"
+                     *           ],
+                     *           "keep_releases": 5,
+                     *           "current_deployment": {
+                     *             "uuid": "01938a2f-0002-7000-8000-00002f000002",
+                     *             "commit_sha": "5d0b7f3",
+                     *             "finished_at": "2026-11-19T15:40:48+07:00"
+                     *           },
+                     *           "status": "ready",
+                     *           "spec_version": 3,
+                     *           "observed_version": 3,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a2e-0002-7000-8000-00002e000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0003-7000-8000-000006000003",
+                     *             "primary_domain": "marketing.itso.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0002-7000-8000-000005000002",
+                     *             "username": "mktitso"
+                     *           },
+                     *           "repo_url": "https://git.itso.local/marketing/site.git",
+                     *           "branch": "production",
+                     *           "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM4qRt itso-deploy-marketing.itso.vn",
+                     *           "deploy_key_fingerprint": "SHA256:Zx9c7V5b3N1m2L4k6J8h0G2f4D6s8A0p1O3i5U7y9T1",
+                     *           "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gl_3b8e6d1f4a",
+                     *           "auto_deploy": false,
+                     *           "build_command": "npm ci && npm run build",
+                     *           "shared_paths": [],
+                     *           "keep_releases": 3,
+                     *           "current_deployment": {
+                     *             "uuid": "01938a2f-0003-7000-8000-00002f000003",
+                     *             "commit_sha": "e9f2a10",
+                     *             "finished_at": "2026-11-18T09:05:48+07:00"
+                     *           },
+                     *           "status": "ready",
+                     *           "spec_version": 3,
+                     *           "observed_version": 3,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["GitRepository"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    createGitRepository: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "website_uuid": "01938a06-0002-7000-8000-000006000002",
+                 *       "repo_url": "git@github.com:anphat-it/shop.git",
+                 *       "branch": "main",
+                 *       "auto_deploy": false,
+                 *       "build_command": null,
+                 *       "shared_paths": [
+                 *         ".env"
+                 *       ],
+                 *       "keep_releases": 5
+                 *     }
+                 */
+                "application/json": components["schemas"]["GitRepositoryCreate"];
+            };
+        };
+        responses: {
+            /** @description Đã tạo */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "uuid": "01938a2e-0001-7000-8000-00002e000001",
+                     *         "website": {
+                     *           "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *           "primary_domain": "anphat.vn"
+                     *         },
+                     *         "hosting_account": {
+                     *           "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *           "username": "anphat"
+                     *         },
+                     *         "repo_url": "git@github.com:anphat-it/website.git",
+                     *         "branch": "main",
+                     *         "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn",
+                     *         "deploy_key_fingerprint": "SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW",
+                     *         "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e",
+                     *         "auto_deploy": true,
+                     *         "build_command": "composer install --no-dev --optimize-autoloader",
+                     *         "shared_paths": [
+                     *           ".env",
+                     *           "storage"
+                     *         ],
+                     *         "keep_releases": 5,
+                     *         "current_deployment": {
+                     *           "uuid": "01938a2f-0002-7000-8000-00002f000002",
+                     *           "commit_sha": "5d0b7f3",
+                     *           "finished_at": "2026-11-19T15:40:48+07:00"
+                     *         },
+                     *         "status": "ready",
+                     *         "spec_version": 3,
+                     *         "observed_version": 3,
+                     *         "drift": null,
+                     *         "observed_at": "2026-11-20T08:15:00+07:00",
+                     *         "created_at": "2026-11-18T09:30:00+07:00",
+                     *         "updated_at": "2026-11-19T14:05:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["GitRepository"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getGitRepository: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "uuid": "01938a2e-0001-7000-8000-00002e000001",
+                     *         "website": {
+                     *           "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *           "primary_domain": "anphat.vn"
+                     *         },
+                     *         "hosting_account": {
+                     *           "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *           "username": "anphat"
+                     *         },
+                     *         "repo_url": "git@github.com:anphat-it/website.git",
+                     *         "branch": "main",
+                     *         "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn",
+                     *         "deploy_key_fingerprint": "SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW",
+                     *         "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e",
+                     *         "auto_deploy": true,
+                     *         "build_command": "composer install --no-dev --optimize-autoloader",
+                     *         "shared_paths": [
+                     *           ".env",
+                     *           "storage"
+                     *         ],
+                     *         "keep_releases": 5,
+                     *         "current_deployment": {
+                     *           "uuid": "01938a2f-0002-7000-8000-00002f000002",
+                     *           "commit_sha": "5d0b7f3",
+                     *           "finished_at": "2026-11-19T15:40:48+07:00"
+                     *         },
+                     *         "status": "ready",
+                     *         "spec_version": 3,
+                     *         "observed_version": 3,
+                     *         "drift": null,
+                     *         "observed_at": "2026-11-20T08:15:00+07:00",
+                     *         "created_at": "2026-11-18T09:30:00+07:00",
+                     *         "updated_at": "2026-11-19T14:05:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["GitRepository"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    deleteGitRepository: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công, không có nội dung */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    updateGitRepository: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412. */
+                "If-Match"?: components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "auto_deploy": false
+                 *     }
+                 */
+                "application/json": components["schemas"]["GitRepositoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "uuid": "01938a2e-0001-7000-8000-00002e000001",
+                     *         "website": {
+                     *           "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *           "primary_domain": "anphat.vn"
+                     *         },
+                     *         "hosting_account": {
+                     *           "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *           "username": "anphat"
+                     *         },
+                     *         "repo_url": "git@github.com:anphat-it/website.git",
+                     *         "branch": "main",
+                     *         "deploy_key_public": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7dpL itso-deploy-anphat.vn",
+                     *         "deploy_key_fingerprint": "SHA256:Qm3v8bK0yX2nV1pL5sT7wR9zA4cE6gH8jM0oP2qS4uW",
+                     *         "webhook_url": "https://panel.itso.local/api/v1/hooks/git/gh_7c1f0a9d2e",
+                     *         "auto_deploy": false,
+                     *         "build_command": "composer install --no-dev --optimize-autoloader",
+                     *         "shared_paths": [
+                     *           ".env",
+                     *           "storage"
+                     *         ],
+                     *         "keep_releases": 5,
+                     *         "current_deployment": {
+                     *           "uuid": "01938a2f-0002-7000-8000-00002f000002",
+                     *           "commit_sha": "5d0b7f3",
+                     *           "finished_at": "2026-11-19T15:40:48+07:00"
+                     *         },
+                     *         "status": "ready",
+                     *         "spec_version": 3,
+                     *         "observed_version": 3,
+                     *         "drift": null,
+                     *         "observed_at": "2026-11-20T08:15:00+07:00",
+                     *         "created_at": "2026-11-18T09:30:00+07:00",
+                     *         "updated_at": "2026-11-19T14:05:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["GitRepository"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listGitDeployments: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a2f-0001-7000-8000-00002f000001",
+                     *           "repository_uuid": "01938a2e-0001-7000-8000-00002e000001",
+                     *           "commit_sha": "a41c9e2",
+                     *           "commit_message": "Trang liên hệ mới",
+                     *           "commit_author": "Nguyễn Văn Bảo",
+                     *           "trigger": "manual",
+                     *           "state": "succeeded",
+                     *           "release_path": "sites/anphat.vn/releases/202611171012",
+                     *           "rollback_of": null,
+                     *           "job_uuid": null,
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "started_at": "2026-11-17T10:12:00+07:00",
+                     *           "finished_at": "2026-11-17T10:12:48+07:00",
+                     *           "created_at": "2026-11-17T10:12:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a2f-0002-7000-8000-00002f000002",
+                     *           "repository_uuid": "01938a2e-0001-7000-8000-00002e000001",
+                     *           "commit_sha": "5d0b7f3",
+                     *           "commit_message": "Sửa lỗi form đặt hàng",
+                     *           "commit_author": "Nguyễn Văn Bảo",
+                     *           "trigger": "webhook",
+                     *           "state": "succeeded",
+                     *           "release_path": "sites/anphat.vn/releases/202611191540",
+                     *           "rollback_of": null,
+                     *           "job_uuid": null,
+                     *           "requested_by": null,
+                     *           "started_at": "2026-11-19T15:40:00+07:00",
+                     *           "finished_at": "2026-11-19T15:40:48+07:00",
+                     *           "created_at": "2026-11-19T15:40:00+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["GitDeployment"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    createGitDeployment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "commit_sha": null
+                 *     }
+                 */
+                "application/json": components["schemas"]["GitDeployRequest"];
+            };
+        };
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0097-7000-8000-00000f000097",
+                     *         "type": "git.deploy",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "git_repository",
+                     *           "uuid": "01938a2e-0001-7000-8000-00002e000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "git.deploy",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "git_repository",
+                     *         "uuid": "01938a2e-0001-7000-8000-00002e000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    rotateGitWebhookSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "secret": "whsec_4Tq9mZ2vL8xR1nB6"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SecretOnce"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     listHostingAccounts: {
         parameters: {
             query?: {
@@ -10095,11 +11266,11 @@ export interface operations {
                      *               "limit": 2
                      *             },
                      *             "ftp_accounts": {
-                     *               "used": 1,
+                     *               "used": 0,
                      *               "limit": 2
                      *             },
                      *             "cron_jobs": {
-                     *               "used": 1,
+                     *               "used": 0,
                      *               "limit": 3
                      *             },
                      *             "backup_mb": {
@@ -10164,7 +11335,7 @@ export interface operations {
                      *               "limit": 10
                      *             },
                      *             "databases": {
-                     *               "used": 1,
+                     *               "used": 0,
                      *               "limit": 10
                      *             },
                      *             "ftp_accounts": {
@@ -10177,79 +11348,6 @@ export interface operations {
                      *             },
                      *             "backup_mb": {
                      *               "used": 3000,
-                     *               "limit": 40960
-                     *             },
-                     *             "bandwidth_mb_30d": 48213,
-                     *             "measured_at": "2026-11-20T08:15:00+07:00"
-                     *           },
-                     *           "status": "suspended",
-                     *           "spec_version": 3,
-                     *           "observed_version": 3,
-                     *           "drift": null,
-                     *           "observed_at": "2026-11-20T08:15:00+07:00",
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a05-0004-7000-8000-000005000004",
-                     *           "username": "oldshop",
-                     *           "server": {
-                     *             "uuid": "01938a02-0003-7000-8000-000002000003",
-                     *             "name": "srv-hcm-01"
-                     *           },
-                     *           "package": {
-                     *             "uuid": "01938a03-0002-7000-8000-000003000002",
-                     *             "code": "business",
-                     *             "name": "Business",
-                     *             "version": 1
-                     *           },
-                     *           "owner": {
-                     *             "uuid": "01938a01-0003-7000-8000-000001000003",
-                     *             "name": "Công ty An Phát",
-                     *             "email": "it@anphat.vn"
-                     *           },
-                     *           "uid": 20003,
-                     *           "home_path": "/home/oldshop",
-                     *           "lifecycle_state": "terminated",
-                     *           "suspended_reason": null,
-                     *           "terminated_at": "2026-11-01T10:00:00+07:00",
-                     *           "purge_after": "2026-12-01T10:00:00+07:00",
-                     *           "legal_hold": false,
-                     *           "usage": {
-                     *             "disk_mb": {
-                     *               "used": 950,
-                     *               "limit": 20480
-                     *             },
-                     *             "inodes": {
-                     *               "used": 21000,
-                     *               "limit": 400000
-                     *             },
-                     *             "cpu_percent": {
-                     *               "used": 0,
-                     *               "limit": 200
-                     *             },
-                     *             "ram_mb": {
-                     *               "used": 0,
-                     *               "limit": 4096
-                     *             },
-                     *             "websites": {
-                     *               "used": 0,
-                     *               "limit": 10
-                     *             },
-                     *             "databases": {
-                     *               "used": 0,
-                     *               "limit": 10
-                     *             },
-                     *             "ftp_accounts": {
-                     *               "used": 0,
-                     *               "limit": 5
-                     *             },
-                     *             "cron_jobs": {
-                     *               "used": 0,
-                     *               "limit": 10
-                     *             },
-                     *             "backup_mb": {
-                     *               "used": 1200,
                      *               "limit": 40960
                      *             },
                      *             "bandwidth_mb_30d": 48213,
@@ -10277,6 +11375,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -10611,6 +11710,62 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getHostingAccountFeatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "package": {
+                     *           "uuid": "01938a03-0002-7000-8000-000003000002",
+                     *           "code": "business",
+                     *           "name": "Business",
+                     *           "version": 1
+                     *         },
+                     *         "php_versions": [
+                     *           "8.1",
+                     *           "8.2",
+                     *           "8.3"
+                     *         ],
+                     *         "php_workers_max": 10,
+                     *         "ssh_allowed": true,
+                     *         "cron_min_interval_min": 5,
+                     *         "backup_quota_mb": 40960,
+                     *         "backup_retention": {
+                     *           "daily": 7,
+                     *           "weekly": 4,
+                     *           "monthly": 3
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["AccountFeatures"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     ListFiles: {
         parameters: {
             query: {
@@ -10685,6 +11840,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -11111,6 +12267,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -11886,7 +13043,7 @@ export interface operations {
                      *           "description": "Website giới thiệu, blog nội bộ",
                      *           "current_version": 2,
                      *           "is_active": true,
-                     *           "account_count": 1,
+                     *           "account_count": 4,
                      *           "limits": {
                      *             "disk_mb": 5120,
                      *             "inode_limit": 150000,
@@ -11928,7 +13085,7 @@ export interface operations {
                      *           "description": "Website doanh nghiệp, shop nhỏ",
                      *           "current_version": 1,
                      *           "is_active": true,
-                     *           "account_count": 2,
+                     *           "account_count": 5,
                      *           "limits": {
                      *             "disk_mb": 20480,
                      *             "inode_limit": 400000,
@@ -11971,7 +13128,7 @@ export interface operations {
                      *           "description": "Ứng dụng lớn, nhiều website",
                      *           "current_version": 1,
                      *           "is_active": true,
-                     *           "account_count": 0,
+                     *           "account_count": 2,
                      *           "limits": {
                      *             "disk_mb": 102400,
                      *             "inode_limit": 2000000,
@@ -12022,6 +13179,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -12093,7 +13251,7 @@ export interface operations {
                      *         "description": "Website giới thiệu, blog nội bộ",
                      *         "current_version": 2,
                      *         "is_active": true,
-                     *         "account_count": 1,
+                     *         "account_count": 4,
                      *         "limits": {
                      *           "disk_mb": 5120,
                      *           "inode_limit": 150000,
@@ -12170,7 +13328,7 @@ export interface operations {
                      *         "description": "Website giới thiệu, blog nội bộ",
                      *         "current_version": 2,
                      *         "is_active": true,
-                     *         "account_count": 1,
+                     *         "account_count": 4,
                      *         "limits": {
                      *           "disk_mb": 5120,
                      *           "inode_limit": 150000,
@@ -12313,7 +13471,7 @@ export interface operations {
                      *         "description": "Website giới thiệu, blog nội bộ",
                      *         "current_version": 2,
                      *         "is_active": true,
-                     *         "account_count": 1,
+                     *         "account_count": 4,
                      *         "limits": {
                      *           "disk_mb": 5120,
                      *           "inode_limit": 150000,
@@ -12472,7 +13630,7 @@ export interface operations {
                      *             ],
                      *             "retention_days_after_terminate": 30
                      *           },
-                     *           "account_count": 1,
+                     *           "account_count": 4,
                      *           "created_by": {
                      *             "uuid": "01938a01-0001-7000-8000-000001000001",
                      *             "name": "Quản trị hệ thống",
@@ -12495,6 +13653,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -12720,6 +13879,59 @@ export interface operations {
                      *             "self": "/api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002",
                      *             "events": "/api/v1/admin/jobs/01938a0f-0002-7000-8000-00000f000002/events"
                      *           }
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0f-0005-7000-8000-00000f000005",
+                     *           "type": "hosting_account.create",
+                     *           "state": "running",
+                     *           "progress": 40,
+                     *           "resource": {
+                     *             "type": "hosting_account",
+                     *             "uuid": "01938a05-000c-7000-8000-00000500000c"
+                     *           },
+                     *           "steps": [
+                     *             {
+                     *               "seq": 1,
+                     *               "op": "account.ensure",
+                     *               "state": "succeeded",
+                     *               "started_at": "2026-11-20T08:15:00+07:00",
+                     *               "finished_at": "2026-11-20T08:15:00+07:00"
+                     *             },
+                     *             {
+                     *               "seq": 2,
+                     *               "op": "quota.apply",
+                     *               "state": "running",
+                     *               "started_at": "2026-11-20T08:15:00+07:00",
+                     *               "finished_at": null
+                     *             },
+                     *             {
+                     *               "seq": 3,
+                     *               "op": "php.pool.apply",
+                     *               "state": "pending",
+                     *               "started_at": null,
+                     *               "finished_at": null
+                     *             }
+                     *           ],
+                     *           "attempts": 1,
+                     *           "max_attempts": 3,
+                     *           "timeout_sec": 600,
+                     *           "error": null,
+                     *           "server": {
+                     *             "uuid": "01938a02-0002-7000-8000-000002000002",
+                     *             "name": "srv-hn-02"
+                     *           },
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "created_at": "2026-11-20T08:15:00+07:00",
+                     *           "started_at": "2026-11-20T08:15:00+07:00",
+                     *           "finished_at": null,
+                     *           "links": {
+                     *             "self": "/api/v1/admin/jobs/01938a0f-0005-7000-8000-00000f000005",
+                     *             "events": "/api/v1/admin/jobs/01938a0f-0005-7000-8000-00000f000005/events"
+                     *           }
                      *         }
                      *       ],
                      *       "meta": {
@@ -12735,6 +13947,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -12921,6 +14134,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -13009,6 +14223,106 @@ export interface operations {
                     "application/json": {
                         data: components["schemas"]["Job"];
                     };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    retryJob: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0099-7000-8000-00000f000099",
+                     *         "type": "website.create",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "website",
+                     *           "uuid": "01938a06-0002-7000-8000-000006000002"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "fs.mkdir",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 2,
+                     *             "op": "php.pool.apply",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 3,
+                     *             "op": "nginx.vhost.apply",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 4,
+                     *             "op": "cert.issue",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "website",
+                     *         "uuid": "01938a06-0002-7000-8000-000006000002"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -13320,6 +14634,16 @@ export interface operations {
                      *           "link": "/backups",
                      *           "read_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-20T03:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a12-0003-7000-8000-000012000003",
+                     *           "type": "job.failed",
+                     *           "severity": "high",
+                     *           "title": "Tạo database intranet_web thất bại",
+                     *           "body": "PostgreSQL không phản hồi; có thể thử lại.",
+                     *           "link": "/jobs/01938a0f-0008-7000-8000-00000f000008",
+                     *           "read_at": null,
+                     *           "created_at": "2026-11-20T08:15:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -13335,6 +14659,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -13456,6 +14781,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -13520,6 +14846,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -13572,6 +14899,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -13703,6 +15031,31 @@ export interface operations {
                      *           },
                      *           "created_at": "2026-11-19T14:05:00+07:00",
                      *           "finished_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a10-0002-7000-8000-000010000002",
+                     *           "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "target_server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "mode": "overwrite",
+                     *           "items": [
+                     *             "database:anphat_shop"
+                     *           ],
+                     *           "state": "failed",
+                     *           "job_uuid": null,
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "created_at": "2026-11-18T16:20:00+07:00",
+                     *           "finished_at": "2026-11-18T16:21:10+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -13718,6 +15071,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -13940,6 +15294,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -14007,6 +15362,23 @@ export interface operations {
                      *           "message": "Phát hiện webshell wp-content/uploads/2026/11/x.php",
                      *           "acknowledged_at": "2026-11-19T14:05:00+07:00",
                      *           "at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1a-0003-7000-8000-00001a000003",
+                     *           "type": "waf.block",
+                     *           "severity": "medium",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "website": {
+                     *             "uuid": "01938a06-0007-7000-8000-000006000007",
+                     *             "primary_domain": "docs.binhminh.vn"
+                     *           },
+                     *           "source_ip": "203.0.113.77",
+                     *           "message": "Chặn XSS tại /lien-he",
+                     *           "acknowledged_at": null,
+                     *           "at": "2026-11-15T14:00:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -14022,6 +15394,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -14166,7 +15539,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009e-7000-8000-00000f00009e",
+                     *         "uuid": "01938a0f-00a1-7000-8000-00000f0000a1",
                      *         "type": "fail2ban.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -14200,8 +15573,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -14369,6 +15742,40 @@ export interface operations {
                      *           "findings": 1,
                      *           "started_at": "2026-11-19T14:05:00+07:00",
                      *           "finished_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1b-0002-7000-8000-00001b000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "engine": "clamav+yara",
+                     *           "state": "succeeded",
+                     *           "files_scanned": 9120,
+                     *           "findings": 0,
+                     *           "started_at": "2026-11-20T02:00:00+07:00",
+                     *           "finished_at": "2026-11-20T02:20:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1b-0003-7000-8000-00001b000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0005-7000-8000-000006000005",
+                     *             "primary_domain": "binhminh.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "engine": "clamav+yara",
+                     *           "state": "succeeded",
+                     *           "files_scanned": 14388,
+                     *           "findings": 0,
+                     *           "started_at": "2026-11-20T02:00:00+07:00",
+                     *           "finished_at": "2026-11-20T02:20:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -14384,6 +15791,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -14518,6 +15926,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -14545,7 +15954,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a1-7000-8000-00000f0000a1",
+                     *         "uuid": "01938a0f-00a4-7000-8000-00000f0000a4",
                      *         "type": "malware.restore",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -14579,8 +15988,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -14677,7 +16086,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009d-7000-8000-00000f00009d",
+                     *         "uuid": "01938a0f-00a0-7000-8000-00000f0000a0",
                      *         "type": "sshd.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -14711,8 +16120,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -14786,7 +16195,7 @@ export interface operations {
                      *             "load_1m": 2.31,
                      *             "uptime_sec": 3888000
                      *           },
-                     *           "account_count": 2,
+                     *           "account_count": 5,
                      *           "status": "ready",
                      *           "spec_version": 3,
                      *           "observed_version": 3,
@@ -14820,7 +16229,7 @@ export interface operations {
                      *             "load_1m": 0.42,
                      *             "uptime_sec": 864000
                      *           },
-                     *           "account_count": 0,
+                     *           "account_count": 5,
                      *           "status": "ready",
                      *           "spec_version": 1,
                      *           "observed_version": 1,
@@ -14855,7 +16264,7 @@ export interface operations {
                      *             "load_1m": 6.8,
                      *             "uptime_sec": 1728000
                      *           },
-                     *           "account_count": 2,
+                     *           "account_count": 1,
                      *           "status": "degraded",
                      *           "spec_version": 5,
                      *           "observed_version": 4,
@@ -14880,6 +16289,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -14982,7 +16392,7 @@ export interface operations {
                      *           "load_1m": 2.31,
                      *           "uptime_sec": 3888000
                      *         },
-                     *         "account_count": 2,
+                     *         "account_count": 5,
                      *         "status": "ready",
                      *         "spec_version": 3,
                      *         "observed_version": 3,
@@ -15063,7 +16473,7 @@ export interface operations {
                      *           "load_1m": 2.31,
                      *           "uptime_sec": 3888000
                      *         },
-                     *         "account_count": 2,
+                     *         "account_count": 5,
                      *         "status": "ready",
                      *         "spec_version": 3,
                      *         "observed_version": 3,
@@ -15120,7 +16530,7 @@ export interface operations {
                      *         "allocated_cpu_pct": 300,
                      *         "allocated_ram_mb": 5120,
                      *         "allocated_disk_mb": 25600,
-                     *         "account_count": 2,
+                     *         "account_count": 5,
                      *         "max_accounts": 200,
                      *         "accepting_new": true,
                      *         "updated_at": "2026-11-20T08:15:00+07:00"
@@ -15209,6 +16619,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -15282,7 +16693,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a2-7000-8000-00000f0000a2",
+                     *         "uuid": "01938a0f-00a5-7000-8000-00000f0000a5",
                      *         "type": "docker.container_control",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -15316,8 +16727,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -15390,6 +16801,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -15444,6 +16856,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -15498,6 +16911,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -15585,6 +16999,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -15713,7 +17128,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009b-7000-8000-00000f00009b",
+                     *         "uuid": "01938a0f-009e-7000-8000-00000f00009e",
                      *         "type": "firewall.apply",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -15747,8 +17162,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -15792,7 +17207,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009c-7000-8000-00000f00009c",
+                     *         "uuid": "01938a0f-009f-7000-8000-00000f00009f",
                      *         "type": "firewall.confirm",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -15826,8 +17241,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -16049,6 +17464,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -16102,13 +17518,6 @@ export interface operations {
                      *           "enabled": true,
                      *           "version": "11.4.4",
                      *           "since": "2026-11-18T09:30:00+07:00"
-                     *         },
-                     *         {
-                     *           "name": "fail2ban",
-                     *           "active": true,
-                     *           "enabled": true,
-                     *           "version": "1.1.0",
-                     *           "since": "2026-11-18T09:30:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -16125,6 +17534,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -16280,6 +17690,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -16584,6 +17995,44 @@ export interface operations {
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0b-0002-7000-8000-00000b000002",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "username": "binhminh_ftp",
+                     *           "protocol": "sftp",
+                     *           "root_path": ".",
+                     *           "read_only": false,
+                     *           "last_login_at": null,
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-12T09:10:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a0b-0003-7000-8000-00000b000003",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0006-7000-8000-000005000006",
+                     *             "username": "saomai"
+                     *           },
+                     *           "username": "saomai_ftp",
+                     *           "protocol": "sftp",
+                     *           "root_path": ".",
+                     *           "read_only": false,
+                     *           "last_login_at": "2026-11-19T14:05:00+07:00",
+                     *           "status": "ready",
+                     *           "spec_version": 1,
+                     *           "observed_version": 1,
+                     *           "drift": null,
+                     *           "observed_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-13T10:20:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -16599,6 +18048,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -16825,6 +18275,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -17165,6 +18616,32 @@ export interface operations {
                      *           "last_latency_ms": 182,
                      *           "uptime_30d": 99.97,
                      *           "last_checked_at": "2026-11-20T08:15:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a2a-0002-7000-8000-00002a000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "url": "https://shop.anphat.vn/",
+                     *           "interval_sec": 60,
+                     *           "last_status": 200,
+                     *           "last_latency_ms": 240,
+                     *           "uptime_30d": 99.95,
+                     *           "last_checked_at": "2026-11-20T08:15:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a2a-0003-7000-8000-00002a000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0005-7000-8000-000006000005",
+                     *             "primary_domain": "binhminh.vn"
+                     *           },
+                     *           "url": "https://binhminh.vn/",
+                     *           "interval_sec": 60,
+                     *           "last_status": 200,
+                     *           "last_latency_ms": 310,
+                     *           "uptime_30d": 99.9,
+                     *           "last_checked_at": "2026-11-20T08:15:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -17180,6 +18657,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -17253,34 +18731,6 @@ export interface operations {
                      *           "last_login_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a01-0004-7000-8000-000001000004",
-                     *           "realm": "portal",
-                     *           "name": "Phòng Marketing",
-                     *           "email": "marketing@itso.vn",
-                     *           "role": "USER",
-                     *           "status": "active",
-                     *           "mfa_enabled": false,
-                     *           "locale": "vi",
-                     *           "timezone": "Asia/Ho_Chi_Minh",
-                     *           "last_login_at": "2026-11-19T14:05:00+07:00",
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a01-0005-7000-8000-000001000005",
-                     *           "realm": "portal",
-                     *           "name": "Lê Hoa",
-                     *           "email": "hoa.le@example.vn",
-                     *           "role": "USER",
-                     *           "status": "locked",
-                     *           "mfa_enabled": false,
-                     *           "locale": "en",
-                     *           "timezone": "Asia/Ho_Chi_Minh",
-                     *           "last_login_at": null,
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -17296,6 +18746,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -17523,6 +18974,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -17898,32 +19350,6 @@ export interface operations {
                      *           "observed_at": "2026-11-20T08:15:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a06-0004-7000-8000-000006000004",
-                     *           "hosting_account": {
-                     *             "uuid": "01938a05-0003-7000-8000-000005000003",
-                     *             "username": "lehoa"
-                     *           },
-                     *           "server": {
-                     *             "uuid": "01938a02-0003-7000-8000-000002000003",
-                     *             "name": "srv-hcm-01"
-                     *           },
-                     *           "primary_domain": "lehoa.blog",
-                     *           "type": "php",
-                     *           "document_root": "public",
-                     *           "php_version": "8.1",
-                     *           "ssl_mode": "acme",
-                     *           "waf_enabled": true,
-                     *           "domains_count": 1,
-                     *           "certificate_expires_at": "2026-12-02T07:00:00+07:00",
-                     *           "status": "suspended",
-                     *           "spec_version": 3,
-                     *           "observed_version": 3,
-                     *           "drift": null,
-                     *           "observed_at": "2026-11-20T08:15:00+07:00",
-                     *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -17939,6 +19365,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -18451,6 +19878,18 @@ export interface operations {
                      *           "verified_at": "2026-11-18T09:30:00+07:00",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a07-0003-7000-8000-000007000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "name": "shop.anphat.vn",
+                     *           "type": "primary",
+                     *           "verified_at": "2026-11-18T09:30:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -18467,6 +19906,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -18978,7 +20418,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a0-7000-8000-00000f0000a0",
+                     *         "uuid": "01938a0f-00a3-7000-8000-00000f0000a3",
                      *         "type": "malware.scan",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -19012,8 +20452,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -19117,7 +20557,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009f-7000-8000-00000f00009f",
+                     *         "uuid": "01938a0f-00a2-7000-8000-00000f0000a2",
                      *         "type": "waf.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -19158,8 +20598,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -19229,6 +20669,52 @@ export interface operations {
                      *           },
                      *           "staging_of": null,
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a11-0002-7000-8000-000011000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0008-7000-8000-000006000008",
+                     *             "primary_domain": "saomai.edu.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0006-7000-8000-000005000006",
+                     *             "username": "saomai"
+                     *           },
+                     *           "wp_version": "6.7.1",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 9,
+                     *           "plugins_outdated": 1,
+                     *           "themes_outdated": 1,
+                     *           "auto_update": "minor",
+                     *           "hardening": {
+                     *             "xmlrpc_disabled": true,
+                     *             "file_edit_disabled": true
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a11-0003-7000-8000-000011000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-000b-7000-8000-00000600000b",
+                     *             "primary_domain": "thientam.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0008-7000-8000-000005000008",
+                     *             "username": "thientam"
+                     *           },
+                     *           "wp_version": "6.7.1",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 11,
+                     *           "plugins_outdated": 0,
+                     *           "themes_outdated": 1,
+                     *           "auto_update": "minor",
+                     *           "hardening": {
+                     *             "xmlrpc_disabled": true,
+                     *             "file_edit_disabled": true
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -19244,6 +20730,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -20008,6 +21495,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };

@@ -4,10 +4,10 @@
 
 | Nội dung | File |
 |---|---|
-| Admin API (208 operation) | [contracts/openapi/itso-admin-v1.yaml](contracts/openapi/itso-admin-v1.yaml) |
-| Portal API (90 operation) | [contracts/openapi/itso-portal-v1.yaml](contracts/openapi/itso-portal-v1.yaml) |
+| Admin API (219 operation) | [contracts/openapi/itso-admin-v1.yaml](contracts/openapi/itso-admin-v1.yaml) |
+| Portal API (100 operation) | [contracts/openapi/itso-portal-v1.yaml](contracts/openapi/itso-portal-v1.yaml) |
 | Thành phần chung (Problem, CursorPage, Job, security) | [contracts/openapi/common.yaml](contracts/openapi/common.yaml) |
-| Agent typed operations (60 op có schema) | [contracts/agent-ops/](contracts/agent-ops/README.md), [catalog.json](contracts/agent-ops/catalog.json) |
+| Agent typed operations (61 op có schema, 23 op khai báo cho Phase 4–10) | [contracts/agent-ops/](contracts/agent-ops/README.md), [catalog.json](contracts/agent-ops/catalog.json) |
 | Input độc hại dùng chung cho test | [contracts/test-vectors/evil-inputs.json](contracts/test-vectors/evil-inputs.json) (93 vector) |
 | Dữ liệu demo (example, MSW Phase 2) | [contracts/examples/demo-dataset.json](contracts/examples/demo-dataset.json) |
 | Quy ước và cách sửa | [contracts/README.md](contracts/README.md) |
@@ -48,6 +48,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | Backup/Restore | `/admin/backup-destinations`, `/admin/backup-policies`, `/admin/backup-snapshots`, `/admin/restores` (kể cả restore sang server khác) |
 | Docker | `/admin/servers/{id}/docker/*`, `/admin/compose-projects` |
 | WordPress | `/admin/wordpress/*` |
+| Git deploy | `GET/POST /admin/git-repositories`, `GET/PATCH/DELETE …/{id}`, `POST …:rotate-webhook-secret`, `GET/POST …/{id}/deployments`, `POST /admin/git-deployments/{id}:rollback`. Webhook công khai `POST /hooks/git/{token}` (HMAC) để Phase 10 |
 | Monitoring, Audit, Jobs, Settings, Notifications | `/admin/metrics/*`, `/admin/alert-rules`, `/admin/audit-logs`, `/admin/jobs`, `/admin/settings/*` |
 | Terminal | `POST /admin/terminal/sessions` (root terminal chỉ chạy khi policy cục bộ cho phép) |
 
@@ -64,6 +65,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | Cron | `/portal/cron-jobs` |
 | Backups | `GET /portal/backup-snapshots`, `POST /portal/backups` (trong quota), `POST /portal/restores`, `POST /portal/backup-snapshots/{id}:download-link` |
 | WordPress | `/portal/wordpress/*` |
+| Git deploy | `/portal/git-repositories*`, `/portal/git-deployments/{id}:rollback` (khi gói cho phép) |
 | Terminal | `POST /portal/terminal/sessions` (chỉ khi gói cho SSH; shell trong jail) |
 | Jobs, Notifications, Profile | `/portal/jobs/{id}`, `/portal/notifications`, `/portal/profile`, `/portal/mfa/*`, `/portal/sessions` |
 
@@ -71,4 +73,4 @@ Portal **không có**: servers, packages, users, firewall, docker, software, set
 
 ## 5. Thao tác bất đồng bộ
 
-Mọi thao tác chạm Linux (tạo/khóa/mở/đổi gói/chuyển server/xóa, website, DB, backup…) trả `202` kèm `job`. Bắt buộc `Idempotency-Key`. Hủy qua `POST /…/jobs/{id}:cancel`. Theo dõi tiến độ qua SSE `/…/jobs/{id}/events`. Mọi thao tác đều được audit.
+Mọi thao tác chạm Linux (tạo/khóa/mở/đổi gói/chuyển server/xóa, website, DB, backup…) trả `202` kèm `job`. Bắt buộc `Idempotency-Key`. Hủy qua `POST /…/jobs/{id}:cancel`, chạy lại job lỗi qua `POST /…/jobs/{id}:retry`. Theo dõi tiến độ qua SSE `/…/jobs/{id}/events`. Mọi thao tác đều được audit.

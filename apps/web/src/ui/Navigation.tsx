@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { ChevronLeft, ChevronRight, ChevronRight as Sep } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
+import { AppLink } from './AppLink';
 import { Button } from './Button';
 
 export interface Crumb {
@@ -27,9 +28,9 @@ export function Breadcrumb({ items, className }: { items: Crumb[]; className?: s
                     {c.label}
                   </span>
                 ) : (
-                  <a href={c.href} className="hover:text-fg hover:underline">
+                  <AppLink href={c.href} className="hover:text-fg hover:underline">
                     {c.label}
-                  </a>
+                  </AppLink>
                 )}
               </li>
               {!last && (

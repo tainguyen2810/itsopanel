@@ -5,6 +5,7 @@ import {
   formatMegabytes,
   formatNumber,
   formatPercent,
+  formatDuration,
   formatRelative,
 } from '../format';
 import { createI18n } from '..';
@@ -37,6 +38,12 @@ describe('format theo locale', () => {
     expect(formatRelative('2026-11-20T08:12:00+07:00', 'vi', now)).toBe('3 phút trước');
     expect(formatRelative('2026-11-20T08:12:00+07:00', 'en', now)).toBe('3 minutes ago');
     expect(formatRelative('2026-11-22T08:15:00+07:00', 'en', now)).toBe('in 2 days');
+  });
+  it('khoảng thời gian theo đơn vị lớn nhất chia hết', () => {
+    expect(formatDuration(3600, 'vi')).toBe('1 giờ');
+    expect(formatDuration(600, 'en')).toBe('10 minutes');
+    expect(formatDuration(90, 'en')).toBe('90 seconds');
+    expect(formatDuration(172_800, 'en')).toBe('2 days');
   });
 });
 

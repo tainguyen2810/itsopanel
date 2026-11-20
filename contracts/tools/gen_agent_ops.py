@@ -201,7 +201,8 @@ DECLARED = [
     ("compose.pull", "docker", "high", False, 10), ("wp.install", "wordpress", "high", True, 10),
     ("wp.update", "wordpress", "high", True, 10), ("wp.clone", "wordpress", "high", True, 10),
     ("wp.harden", "wordpress", "medium", True, 10), ("pty.open", "pty", "high", True, 6),
-    ("audit.tail", "system", "low", True, 4),
+    ("audit.tail", "system", "low", True, 4), ("git.deploy", "git", "high", True, 10),
+    ("git.rollback", "git", "high", True, 10),
 ]
 
 # Bước do worker của panel thực hiện (gọi API bên ngoài), không phải op của agent.

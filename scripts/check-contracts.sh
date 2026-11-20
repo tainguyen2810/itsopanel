@@ -22,8 +22,9 @@ echo "  ✓ không có diff"
 echo "→ 2/5 Redocly lint (ruleset contracts/redocly.yaml)"
 (cd "$C" && $PNPX @redocly/cli@2.71.0 lint --config redocly.yaml --format=summary 2>&1 | grep -E "validated|valid|error|warning" | grep -v "new version")
 
-echo "→ 3/5 Kiểm ngữ nghĩa (tools/check_contracts.py)"
+echo "→ 3/5 Kiểm ngữ nghĩa (tools/check_contracts.py) và dữ liệu demo nhất quán (tools/check_demo.py)"
 python3 "$C/tools/check_contracts.py"
+python3 "$C/tools/check_demo.py"
 
 echo "→ 4/5 ajv: compile schema agent-ops (strict) và envelope mẫu hợp lệ"
 cd "$C/agent-ops"

@@ -13,9 +13,9 @@ Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations viết
 | 7 — Bảo mật | `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `fim_baselines` | 6 |
 | 8 — Backup, purge | `backup_destinations`, `backup_policies`, `backup_jobs`, `backup_snapshots`, `backup_verifications`, `restore_jobs`, `purge_records` | 7 |
 | 9 — Multi-server, chuyển account | `agent_enrollment_tokens`, `account_migrations` | 2 |
-| 10 — Docker, WordPress | `docker_hosts`, `registries`, `compose_projects`, `compose_revisions`, `containers`, `port_allocations`, `wordpress_sites` | 7 |
+| 10 — Docker, WordPress | `docker_hosts`, `registries`, `compose_projects`, `compose_revisions`, `containers`, `port_allocations`, `wordpress_sites`, `git_repositories`, `git_deployments` | 9 |
 | 11 — Giám sát, cảnh báo | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `notification_channels`, `notification_preferences` | 6 |
-| **Tổng** | | **78** |
+| **Tổng** | | **80** |
 
 Phần trong `extras.sql` đi cùng bảng của nó: trigger realm (Phase 3), audit append-only + hash chain + partition (Phase 3), package version bất biến (Phase 3), purge guard (Phase 8, khi có `purge_records`), partition `metric_samples` (Phase 4).
 

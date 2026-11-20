@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 1 — Foundation, Architecture, Database, API Contracts, Design System — **✓ hoàn tất, chờ duyệt**
-- **Prompt hiện tại:** 1.7 ✓ (Phase 1 xong; đã merge `phase-1` vào `main` ở Git local)
-- **Task đang làm:** — (DỪNG chờ duyệt Phase 1; không bắt đầu Phase 2)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (merge commit `phase-1 → main`)
-- **Bước tiếp theo:** Người dùng duyệt Phase 1 (báo cáo `docs/reports/phase-1.md`, quyết định đề xuất D-54, D-55) → Phase 2 (Complete UI Demo) khi có lệnh
+- **Phase:** 2 — Complete UI Demo ✓ hoàn tất 2026-11-20, đã merge vào `main` (Phase 1 ✓ APPROVED 2026-11-20)
+- **Prompt hiện tại:** 2.8 xong. Người dùng đã duyệt trước (2026-11-20): merge Phase 2 rồi lên kế hoạch và thực hiện Phase 3
+- **Task đang làm:** lập kế hoạch Phase 3 (`docs/planning/seed/PHASE_3_PROMPTS.md`)
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-2`
+- **Bước tiếp theo:** Viết `PHASE_3_PROMPTS.md`, mở nhánh `phase-3`, làm hàng loạt 3.1 → cuối, tự merge local, báo cáo và DỪNG trước Phase 4
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -16,8 +16,8 @@
 | Phase | Tên | Trạng thái |
 |---|---|---|
 | 0 | Planning | ✓ APPROVED |
-| 1 | Foundation, Architecture, Database, API Contracts, Design System | ✓ chờ duyệt |
-| 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ○ |
+| 1 | Foundation, Architecture, Database, API Contracts, Design System | ✓ APPROVED |
+| 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ✓ (báo cáo `docs/reports/phase-2.md`) |
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ○ |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ○ |
 | 5 | Website / Nginx / PHP / SSL / DNS | ○ |
@@ -31,15 +31,18 @@
 
 ## Checklist Phase hiện tại
 
-Phase 1 (✓ hoàn tất, chờ duyệt)
+Phase 2 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_2_PROMPTS.md`
 
-- ✓ 1.1 Git local, cấu trúc repo, file tiến độ, CLAUDE.md
-- ✓ 1.2 Architecture & ADR trong repo
-- ✓ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
-- ✓ 1.4 API Contracts (OpenAPI admin/portal, agent schemas, test vectors)
-- ✓ 1.5 Scaffold web/api/agent + mock agent + dev env
-- ✓ 1.6 Design System (tokens, Light/Dark, i18n, component nền, app shell 2 entry)
-- ✓ 1.7 CI, codegen, kiểm tra tổng và báo cáo Phase 1
+- ✓ 2.1 Nền demo: router, MSW theo OpenAPI, dataset mở rộng, role switcher, khung trang, smoke test
+- ✓ 2.2 Admin chung: Dashboard, Jobs, Profile, Ctrl+K, Login/MFA, wizard cài đặt
+- ✓ 2.3 Hạ tầng: Servers, dịch vụ, Docker, Compose
+- ✓ 2.4 Hosting I: gói, tài khoản hosting
+- ✓ 2.5 Hosting II: website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git
+- ✓ 2.6 Bảo mật, sao lưu, quản trị
+- ✓ 2.7 User Hosting Portal
+- ✓ 2.8 Kiểm tra tổng, báo cáo Phase 2
+
+Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 
 ## Nhật ký
 
@@ -58,3 +61,12 @@ Phase 1 (✓ hoàn tất, chờ duyệt)
 | 2026-11-20 | 1 / 1.5 | Contract `GET /admin/system/status` + op `system.ping`; apps/web (Vite/React/Tailwind, 2 entry), apps/api (Laravel 13.43, RFC 9457, Pest, Larastan + rule cấm exec), agent mock (Go, unix socket), make setup/dev/test/lint, compose dev, runbook | 67211b5, e050c8c, 53f4a13, 16837e7, 1fd5485 |
 | 2026-11-20 | 1 / 1.6 | Token Light/Dark + sinh CSS/@theme + kiểm AA 84/84; lint cấm màu cứng; ThemeProvider + chặn nháy; i18n VI/EN; 25 component; AdminShell/PortalShell; trang /design (dev); Vitest 26, Playwright 30 (14 ảnh, axe 0 lỗi nghiêm trọng); design/docs | 6e48570, 18f5ea6, 50087c3 |
 | 2026-11-20 | 1 / 1.7 | Codegen TS (openapi-typescript + openapi-fetch) và Go structs (generator Python), codegen-check; CI 7 job; `make check` 21 bước (20 PASS, 1 SKIP); runbook GitHub; báo cáo Phase 1; clean clone xanh; merge `phase-1 → main` (local) | cde2c40, f1d6205, 62c12f2 + commit này |
+| 2026-11-20 | 1 → 2 | Người dùng duyệt Phase 1 ("Tiếp nhé"); D-54, D-55 APPROVED; viết PHASE_2_PROMPTS.md, mở nhánh `phase-2` | — |
+| 2026-11-20 | 2 / 2.1 | Dataset mở rộng + check_demo.py; MSW theo OpenAPI (dispatcher theo template, job giả lập theo thời gian, phạm vi vai trò); contract list khai báo 422; TanStack Router theo sitemap (58 admin + 18 portal), guard 403, breadcrumb, khung trang (PageHeader, ListPage URL state, DetailPage tabs URL, FormDialog, trạng thái), drawer job; `dev:demo`/`build:demo`; Vitest 110, Playwright 106 | 87c2fe0 + commit này |
+| 2026-11-20 | 2 / 2.2 | Contract thêm `jobs/{id}:retry` (admin + portal, theo 05-API); API giả lập ghi (auth/MFA/step-up/đổi mật khẩu/phiên, hủy/thử lại job sinh audit) và dashboard tính từ dữ liệu theo phạm vi vai trò; Dashboard theo mockup, Jobs + chi tiết, Hồ sơ (mật khẩu, MFA, phiên), Ctrl+K tìm thật, Đăng nhập/MFA, wizard cài đặt 10 bước; namespace i18n `admin` (575 key); Vitest 141, Playwright 112 | 2b71414 |
+| 2026-11-20 | 2 / 2.3 | Contract: `ComposeProject.compose_yaml`; API giả lập hạ tầng (token thêm server + agent giả lập kết nối, sửa/reboot, dịch vụ, phần mềm/PHP, Nginx, tường lửa safe-apply có tự hoàn tác, Docker, Compose, Registry, terminal ticket) với dữ liệu tách theo từng server; 12 trang: danh sách/thêm/chi tiết server (5 tab), Nginx, PHP, phần mềm, tường lửa (đếm ngược xác nhận), Docker, terminal mô phỏng có chính sách, Compose (+chi tiết, sửa YAML), Registry; Vitest 188, Playwright 116 | 63b40ab |
+| 2026-11-20 | 2 / 2.4 | Dataset: thêm Super Admin thứ hai (Nguyễn Hải) cho purge 2 bước; API giả lập gói và tài khoản hosting (tạo/sửa gói tạo phiên bản bất biến D-43, chuyển account lên phiên bản mới, tạo account qua job, khóa/mở khóa, đổi gói, chấm dứt, purge 2 SA D-46 + legal hold, chuyển server preflight → sync → verify → cutover/rollback), gợi ý đặt account tính theo tài nguyên và phạm vi; 8 trang: gói (danh sách, thêm, chi tiết + lịch sử phiên bản + so sánh), tài khoản (danh sách, wizard tạo, chi tiết 7 tab, wizard chuyển server, đã chấm dứt); Stepper dùng chung; Vitest 233, Playwright 120 | be4a5a0 |
+| 2026-11-20 | 2 / 2.5 | Contract + DB: Git deploy (bảng `git_repositories`, `git_deployments`; 9 endpoint admin/portal; op `git.deploy`, `git.rollback`; D-56 ĐỀ XUẤT), dataset thêm 2 zone DNS; thư viện dùng chung đường dẫn File Manager / cron / record DNS; API giả lập Hosting II (website + domain/SSL/Nginx/PHP/WAF/log, DB + user + quyền, File Manager ảo trong home có etag, SFTP/SSH key, DNS, cron theo giới hạn gói, WordPress, Git deploy/rollback); 10 trang: website (+chi tiết 8 tab), database, File Manager 2 khung, SFTP/SSH, SSL, DNS, cron (+lịch sử), WordPress, Git deploy; ListPage nhúng hiện mô tả + nút; Vitest 326, Playwright 124 | 01e004e, b067733, 3887735 |
+| 2026-11-20 | 2 / 2.6 | Dataset thêm quy tắc/cảnh báo/uptime/quét mã độc, chính sách sao lưu cấu hình panel, lần khôi phục lỗi; API giả lập quản trị (`handlers/governance.ts`: SSH/fail2ban có If-Match, allowlist chặn rỗng/CIDR sai/xung đột, quarantine; đích sao lưu không hạ Object Lock và không lưu bí mật, chính sách, snapshot khóa bất biến, duyệt cây, kiểm chứng, khôi phục ghi đè phải gõ username; người dùng tạo/sửa/phạm vi ADMIN/khóa/MFA/impersonate có lý do vào audit; quy tắc cảnh báo; xuất audit CSV; thông báo; cài đặt chỉ SA); 18 trang: Bảo mật (tổng quan + WAF, mã độc, SSH, fail2ban, FIM, IP được phép), Sao lưu (checklist 3-2-1-1-0, lịch sử, chính sách, đích, kiểm chứng), Khôi phục (+ wizard 4 bước), Người dùng (+ chi tiết, phạm vi), Vai trò (ma trận chỉ xem), Giám sát (+ cảnh báo), Nhật ký kiểm toán (lọc, chi tiết, CSV chống chèn công thức), Thông báo, Cài đặt 5 tab; Vitest 383, Playwright 127 | 715bebf, 957f0f8 |
+| 2026-11-20 | 2 / 2.7 | User Hosting Portal: contract `GET /hosting-accounts/{id}/features` (D-57 ĐỀ XUẤT, admin + portal); lớp API trung lập realm (`shared/api/realm.ts`, đường dẫn không tiền tố, kiểu theo contract Portal) nên trang hosting/website/database/file/SFTP/cron/WordPress/sao lưu/khôi phục/đăng nhập/hồ sơ/job/thông báo dùng chung `shared/`, phần chỉ Admin cắm qua slot; API giả lập Portal (`handlers/portal.ts`) chỉ trả dữ liệu account user sở hữu, job/thông báo theo user, terminal theo gói có SSH; 18 route Portal (Tổng quan usage/quota, chi tiết gói, tạo website, sao lưu 3 tab, terminal, quên mật khẩu); sửa đổi user demo không tải lại dữ liệu đang hiện, chuông thông báo đếm từ dữ liệu thật; Vitest 452, Playwright 129 | 3ab0fe1 |
+| 2026-11-20 | 2 / 2.8 | Kiểm tra tổng: 74 route axe light/dark + 390px + EN không lẫn tiếng Việt; số liệu nhất quán (5 test); 56 ảnh trang chính `docs/screenshots/phase-2/`; bản demo tĩnh; `make check` (2 bước đỏ lần đầu do môi trường/markdown, sửa và chạy lại PASS); sửa 5 lỗi a11y; báo cáo `docs/reports/phase-2.md` | b7f6bd9 |

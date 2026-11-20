@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -81,8 +81,8 @@ test-agent:
 test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự bật Vite)
 	@cd apps/web && $(PNPM) e2e
 
-screenshots: ## Chụp lại ảnh Design System vào docs/screenshots/design-system/
-	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system $(PNPM) e2e
+screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/) và trang chính Phase 2 (docs/screenshots/phase-2/)
+	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system SCREENSHOT_DIR_P2=$(CURDIR)/docs/screenshots/phase-2 $(PNPM) e2e
 
 tokens: ## Sinh tokens.css từ design/tokens/tokens.json
 	@node design/tools/gen-tokens.mjs
@@ -116,6 +116,12 @@ build: build-web build-agent ## Build web và mock agent
 
 build-web:
 	@cd apps/web && $(PNPM) build
+
+build-demo: ## Build bản demo (API giả lập MSW) vào apps/web/dist-demo; kiểm build thường không có MSW
+	@bash scripts/check-demo-build.sh
+
+dev-demo: ## Chạy giao diện demo với API giả lập (không cần Laravel/agent)
+	@cd apps/web && $(PNPM) dev:demo
 
 build-agent:
 	@cd agent && go build -o bin/itso-mock-agent ./cmd/itso-mock-agent
