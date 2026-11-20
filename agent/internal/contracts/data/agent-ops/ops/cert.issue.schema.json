@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cert.issue.schema.json",
+  "title": "cert.issue",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "website_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Domain"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "challenge": {
+          "type": "string",
+          "enum": [
+            "http-01",
+            "dns-01"
+          ]
+        },
+        "acme_account_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "account",
+        "website_uuid",
+        "domains",
+        "challenge",
+        "acme_account_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "cert_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "not_after": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cert_uuid",
+        "not_after",
+        "issuer"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

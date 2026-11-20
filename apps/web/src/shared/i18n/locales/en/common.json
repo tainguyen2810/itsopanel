@@ -1,0 +1,75 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "retry": "Retry",
+    "copy": "Copy",
+    "copied": "Copied",
+    "clearFilter": "Clear filter",
+    "viewAll": "View all",
+    "more": "More"
+  },
+  "state": {
+    "loading": "Loading…",
+    "empty": "No data yet",
+    "error": "Something went wrong",
+    "noResults": "No matching results"
+  },
+  "status": {
+    "active": "Active",
+    "pending": "Pending",
+    "provisioning": "Provisioning",
+    "suspended": "Suspended",
+    "failed": "Failed",
+    "terminated": "Terminated",
+    "running": "Running",
+    "succeeded": "Succeeded",
+    "cancelled": "Cancelled",
+    "queued": "Queued",
+    "online": "Online",
+    "offline": "Offline",
+    "drift": "Drift",
+    "inSync": "In sync",
+    "desired": "Desired",
+    "observed": "Observed",
+    "degraded": "Degraded"
+  },
+  "table": {
+    "selected_one": "{{count}} row selected",
+    "selected_other": "{{count}} rows selected",
+    "filter": "Filter…",
+    "rowsPerPage": "Rows per page",
+    "page": "Page {{page}} of {{total}}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "sortAsc": "Sort ascending",
+    "sortDesc": "Sort descending",
+    "selectAll": "Select all",
+    "selectRow": "Select row"
+  },
+  "confirm": {
+    "typeToConfirm": "Type <strong>{{name}}</strong> to confirm",
+    "mismatch": "Name does not match",
+    "irreversible": "This action cannot be undone."
+  },
+  "form": {
+    "required": "Required",
+    "invalid": "Invalid value",
+    "minLength": "At least {{min}} characters",
+    "email": "Invalid email",
+    "optional": "optional"
+  },
+  "job": {
+    "step": "Step {{current}} of {{total}}",
+    "steps": "Steps",
+    "elapsed": "Running for {{time}}"
+  },
+  "breadcrumb": "Breadcrumb",
+  "pagination": "Pagination"
+}

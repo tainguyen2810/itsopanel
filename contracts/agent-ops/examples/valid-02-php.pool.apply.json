@@ -1,0 +1,28 @@
+{
+  "v": 1,
+  "op": "php.pool.apply",
+  "op_id": "01938a0f-0002-7000-8000-00000f000002:2:1",
+  "params": {
+    "account": {
+      "username": "anphat",
+      "uid": 20001
+    },
+    "website_uuid": "01938a06-0002-7000-8000-000006000002",
+    "version": "8.2",
+    "pm_max_children": 6,
+    "memory_limit": "256m",
+    "max_execution_time": 60,
+    "upload_max_filesize": "64m",
+    "disable_functions": [
+      "exec",
+      "shell_exec"
+    ]
+  },
+  "deadline": "2026-11-20T08:25:00+07:00",
+  "ts": 1795655700,
+  "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+  "requested_by": {
+    "user_uuid": "01938a01-0003-7000-8000-000001000003",
+    "role": "USER"
+  }
+}

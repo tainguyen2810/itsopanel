@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/backup.run.schema.json",
+  "title": "backup.run",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "account": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Account"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "contents": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "files",
+              "databases",
+              "config"
+            ]
+          },
+          "minItems": 1
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{1,32}$"
+          }
+        }
+      },
+      "required": [
+        "repo",
+        "account",
+        "contents",
+        "tags"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8,64}$"
+        },
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "size"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.mysql.grant.schema.json",
+  "title": "db.mysql.grant",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "username": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "database": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "privileges": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "SELECT",
+              "INSERT",
+              "UPDATE",
+              "DELETE",
+              "CREATE",
+              "DROP",
+              "ALTER",
+              "INDEX"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "account",
+        "username",
+        "database",
+        "privileges"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "granted": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "granted"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

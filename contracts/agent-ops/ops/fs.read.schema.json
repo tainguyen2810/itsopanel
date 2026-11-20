@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.read.schema.json",
+  "title": "fs.read",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2097152
+        }
+      },
+      "required": [
+        "account",
+        "path",
+        "max_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "content_b64": {
+          "type": "string"
+        },
+        "sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "content_b64",
+        "sha256",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

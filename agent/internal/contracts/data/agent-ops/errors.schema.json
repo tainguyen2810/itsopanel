@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/errors.schema.json",
+  "title": "Mã lỗi agent",
+  "$defs": {
+    "ErrorCode": {
+      "type": "string",
+      "enum": [
+        "invalid_envelope",
+        "unknown_op",
+        "op_disabled",
+        "invalid_params",
+        "path_outside_home",
+        "reserved_name",
+        "not_found",
+        "already_exists",
+        "precondition_failed",
+        "quota_exceeded",
+        "config_test_failed",
+        "deadline_exceeded",
+        "cancelled",
+        "busy",
+        "dependency_unavailable",
+        "replay_rejected",
+        "unauthorized_caller",
+        "internal"
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/quota.apply.schema.json",
+  "title": "quota.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "limits": {
+          "$ref": "../defs.schema.json#/$defs/Limits"
+        }
+      },
+      "required": [
+        "account",
+        "limits"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "applied": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "applied"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

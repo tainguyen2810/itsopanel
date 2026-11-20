@@ -60,10 +60,12 @@
 | D-51 | **Mới:** Không bắt buộc GitHub trước khi bắt đầu. Phase 1 khởi tạo **Git local**, sau đó kết nối GitHub | **APPROVED** (2026-11-20) |
 | D-52 | **Mới:** Phase 1 = Foundation + Architecture + Database (schema spec) + API Contracts + **Design System**; Phase 2 = demo UI hoàn chỉnh Admin Panel + User Hosting Portal | **APPROVED** (2026-11-20) |
 | D-53 | Giữ installer giống aaPanel (một lệnh, native Ubuntu, Web Wizard, systemd, CLI `itso`, không bắt buộc Docker) và toàn bộ yêu cầu bảo mật, cách ly, backup immutable, quota thực, multi-server | **APPROVED** (2026-11-20) |
+| D-54 | **Đề xuất (Phase 1):** Design token lấy `design/tokens/tokens.json` làm nguồn; "preset" Tailwind v4 là khối `@theme inline` sinh ra (Tailwind 4 bỏ preset JS); Light mặc định ở `:root`, Dark bằng class `.dark`; mọi cặp màu khai báo phải đạt WCAG AA | **Proposed** (2026-11-20) |
+| D-55 | **Đề xuất (Phase 1):** Codegen từ contracts: TS bằng openapi-typescript + openapi-fetch (`apps/web/src/api/generated`), Go structs bằng generator Python trong `contracts/tools` (không thêm tool ngoài). File sinh được commit và kiểm bằng `make codegen-check` | **Proposed** (2026-11-20) |
 
 ---
 
-# Lịch sử quyết định (giữ nguyên)
+## Lịch sử quyết định (giữ nguyên)
 
 Trạng thái: **Proposed** (chờ duyệt) · **Accepted** · **Rejected** · **Superseded**.
 Mỗi quyết định Accepted quan trọng sẽ có ADR trong `docs/adr/`.
@@ -96,9 +98,11 @@ Mỗi quyết định Accepted quan trọng sẽ có ADR trong `docs/adr/`.
 ---
 
 ## Rà soát 2026-11-20: panel dùng cho công ty **và khách hàng**
+
 Chi tiết: `docs/planning/14-CUSTOMER-MULTI-TENANT.md`.
 
 ### Quyết định thay đổi
+
 | ID | Thay đổi | Lý do |
 |---|---|---|
 | D-11 | DNS: vẫn dùng provider API ở v0.x, nhưng **nâng lên P1** và mở phương án DNS hosted (PowerDNS, `ns1/ns2` của công ty) ở Phase 11 | Khách thường cần nameserver do nhà cung cấp quản lý |
@@ -113,6 +117,7 @@ Chi tiết: `docs/planning/14-CUSTOMER-MULTI-TENANT.md`.
 Các quyết định còn lại (D-01–D-03, D-05–D-09, D-14, D-19, D-20, D-22) không đổi.
 
 ### Quyết định mới
+
 | ID | Quyết định | Đề xuất | Phương án khác | Trạng thái |
 |---|---|---|---|---|
 | D-23 | Tổ chức backup repo | **Một restic repo cho mỗi hosting account** trên server khách; repo chung cho server nội bộ | Một repo chung + tag (dedupe tốt, khó xóa sạch một khách) | Proposed |
@@ -128,9 +133,11 @@ Các quyết định còn lại (D-01–D-03, D-05–D-09, D-14, D-19, D-20, D-2
 ---
 
 ## Rà soát 2026-11-20 (lần 2): mô hình Hosting Provider
+
 Chi tiết: `docs/planning/15-HOSTING-PROVIDER.md`.
 
 ### Đã chốt theo yêu cầu của bạn (Accepted)
+
 | ID | Quyết định |
 |---|---|
 | D-32 | Có **Provisioning API** `/api/provisioning/v1` cho website bán hosting: tạo, kích hoạt, gia hạn, suspend, unsuspend, terminate (thay D-24) |
@@ -141,6 +148,7 @@ Chi tiết: `docs/planning/15-HOSTING-PROVIDER.md`.
 | D-39 | **Paid Customer Gate**: không nhận khách trả phí trước khi đạt PG1–PG8 (isolation, resource, priv-esc, backup/restore, upgrade, DR, lifecycle, vận hành) |
 
 ### Quyết định thay đổi
+
 | ID | Thay đổi |
 |---|---|
 | D-18 | Docker Hosting cho khách là product line riêng trên **VM cô lập theo khách** (xem D-38); shared node không chạy Docker của khách |
@@ -148,6 +156,7 @@ Chi tiết: `docs/planning/15-HOSTING-PROVIDER.md`.
 | D-28 | Multi-server đưa lên **Phase 9** (đầu giai đoạn Beta); control plane chạy trên máy riêng (D-41) |
 
 ### Quyết định mới cần duyệt (Proposed)
+
 | ID | Quyết định | Đề xuất | Phương án khác |
 |---|---|---|---|
 | D-34 | Adapter WooCommerce | Plugin WP dựa trên **WooCommerce Subscriptions** (extension trả phí) để quản lý gia hạn | Adapter tự quản chu kỳ gia hạn (không cần extension, phức tạp hơn) |

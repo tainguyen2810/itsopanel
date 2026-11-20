@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.chmod.schema.json",
+  "title": "fs.chmod",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/RelPath"
+          },
+          "minItems": 1,
+          "maxItems": 500
+        },
+        "mode": {
+          "$ref": "../defs.schema.json#/$defs/Mode"
+        },
+        "recursive": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account",
+        "paths",
+        "mode",
+        "recursive"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "changed": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "title": "Dev environment status",
+  "api": "API",
+  "agent": "Agent",
+  "database": "PostgreSQL",
+  "redis": "Redis",
+  "checking": "Checking…",
+  "unreachable": "unreachable"
+}

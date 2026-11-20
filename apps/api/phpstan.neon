@@ -1,0 +1,15 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - app
+        - config/itso.php
+        - config/cors.php
+        - routes
+        - bootstrap/app.php
+    tmpDir: storage/framework/cache/phpstan
+
+rules:
+    - Itso\PHPStan\NoSystemCommandRule

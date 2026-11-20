@@ -1,0 +1,40 @@
+# Ruleset lint OpenAPI cho ITSO Panel (Redocly CLI). Quy tắc ngữ nghĩa riêng của ITSO
+# (POST tạo job ⇒ Idempotency-Key + 202 Job, lỗi dùng Problem, portal ⊄ admin-only)
+# nằm ở tools/check_contracts.py vì cần so sánh chéo giữa hai file.
+apis:
+  admin:
+    root: openapi/itso-admin-v1.yaml
+  portal:
+    root: openapi/itso-portal-v1.yaml
+  common:
+    root: openapi/common.yaml
+extends:
+  - recommended-strict
+rules:
+  operation-operationId: error
+  operation-operationId-unique: error
+  operation-operationId-url-safe: error
+  operation-summary: error
+  operation-tag-defined: error
+  operation-2xx-response: error
+  operation-4xx-response: error
+  operation-4xx-problem-details-rfc7807: error
+  no-unresolved-refs: error
+  no-unused-components: off
+  security-defined: error
+  no-invalid-media-type-examples:
+    severity: error
+    allowAdditionalProperties: false
+  no-invalid-schema-examples: error
+  path-parameters-defined: error
+  no-ambiguous-paths: error
+  info-license: error
+  tag-description: off
+  rule/operation-description-vi:
+    subject:
+      type: Operation
+      property: summary
+    assertions:
+      minLength: 3
+    severity: error
+    message: Operation phải có summary (tiếng Việt) tối thiểu 3 ký tự.

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/backup.forget.schema.json",
+  "title": "backup.forget",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "snapshot_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8,64}$"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "repo",
+        "snapshot_ids"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "forgotten": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "forgotten"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

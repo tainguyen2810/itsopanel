@@ -1,0 +1,14 @@
+{
+  // Lint cấu hình cho tài liệu ITSO Panel (Prompt 1.2)
+  "config": {
+    "default": true,
+    "MD013": false,          // độ dài dòng: tắt (bảng và tiếng Việt dài)
+    "MD033": { "allowed_elements": ["br"] },
+    "MD041": false,          // README thư mục con có thể bắt đầu khác H1
+    "MD024": { "siblings_only": true },
+    "MD036": false,
+    "MD060": false
+  },
+  "globs": ["*.md", "docs/**/*.md", "apps/**/README.md", "agent/README.md", "contracts/**/README.md", "database/**/README.md", "design/**/README.md", "installer/README.md", "packaging/README.md", "demo/README.md"],
+  "ignores": ["docs/planning/**", "node_modules/**", "**/node_modules/**", "apps/api/vendor/**"]
+}

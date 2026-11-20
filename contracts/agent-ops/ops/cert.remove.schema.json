@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cert.remove.schema.json",
+  "title": "cert.remove",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "cert_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "account",
+        "cert_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "removed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

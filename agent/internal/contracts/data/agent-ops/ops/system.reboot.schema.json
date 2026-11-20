@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/system.reboot.schema.json",
+  "title": "system.reboot",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "delay_sec": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 600
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "delay_sec",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "scheduled_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "scheduled_at"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

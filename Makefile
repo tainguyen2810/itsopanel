@@ -1,42 +1,132 @@
 # ITSO Panel — Makefile gốc
-# Target chưa hiện thực sẽ in thông báo kèm Prompt sẽ hiện thực.
+# `make help` liệt kê lệnh; `make check` chạy toàn bộ kiểm tra như CI.
 
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-define todo
-	@echo "[$(1)] chưa hiện thực — sẽ có ở Prompt $(2)"
-endef
+PNPX ?= npx -y
 
-.PHONY: help structure setup dev test lint build codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
 structure: ## Kiểm tra cấu trúc repository
 	@bash scripts/check-structure.sh
 
-setup: ## Cài dependency (web, api, agent)
-	$(call todo,setup,1.5)
+docs-check: ## Lint Markdown, kiểm tra link nội bộ và cú pháp Mermaid
+	@$(PNPX) markdownlint-cli2@0.17.2
+	@node scripts/check-links.mjs .
+	@bash scripts/check-mermaid.sh
 
-dev: ## Chạy web + api + mock agent
-	$(call todo,dev,1.5)
+DBML_CLI ?= $(PNPX) -p @dbml/cli@3.9.0
+DBML_RENDERER ?= $(PNPX) @softwaretechnik/dbml-renderer@1.0.31
 
-test: ## Chạy toàn bộ test
-	$(call todo,test,1.5)
+db-schema: ## Sinh itso.dbml → itso.sql (DBML là nguồn sự thật)
+	@python3 database/tools/gen_dbml.py
+	@$(DBML_CLI) dbml2sql database/schema/itso.dbml --postgres -o database/schema/itso.sql
+	@python3 database/tools/postprocess_sql.py database/schema/itso.sql
 
-lint: ## Chạy lint cho mọi phần
-	$(call todo,lint,1.5)
+ERD_TMP ?= .cache/erd-dbml
 
-build: ## Build web, api, agent
-	$(call todo,build,1.5)
+db-erd: ## Vẽ ERD SVG (toàn bộ + từng nhóm) vào database/docs/erd/
+	@mkdir -p database/docs/erd
+	@$(DBML_RENDERER) -i database/schema/itso.dbml -o database/docs/erd/erd-full.svg
+	@for g in $$(python3 database/tools/gen_dbml.py --erd-groups $(ERD_TMP)); do \
+	  $(DBML_RENDERER) -i $(ERD_TMP)/$$g.dbml -o database/docs/erd/erd-$$g.svg || exit 1; \
+	done
 
-codegen: ## Sinh code từ contracts
-	$(call todo,codegen,1.7)
+db-verify: ## Áp schema vào PostgreSQL 16 tạm và chạy test SQL
+	@bash scripts/db-verify.sh
 
-codegen-check: ## Kiểm tra codegen không tạo diff
-	$(call todo,codegen-check,1.7)
+contracts: ## Sinh OpenAPI, agent-ops, test vectors từ contracts/tools
+	@python3 contracts/tools/gen_openapi.py
+	@python3 contracts/tools/gen_agent_ops.py
+	@python3 contracts/tools/gen_vectors.py
 
-check: structure ## Chạy toàn bộ kiểm tra (đầy đủ ở Prompt 1.7)
-	$(call todo,check (đầy đủ),1.7)
+contracts-check: ## Kiểm contracts: không diff, Redocly lint, ngữ nghĩa, ajv
+	@bash scripts/check-contracts.sh
+
+contracts-docs: ## Dựng HTML docs API vào docs/api/ (không commit)
+	@cd contracts && for r in admin portal; do REDOCLY_TELEMETRY=off $(PNPX) @redocly/cli@2.71.0 build-docs openapi/itso-$$r-v1.yaml -o ../docs/api/itso-$$r-v1.html; done
+
+PNPM ?= corepack pnpm
+FUZZTIME ?= 30s
+COMPOSE ?= docker compose -f docker-compose.dev.yml
+
+setup: ## Cài dependency (web, api, agent), không cần Docker
+	@bash scripts/setup.sh
+
+dev: ## Chạy web + api + mock agent (Ctrl+C để dừng)
+	@bash scripts/dev.sh
+
+services-up: ## (Tùy chọn) PostgreSQL 16 + Redis 7 bằng Docker, chỉ cho dev
+	$(COMPOSE) up -d --wait
+
+services-down: ## Tắt PostgreSQL/Redis dev (giữ volume)
+	$(COMPOSE) stop
+
+test: test-web test-api test-agent no-exec ## Chạy toàn bộ test (web, api, agent, chặn exec)
+
+test-web:
+	@cd apps/web && $(PNPM) test
+
+test-api:
+	@cd apps/api && php artisan config:clear --ansi >/dev/null && php vendor/bin/pest
+
+test-agent:
+	@cd agent && go test -race ./...
+
+test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự bật Vite)
+	@cd apps/web && $(PNPM) e2e
+
+screenshots: ## Chụp lại ảnh Design System vào docs/screenshots/design-system/
+	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system $(PNPM) e2e
+
+tokens: ## Sinh tokens.css từ design/tokens/tokens.json
+	@node design/tools/gen-tokens.mjs
+
+tokens-check: ## Kiểm tokens.css khớp nguồn và tương phản WCAG AA
+	@node design/tools/gen-tokens.mjs --check
+	@node design/tools/check-contrast.mjs
+
+test-api-pg: ## Pest với PostgreSQL 16 + Redis thật (đọc DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD)
+	@cd apps/api && php artisan config:clear --ansi >/dev/null && bash ../../scripts/pest-pg.sh
+
+test-fuzz: ## Fuzz parser envelope của agent (FUZZTIME=30s)
+	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope
+
+lint: lint-web lint-api lint-agent no-exec ## Chạy lint cho mọi phần
+
+lint-web: tokens-check
+	@cd apps/web && $(PNPM) lint
+
+lint-api:
+	@cd apps/api && php vendor/bin/pint --test && php vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+lint-agent:
+	@cd agent && test -z "$$(gofmt -l .)" || { echo "gofmt cần chạy:"; gofmt -l .; exit 1; }
+	@cd agent && go vet ./...
+
+no-exec: ## Chặn lệnh hệ thống trong apps/api/app và agent/
+	@bash scripts/check-no-exec.sh
+
+build: build-web build-agent ## Build web và mock agent
+
+build-web:
+	@cd apps/web && $(PNPM) build
+
+build-agent:
+	@cd agent && go build -o bin/itso-mock-agent ./cmd/itso-mock-agent
+
+codegen: ## Sinh code từ contracts: TS (OpenAPI), Go structs + bản nhúng schema (agent-ops)
+	@cd apps/web && $(PNPM) -s codegen
+	@python3 contracts/tools/gen_go_types.py
+	@cd agent && go generate ./internal/contracts && echo "✓ đồng bộ agent/internal/contracts/data"
+
+codegen-check: ## Báo lỗi nếu file sinh lệch với contracts (không ghi file)
+	@PNPM="$(PNPM)" bash scripts/codegen-check.sh
+
+check: ## Toàn bộ pipeline local như CI, in bảng kết quả (exit ≠ 0 nếu có bước đỏ)
+	@bash scripts/check-all.sh

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.mysql.dump.schema.json",
+  "title": "db.mysql.dump",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "name": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "target": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "compress": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account",
+        "name",
+        "target",
+        "compress"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "size",
+        "sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

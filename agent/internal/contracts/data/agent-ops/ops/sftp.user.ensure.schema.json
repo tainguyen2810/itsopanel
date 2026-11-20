@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/sftp.user.ensure.schema.json",
+  "title": "sftp.user.ensure",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "username": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,31}$"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "sftp",
+            "ftps"
+          ]
+        },
+        "root_path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "read_only": {
+          "type": "boolean"
+        },
+        "password_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "account",
+        "username",
+        "protocol",
+        "root_path",
+        "read_only",
+        "password_ref"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "created"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

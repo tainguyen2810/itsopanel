@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.extract.schema.json",
+  "title": "fs.extract",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "archive": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "target": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "max_total_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_entries": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200000
+        }
+      },
+      "required": [
+        "account",
+        "archive",
+        "target",
+        "max_total_bytes",
+        "max_entries"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "integer"
+        },
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        }
+      },
+      "required": [
+        "entries",
+        "size"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/account.remove.schema.json",
+  "title": "account.remove",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "purge_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "final_snapshot_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8,64}$"
+        },
+        "confirm_username": {
+          "$ref": "../defs.schema.json#/$defs/Username"
+        }
+      },
+      "required": [
+        "account",
+        "purge_uuid",
+        "final_snapshot_id",
+        "confirm_username"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "removed_objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "name",
+              "sha256"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "removed_objects"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -5,6 +5,7 @@ Hệ thống quản trị máy chủ và Web Hosting **dùng nội bộ** cho Ub
 > **Trạng thái:** Phase 1 — Foundation (đang xây dựng). Chưa có bản cài đặt.
 
 ## Thành phần
+
 | Thành phần | Công nghệ | Thư mục |
 |---|---|---|
 | Admin Panel + User Hosting Portal | React, TypeScript, Vite, Tailwind CSS, shadcn/ui | `apps/web` |
@@ -16,6 +17,7 @@ Hệ thống quản trị máy chủ và Web Hosting **dùng nội bộ** cho Ub
 | Installer | Bash bootstrap + `itso install` | `installer`, `packaging` |
 
 ## Đọc tài liệu theo thứ tự
+
 1. [PROJECT_PLAN.md](PROJECT_PLAN.md): phạm vi và nguyên tắc
 2. [ARCHITECTURE.md](ARCHITECTURE.md): kiến trúc
 3. [ROADMAP.md](ROADMAP.md): 12 Phase
@@ -25,13 +27,16 @@ Hệ thống quản trị máy chủ và Web Hosting **dùng nội bộ** cho Ub
 7. Chi tiết: [docs/planning/](docs/planning/README.md)
 
 ## Lệnh
+
 ```bash
 make help        # liệt kê lệnh
 make structure   # kiểm tra cấu trúc repo
 ```
+
 Trên Windows: `.\scripts\dev.ps1 help` (chạy qua WSL2).
 
 ## Quy tắc đóng góp
+
 Xem [CLAUDE.md](CLAUDE.md).
 
 © 2026 ITSO, sử dụng nội bộ.

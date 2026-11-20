@@ -1,0 +1,75 @@
+{
+  "actions": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "close": "Đóng",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "create": "Tạo mới",
+    "search": "Tìm kiếm",
+    "retry": "Thử lại",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "clearFilter": "Xóa bộ lọc",
+    "viewAll": "Xem tất cả",
+    "more": "Thêm"
+  },
+  "state": {
+    "loading": "Đang tải…",
+    "empty": "Chưa có dữ liệu",
+    "error": "Đã xảy ra lỗi",
+    "noResults": "Không có kết quả phù hợp"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "pending": "Đang chờ",
+    "provisioning": "Đang khởi tạo",
+    "suspended": "Tạm khóa",
+    "failed": "Lỗi",
+    "terminated": "Đã chấm dứt",
+    "running": "Đang chạy",
+    "succeeded": "Thành công",
+    "cancelled": "Đã hủy",
+    "queued": "Trong hàng đợi",
+    "online": "Trực tuyến",
+    "offline": "Mất kết nối",
+    "drift": "Lệch cấu hình",
+    "inSync": "Đã đồng bộ",
+    "desired": "Mong muốn",
+    "observed": "Thực tế",
+    "degraded": "Suy giảm"
+  },
+  "table": {
+    "selected_one": "Đã chọn {{count}} dòng",
+    "selected_other": "Đã chọn {{count}} dòng",
+    "filter": "Lọc…",
+    "rowsPerPage": "Số dòng mỗi trang",
+    "page": "Trang {{page}} / {{total}}",
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "sortAsc": "Sắp xếp tăng dần",
+    "sortDesc": "Sắp xếp giảm dần",
+    "selectAll": "Chọn tất cả",
+    "selectRow": "Chọn dòng"
+  },
+  "confirm": {
+    "typeToConfirm": "Gõ <strong>{{name}}</strong> để xác nhận",
+    "mismatch": "Tên chưa khớp",
+    "irreversible": "Thao tác này không thể hoàn tác."
+  },
+  "form": {
+    "required": "Bắt buộc nhập",
+    "invalid": "Giá trị không hợp lệ",
+    "minLength": "Tối thiểu {{min}} ký tự",
+    "email": "Email không hợp lệ",
+    "optional": "không bắt buộc"
+  },
+  "job": {
+    "step": "Bước {{current}} / {{total}}",
+    "steps": "Các bước",
+    "elapsed": "Đã chạy {{time}}"
+  },
+  "breadcrumb": "Đường dẫn",
+  "pagination": "Phân trang"
+}

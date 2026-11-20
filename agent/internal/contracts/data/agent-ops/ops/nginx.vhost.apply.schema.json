@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/nginx.vhost.apply.schema.json",
+  "title": "nginx.vhost.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "website_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "server_names": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Domain"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "document_root": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "php_socket": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^/run/itso/php/[a-z][a-z0-9]{2,15}-[0-9a-f]{8}\\.sock$"
+        },
+        "tls": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "cert_uuid": {
+              "$ref": "../defs.schema.json#/$defs/Uuid"
+            },
+            "hsts": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "cert_uuid"
+          ],
+          "additionalProperties": false
+        },
+        "client_max_body_size": {
+          "$ref": "../defs.schema.json#/$defs/NginxSize"
+        },
+        "extra_headers": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "../defs.schema.json#/$defs/HeaderValue"
+          },
+          "propertyNames": {
+            "pattern": "^[A-Za-z][A-Za-z0-9-]{1,63}$"
+          }
+        },
+        "suspended": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account",
+        "website_uuid",
+        "server_names",
+        "document_root"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "config_path": {
+          "type": "string"
+        },
+        "nginx_test": {
+          "type": "string",
+          "enum": [
+            "ok"
+          ]
+        },
+        "reloaded": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "config_path",
+        "nginx_test",
+        "reloaded"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

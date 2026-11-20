@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "errors": [
+    {
+      "code": "invalid_envelope",
+      "retryable": false,
+      "description": "Envelope sai schema"
+    },
+    {
+      "code": "unknown_op",
+      "retryable": false,
+      "description": "Op không có trong catalog"
+    },
+    {
+      "code": "op_disabled",
+      "retryable": false,
+      "description": "Op bị tắt bởi policy cục bộ (/etc/itso/agent-policy.yaml)"
+    },
+    {
+      "code": "invalid_params",
+      "retryable": false,
+      "description": "Tham số sai schema hoặc vi phạm ràng buộc"
+    },
+    {
+      "code": "path_outside_home",
+      "retryable": false,
+      "description": "Đường dẫn thoát khỏi home account (sau khi chuẩn hóa/symlink)"
+    },
+    {
+      "code": "reserved_name",
+      "retryable": false,
+      "description": "Tên bị cấm (username hệ thống, domain của panel...)"
+    },
+    {
+      "code": "not_found",
+      "retryable": false,
+      "description": "Đối tượng không tồn tại"
+    },
+    {
+      "code": "already_exists",
+      "retryable": false,
+      "description": "Đối tượng đã tồn tại với cấu hình khác"
+    },
+    {
+      "code": "precondition_failed",
+      "retryable": false,
+      "description": "Điều kiện trước không thỏa (sha256, trạng thái)"
+    },
+    {
+      "code": "quota_exceeded",
+      "retryable": false,
+      "description": "Vượt quota của account"
+    },
+    {
+      "code": "config_test_failed",
+      "retryable": false,
+      "description": "nginx -t / php-fpm -t thất bại, đã hoàn tác"
+    },
+    {
+      "code": "deadline_exceeded",
+      "retryable": true,
+      "description": "Hết deadline"
+    },
+    {
+      "code": "cancelled",
+      "retryable": false,
+      "description": "Đã hủy theo op.cancel"
+    },
+    {
+      "code": "busy",
+      "retryable": true,
+      "description": "Tài nguyên đang bị khóa bởi op khác (apt lock, ...)"
+    },
+    {
+      "code": "dependency_unavailable",
+      "retryable": true,
+      "description": "Dịch vụ phụ thuộc không phản hồi"
+    },
+    {
+      "code": "replay_rejected",
+      "retryable": false,
+      "description": "Nonce/timestamp không hợp lệ"
+    },
+    {
+      "code": "unauthorized_caller",
+      "retryable": false,
+      "description": "SO_PEERCRED/HMAC không hợp lệ"
+    },
+    {
+      "code": "internal",
+      "retryable": true,
+      "description": "Lỗi nội bộ agent"
+    }
+  ]
+}

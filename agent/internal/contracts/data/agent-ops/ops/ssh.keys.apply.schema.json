@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/ssh.keys.apply.schema.json",
+  "title": "ssh.keys.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa) [A-Za-z0-9+/=]+( [^\\r\\n]{0,100})?$"
+          },
+          "maxItems": 50
+        }
+      },
+      "required": [
+        "account",
+        "keys"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

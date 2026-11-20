@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.mysql.user_drop.schema.json",
+  "title": "db.mysql.user_drop",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "username": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        }
+      },
+      "required": [
+        "account",
+        "username"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "dropped": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dropped"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

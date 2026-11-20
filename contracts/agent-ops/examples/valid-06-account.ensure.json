@@ -1,0 +1,30 @@
+{
+  "v": 1,
+  "op": "account.ensure",
+  "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+  "params": {
+    "account": {
+      "username": "anphat",
+      "uid": 20001
+    },
+    "home_path": "/home/anphat",
+    "shell": "/usr/sbin/nologin",
+    "limits": {
+      "disk_mb": 20480,
+      "inode_limit": 400000,
+      "cpu_percent": 200,
+      "ram_mb": 4096,
+      "tasks_max": 256,
+      "io_weight": 100,
+      "io_read_bps": null,
+      "io_write_bps": null
+    }
+  },
+  "deadline": "2026-11-20T08:25:00+07:00",
+  "ts": 1795655700,
+  "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+  "requested_by": {
+    "user_uuid": "01938a01-0003-7000-8000-000001000003",
+    "role": "USER"
+  }
+}

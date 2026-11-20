@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cron.run_once.schema.json",
+  "title": "cron.run_once",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "command": {
+          "$ref": "../defs.schema.json#/$defs/CronCommand"
+        },
+        "working_dir": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        }
+      },
+      "required": [
+        "account",
+        "uuid",
+        "command",
+        "working_dir"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "exit_code": {
+          "type": "integer"
+        },
+        "output_tail": {
+          "type": "string",
+          "maxLength": 8192
+        }
+      },
+      "required": [
+        "exit_code",
+        "output_tail"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

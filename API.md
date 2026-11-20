@@ -1,5 +1,20 @@
 # API — ITSO Panel (phạm vi nội bộ, chốt 2026-11-20)
 
+## 0. Contracts chính thức (Prompt 1.4)
+
+| Nội dung | File |
+|---|---|
+| Admin API (208 operation) | [contracts/openapi/itso-admin-v1.yaml](contracts/openapi/itso-admin-v1.yaml) |
+| Portal API (90 operation) | [contracts/openapi/itso-portal-v1.yaml](contracts/openapi/itso-portal-v1.yaml) |
+| Thành phần chung (Problem, CursorPage, Job, security) | [contracts/openapi/common.yaml](contracts/openapi/common.yaml) |
+| Agent typed operations (60 op có schema) | [contracts/agent-ops/](contracts/agent-ops/README.md), [catalog.json](contracts/agent-ops/catalog.json) |
+| Input độc hại dùng chung cho test | [contracts/test-vectors/evil-inputs.json](contracts/test-vectors/evil-inputs.json) (93 vector) |
+| Dữ liệu demo (example, MSW Phase 2) | [contracts/examples/demo-dataset.json](contracts/examples/demo-dataset.json) |
+| Quy ước và cách sửa | [contracts/README.md](contracts/README.md) |
+| Kiểm tra | `make contracts-check`; HTML docs: `make contracts-docs` → `docs/api/` |
+
+Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so với bảng dưới: DNS chỉ có ở Admin API (portal không quản lý DNS theo sitemap); job theo dõi qua `GET /…/jobs/{id}/events` (SSE).
+
 > Quy ước chung (RFC 9457, cursor pagination, `202` + Job, `Idempotency-Key`, ETag, rate limit, job model, retry/timeout/cancel) giữ nguyên theo `docs/planning/05-API.md`. File này ghi **cấu trúc bề mặt API** cho phạm vi nội bộ.
 
 ## 1. Ba nhóm route
@@ -14,10 +29,12 @@
 **Không có:** Public Provisioning API, HMAC integration với website bán hàng, webhook cho billing, endpoint order/invoice/payment.
 
 ## 2. Hosting Provisioning Service (lớp nội bộ)
+
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.
 Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục bộ) và scheduler đều đi qua lớp này. Một Public API trong tương lai chỉ cần thêm controller mỏng gọi lại lớp này.
 
 ## 3. Admin API (chính)
+
 | Nhóm | Endpoint |
 |---|---|
 | Servers | `GET/POST /admin/servers`, `GET/PATCH /admin/servers/{id}`, `POST /admin/servers/enrollment-tokens`, `GET /admin/servers/{id}/capacity`, services, software, reboot |
@@ -35,6 +52,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | Terminal | `POST /admin/terminal/sessions` (root terminal chỉ chạy khi policy cục bộ cho phép) |
 
 ## 4. Portal API (USER, chỉ trên tài nguyên của mình)
+
 | Nhóm | Endpoint |
 |---|---|
 | Tổng quan | `GET /portal/overview`: usage so với quota, cảnh báo |
@@ -52,4 +70,5 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 Portal **không có**: servers, packages, users, firewall, docker, software, settings hệ thống. Truy cập tài nguyên không thuộc mình trả `404`.
 
 ## 5. Thao tác bất đồng bộ
+
 Mọi thao tác chạm Linux (tạo/khóa/mở/đổi gói/chuyển server/xóa, website, DB, backup…) trả `202` kèm `job`. Bắt buộc `Idempotency-Key`. Hủy qua `POST /…/jobs/{id}:cancel`. Theo dõi tiến độ qua SSE `/…/jobs/{id}/events`. Mọi thao tác đều được audit.

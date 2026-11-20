@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.pg.drop.schema.json",
+  "title": "db.pg.drop",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "name": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "confirm_name": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        }
+      },
+      "required": [
+        "account",
+        "name",
+        "confirm_name"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "dropped": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dropped"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

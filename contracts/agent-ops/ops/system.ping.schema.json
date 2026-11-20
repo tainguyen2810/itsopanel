@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/system.ping.schema.json",
+  "title": "system.ping",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "pong": {
+          "const": true
+        },
+        "agent_version": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "real"
+          ]
+        }
+      },
+      "required": [
+        "pong",
+        "agent_version",
+        "mode"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

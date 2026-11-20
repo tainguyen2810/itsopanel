@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/service.status.schema.json",
+  "title": "service.status",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ServiceName"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "names"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "active",
+              "enabled",
+              "version"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "services"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

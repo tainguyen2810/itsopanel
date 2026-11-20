@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/migrate.cutover.schema.json",
+  "title": "migrate.cutover",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "target_server_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "account",
+        "target_server_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "downtime_sec": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "downtime_sec"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

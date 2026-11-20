@@ -1,0 +1,1319 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/envelope.schema.json",
+  "title": "Request gửi tới agent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "v",
+    "op",
+    "op_id",
+    "params",
+    "deadline",
+    "ts",
+    "nonce",
+    "requested_by"
+  ],
+  "properties": {
+    "v": {
+      "const": 1
+    },
+    "op": {
+      "type": "string",
+      "enum": [
+        "system.ping",
+        "system.info",
+        "service.status",
+        "service.control",
+        "system.reboot",
+        "metrics.snapshot",
+        "op.cancel",
+        "account.ensure",
+        "account.suspend",
+        "account.unsuspend",
+        "account.remove",
+        "quota.apply",
+        "quota.report",
+        "nginx.vhost.apply",
+        "nginx.vhost.remove",
+        "nginx.global.apply",
+        "php.pool.apply",
+        "php.pool.remove",
+        "php.version.install",
+        "cert.issue",
+        "cert.install",
+        "cert.remove",
+        "fs.list",
+        "fs.read",
+        "fs.write",
+        "fs.mkdir",
+        "fs.move",
+        "fs.copy",
+        "fs.delete",
+        "fs.chmod",
+        "fs.archive",
+        "fs.extract",
+        "db.mysql.create",
+        "db.mysql.drop",
+        "db.mysql.user_ensure",
+        "db.mysql.user_drop",
+        "db.mysql.grant",
+        "db.mysql.dump",
+        "db.mysql.import",
+        "db.pg.create",
+        "db.pg.drop",
+        "db.pg.user_ensure",
+        "db.pg.user_drop",
+        "db.pg.grant",
+        "db.pg.dump",
+        "db.pg.import",
+        "sftp.user.ensure",
+        "sftp.user.remove",
+        "ssh.keys.apply",
+        "cron.apply",
+        "cron.run_once",
+        "backup.run",
+        "backup.restore",
+        "backup.check",
+        "backup.restore_test",
+        "backup.forget",
+        "migrate.preflight",
+        "migrate.sync",
+        "migrate.verify",
+        "migrate.cutover",
+        "migrate.rollback",
+        "firewall.apply",
+        "firewall.confirm",
+        "sshd.config.apply",
+        "fail2ban.apply",
+        "waf.apply",
+        "malware.scan",
+        "malware.restore",
+        "fim.baseline",
+        "software.install",
+        "docker.container.control",
+        "compose.validate",
+        "compose.apply",
+        "compose.up",
+        "compose.down",
+        "compose.pull",
+        "wp.install",
+        "wp.update",
+        "wp.clone",
+        "wp.harden",
+        "pty.open",
+        "audit.tail"
+      ]
+    },
+    "op_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f-]{36}:[0-9]{1,4}:[0-9]{1,3}$",
+      "description": "job_uuid:seq:attempt_group — agent cache kết quả theo op_id (idempotent)."
+    },
+    "params": {
+      "type": "object"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ts": {
+      "type": "integer",
+      "description": "Unix giây; lệch quá ±60 giây bị từ chối."
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16,64}$"
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "requested_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user_uuid",
+        "role"
+      ],
+      "properties": {
+        "user_uuid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "SUPER_ADMIN",
+            "ADMIN",
+            "USER",
+            "SYSTEM"
+          ]
+        }
+      },
+      "description": "Chỉ để audit; quyết định quyền nằm ở panel."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "system.ping"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/system.ping.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "system.info"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/system.info.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "service.status"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/service.status.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "service.control"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/service.control.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "system.reboot"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/system.reboot.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "metrics.snapshot"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/metrics.snapshot.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "op.cancel"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/op.cancel.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "account.ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/account.ensure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "account.suspend"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/account.suspend.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "account.unsuspend"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/account.unsuspend.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "account.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/account.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "quota.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/quota.apply.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "quota.report"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/quota.report.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "nginx.vhost.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/nginx.vhost.apply.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "nginx.vhost.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/nginx.vhost.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "nginx.global.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/nginx.global.apply.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "php.pool.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/php.pool.apply.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "php.pool.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/php.pool.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "php.version.install"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/php.version.install.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "cert.issue"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cert.issue.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "cert.install"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cert.install.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "cert.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cert.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.list"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.list.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.read"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.read.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.write"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.write.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.mkdir"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.mkdir.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.move"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.move.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.copy"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.copy.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.delete"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.delete.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.chmod"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.chmod.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.archive"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.archive.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.extract"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.extract.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.create"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.create.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.drop"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.drop.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.user_ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.user_ensure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.user_drop"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.user_drop.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.grant"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.grant.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.dump"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.dump.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.import"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.import.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.create"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.create.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.drop"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.drop.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.user_ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.user_ensure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.user_drop"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.user_drop.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.grant"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.grant.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.dump"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.dump.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.import"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.import.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "sftp.user.ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/sftp.user.ensure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "sftp.user.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/sftp.user.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "ssh.keys.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/ssh.keys.apply.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "cron.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cron.apply.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "cron.run_once"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cron.run_once.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.run"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.run.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.restore"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.restore.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.check"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.check.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.restore_test"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.restore_test.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.forget"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.forget.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "migrate.preflight"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/migrate.preflight.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "migrate.sync"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/migrate.sync.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "migrate.verify"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/migrate.verify.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "migrate.cutover"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/migrate.cutover.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "migrate.rollback"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/migrate.rollback.schema.json#/$defs/params"
+          }
+        }
+      }
+    }
+  ]
+}

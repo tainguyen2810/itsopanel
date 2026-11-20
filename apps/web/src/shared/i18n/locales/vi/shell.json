@@ -1,0 +1,72 @@
+{
+  "brand": "ITSO Panel",
+  "adminArea": "Quản trị",
+  "portalArea": "Hosting của tôi",
+  "skipToContent": "Bỏ qua tới nội dung",
+  "nav": {
+    "label": "Điều hướng chính",
+    "groups": {
+      "overview": "Tổng quan",
+      "infra": "Hạ tầng",
+      "hosting": "Hosting",
+      "security": "Bảo mật và sao lưu",
+      "admin": "Quản trị",
+      "account": "Tài khoản"
+    },
+    "dashboard": "Bảng điều khiển",
+    "jobs": "Tác vụ",
+    "servers": "Máy chủ",
+    "docker": "Docker",
+    "packages": "Gói hosting",
+    "accounts": "Tài khoản hosting",
+    "websites": "Website",
+    "databases": "Cơ sở dữ liệu",
+    "files": "Quản lý file",
+    "sftp": "SFTP / SSH",
+    "ssl": "SSL",
+    "dns": "DNS",
+    "cron": "Cron",
+    "wordpress": "WordPress",
+    "security": "Bảo mật",
+    "backups": "Sao lưu",
+    "restores": "Khôi phục",
+    "users": "Người dùng",
+    "roles": "Vai trò",
+    "monitoring": "Giám sát",
+    "audit": "Nhật ký kiểm toán",
+    "notifications": "Thông báo",
+    "settings": "Cài đặt",
+    "overview": "Tổng quan",
+    "terminal": "Terminal",
+    "profile": "Hồ sơ"
+  },
+  "topbar": {
+    "search": "Tìm server, tài khoản, website…",
+    "searchShortcut": "Ctrl K",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "collapse": "Thu gọn thanh bên",
+    "expand": "Mở rộng thanh bên",
+    "notifications": "Thông báo",
+    "unread_one": "{{count}} thông báo chưa đọc",
+    "unread_other": "{{count}} thông báo chưa đọc",
+    "theme": "Giao diện",
+    "themeLight": "Sáng",
+    "themeDark": "Tối",
+    "themeSystem": "Theo hệ thống",
+    "language": "Ngôn ngữ",
+    "userMenu": "Tài khoản của bạn",
+    "profile": "Hồ sơ",
+    "signOut": "Đăng xuất"
+  },
+  "storage": {
+    "title": "Dung lượng lưu trữ",
+    "used": "Đã dùng {{used}} / {{total}}"
+  },
+  "command": {
+    "placeholder": "Gõ để tìm…",
+    "empty": "Không tìm thấy",
+    "pages": "Trang",
+    "title": "Tìm nhanh"
+  }
+}
