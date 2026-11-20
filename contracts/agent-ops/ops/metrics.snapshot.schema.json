@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/metrics.snapshot.schema.json",
+  "title": "metrics.snapshot",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "cpu_pct": {
+          "type": "number"
+        },
+        "ram_used_mb": {
+          "type": "integer"
+        },
+        "disk_used_mb": {
+          "type": "integer"
+        },
+        "load_1m": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "cpu_pct",
+        "ram_used_mb",
+        "disk_used_mb",
+        "load_1m"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

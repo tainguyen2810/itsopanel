@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.mysql.create.schema.json",
+  "title": "db.mysql.create",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "name": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "charset": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_]{1,32}$"
+        }
+      },
+      "required": [
+        "account",
+        "name",
+        "charset"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "created"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

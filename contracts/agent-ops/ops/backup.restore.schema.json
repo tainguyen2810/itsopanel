@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/backup.restore.schema.json",
+  "title": "backup.restore",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8,64}$"
+        },
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "new",
+            "overwrite"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(files:.+|database:[a-z][a-z0-9_]{0,63}|config)$"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "repo",
+        "snapshot_id",
+        "account",
+        "mode",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "restored_items": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "restored_items"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

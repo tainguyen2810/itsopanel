@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.archive.schema.json",
+  "title": "fs.archive",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/RelPath"
+          },
+          "minItems": 1,
+          "maxItems": 500
+        },
+        "target": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "zip",
+            "tar.gz"
+          ]
+        }
+      },
+      "required": [
+        "account",
+        "paths",
+        "target",
+        "format"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        }
+      },
+      "required": [
+        "size"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

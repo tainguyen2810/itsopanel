@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/service.control.schema.json",
+  "title": "service.control",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "../defs.schema.json#/$defs/ServiceName"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "start",
+            "stop",
+            "restart",
+            "reload"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "active"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

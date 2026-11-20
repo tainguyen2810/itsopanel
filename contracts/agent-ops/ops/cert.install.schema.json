@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cert.install.schema.json",
+  "title": "cert.install",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "website_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "certificate_pem": {
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----"
+        },
+        "private_key_ref": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "account",
+        "website_uuid",
+        "certificate_pem",
+        "private_key_ref"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "cert_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "not_after": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cert_uuid",
+        "not_after"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

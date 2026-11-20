@@ -33,6 +33,7 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Xem lệnh | `make help` | 1.1 |
 | Kiểm tra cấu trúc repo | `make structure` (`scripts/check-structure.sh`) | 1.1 |
 | Sinh schema / ERD / kiểm chứng DB | `make db-schema` · `make db-erd` · `make db-verify` | 1.3 |
+| Sinh / kiểm / dựng docs contracts | `make contracts` · `make contracts-check` · `make contracts-docs` | 1.4 |
 | Cài dependency | `make setup` | 1.5 |
 | Chạy dev (web + api + mock agent) | `make dev` | 1.5 |
 | Test / Lint / Build | `make test` · `make lint` · `make build` | 1.5 |

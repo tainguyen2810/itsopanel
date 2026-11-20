@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.mkdir.schema.json",
+  "title": "fs.mkdir",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "mode": {
+          "$ref": "../defs.schema.json#/$defs/Mode"
+        }
+      },
+      "required": [
+        "account",
+        "path",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "created"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

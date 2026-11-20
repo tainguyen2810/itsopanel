@@ -10,7 +10,7 @@ endef
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify setup dev test lint build codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev test lint build codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -43,6 +43,17 @@ db-erd: ## Vẽ ERD SVG (toàn bộ + từng nhóm) vào database/docs/erd/
 
 db-verify: ## Áp schema vào PostgreSQL 16 tạm và chạy test SQL
 	@bash scripts/db-verify.sh
+
+contracts: ## Sinh OpenAPI, agent-ops, test vectors từ contracts/tools
+	@python3 contracts/tools/gen_openapi.py
+	@python3 contracts/tools/gen_agent_ops.py
+	@python3 contracts/tools/gen_vectors.py
+
+contracts-check: ## Kiểm contracts: không diff, Redocly lint, ngữ nghĩa, ajv
+	@bash scripts/check-contracts.sh
+
+contracts-docs: ## Dựng HTML docs API vào docs/api/ (không commit)
+	@cd contracts && for r in admin portal; do REDOCLY_TELEMETRY=off $(PNPX) @redocly/cli@2.71.0 build-docs openapi/itso-$$r-v1.yaml -o ../docs/api/itso-$$r-v1.html; done
 
 setup: ## Cài dependency (web, api, agent)
 	$(call todo,setup,1.5)

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cron.apply.schema.json",
+  "title": "cron.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "$ref": "../defs.schema.json#/$defs/Uuid"
+              },
+              "schedule": {
+                "$ref": "../defs.schema.json#/$defs/CronExpr"
+              },
+              "command": {
+                "$ref": "../defs.schema.json#/$defs/CronCommand"
+              },
+              "working_dir": {
+                "$ref": "../defs.schema.json#/$defs/RelPath"
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "uuid",
+              "schedule",
+              "command",
+              "working_dir",
+              "enabled"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "account",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

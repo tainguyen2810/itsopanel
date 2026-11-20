@@ -41,3 +41,6 @@ release/
 __pycache__/
 *.pyc
 dbml-error.log
+
+# API docs build (make contracts-docs)
+docs/api/*.html

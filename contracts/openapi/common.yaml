@@ -1,0 +1,2922 @@
+# SINH TỰ ĐỘNG bởi contracts/tools/gen_openapi.py (make contracts). Không sửa tay.
+openapi: 3.1.0
+info:
+  title: ITSO Panel — components chung
+  version: 1.0.0-p1
+  license:
+    name: Proprietary — ITSO
+    identifier: LicenseRef-ITSO
+servers:
+- url: https://admin.itso.local
+paths: {}
+components:
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+    Domain:
+      type: string
+      minLength: 4
+      maxLength: 253
+      pattern: ^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+(xn--[a-z0-9-]{1,59}|[a-z]{2,63})$
+      description: 'Tên miền chữ thường, đã chuyển punycode. Kiểm thêm ở tầng nghiệp vụ: cấm localhost, IP, tên panel.'
+    Username:
+      type: string
+      pattern: ^[a-z][a-z0-9]{2,15}$
+      not:
+        enum:
+        - root
+        - admin
+        - www
+        - mysql
+        - postgres
+        - redis
+        - nginx
+        - itso
+        - daemon
+        - bin
+        - sys
+        - sync
+        - games
+        - man
+        - mail
+        - news
+        - proxy
+        - backup
+        - list
+        - nobody
+        - systemd
+        - sshd
+        - ftp
+        - test
+        - user
+        - support
+      description: Username Linux của hosting account.
+    RelPath:
+      type: string
+      maxLength: 4096
+      oneOf:
+      - const: .
+      - pattern: ^[^/\x00-\x1f]+(/[^/\x00-\x1f]+)*$
+        not:
+          pattern: (^|/)\.{1,2}(/|$)
+      description: Đường dẫn TƯƠNG ĐỐI với home của account. `.` là thư mục gốc. Cấm `..`, ký tự điều khiển, đường dẫn tuyệt
+        đối.
+    DbName:
+      type: string
+      pattern: ^[a-z][a-z0-9_]{0,63}$
+      description: Tên database/DB user. Tầng nghiệp vụ bắt buộc tiền tố `<username>_`.
+    CronExpr:
+      type: string
+      maxLength: 100
+      pattern: ^([0-9*,/-]+) ([0-9*,/-]+) ([0-9*,/-]+) ([0-9*,/-]+) ([0-9*,/-]+)$
+      description: Biểu thức cron 5 trường dạng số. Khoảng tối thiểu theo gói kiểm ở tầng nghiệp vụ.
+    CronCommand:
+      type: string
+      minLength: 1
+      maxLength: 1024
+      not:
+        pattern: '[\r\n\x00]'
+      description: Lệnh chạy dưới UID của account. Một dòng, không ký tự xuống dòng (chống chèn crontab).
+    NginxSize:
+      type: string
+      pattern: ^[0-9]{1,5}[kmg]?$
+      description: Giá trị kích thước Nginx, ví dụ 64m.
+    HeaderValue:
+      type: string
+      maxLength: 512
+      not:
+        pattern: '[;{}\r\n\x00"''\\$]'
+      description: 'Giá trị đưa vào cấu hình Nginx: cấm ký tự phá cú pháp.'
+    PhpVersion:
+      type: string
+      pattern: ^[5-9]\.[0-9]$
+    Cidr:
+      type: string
+      pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?$|^[0-9a-f:]+(/[0-9]{1,3})?$
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        instance:
+          type: string
+        request_id:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - type
+      - title
+      - status
+      - code
+      additionalProperties: false
+      description: RFC 9457 Problem Details.
+    ErrorCode:
+      type: string
+      enum:
+      - bad_request
+      - unauthenticated
+      - forbidden
+      - not_found
+      - conflict
+      - idempotency_key_reused
+      - precondition_failed
+      - validation_failed
+      - rate_limited
+      - mfa_required
+      - mfa_step_up_required
+      - ip_not_allowed
+      - csrf_mismatch
+      - quota_exceeded
+      - package_limit_reached
+      - resource_locked
+      - invalid_state_transition
+      - server_not_accepting
+      - agent_unavailable
+      - job_failed
+      - legal_hold_active
+      - retention_not_elapsed
+      - backup_not_verified
+      - confirmation_mismatch
+      - internal_error
+    CursorMeta:
+      type: object
+      properties:
+        next_cursor:
+          type:
+          - string
+          - 'null'
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+      required:
+      - next_cursor
+      additionalProperties: false
+    CursorPage:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/CursorMeta'
+      required:
+      - meta
+    ResourceRef:
+      type: object
+      properties:
+        type:
+          type: string
+        uuid:
+          type: string
+          format: uuid
+      required:
+      - type
+      - uuid
+      additionalProperties: false
+    UserRef:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+      - uuid
+      - name
+      - email
+      additionalProperties: false
+    ServerRef:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+      - uuid
+      - name
+      additionalProperties: false
+    AccountRef:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        username:
+          $ref: '#/components/schemas/Username'
+      required:
+      - uuid
+      - username
+      additionalProperties: false
+    WebsiteRef:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        primary_domain:
+          $ref: '#/components/schemas/Domain'
+      required:
+      - uuid
+      - primary_domain
+      additionalProperties: false
+    JobState:
+      type: string
+      enum:
+      - queued
+      - running
+      - succeeded
+      - failed
+      - cancel_requested
+      - cancelled
+      - timed_out
+    JobStep:
+      type: object
+      properties:
+        seq:
+          type: integer
+          minimum: 1
+        op:
+          type: string
+          pattern: ^[a-z0-9]+(\.[a-z0-9_]+)+$
+        state:
+          type: string
+          enum:
+          - pending
+          - running
+          - succeeded
+          - failed
+          - skipped
+          - cancelled
+        started_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - seq
+      - op
+      - state
+      - started_at
+      - finished_at
+      additionalProperties: false
+    Job:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        type:
+          type: string
+          pattern: ^[a-z0-9_]+\.[a-z0-9_.]+$
+        state:
+          $ref: '#/components/schemas/JobState'
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        resource:
+          oneOf:
+          - $ref: '#/components/schemas/ResourceRef'
+          - type: 'null'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobStep'
+        attempts:
+          type: integer
+          minimum: 0
+        max_attempts:
+          type: integer
+          minimum: 1
+        timeout_sec:
+          type: integer
+          minimum: 1
+        error:
+          type:
+          - object
+          - 'null'
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            step:
+              type:
+              - integer
+              - 'null'
+          required:
+          - code
+          - message
+          - step
+          additionalProperties: false
+        server:
+          oneOf:
+          - $ref: '#/components/schemas/ServerRef'
+          - type: 'null'
+        requested_by:
+          oneOf:
+          - $ref: '#/components/schemas/UserRef'
+          - type: 'null'
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        links:
+          type: object
+          properties:
+            self:
+              type: string
+            events:
+              type: string
+          required:
+          - self
+          - events
+          additionalProperties: false
+      required:
+      - uuid
+      - type
+      - state
+      - progress
+      - resource
+      - steps
+      - attempts
+      - max_attempts
+      - timeout_sec
+      - error
+      - server
+      - requested_by
+      - created_at
+      - started_at
+      - finished_at
+      - links
+      additionalProperties: false
+    JobAccepted:
+      type: object
+      properties:
+        job:
+          $ref: '#/components/schemas/Job'
+        resource:
+          oneOf:
+          - $ref: '#/components/schemas/ResourceRef'
+          - type: 'null'
+      required:
+      - job
+      additionalProperties: false
+    JobLog:
+      type: object
+      properties:
+        seq:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum:
+          - debug
+          - info
+          - warn
+          - error
+        message:
+          type: string
+      required:
+      - seq
+      - at
+      - level
+      - message
+      additionalProperties: false
+    User:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        realm:
+          type: string
+          enum:
+          - admin
+          - portal
+        name:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - SUPER_ADMIN
+          - ADMIN
+          - USER
+        status:
+          type: string
+          enum:
+          - active
+          - locked
+          - disabled
+        mfa_enabled:
+          type: boolean
+        locale:
+          type: string
+          enum:
+          - vi
+          - en
+        timezone:
+          type: string
+        last_login_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - realm
+      - name
+      - email
+      - role
+      - status
+      - mfa_enabled
+      - locale
+      - timezone
+      - last_login_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    Me:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        permissions:
+          type: array
+          items:
+            type: string
+        scopes:
+          type: array
+          items:
+            type: object
+            properties:
+              scope_type:
+                type: string
+              uuid:
+                type: string
+                format: uuid
+              name:
+                type: string
+            required:
+            - scope_type
+            - uuid
+            - name
+            additionalProperties: false
+        mfa_verified_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        impersonating:
+          oneOf:
+          - $ref: '#/components/schemas/UserRef'
+          - type: 'null'
+      required:
+      - user
+      - permissions
+      - scopes
+      - mfa_verified_at
+      - impersonating
+      additionalProperties: false
+    Session:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        ip:
+          type: string
+        user_agent:
+          type: string
+        current:
+          type: boolean
+        last_active_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - ip
+      - user_agent
+      - current
+      - last_active_at
+      - created_at
+      additionalProperties: false
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+          maxLength: 200
+          writeOnly: true
+        remember:
+          type: boolean
+      required:
+      - email
+      - password
+      additionalProperties: false
+    LoginResult:
+      type: object
+      properties:
+        mfa_required:
+          type: boolean
+        mfa_methods:
+          type: array
+          items:
+            type: string
+            enum:
+            - totp
+            - recovery
+      required:
+      - mfa_required
+      - mfa_methods
+      additionalProperties: false
+    MfaVerifyRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: ^([0-9]{6}|[a-z0-9]{10})$
+        method:
+          type: string
+          enum:
+          - totp
+          - recovery
+      required:
+      - code
+      - method
+      additionalProperties: false
+    TotpEnrollment:
+      type: object
+      properties:
+        secret:
+          type: string
+        otpauth_uri:
+          type: string
+        recovery_codes:
+          type: array
+          items:
+            type: string
+      required:
+      - secret
+      - otpauth_uri
+      - recovery_codes
+      additionalProperties: false
+    PasswordChange:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          minLength: 12
+          writeOnly: true
+      required:
+      - current_password
+      - new_password
+      additionalProperties: false
+    UsageItem:
+      type: object
+      properties:
+        used:
+          type: number
+          minimum: 0
+        limit:
+          type: number
+          minimum: 0
+      required:
+      - used
+      - limit
+      additionalProperties: false
+    Usage:
+      type: object
+      properties:
+        disk_mb:
+          $ref: '#/components/schemas/UsageItem'
+        inodes:
+          $ref: '#/components/schemas/UsageItem'
+        cpu_percent:
+          $ref: '#/components/schemas/UsageItem'
+        ram_mb:
+          $ref: '#/components/schemas/UsageItem'
+        websites:
+          $ref: '#/components/schemas/UsageItem'
+        databases:
+          $ref: '#/components/schemas/UsageItem'
+        ftp_accounts:
+          $ref: '#/components/schemas/UsageItem'
+        cron_jobs:
+          $ref: '#/components/schemas/UsageItem'
+        backup_mb:
+          $ref: '#/components/schemas/UsageItem'
+        bandwidth_mb_30d:
+          type: number
+          minimum: 0
+        measured_at:
+          type: string
+          format: date-time
+      required:
+      - disk_mb
+      - inodes
+      - cpu_percent
+      - ram_mb
+      - websites
+      - databases
+      - ftp_accounts
+      - cron_jobs
+      - backup_mb
+      - bandwidth_mb_30d
+      - measured_at
+      additionalProperties: false
+    LifecycleState:
+      type: string
+      enum:
+      - pending
+      - provisioning
+      - active
+      - suspended
+      - migrating
+      - terminated
+      - purged
+      - failed
+    PackageRef:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - uuid
+      - code
+      - name
+      - version
+      additionalProperties: false
+    HostingAccount:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        username:
+          $ref: '#/components/schemas/Username'
+        server:
+          $ref: '#/components/schemas/ServerRef'
+        package:
+          $ref: '#/components/schemas/PackageRef'
+        owner:
+          $ref: '#/components/schemas/UserRef'
+        uid:
+          type: integer
+          minimum: 20000
+          maximum: 59999
+        home_path:
+          type: string
+        lifecycle_state:
+          $ref: '#/components/schemas/LifecycleState'
+        suspended_reason:
+          type:
+          - string
+          - 'null'
+        terminated_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        purge_after:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        legal_hold:
+          type: boolean
+        usage:
+          $ref: '#/components/schemas/Usage'
+        status:
+          type: string
+          enum:
+          - pending
+          - provisioning
+          - ready
+          - degraded
+          - failed
+          - suspended
+          - deleting
+          description: Trạng thái quan sát được (observed).
+        spec_version:
+          type: integer
+          minimum: 1
+          description: 'Desired: tăng mỗi lần đổi cấu hình.'
+        observed_version:
+          type: integer
+          minimum: 0
+          description: Phiên bản agent đã áp dụng.
+        drift:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: string
+        observed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - username
+      - server
+      - package
+      - owner
+      - uid
+      - home_path
+      - lifecycle_state
+      - suspended_reason
+      - terminated_at
+      - purge_after
+      - legal_hold
+      - usage
+      - status
+      - spec_version
+      - observed_version
+      - drift
+      - observed_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    LifecycleEvent:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        from_state:
+          oneOf:
+          - $ref: '#/components/schemas/LifecycleState'
+          - type: 'null'
+        to_state:
+          $ref: '#/components/schemas/LifecycleState'
+        reason:
+          type:
+          - string
+          - 'null'
+        actor:
+          oneOf:
+          - $ref: '#/components/schemas/UserRef'
+          - type: 'null'
+        job_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - from_state
+      - to_state
+      - reason
+      - actor
+      - job_uuid
+      - at
+      additionalProperties: false
+    Website:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        server:
+          $ref: '#/components/schemas/ServerRef'
+        primary_domain:
+          $ref: '#/components/schemas/Domain'
+        type:
+          type: string
+          enum:
+          - php
+          - static
+          - proxy
+          - docker
+        document_root:
+          $ref: '#/components/schemas/RelPath'
+        php_version:
+          oneOf:
+          - $ref: '#/components/schemas/PhpVersion'
+          - type: 'null'
+        ssl_mode:
+          type: string
+          enum:
+          - none
+          - acme
+          - custom
+        waf_enabled:
+          type: boolean
+        domains_count:
+          type: integer
+          minimum: 0
+        certificate_expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        status:
+          type: string
+          enum:
+          - pending
+          - provisioning
+          - ready
+          - degraded
+          - failed
+          - suspended
+          - deleting
+          description: Trạng thái quan sát được (observed).
+        spec_version:
+          type: integer
+          minimum: 1
+          description: 'Desired: tăng mỗi lần đổi cấu hình.'
+        observed_version:
+          type: integer
+          minimum: 0
+          description: Phiên bản agent đã áp dụng.
+        drift:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: string
+        observed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - hosting_account
+      - server
+      - primary_domain
+      - type
+      - document_root
+      - php_version
+      - ssl_mode
+      - waf_enabled
+      - domains_count
+      - certificate_expires_at
+      - status
+      - spec_version
+      - observed_version
+      - drift
+      - observed_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    WebsiteCreate:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type: string
+          format: uuid
+        primary_domain:
+          $ref: '#/components/schemas/Domain'
+        type:
+          type: string
+          enum:
+          - php
+          - static
+          - proxy
+        document_root:
+          $ref: '#/components/schemas/RelPath'
+        php_version:
+          oneOf:
+          - $ref: '#/components/schemas/PhpVersion'
+          - type: 'null'
+        ssl_mode:
+          type: string
+          enum:
+          - none
+          - acme
+        proxy_target:
+          type:
+          - string
+          - 'null'
+          pattern: ^http://127\.0\.0\.1:[0-9]{2,5}$
+      required:
+      - hosting_account_uuid
+      - primary_domain
+      - type
+      additionalProperties: false
+    WebsiteUpdate:
+      type: object
+      properties:
+        document_root:
+          $ref: '#/components/schemas/RelPath'
+        php_version:
+          oneOf:
+          - $ref: '#/components/schemas/PhpVersion'
+          - type: 'null'
+        ssl_mode:
+          type: string
+          enum:
+          - none
+          - acme
+          - custom
+        waf_enabled:
+          type: boolean
+      additionalProperties: false
+    WebsiteDomain:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        website:
+          $ref: '#/components/schemas/WebsiteRef'
+        name:
+          $ref: '#/components/schemas/Domain'
+        type:
+          type: string
+          enum:
+          - primary
+          - alias
+          - redirect
+          - subdomain
+        verified_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - website
+      - name
+      - type
+      - verified_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    WebsiteDomainCreate:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/Domain'
+        type:
+          type: string
+          enum:
+          - alias
+          - redirect
+          - subdomain
+      required:
+      - name
+      - type
+      additionalProperties: false
+    WebsiteNginx:
+      type: object
+      properties:
+        client_max_body_size:
+          $ref: '#/components/schemas/NginxSize'
+        http2:
+          type: boolean
+        hsts:
+          type: boolean
+        extra_headers:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HeaderValue'
+        redirects:
+          type: array
+          items:
+            type: object
+            properties:
+              from:
+                $ref: '#/components/schemas/RelPath'
+              to:
+                type: string
+                format: uri
+              code:
+                type: string
+                enum:
+                - '301'
+                - '302'
+            required:
+            - from
+            - to
+            - code
+            additionalProperties: false
+      additionalProperties: false
+    WebsitePhp:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/PhpVersion'
+        memory_limit:
+          $ref: '#/components/schemas/NginxSize'
+        max_execution_time:
+          type: integer
+          minimum: 1
+          maximum: 600
+        upload_max_filesize:
+          $ref: '#/components/schemas/NginxSize'
+        pm_max_children:
+          type: integer
+          minimum: 1
+          maximum: 64
+        disable_functions:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z_0-9]+$
+      additionalProperties: false
+    Certificate:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        website:
+          $ref: '#/components/schemas/WebsiteRef'
+        source:
+          type: string
+          enum:
+          - acme
+          - upload
+        domains:
+          type: array
+          items:
+            $ref: '#/components/schemas/Domain'
+        issuer:
+          type: string
+        not_before:
+          type: string
+          format: date-time
+        not_after:
+          type: string
+          format: date-time
+        auto_renew:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - pending
+          - valid
+          - expiring
+          - expired
+          - failed
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - website
+      - source
+      - domains
+      - issuer
+      - not_before
+      - not_after
+      - auto_renew
+      - status
+      - created_at
+      - updated_at
+      additionalProperties: false
+    CertificateRequest:
+      type: object
+      properties:
+        source:
+          type: string
+          enum:
+          - acme
+          - upload
+        domains:
+          type: array
+          items:
+            $ref: '#/components/schemas/Domain'
+          minItems: 1
+          maxItems: 100
+        certificate_pem:
+          type:
+          - string
+          - 'null'
+        private_key_pem:
+          type:
+          - string
+          - 'null'
+          writeOnly: true
+      required:
+      - source
+      - domains
+      additionalProperties: false
+    Database:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        server:
+          $ref: '#/components/schemas/ServerRef'
+        engine:
+          type: string
+          enum:
+          - mariadb
+          - mysql
+          - postgresql
+        name:
+          $ref: '#/components/schemas/DbName'
+        size_mb:
+          type: number
+          minimum: 0
+        charset:
+          type: string
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/DbName'
+        status:
+          type: string
+          enum:
+          - pending
+          - provisioning
+          - ready
+          - degraded
+          - failed
+          - suspended
+          - deleting
+          description: Trạng thái quan sát được (observed).
+        spec_version:
+          type: integer
+          minimum: 1
+          description: 'Desired: tăng mỗi lần đổi cấu hình.'
+        observed_version:
+          type: integer
+          minimum: 0
+          description: Phiên bản agent đã áp dụng.
+        drift:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: string
+        observed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - hosting_account
+      - server
+      - engine
+      - name
+      - size_mb
+      - charset
+      - users
+      - status
+      - spec_version
+      - observed_version
+      - drift
+      - observed_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    DatabaseCreate:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type: string
+          format: uuid
+        engine:
+          type: string
+          enum:
+          - mariadb
+          - mysql
+          - postgresql
+        name:
+          $ref: '#/components/schemas/DbName'
+        create_user:
+          type: boolean
+      required:
+      - hosting_account_uuid
+      - engine
+      - name
+      additionalProperties: false
+    DatabaseGrant:
+      type: object
+      properties:
+        database:
+          $ref: '#/components/schemas/DbName'
+        privileges:
+          type: array
+          items:
+            type: string
+            enum:
+            - ALL
+            - SELECT
+            - INSERT
+            - UPDATE
+            - DELETE
+            - CREATE
+            - DROP
+            - ALTER
+            - INDEX
+      required:
+      - database
+      - privileges
+      additionalProperties: false
+    DatabaseUser:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        engine:
+          type: string
+          enum:
+          - mariadb
+          - mysql
+          - postgresql
+        username:
+          $ref: '#/components/schemas/DbName'
+        host:
+          type: string
+          enum:
+          - localhost
+          - '%'
+        grants:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseGrant'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - hosting_account
+      - engine
+      - username
+      - host
+      - grants
+      - created_at
+      - updated_at
+      additionalProperties: false
+    DatabaseUserCreate:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type: string
+          format: uuid
+        engine:
+          type: string
+          enum:
+          - mariadb
+          - mysql
+          - postgresql
+        username:
+          $ref: '#/components/schemas/DbName'
+        password:
+          type: string
+          minLength: 16
+          writeOnly: true
+      required:
+      - hosting_account_uuid
+      - engine
+      - username
+      additionalProperties: false
+    SecretOnce:
+      type: object
+      properties:
+        secret:
+          type: string
+          description: Chỉ trả MỘT lần, không lưu ở dạng đọc lại được.
+      required:
+      - secret
+      additionalProperties: false
+    FileEntry:
+      type: object
+      properties:
+        name:
+          type: string
+        path:
+          $ref: '#/components/schemas/RelPath'
+        type:
+          type: string
+          enum:
+          - file
+          - dir
+          - symlink
+        size:
+          type: integer
+          minimum: 0
+        mode:
+          type: string
+          pattern: ^0[0-7]{3}$
+        owner:
+          type: string
+        modified_at:
+          type: string
+          format: date-time
+      required:
+      - name
+      - path
+      - type
+      - size
+      - mode
+      - owner
+      - modified_at
+      additionalProperties: false
+    FileContent:
+      type: object
+      properties:
+        path:
+          $ref: '#/components/schemas/RelPath'
+        content:
+          type: string
+          maxLength: 2097152
+        encoding:
+          type: string
+          enum:
+          - utf-8
+          - base64
+        etag:
+          type: string
+      required:
+      - path
+      - content
+      - encoding
+      - etag
+      additionalProperties: false
+    FileWrite:
+      type: object
+      properties:
+        path:
+          $ref: '#/components/schemas/RelPath'
+        content:
+          type: string
+          maxLength: 2097152
+        encoding:
+          type: string
+          enum:
+          - utf-8
+          - base64
+        if_etag:
+          type:
+          - string
+          - 'null'
+      required:
+      - path
+      - content
+      additionalProperties: false
+    FileOperation:
+      type: object
+      properties:
+        op:
+          type: string
+          enum:
+          - mkdir
+          - move
+          - copy
+          - delete
+          - chmod
+          - compress
+          - extract
+        paths:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelPath'
+          minItems: 1
+          maxItems: 500
+        target:
+          oneOf:
+          - $ref: '#/components/schemas/RelPath'
+          - type: 'null'
+        mode:
+          type:
+          - string
+          - 'null'
+          pattern: ^0[0-7]{3}$
+        format:
+          type:
+          - string
+          - 'null'
+          enum:
+          - zip
+          - tar.gz
+          - null
+      required:
+      - op
+      - paths
+      additionalProperties: false
+    UploadSession:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        path:
+          $ref: '#/components/schemas/RelPath'
+        size:
+          type: integer
+          minimum: 1
+          maximum: 10737418240
+        chunk_size:
+          type: integer
+          minimum: 65536
+        received:
+          type: integer
+          minimum: 0
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - path
+      - size
+      - chunk_size
+      - received
+      - expires_at
+      additionalProperties: false
+    UploadCreate:
+      type: object
+      properties:
+        path:
+          $ref: '#/components/schemas/RelPath'
+        size:
+          type: integer
+          minimum: 1
+          maximum: 10737418240
+        overwrite:
+          type: boolean
+      required:
+      - path
+      - size
+      additionalProperties: false
+    SignedUrl:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - url
+      - expires_at
+      additionalProperties: false
+    SftpAccount:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        username:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{2,31}$
+        protocol:
+          type: string
+          enum:
+          - sftp
+          - ftps
+        root_path:
+          $ref: '#/components/schemas/RelPath'
+        read_only:
+          type: boolean
+        last_login_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        status:
+          type: string
+          enum:
+          - pending
+          - provisioning
+          - ready
+          - degraded
+          - failed
+          - suspended
+          - deleting
+          description: Trạng thái quan sát được (observed).
+        spec_version:
+          type: integer
+          minimum: 1
+          description: 'Desired: tăng mỗi lần đổi cấu hình.'
+        observed_version:
+          type: integer
+          minimum: 0
+          description: Phiên bản agent đã áp dụng.
+        drift:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: string
+        observed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - hosting_account
+      - username
+      - protocol
+      - root_path
+      - read_only
+      - last_login_at
+      - status
+      - spec_version
+      - observed_version
+      - drift
+      - observed_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    SftpAccountCreate:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type: string
+          format: uuid
+        username:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{2,31}$
+        protocol:
+          type: string
+          enum:
+          - sftp
+          - ftps
+        root_path:
+          $ref: '#/components/schemas/RelPath'
+        read_only:
+          type: boolean
+        password:
+          type:
+          - string
+          - 'null'
+          minLength: 16
+          writeOnly: true
+      required:
+      - hosting_account_uuid
+      - username
+      - protocol
+      - root_path
+      additionalProperties: false
+    SshKey:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        name:
+          type: string
+          maxLength: 80
+        fingerprint:
+          type: string
+        type:
+          type: string
+          enum:
+          - ssh-ed25519
+          - ecdsa-sha2-nistp256
+          - ssh-rsa
+        last_used_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - hosting_account
+      - name
+      - fingerprint
+      - type
+      - last_used_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    SshKeyCreate:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 80
+        public_key:
+          type: string
+          pattern: ^(ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa) [A-Za-z0-9+/=]+( [^\r\n]{0,100})?$
+      required:
+      - hosting_account_uuid
+      - name
+      - public_key
+      additionalProperties: false
+    CronJob:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        website:
+          oneOf:
+          - $ref: '#/components/schemas/WebsiteRef'
+          - type: 'null'
+        schedule:
+          $ref: '#/components/schemas/CronExpr'
+        command:
+          $ref: '#/components/schemas/CronCommand'
+        working_dir:
+          $ref: '#/components/schemas/RelPath'
+        php_version:
+          oneOf:
+          - $ref: '#/components/schemas/PhpVersion'
+          - type: 'null'
+        enabled:
+          type: boolean
+        last_run_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        last_status:
+          type:
+          - string
+          - 'null'
+          enum:
+          - succeeded
+          - failed
+          - timed_out
+          - null
+        status:
+          type: string
+          enum:
+          - pending
+          - provisioning
+          - ready
+          - degraded
+          - failed
+          - suspended
+          - deleting
+          description: Trạng thái quan sát được (observed).
+        spec_version:
+          type: integer
+          minimum: 1
+          description: 'Desired: tăng mỗi lần đổi cấu hình.'
+        observed_version:
+          type: integer
+          minimum: 0
+          description: Phiên bản agent đã áp dụng.
+        drift:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: string
+        observed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - hosting_account
+      - website
+      - schedule
+      - command
+      - working_dir
+      - php_version
+      - enabled
+      - last_run_at
+      - last_status
+      - status
+      - spec_version
+      - observed_version
+      - drift
+      - observed_at
+      - created_at
+      - updated_at
+      additionalProperties: false
+    CronJobCreate:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type: string
+          format: uuid
+        website_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        schedule:
+          $ref: '#/components/schemas/CronExpr'
+        command:
+          $ref: '#/components/schemas/CronCommand'
+        working_dir:
+          $ref: '#/components/schemas/RelPath'
+        php_version:
+          oneOf:
+          - $ref: '#/components/schemas/PhpVersion'
+          - type: 'null'
+        enabled:
+          type: boolean
+      required:
+      - hosting_account_uuid
+      - schedule
+      - command
+      additionalProperties: false
+    CronJobUpdate:
+      type: object
+      properties:
+        schedule:
+          $ref: '#/components/schemas/CronExpr'
+        command:
+          $ref: '#/components/schemas/CronCommand'
+        working_dir:
+          $ref: '#/components/schemas/RelPath'
+        enabled:
+          type: boolean
+      additionalProperties: false
+    CronRun:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        exit_code:
+          type:
+          - integer
+          - 'null'
+        status:
+          type: string
+          enum:
+          - running
+          - succeeded
+          - failed
+          - timed_out
+        output_tail:
+          type: string
+          maxLength: 8192
+      required:
+      - uuid
+      - started_at
+      - finished_at
+      - exit_code
+      - status
+      - output_tail
+      additionalProperties: false
+    DnsZone:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          $ref: '#/components/schemas/Domain'
+        provider:
+          type: string
+          enum:
+          - cloudflare
+          - powerdns
+          - manual
+        hosting_account:
+          oneOf:
+          - $ref: '#/components/schemas/AccountRef'
+          - type: 'null'
+        records_count:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - name
+      - provider
+      - hosting_account
+      - records_count
+      - created_at
+      - updated_at
+      additionalProperties: false
+    DnsRecord:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - A
+          - AAAA
+          - CNAME
+          - MX
+          - TXT
+          - SRV
+          - CAA
+          - NS
+        name:
+          type: string
+          pattern: ^(@|\*|[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9])?(\.[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9])?)*)$
+        content:
+          type: string
+          maxLength: 2048
+        ttl:
+          type: integer
+          minimum: 60
+          maximum: 86400
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        proxied:
+          type: boolean
+      required:
+      - uuid
+      - type
+      - name
+      - content
+      - ttl
+      - proxied
+      additionalProperties: false
+    DnsRecordInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - A
+          - AAAA
+          - CNAME
+          - MX
+          - TXT
+          - SRV
+          - CAA
+          - NS
+        name:
+          type: string
+          pattern: ^(@|\*|[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9])?(\.[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9])?)*)$
+        content:
+          type: string
+          maxLength: 2048
+        ttl:
+          type: integer
+          minimum: 60
+          maximum: 86400
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        proxied:
+          type: boolean
+      required:
+      - type
+      - name
+      - content
+      - ttl
+      additionalProperties: false
+    BackupSnapshot:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          oneOf:
+          - $ref: '#/components/schemas/AccountRef'
+          - type: 'null'
+        destination:
+          type: object
+          properties:
+            uuid:
+              type: string
+              format: uuid
+            name:
+              type: string
+          required:
+          - uuid
+          - name
+          additionalProperties: false
+        scope_type:
+          type: string
+          enum:
+          - hosting_account
+          - website
+          - database
+          - server_config
+          - panel
+        restic_snapshot_id:
+          type: string
+          pattern: ^[0-9a-f]{8,64}$
+        size_mb:
+          type: number
+          minimum: 0
+        taken_at:
+          type: string
+          format: date-time
+        verified_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        contents:
+          type: array
+          items:
+            type: string
+            enum:
+            - files
+            - databases
+            - config
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+      - uuid
+      - hosting_account
+      - destination
+      - scope_type
+      - restic_snapshot_id
+      - size_mb
+      - taken_at
+      - verified_at
+      - contents
+      - tags
+      additionalProperties: false
+    BackupRequest:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type: string
+          format: uuid
+        contents:
+          type: array
+          items:
+            type: string
+            enum:
+            - files
+            - databases
+            - config
+          minItems: 1
+        note:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+      required:
+      - hosting_account_uuid
+      - contents
+      additionalProperties: false
+    Restore:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        snapshot_uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        target_server:
+          $ref: '#/components/schemas/ServerRef'
+        mode:
+          type: string
+          enum:
+          - new
+          - overwrite
+        items:
+          type: array
+          items:
+            type: string
+        state:
+          $ref: '#/components/schemas/JobState'
+        job_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        requested_by:
+          $ref: '#/components/schemas/UserRef'
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - uuid
+      - snapshot_uuid
+      - hosting_account
+      - target_server
+      - mode
+      - items
+      - state
+      - job_uuid
+      - requested_by
+      - created_at
+      - finished_at
+      additionalProperties: false
+    RestoreRequest:
+      type: object
+      properties:
+        snapshot_uuid:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum:
+          - new
+          - overwrite
+        items:
+          type: array
+          items:
+            type: string
+            pattern: ^(files:.+|database:[a-z][a-z0-9_]{0,63}|config)$
+          minItems: 1
+        target_server_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        confirm:
+          type:
+          - string
+          - 'null'
+      required:
+      - snapshot_uuid
+      - mode
+      - items
+      additionalProperties: false
+    WordPressSite:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        website:
+          $ref: '#/components/schemas/WebsiteRef'
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        wp_version:
+          type: string
+        latest_version:
+          type: string
+        plugins_total:
+          type: integer
+          minimum: 0
+        plugins_outdated:
+          type: integer
+          minimum: 0
+        themes_outdated:
+          type: integer
+          minimum: 0
+        auto_update:
+          type: string
+          enum:
+          - 'off'
+          - minor
+          - all
+        hardening:
+          type: object
+          additionalProperties:
+            type: boolean
+        staging_of:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - website
+      - hosting_account
+      - wp_version
+      - latest_version
+      - plugins_total
+      - plugins_outdated
+      - themes_outdated
+      - auto_update
+      - hardening
+      - staging_of
+      - updated_at
+      additionalProperties: false
+    WordPressInstall:
+      type: object
+      properties:
+        website_uuid:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 120
+        admin_username:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{2,30}$
+        admin_email:
+          type: string
+          format: email
+        locale:
+          type: string
+          enum:
+          - vi
+          - en_US
+      required:
+      - website_uuid
+      - title
+      - admin_username
+      - admin_email
+      - locale
+      additionalProperties: false
+    Notification:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        type:
+          type: string
+        severity:
+          type: string
+          enum:
+          - info
+          - low
+          - medium
+          - high
+          - critical
+        title:
+          type: string
+        body:
+          type: string
+        link:
+          type:
+          - string
+          - 'null'
+        read_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - type
+      - severity
+      - title
+      - body
+      - link
+      - read_at
+      - created_at
+      additionalProperties: false
+    NotificationPreferences:
+      type: object
+      properties:
+        channels:
+          type: object
+          additionalProperties:
+            type: boolean
+        events:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              enum:
+              - email
+              - telegram
+              - in_app
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - channels
+      - events
+      - updated_at
+      additionalProperties: false
+    TerminalTicket:
+      type: object
+      properties:
+        ticket:
+          type: string
+        ws_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+        mode:
+          type: string
+          enum:
+          - account
+          - root
+        unix_user:
+          type: string
+      required:
+      - ticket
+      - ws_url
+      - expires_at
+      - mode
+      - unix_user
+      additionalProperties: false
+    TerminalRequest:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        server_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        mode:
+          type: string
+          enum:
+          - account
+          - root
+      required:
+      - mode
+      additionalProperties: false
+    PortalOverview:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              hosting_account:
+                $ref: '#/components/schemas/AccountRef'
+              lifecycle_state:
+                $ref: '#/components/schemas/LifecycleState'
+              usage:
+                $ref: '#/components/schemas/Usage'
+            required:
+            - hosting_account
+            - lifecycle_state
+            - usage
+            additionalProperties: false
+        warnings:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              severity:
+                type: string
+                enum:
+                - info
+                - low
+                - medium
+                - high
+                - critical
+            required:
+            - code
+            - message
+            - severity
+            additionalProperties: false
+        recent_jobs:
+          type: array
+          items:
+            type: object
+            properties:
+              uuid:
+                type: string
+                format: uuid
+              type:
+                type: string
+              state:
+                $ref: '#/components/schemas/JobState'
+              progress:
+                type: integer
+                minimum: 0
+                maximum: 100
+            required:
+            - uuid
+            - type
+            - state
+            - progress
+            additionalProperties: false
+        notifications_unread:
+          type: integer
+          minimum: 0
+      required:
+      - accounts
+      - warnings
+      - recent_jobs
+      - notifications_unread
+      additionalProperties: false
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+      required:
+      - status
+      additionalProperties: false
+    DnsRecordInputPatch:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - A
+          - AAAA
+          - CNAME
+          - MX
+          - TXT
+          - SRV
+          - CAA
+          - NS
+        name:
+          type: string
+          pattern: ^(@|\*|[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9])?(\.[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9])?)*)$
+        content:
+          type: string
+          maxLength: 2048
+        ttl:
+          type: integer
+          minimum: 60
+          maximum: 86400
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        proxied:
+          type: boolean
+      additionalProperties: false
+      description: 'Cập nhật một phần DnsRecordInput: chỉ gửi trường cần đổi.'
+  responses:
+    Unauthorized:
+      description: Chưa đăng nhập
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/unauthenticated
+            title: Chưa đăng nhập
+            status: 401
+            code: unauthenticated
+            detail: Phiên đã hết hạn.
+            request_id: req_01JD8K2M4N
+    Forbidden:
+      description: Không có quyền
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/forbidden
+            title: Không có quyền
+            status: 403
+            code: forbidden
+            detail: Thao tác yêu cầu quyền khác hoặc step-up MFA.
+            request_id: req_01JD8K2M4N
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/not_found
+            title: Không tìm thấy
+            status: 404
+            code: not_found
+            detail: Tài nguyên không tồn tại hoặc ngoài phạm vi.
+            request_id: req_01JD8K2M4N
+    Conflict:
+      description: Xung đột
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/conflict
+            title: Xung đột
+            status: 409
+            code: conflict
+            detail: Tài nguyên đang có job khác hoặc Idempotency-Key đã dùng với body khác.
+            request_id: req_01JD8K2M4N
+    PreconditionFailed:
+      description: Phiên bản đã thay đổi
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/precondition_failed
+            title: Phiên bản đã thay đổi
+            status: 412
+            code: precondition_failed
+            detail: If-Match không khớp ETag hiện tại.
+            request_id: req_01JD8K2M4N
+    ValidationFailed:
+      description: Dữ liệu không hợp lệ
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/validation_failed
+            title: Dữ liệu không hợp lệ
+            status: 422
+            code: validation_failed
+            detail: Một hoặc nhiều trường không hợp lệ.
+            request_id: req_01JD8K2M4N
+            errors:
+              username:
+              - Username đã tồn tại trên server này.
+    TooManyRequests:
+      description: Quá nhiều yêu cầu
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/rate_limited
+            title: Quá nhiều yêu cầu
+            status: 429
+            code: rate_limited
+            detail: Thử lại sau 30 giây.
+            request_id: req_01JD8K2M4N
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Số giây chờ.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID tài nguyên.
+    DomainId:
+      name: domain
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID domain.
+    RecordId:
+      name: record
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID record DNS.
+    RuleId:
+      name: rule
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID rule tường lửa.
+    UploadId:
+      name: upload
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID phiên upload.
+    Version:
+      name: version
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      description: Số phiên bản gói.
+    ServiceName:
+      name: service
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[a-z0-9@.-]{2,64}$
+      description: Tên dịch vụ trong allowlist.
+    ServiceAction:
+      name: action
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - start
+        - stop
+        - restart
+        - reload
+      description: Hành động.
+    SoftwareKey:
+      name: key
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[a-z0-9.+-]+$
+      description: Khóa recipe.
+    SoftwareAction:
+      name: action
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - install
+        - remove
+        - upgrade
+      description: Hành động.
+    ContainerId:
+      name: container
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[0-9a-f]{12,64}$
+      description: ID container.
+    ContainerAction:
+      name: action
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - start
+        - stop
+        - restart
+      description: Hành động.
+    SettingsGroup:
+      name: group
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - general
+        - security
+        - smtp
+        - backup
+        - updates
+      description: Nhóm cài đặt.
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Cursor trang tiếp theo.
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Số bản ghi mỗi trang.
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        pattern: ^-?[a-z_]+(,-?[a-z_]+)*$
+      description: Sắp xếp, ví dụ `-created_at`.
+    Q:
+      name: q
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 200
+      description: Tìm kiếm tự do.
+    PathQuery:
+      name: path
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/RelPath'
+      description: Đường dẫn tương đối với home account.
+    FilterHostingAccount:
+      name: filter[hosting_account]
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Lọc theo account.
+    FilterServer:
+      name: filter[server]
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Lọc theo server.
+    FilterLifecycle:
+      name: filter[lifecycle_state]
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/LifecycleState'
+      description: Lọc theo trạng thái vòng đời.
+    FilterRealm:
+      name: filter[realm]
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - admin
+        - portal
+      description: Lọc theo realm.
+    FilterState:
+      name: filter[state]
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/JobState'
+      description: Lọc theo trạng thái job.
+    FilterSeverity:
+      name: filter[severity]
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - info
+        - low
+        - medium
+        - high
+        - critical
+      description: Lọc theo mức độ.
+    FilterAction:
+      name: filter[action]
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Lọc theo action.
+    FilterActor:
+      name: filter[actor]
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Lọc theo người thực hiện.
+    ServerQuery:
+      name: server
+      in: query
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Server áp dụng.
+    PackageQuery:
+      name: package
+      in: query
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Gói dự định cấp.
+    Metric:
+      name: metric
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+        - cpu_pct
+        - ram_pct
+        - disk_pct
+        - net_in
+        - net_out
+        - load_1m
+      description: Số liệu.
+    Range:
+      name: range
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - 1h
+        - 24h
+        - 7d
+        - 30d
+        default: 24h
+      description: Khoảng thời gian.
+    LogKind:
+      name: kind
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+        - access
+        - error
+      description: Loại log.
+    Lines:
+      name: lines
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 2000
+        default: 200
+      description: Số dòng cuối.
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409.
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      schema:
+        type: string
+      description: ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412.
+    ContentRange:
+      name: Content-Range
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: ^bytes [0-9]+-[0-9]+/[0-9]+$
+      description: Vị trí chunk.
+  headers:
+    ETag:
+      description: Phiên bản tài nguyên (spec_version).
+      schema:
+        type: string
+  securitySchemes:
+    cookieSession:
+      type: apiKey
+      in: cookie
+      name: itso_session
+      description: Laravel Sanctum session, cookie Secure; HttpOnly; SameSite=Strict.
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-XSRF-TOKEN
+      description: Giá trị cookie XSRF-TOKEN, bắt buộc cho request thay đổi trạng thái.
+    bearerToken:
+      type: http
+      scheme: bearer
+      description: API token nội bộ có scope (CLI `itso`, automation). Chỉ Admin API.

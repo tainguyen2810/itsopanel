@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.write.schema.json",
+  "title": "fs.write",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "content_b64": {
+          "type": "string",
+          "maxLength": 2796204
+        },
+        "if_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "mode": {
+          "$ref": "../defs.schema.json#/$defs/Mode"
+        }
+      },
+      "required": [
+        "account",
+        "path",
+        "content_b64"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        },
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        }
+      },
+      "required": [
+        "sha256",
+        "size"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

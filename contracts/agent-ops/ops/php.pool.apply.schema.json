@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/php.pool.apply.schema.json",
+  "title": "php.pool.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "website_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "version": {
+          "$ref": "../defs.schema.json#/$defs/PhpVersion"
+        },
+        "pm_max_children": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "memory_limit": {
+          "$ref": "../defs.schema.json#/$defs/NginxSize"
+        },
+        "max_execution_time": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "upload_max_filesize": {
+          "$ref": "../defs.schema.json#/$defs/NginxSize"
+        },
+        "disable_functions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_0-9]+$"
+          }
+        }
+      },
+      "required": [
+        "account",
+        "website_uuid",
+        "version",
+        "pm_max_children",
+        "memory_limit",
+        "max_execution_time",
+        "upload_max_filesize",
+        "disable_functions"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "socket": {
+          "type": "string"
+        },
+        "reloaded": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "socket",
+        "reloaded"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

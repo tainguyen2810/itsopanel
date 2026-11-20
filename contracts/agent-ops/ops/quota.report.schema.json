@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/quota.report.schema.json",
+  "title": "quota.report",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Account"
+          },
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "accounts"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "usage": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "username": {
+                "$ref": "../defs.schema.json#/$defs/Username"
+              },
+              "disk_mb": {
+                "type": "integer"
+              },
+              "inodes": {
+                "type": "integer"
+              },
+              "cpu_pct": {
+                "type": "number"
+              },
+              "ram_mb": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "username",
+              "disk_mb",
+              "inodes",
+              "cpu_pct",
+              "ram_mb"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "usage"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/system.info.schema.json",
+  "title": "system.info",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "kernel": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "uptime_sec": {
+          "type": "integer"
+        },
+        "cpu_cores": {
+          "type": "integer"
+        },
+        "ram_mb": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "os",
+        "kernel",
+        "hostname",
+        "uptime_sec",
+        "cpu_cores",
+        "ram_mb"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
