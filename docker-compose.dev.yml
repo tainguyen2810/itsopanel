@@ -16,6 +16,7 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - itso-dev-pg:/var/lib/postgresql/data
+      - ./scripts/dev/pg-init.sql:/docker-entrypoint-initdb.d/10-itso-test.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U itso -d itso"]
       interval: 5s

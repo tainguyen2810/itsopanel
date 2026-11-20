@@ -23,6 +23,8 @@
     "noResults": "No matching results",
     "forbidden": "You do not have access to this page",
     "forbiddenHint": "This page needs a different role or is outside your assigned scope. Contact a Super Admin if you need access.",
+    "notAvailable": "Not available in this version",
+    "notAvailableHint": "This feature belongs to a later development phase and its API is not part of the running version yet. Data will appear here once the feature ships.",
     "notFound": "Page not found",
     "notFoundHint": "The link does not exist or has moved."
   },
@@ -161,6 +163,7 @@
     },
     "hosting_account": {
       "create": "Hosting account created",
+      "reconcile": "Reconcile hosting account",
       "suspend": "Hosting account suspended",
       "unsuspend": "Hosting account unsuspended",
       "change_package": "Package changed",

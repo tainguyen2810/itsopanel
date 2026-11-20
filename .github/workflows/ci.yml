@@ -154,10 +154,8 @@ jobs:
         run: cp .env.example .env && php artisan key:generate --ansi
       - name: Pint + PHPStan/Larastan
         run: make lint-api
-      - name: Pest (SQLite trong bộ nhớ)
+      - name: Pest (PostgreSQL 16 + Redis 7, D-59)
         run: make test-api
-      - name: Pest (PostgreSQL 16 + Redis 7)
-        run: make test-api-pg
         env:
           DB_PASSWORD: itso_ci_only
       - name: Chặn lệnh hệ thống (exec, shell_exec, proc_open, sh -c…)

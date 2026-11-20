@@ -60,6 +60,12 @@ final class OpenApi
         return ['schema' => $resp['content'][$contentType]['schema'], 'contentType' => (string) $contentType, 'file' => $ctx];
     }
 
+    /** (method, path) có khai báo response `$status` trong file realm. */
+    public static function declares(string $file, string $method, string $path, int $status): bool
+    {
+        return isset(self::doc($file)['paths'][$path][$method]['responses'][(string) $status]);
+    }
+
     /** Trả về null nếu hợp lệ, ngược lại là thông báo lỗi. */
     public static function validate(string $file, mixed $schema, mixed $data): ?string
     {
@@ -102,6 +108,9 @@ final class OpenApi
                 [$target, $pointer] = array_pad(explode('#', $v, 2), 2, '');
                 $target = $target === '' ? $file : ltrim($target, './');
                 $out[$k] = self::BASE.$target.'#'.str_replace('/components/schemas/', '/$defs/', $pointer);
+            } elseif (in_array($k, ['additionalProperties', 'items'], true) && $v === []) {
+                // YAML `{}` (schema rỗng = mọi giá trị) bị parse thành mảng rỗng PHP.
+                $out[$k] = true;
             } else {
                 $out[$k] = self::rewrite($v, $file);
             }

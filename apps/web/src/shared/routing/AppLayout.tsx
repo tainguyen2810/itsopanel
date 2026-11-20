@@ -1,14 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
-import { Outlet, useNavigate } from '@tanstack/react-router';
+import { Navigate, Outlet, useNavigate } from '@tanstack/react-router';
 import { list } from '@/shared/api/realm';
 import { JobDrawerHost } from '@/shared/jobs/JobDrawer';
+import { PageSkeleton } from '@/shared/page/states';
 import { useSession } from '@/shared/session/SessionContext';
 import { AdminShell, PortalShell } from '@/shared/shell/AppShell';
 import { useRoutesInfo } from './RoutesContext';
 import { useCurrentRoute } from './useBreadcrumbs';
 
-/** Layout có shell cho mọi route không phải `bare`: sidebar active theo route, drawer job toàn cục. */
+/**
+ * Layout có shell cho mọi route không phải `bare`: sidebar active theo route, drawer job toàn cục.
+ * API thật: chưa đăng nhập → /login, chưa xác minh MFA → /login/mfa, SUPER_ADMIN chưa bật MFA → chỉ /profile.
+ */
 export function AppLayout() {
+  const session = useSession();
+  const { def } = useCurrentRoute();
+  if (session.status === 'loading') return <PageSkeleton />;
+  if (session.status === 'anonymous') return <Navigate to="/login" replace />;
+  if (session.status === 'mfa') return <Navigate to="/login/mfa" replace />;
+  if (session.status === 'enroll' && def?.id !== 'profile')
+    return <Navigate to="/profile" replace />;
+  return <ShellLayout />;
+}
+
+function ShellLayout() {
   const session = useSession();
   const { fetchJob, search, basepath } = useRoutesInfo();
   const { def } = useCurrentRoute();
@@ -32,7 +47,7 @@ export function AppLayout() {
         : {})}
       onOpenProfile={() => void navigate({ to: '/profile' })}
       onOpenNotifications={() => void navigate({ to: '/notifications' })}
-      onSignOut={() => void navigate({ to: '/login' })}
+      onSignOut={() => void session.signOut().finally(() => void navigate({ to: '/login' }))}
       overlay={<JobDrawerHost fetchJob={fetchJob} />}
       {...(search ? { searchFn: search } : {})}
       onNavigate={(href) => void navigate({ to: href.slice(basepath.length) || '/' })}

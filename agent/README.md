@@ -6,7 +6,7 @@ Go module `itso.local/agent`. Prompt 1.5 có **mock agent** cho dev; agent thậ
 
 - HTTP JSON `POST /v1/ops`: nhận envelope theo `contracts/agent-ops/envelope.schema.json`, trả result theo `result.schema.json`.
 - Nghe `unix:/path.sock` (Linux, quyền 0660) hoặc `tcp:127.0.0.1:port` (Windows dev; chỉ chấp nhận địa chỉ loopback).
-- Op: `system.ping`, `system.info` (dữ liệu giả từ `contracts/examples/demo-dataset.json`). Op ngoài catalog → `unknown_op`; op trong catalog nhưng mock không hỗ trợ → `op_disabled`.
+- Op: `system.ping`, `system.info` (dữ liệu giả từ `contracts/examples/demo-dataset.json`); từ Prompt 3.4: `account.ensure`, `account.suspend`, `account.unsuspend`, `account.remove`, `quota.apply`, `quota.report` trên kho account trong bộ nhớ (`internal/mock/accounts.go`; params/result theo struct sinh `types_gen.go`, không đụng hệ thống thật). Op ngoài catalog → `unknown_op`; op trong catalog nhưng mock không hỗ trợ → `op_disabled`.
 - Kiểm tra: schema envelope + params, `ts` lệch tối đa ±60 giây, `deadline`, nonce chống replay, cache kết quả theo `op_id` (idempotent).
 - **Không có op nào chạy lệnh hệ thống**; `make no-exec` chặn `os/exec`, `syscall.Exec`, `sh -c` trong `agent/`.
 

@@ -50,7 +50,7 @@ Workflow `.github/workflows/ci.yml` gồm 7 job:
 | database | Áp schema + test SQL trên service PostgreSQL 16 | `make db-verify` |
 | contracts | Sinh lại không diff, Redocly, ajv, codegen | `make contracts-check`, `make codegen-check` |
 | web | Token, ESLint, Prettier, tsc, i18n, Vitest, build, Playwright + axe | `make lint-web test-web build-web test-e2e` |
-| api | Pint, PHPStan/Larastan, Pest (SQLite và PostgreSQL 16 + Redis 7), cấm lệnh hệ thống | `make lint-api test-api test-api-pg no-exec` |
+| api | Pint, PHPStan/Larastan, Pest trên PostgreSQL 16 + Redis 7 (D-59), cấm lệnh hệ thống | `make lint-api test-api no-exec` |
 | agent | gofmt, vet, staticcheck, `test -race`, fuzz 30 giây | `make lint-agent test-agent test-fuzz` |
 
 Ảnh chụp Playwright được lưu thành artifact `design-system-screenshots` (14 ngày).

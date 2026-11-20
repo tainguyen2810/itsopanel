@@ -1,4 +1,4 @@
-import { CircleAlert, FileQuestion, ShieldOff } from 'lucide-react';
+import { CircleAlert, Construction, FileQuestion, ShieldOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '@/api/http';
 import { Button } from '@/ui/Button';
@@ -45,6 +45,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   const { t } = useTranslation('common');
   const problem = error instanceof ApiError ? error.problem : undefined;
   if (problem?.status === 403) return <ForbiddenState />;
+  if (isNotAvailable(error)) return <NotAvailableState />;
   return (
     <div role="alert" className="rounded-lg border border-border">
       <EmptyState
@@ -62,6 +63,26 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
             </Button>
           ) : undefined
         }
+      />
+    </div>
+  );
+}
+
+/** API chưa có ở bản đang chạy (module Phase sau): 404 type `not_available` hoặc 501. */
+export function isNotAvailable(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  const p = error.problem;
+  return p.status === 501 || (p.status === 404 && p.type.endsWith('/not_available'));
+}
+
+export function NotAvailableState() {
+  const { t } = useTranslation('common');
+  return (
+    <div className="rounded-lg border border-border">
+      <EmptyState
+        icon={Construction}
+        title={t('state.notAvailable')}
+        description={t('state.notAvailableHint')}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 # Kế hoạch Laravel migrations
 
-Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations viết từ Phase 3, mỗi Phase chỉ tạo bảng mình dùng. Đặc tả DBML luôn là đích; migration của từng Phase phải khớp phần tương ứng (kiểm bằng so sánh `pg_dump --schema-only` với `itso.sql` + `extras.sql` ở Phase 12).
+Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations có từ Phase 3, mỗi Phase chỉ tạo bảng mình dùng. Đặc tả DBML luôn là đích; migration của từng Phase phải khớp phần tương ứng (kiểm bằng so sánh `pg_dump --schema-only` với `itso.sql` + `extras.sql` ở Phase 12).
 
 ## 1. Bảng theo Phase
 
@@ -20,6 +20,15 @@ Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations viết
 Phần trong `extras.sql` đi cùng bảng của nó: trigger realm (Phase 3), audit append-only + hash chain + partition (Phase 3), package version bất biến (Phase 3), purge guard (Phase 8, khi có `purge_records`), partition `metric_samples` (Phase 4).
 
 FK tới bảng của Phase sau (ví dụ `hosting_accounts.last_job_id → jobs` cùng Phase 3 thì tạo luôn; `audit_logs.server_id` cũng vậy). FK tới bảng chưa tồn tại được thêm bằng migration riêng ở Phase tạo bảng đích.
+
+## 1b. Sinh migration từ đặc tả (từ Phase 3)
+
+`make db-migrations PHASE=N` (`database/tools/gen_migrations.py`) ghi `apps/api/database/migrations/2026_11_20_00000N_phase_N_schema.php`: migration chứa nguyên văn các câu lệnh của `itso.sql` + `extras.sql` mà mọi bảng nó nhắc tới thuộc Phase ≤ N và chưa có ở Phase trước (FK tới bảng Phase sau được thêm ở Phase đó). `make db-verify` kiểm:
+
+- file migration đã commit khớp đặc tả (`--check`);
+- áp lần lượt SQL Phase 3 → 11 vào database rỗng cho ra **đúng** schema của `itso.sql` + `extras.sql` (so `pg_dump --schema-only`).
+
+Migration đã phát hành không sinh lại; thay đổi schema sau `v0.1.0-alpha` theo expand/contract bằng migration mới viết tay.
 
 ## 2. Nguyên tắc expand / contract
 

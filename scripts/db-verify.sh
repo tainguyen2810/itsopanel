@@ -64,4 +64,43 @@ for f in "$TESTS"/[0-9]*.sql; do
 done
 
 echo "Tổng: $TOTAL test PASS, $FAILED file lỗi"
-[[ $FAILED -eq 0 && $TOTAL -gt 0 ]]
+
+# Migration Laravel theo Phase (database/tools/gen_migrations.py): áp lần lượt SQL của Phase 3 → 11
+# vào database rỗng phải ra đúng schema của itso.sql + extras.sql; file migration đã commit khớp đặc tả.
+echo "→ Migration theo Phase"
+GEN="$ROOT/database/tools/gen_migrations.py"
+MIG_OK=1
+for f in "$ROOT"/apps/api/database/migrations/*_phase_*_schema.php; do
+  [[ -e "$f" ]] || continue
+  p=$(basename "$f" | sed -E 's/.*_phase_([0-9]+)_schema\.php/\1/')
+  python3 "$GEN" "$p" --check | sed 's/^/  /' || MIG_OK=0
+done
+# psql/pg_dump tới database tên $1 (cùng server với DB kiểm chứng).
+if [[ -n "${DB_VERIFY_URL:-}" ]]; then
+  url_of() { sed -E "s#/[^/?]+(\?|$)#/$1\1#" <<<"$DB_VERIFY_URL"; }
+  db_psql() { local d="$1"; shift; psql "$(url_of "$d")" -X -q -v ON_ERROR_STOP=1 "$@"; }
+  db_dump() { pg_dump -s --no-owner "$(url_of "$1")"; }
+  db_new() { psql "$DB_VERIFY_URL" -X -q -c "SET client_min_messages = warning" -c "DROP DATABASE IF EXISTS $1" -c "CREATE DATABASE $1"; }
+else
+  db_psql() { local d="$1"; shift; as_pg "$PG_BIN/psql" -h "$TMP" -U itso -d "$d" -X -q -v ON_ERROR_STOP=1 "$@"; }
+  db_dump() { as_pg "$PG_BIN/pg_dump" -h "$TMP" -U itso -s --no-owner "$1"; }
+  db_new() { as_pg "$PG_BIN/createdb" -h "$TMP" -U itso "$1"; }
+fi
+db_new itso_spec
+db_new itso_phased
+db_psql itso_spec <"$SCHEMA/itso.sql" >/dev/null
+db_psql itso_spec <"$SCHEMA/extras.sql" >/dev/null
+for p in 3 4 5 6 7 8 9 10 11; do
+  if ! python3 "$GEN" "$p" --sql | db_psql itso_phased >/dev/null; then
+    echo "  ✗ SQL Phase $p không áp được"; MIG_OK=0
+  fi
+done
+clean_dump() { db_dump "$1" | grep -v -e '^--' -e '^\\restrict' -e '^\\unrestrict' | sed '/^$/d'; }
+DIFF="$(mktemp)"
+if diff <(clean_dump itso_spec) <(clean_dump itso_phased) >"$DIFF"; then
+  echo "  ✓ Phase 3 → 11 áp lần lượt = itso.sql + extras.sql (pg_dump --schema-only giống hệt)"
+else
+  echo "  ✗ Schema theo Phase khác đặc tả:"; head -40 "$DIFF" | sed 's/^/      /'; MIG_OK=0
+fi
+rm -f "$DIFF"
+[[ $FAILED -eq 0 && $TOTAL -gt 0 && $MIG_OK -eq 1 ]]

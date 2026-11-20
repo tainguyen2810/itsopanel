@@ -154,6 +154,8 @@ components:
       - retention_not_elapsed
       - backup_not_verified
       - confirmation_mismatch
+      - purge_not_available
+      - migration_not_available
       - internal_error
     CursorMeta:
       type: object
@@ -2887,6 +2889,19 @@ components:
           schema:
             type: integer
           description: Số giây chờ.
+    NotImplemented:
+      description: Chưa có ở phiên bản này
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/purge_not_available
+            title: Chưa có ở phiên bản này
+            status: 501
+            code: purge_not_available
+            detail: Purge hiện thực ở Phase 8.
+            request_id: req_01JD8K2M4N
   parameters:
     Id:
       name: id
@@ -3193,6 +3208,18 @@ components:
       schema:
         type: string
       description: ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412.
+    Realm:
+      name: X-ITSO-Realm
+      in: header
+      required: false
+      schema:
+        type: string
+        enum:
+        - admin
+        - portal
+        default: portal
+      description: Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production),
+        host quyết định và header bị bỏ qua (D-58).
     ContentRange:
       name: Content-Range
       in: header
@@ -3207,11 +3234,16 @@ components:
       schema:
         type: string
   securitySchemes:
-    cookieSession:
+    adminSession:
       type: apiKey
       in: cookie
-      name: itso_session
-      description: Laravel Sanctum session, cookie Secure; HttpOnly; SameSite=Strict.
+      name: itso_admin_session
+      description: Session realm admin (D-58), cookie Secure; HttpOnly; SameSite=Strict.
+    portalSession:
+      type: apiKey
+      in: cookie
+      name: itso_portal_session
+      description: Session realm portal (D-58), cookie Secure; HttpOnly; SameSite=Strict.
     csrfToken:
       type: apiKey
       in: header

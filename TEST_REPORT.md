@@ -2,6 +2,159 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-20 — Phase 3 / Prompt 3.6 — nhánh `phase-3`
+
+Môi trường: như 3.4; stack thật chạy bằng `make dev` (Vite 5173, Laravel 8000, mock agent, queue worker), DB `itso` đã `migrate:fresh --seed` + `DemoSeeder`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật | `make test-e2e-real` | PASS: 4/4 — Admin đăng nhập MFA (mã sai bị từ chối, chưa xác minh bị đưa về MFA); tạo user portal → gói → account qua wizard → job mock agent → Hoạt động → tạm khóa → mở khóa; Portal chỉ thấy `anphat`, `oldshop`, account người khác 404 (API + URL); sai realm 401 và user portal không vào được Admin |
+| Endpoint còn thiếu test | `php artisan test tests/Feature/Platform` | PASS: 20 test (mới: 501 purge/migrate, gợi ý đặt account, đánh dấu đọc thông báo Admin, sự kiện + chạy lại job Portal) |
+| DemoSeeder | `php artisan test tests/Feature/Demo/DemoSeederTest.php` | PASS |
+| Toàn bộ | `make check` | 20 PASS · 1 SKIP (staticcheck) · 0 FAIL; Pest 292 (2095 assertion), Vitest 457, Playwright 259, db-verify 41, fuzz 240.425 lần, git-clean PASS |
+
+Lần chạy `make check` đầu: FAIL ở docs-check (URL/email trần trong runbook), test-e2e (21 test shell bị đưa về đăng nhập vì build thường dùng phiên thật), test-api (1 test còn kỳ vọng `type` `not_found` cho route không tồn tại), git-clean (sửa file trong lúc chạy). Đã sửa runbook, thêm giả lập `/auth/me` vào fixture e2e, cập nhật kỳ vọng test theo hành vi mới; lần 2 xanh hết.
+
+Coverage: không có pcov/xdebug, build pcov trong container bị chặn → thay bằng đối chiếu route (87/87 route có test gọi tới), chi tiết ở `docs/reports/phase-3.md` §6.
+
+**Test bị bỏ qua:** không.
+
+### Acceptance Prompt 3.6
+
+- ✓ Client gửi CSRF, xử lý 401/419; phiên thật thay persona ở build thường
+- ✓ DemoSeeder (mật khẩu dev, SA dùng secret TOTP dev), `make dev` chạy web + api + queue + mock agent
+- ✓ Module Phase sau hiện "Chưa có ở bản này"
+- ✓ Playwright trên stack thật; `make check` xanh; báo cáo `docs/reports/phase-3.md`; runbook `docs/runbooks/phase-3-demo.md`
+
+## 2026-11-20 — Phase 3 / Prompt 3.5 — nhánh `phase-3`
+
+Môi trường: như 3.4.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (thêm response `NotImplemented` 501 và 2 mã lỗi; admin 220 / portal 103 operation) |
+| Gói + account + Portal | `php artisan test tests/Feature/Hosting/HostingTest.php` | PASS: 25 test — gói tạo/409/422/412, sửa limits → phiên bản 2, phiên bản bị DB chặn sửa, xóa còn account → 409; tạo account qua job với agent giả → `active` (op `account.ensure` + `quota.apply`, home `/home/<user>`, shell theo `ssh_allowed`, override áp vào limits), username trùng 409, sai/tên hệ thống 422, server ngoài phạm vi / không nhận account 422; agent lỗi → `failed` → retry → `active`; suspend/unsuspend/terminate/khôi phục, quá hạn giữ 409, chuyển sai 409, 501 cho purge/migrate, account bận 409 `resource_locked`, terminate thiếu quyền 403; bảng chuyển trạng thái (15 ca); đổi gói / giảm override dưới mức dùng → 422 `quota_exceeded`, migrate-accounts qua job; `ensureCanAdd`; UID không tái dùng trong 90 ngày; Portal chỉ account của mình (404 với account người khác), overview, profile (ETag), USER gọi Admin API → 401; `itso:usage-refresh` |
+| Ma trận quyền | `php artisan test tests/Feature/Rbac/MatrixTest.php` | PASS: 169 test — admin 37 endpoint × 4 nhân vật; Portal 10 endpoint × chủ / USER khác (USER khác → 404 với account, job của người khác) |
+| Pest toàn bộ | `make test-api` | PASS: 287 test, 1991 assertion |
+| Lint | `make lint-api` · `make no-exec` | PASS |
+
+**Test bị bỏ qua:** không.
+
+Ghi chú:
+
+- `account_usage_snapshots` thuộc Phase 4 nên mức dùng Phase 3 lưu ở `hosting_accounts.observed_facts.usage` (lệnh `itso:usage-refresh`); `QuotaService` tự dùng bảng snapshot khi có.
+- Bảng website/database/FTP/cron có từ Phase 5–6: số đếm hiện bằng 0, `QuotaService` tự đếm khi bảng xuất hiện.
+- Step `php.pool.apply` trong ví dụ contract của job tạo account chưa có trong mock (Phase 5 PHP-FPM), job Phase 3 gồm `account.ensure` + `quota.apply`.
+
+### Acceptance Prompt 3.5
+
+- ✓ /hosting-packages CRUD, phiên bản bất biến, /versions, migrate-accounts qua job
+- ✓ Provisioning: tạo (username, server, UID 90 ngày, job), suspend có lý do, unsuspend, terminate (≥30 ngày, legal hold), khôi phục trong thời gian giữ, đổi gói; lifecycle events
+- ✓ /features, /usage, /lifecycle-events; QuotaService 422 `quota_exceeded`
+- ✓ API Portal: hosting-accounts, overview, profile, jobs, notifications
+- ✓ Purge/migrate trả 501 có mã rõ ràng
+
+## 2026-11-20 — Phase 3 / Prompt 3.4 — nhánh `phase-3`
+
+Môi trường: như 3.1 (PostgreSQL 16 local, Redis; queue `sync` trong Pest, agent giả bằng `Http::fake` — `tests/Support/FakeAgent.php`).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Agent mock | `cd agent && go test ./...` · `make lint-agent` · `make no-exec` | PASS — `accounts_test.go`: vòng đời ensure → quota.apply → suspend → unsuspend → remove, quota.report; params sai schema / home ngoài `/home/<user>` / shell ngoài enum → `invalid_params` / `path_outside_home` |
+| Job | `php artisan test tests/Feature/Platform/JobsTest.php` | PASS: 8 test — thành công (op_id `uuid:seq:1`, requested_by, tiến độ 100, audit `job.create`); lỗi tạm thời tự thử lại với op_id mới; hết lượt → failed; agent không kết nối = lỗi tạm thời; lỗi không thử lại → failed + thông báo; retry qua API cần Idempotency-Key, không chạy lại bước đã xong, replay trả response cũ + `Idempotent-Replayed`, cùng key khác request → 409; cancel queued / running (dừng trước bước kế), cancel lần hai 409; timeout → `timed_out`; phạm vi (ADMIN ngoài phạm vi, USER khác → 404); mọi endpoint admin/portal khớp OpenAPI |
+| Audit, thông báo, cài đặt, server, dashboard | `php artisan test tests/Feature/Platform/PlatformApiTest.php` | PASS: 8 test — UPDATE/DELETE audit bị DB chặn, chuỗi hash hợp lệ, sửa trực tiếp (bỏ trigger) bị `itso:audit-verify` phát hiện; lọc `prefix.*`, phạm vi ADMIN, CSV thêm `'` trước `= + - @`; 403 khi ghi → audit `denied`; thông báo chỉ của chính user, đọc một/đọc hết; cài đặt không trả secret (lưu mã hóa, không vào audit), 412, 422, 403 cho ADMIN, step-up hết hạn → 403; server local + `itso:server-local` (agent giả), phạm vi ADMIN, ETag/412, 409 trùng tên, agent mất liên lạc → `agent_connected=false` / `degraded`; dashboard theo phạm vi |
+| Ma trận quyền | `php artisan test tests/Feature/Rbac/MatrixTest.php` | PASS: 113 test — thêm 11 endpoint 3.4 × 4 nhân vật |
+| Contracts | `make contracts-check` · `make codegen-check` | PASS (không đổi contract) |
+| Pest toàn bộ | `make test-api` | PASS: 206 test, 1496 assertion |
+| Lint | `make lint-api` (pint + Larastan) · `make lint-agent` · `make no-exec` | PASS |
+
+**Test bị bỏ qua:** không.
+
+Ghi chú:
+
+- Helper `tests/Support/OpenApi.php`: YAML `{}` (schema rỗng) được parse thành mảng PHP rỗng; nay đổi thành `true` để validate được `SettingsGroup`/`DashboardSummary.counts`.
+- `make no-exec` báo nhầm chuỗi `"/bin/sh"` trong test Go (giá trị shell sai để kiểm validate); đổi sang `/usr/bin/zsh`, không nới luật kiểm.
+- Idempotency-Key dùng lại với request khác trả 409 `idempotency_key_reused` theo contract (prompt ghi 422). `/jobs/{id}/events` trả một bản chụp SSE (contract không có tham số `after`); luồng liên tục qua gateway ở Phase 11.
+
+### Acceptance Prompt 3.4
+
+- ✓ JobRunner nhiều bước, retry/cancel/timeout, job_logs; mock agent op account/quota theo schema
+- ✓ /jobs admin + portal (portal chỉ job của account mình); Idempotency-Key
+- ✓ Audit append-only + hash chain + CSV chống chèn công thức; audit `denied`
+- ✓ Thông báo in-app; /settings/{group} chỉ SA, không trả secret
+- ✓ /servers (server local seed từ cấu hình), /dashboard/summary
+
+## 2026-11-20 — Phase 3 / Prompt 3.3 — nhánh `phase-3`
+
+Môi trường: như 3.1.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (portal thêm `POST /auth/impersonation:accept`, `POST /auth/impersonation:end`; admin 220 / portal 103 operation) |
+| Ma trận quyền | `php artisan test tests/Feature/Rbac/MatrixTest.php` | PASS: 69 test — 17 endpoint × 4 nhân vật (SA, ADMIN trong phạm vi, ADMIN ngoài phạm vi, USER) + danh sách theo phạm vi. Ngoài phạm vi → 404, thiếu quyền → 403, USER gọi Admin API → 401 (GET) / 419 (ghi, không có phiên admin nên chặn ở CSRF) |
+| Users API | `php artisan test tests/Feature/Rbac/UsersApiTest.php` | PASS: 12 test — mọi endpoint users/roles/api-tokens khớp OpenAPI (200/201/204/404/409/412/422); token tạo qua API dùng được đúng scope; mời user 72 giờ; ≥1 SUPER_ADMIN; ETag/If-Match; khóa thu hồi phiên, mở khóa xóa bộ đếm, reset MFA; step-up hết hạn; gán phạm vi; giả danh (vé một lần, hết hạn 60 giây / 30 phút, chặn đổi mật khẩu/MFA, audit kèm người giả danh); audit che secret + hash chain; cursor + sort sai 422 |
+| Pest toàn bộ | `make test-api` | PASS: 146 test, 983 assertion |
+| Lint | `make lint-api` · `make docs-check` · web `tsc -b` | PASS (Larastan 0 lỗi) |
+
+**Test bị bỏ qua:** không.
+
+Ghi chú: Policies hiện thực bằng `App\Auth\Access` (truy vấn có phạm vi dùng chung cho list và chi tiết) + middleware `itso.perm`; model của 3.4/3.5 (job, audit, account, gói) dùng cùng lớp này khi có endpoint.
+
+### Acceptance Prompt 3.3
+
+- ✓ Seed vai trò/quyền, phạm vi ADMIN, USER chỉ thấy của mình (`Access::accounts`)
+- ✓ /users (lọc, tạo, sửa, khóa/mở, reset MFA, scopes), /roles, API token
+- ✓ Giả danh chỉ SA, có lý do, chỉ USER Portal đang hoạt động, impersonation_sessions, audit
+- ✓ Luôn còn ít nhất một SUPER_ADMIN; ADMIN chỉ quản lý USER Portal trong phạm vi
+- ✓ Ma trận quyền tự động
+
+## 2026-11-20 — Phase 3 / Prompt 3.2 — nhánh `phase-3`
+
+Môi trường: như 3.1 (PostgreSQL 16 + Redis 7 cục bộ).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (thêm header `X-ITSO-Realm`, scheme `adminSession`/`portalSession`) |
+| TOTP | `php artisan test tests/Unit/Auth` | PASS: 10 test — 6 vector RFC 6238 (SHA-1, 8 số), 10 vector HOTP RFC 4226, base32, cửa sổ ±1 bước, otpauth URI |
+| Auth (Feature) | `php artisan test tests/Feature/Auth` | PASS: 32 test. Mọi endpoint `/auth/*` kiểm response theo schema OpenAPI (200/204/401/409/422/429). Khóa sau 5 lần sai (429 + Retry-After, khóa tăng 1 → 2 phút, đúng mật khẩu xóa bộ đếm), khóa theo IP; sai realm = sai mật khẩu; CSRF thiếu/sai → 419 `csrf_mismatch` (cả khi đã đăng nhập); phiên admin không gọi được API portal và ngược lại (kể cả đổi tên cookie, đổi header realm); realm theo host; MFA enroll/confirm/verify, chặn dùng lại mã, mã khôi phục một lần, 429 sau 5 lần sai; SA chưa bật MFA bị chặn; step-up hết hạn sau 10 phút; danh sách/thu hồi phiên; đổi/quên/đặt lại mật khẩu (token một lần, hết hạn 60 phút); IP allowlist; API token (sai, hết hạn, CIDR, scope, user portal/khóa) |
+| Pest toàn bộ | `make test-api` | PASS: 65 test, 431 assertion |
+| Thử thật qua HTTP | `php artisan serve` + `curl` (csrf → login SA → me → admin/system/version) | PASS: cookie `XSRF-TOKEN-ADMIN`, `itso_admin_session` mã hóa; SA chưa bật MFA nhận `403 mfa_required` |
+| Lint | `make lint-api` · `make docs-check` · `make structure` | PASS (Pint, Larastan 0 lỗi) |
+
+**Test bị bỏ qua:** không.
+
+Phát hiện và sửa trong lúc test:
+
+- `ResolveRealm` (đặt tên cookie phiên theo realm) bị Laravel xếp sau `StartSession` theo middleware priority → request admin ngay sau một request portal đọc nhầm cookie portal. Thêm `ResolveRealm` vào priority trước `EncryptCookies`; test "phiên admin và portal xen kẽ" bắt được lỗi này.
+- Test giả lập trình duyệt (`tests/Support/Spa.php`) dựng lại session store và guard mỗi request để không dùng trạng thái session trong bộ nhớ của test.
+
+### Acceptance Prompt 3.2
+
+- ✓ Đăng nhập theo realm, khóa lũy tiến, argon2id, logout, me
+- ✓ MFA TOTP + mã khôi phục, SUPER_ADMIN bắt buộc MFA, step-up
+- ✓ Phiên (liệt kê, thu hồi), đổi/quên/đặt lại mật khẩu
+- ✓ IP allowlist realm admin, guard API token
+- ✓ Pest khớp OpenAPI; vector RFC 6238; khóa sau N lần sai; tách realm; CSRF 419
+
+## 2026-11-20 — Phase 3 / Prompt 3.1 — nhánh `phase-3`
+
+Môi trường: PHP 8.3.6, Laravel 13, Pest 4; PostgreSQL 16 (cluster tạm `initdb`, database `itso` và `itso_test`) + Redis 7 chạy cục bộ.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Đặc tả DB + migration | `make db-verify` | PASS: 41 test SQL; `2026_11_20_000003_phase_3_schema.php` khớp đặc tả; áp lần lượt SQL Phase 3 → 11 vào DB rỗng cho `pg_dump --schema-only` giống hệt itso.sql + extras.sql. Đã thử cả chế độ `DB_VERIFY_URL` (như CI) |
+| Pest | `make test-api` | PASS: 23 test (9 test schema mới + 14 cũ) — đủ 26 bảng Phase 3, partition mặc định audit; 3 vai trò đúng realm, CHECK chặn vai trò lạ; uuid do DB sinh có ngay sau create; realm bất biến; vai trò khác realm bị chặn; email citext duy nhất; chủ account phải là USER portal, username/UID sai bị chặn, terminated thiếu purge_after bị chặn; phiên bản gói bất biến, retention < 30 ngày bị chặn, cột `text[]` đọc/ghi đúng; audit append-only và chuỗi hash nối tiếp; lịch sử vòng đời append-only; job sai trạng thái/tiến độ bị chặn |
+| Migrate thật | `php artisan migrate:fresh --seed`, `migrate:rollback`, `migrate` (DB `itso`) | PASS |
+| Lint | `make lint-api` · `make docs-check` · `make structure` · `python3 scripts/check-ci.py` | PASS (Larastan 0 lỗi) |
+
+**Test bị bỏ qua:** không.
+
+### Acceptance Prompt 3.1
+
+- ✓ Migrations 26 bảng Phase 3 + phần extras.sql tương ứng (purge guard để Phase 8 vì cần `purge_records`)
+- ✓ Model, cast, factory; Pest chạy trên PostgreSQL 16 (D-59)
+- ✓ So khớp schema migrate với đặc tả; test trigger/CHECK
+
 ## 2026-11-20 — Phase 2 / Prompt 2.8 — nhánh `phase-2` (kiểm tra tổng)
 
 Môi trường: như 2.1; PostgreSQL 16 (cluster tạm `initdb`) và Redis 7 chạy cục bộ cho `test-api-pg`.

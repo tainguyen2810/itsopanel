@@ -81,12 +81,7 @@ else
   run test-e2e       make -s test-e2e
 fi
 run lint-api         make -s lint-api
-run test-api         make -s test-api
-if tcp_open "${DB_HOST:-127.0.0.1}" "${DB_PORT:-5432}"; then
-  run test-api-pg    make -s test-api-pg
-else
-  skip test-api-pg   "PostgreSQL chưa chạy ở ${DB_HOST:-127.0.0.1}:${DB_PORT:-5432} (make services-up)"
-fi
+run test-api         make -s test-api   # PostgreSQL bắt buộc (D-59)
 run no-exec          make -s no-exec
 run lint-agent       make -s lint-agent
 if have staticcheck; then

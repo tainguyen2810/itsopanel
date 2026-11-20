@@ -28,6 +28,66 @@ Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so v
 
 **Không có:** Public Provisioning API, HMAC integration với website bán hàng, webhook cho billing, endpoint order/invoice/payment.
 
+## 1a. Xác thực (D-58, hiện thực Prompt 3.2)
+
+| Mục | Cách làm |
+|---|---|
+| Realm | `/api/v1/admin/*` → admin, `/api/v1/portal/*` → portal. `/api/v1/auth/*`: host khớp `ITSO_ADMIN_HOST` / `ITSO_PORTAL_HOST` (production hai origin), ngược lại header `X-ITSO-Realm: admin\|portal` (một origin: dev, demo), mặc định portal. User chỉ được tìm trong đúng realm nên header giả mạo không mở được tài khoản realm khác |
+| Phiên | Cookie `itso_admin_session` / `itso_portal_session` (HttpOnly, SameSite=Lax), driver `itso` ghi bảng `sessions` kèm `realm`, `mfa_verified_at`. Hai SPA chung origin không ghi đè phiên của nhau. `remember=false` → cookie hết khi đóng trình duyệt |
+| CSRF | `GET /auth/csrf` gắn cookie `XSRF-TOKEN-ADMIN` / `XSRF-TOKEN-PORTAL`; mọi request ghi gửi lại giá trị cookie qua header `X-XSRF-TOKEN`. Thiếu hoặc sai → `419 csrf_mismatch` |
+| Đăng nhập | argon2id. Sai email, sai mật khẩu, sai realm, tài khoản khóa: cùng một lỗi `422` (`errors.email`). Khóa lũy tiến theo (realm, email) từ lần sai thứ 5 và theo IP từ lần thứ 20: khóa 1, 2, 4… phút (tối đa 60), trả `429 rate_limited` + `Retry-After` |
+| MFA | TOTP RFC 6238 (SHA-1, 6 số, 30 giây, lệch ±1 bước, chặn dùng lại bước đã dùng) + 10 mã khôi phục dùng một lần (băm argon2id). `enroll` trả secret một lần, `confirm` mới lưu (secret mã hóa APP_KEY). User đã bật TOTP phải `mfa/verify` sau login, nếu không mọi API khác trả `403 mfa_required`. SUPER_ADMIN chưa bật MFA: login trả `mfa_required: true, mfa_methods: []`, chỉ còn `me`, đăng ký TOTP, đăng xuất. Nhập sai quá 5 lần/phút → `429` |
+| Step-up | `POST /auth/step-up` đặt mốc xác thực lại; route nhạy cảm gắn middleware `itso.step-up` yêu cầu mốc trong 10 phút, ngược lại `403 mfa_step_up_required`. Token API không dùng được thao tác nhạy cảm |
+| Phiên của tôi | `GET /auth/sessions` (realm hiện tại, `uuid` là băm của session id, không lộ id thật), `DELETE /auth/sessions/{id}` thu hồi phiên khác (phiên hiện tại → `409`, dùng logout) |
+| Mật khẩu | `password:change` thu hồi các phiên khác. `password:forgot` luôn `204`, gửi mail (driver `log` ở dev) link `{ITSO_PORTAL_URL\|ITSO_ADMIN_URL}/reset-password?token=…&email=…`; token 64 ký tự, chỉ lưu SHA-256 trong cache, dùng một lần, hết hạn 60 phút; đặt lại xong thu hồi mọi phiên |
+| IP allowlist | Bảng `ip_allowlist`: scope `admin` áp cho realm admin (cả `/auth/*` khi realm admin), scope `api` áp thêm cho request bằng token. Danh sách trống = không giới hạn. Ngoài danh sách → `403 ip_not_allowed` |
+| API token | `Authorization: Bearer itso_…` chỉ cho realm admin; lưu SHA-256, kiểm `expires_at`, `allowed_cidrs`, user admin còn active; không cần CSRF/MFA. Route kiểm scope bằng `itso.scope:<nhóm>:read\|write` (`write` bao gồm `read`). Tạo/thu hồi token qua `/admin/api-tokens` (Prompt 3.3) |
+
+## 1b. Phân quyền (Prompt 3.3)
+
+| Mục | Cách làm |
+|---|---|
+| Quyền | Danh mục ở `apps/api/app/Auth/Permissions.php` (seed `PermissionSeeder`): SUPER_ADMIN `*`; ADMIN `users.read/write`, `roles.read`, `servers.read`, `packages.read`, `accounts.read/write`, `jobs.read/write`, `audit.read`, `websites.*`, `databases.*`, `backups.read`; USER `own.*`. Route gắn `itso.perm:<quyền>`; thiếu → `403 forbidden` |
+| Phạm vi ADMIN | `user_scopes` (server \| hosting_account). ADMIN thấy account trên server trong phạm vi hoặc account được giao, thấy USER Portal sở hữu các account đó hoặc do mình tạo. Ngoài phạm vi → `404` (không lộ sự tồn tại). USER chỉ thấy tài nguyên `owner_user_id` của mình |
+| Token API | Ngoài quyền của user, token phải có scope tương ứng: `users.read` → `users:read`, hành động khác → `users:write` |
+| Users | ADMIN chỉ tạo/sửa/khóa USER Portal trong phạm vi; đổi vai trò và gán phạm vi chỉ SUPER_ADMIN; luôn còn ít nhất một SUPER_ADMIN đang hoạt động (`409`); không tự khóa. `PATCH` trả `ETag`, gửi `If-Match` sai → `412`. Mời user (`send_invite`) gửi link đặt mật khẩu 72 giờ. Khóa → thu hồi mọi phiên; mở khóa → xóa bộ đếm đăng nhập sai; reset MFA (step-up) → xóa TOTP + mã khôi phục + phiên |
+| Giả danh | D-61: vé một lần 60 giây → `portal_url` (`{ITSO_PORTAL_URL}/impersonate?ticket=…`) → `POST /auth/impersonation:accept`; phiên 30 phút; `Me.impersonating` = người giả danh |
+| Ma trận kiểm thử | `apps/api/tests/Feature/Rbac/MatrixTest.php`: mỗi endpoint × SA / ADMIN trong phạm vi / ADMIN ngoài phạm vi / USER; Prompt 3.4–3.5 thêm dòng cho endpoint mới |
+
+## 1c. Job, audit, thông báo, cài đặt, server (Prompt 3.4)
+
+| Mục | Cách làm |
+|---|---|
+| Job (D-60) | `JobDispatcher` tạo `jobs` + `job_steps` (mỗi bước một op agent có kiểu, params không chứa secret) → queue Redis (`RunJob`, sau commit) → `JobRunner`. `op_id = job_uuid:seq:attempt`; agent cache theo op_id nên gửi lại không chạy hai lần. Lỗi `retryable` / agent không kết nối → xếp hàng lại, backoff 5·2^(n-1) giây (tối đa 300) tới `max_attempts`; lỗi khác → `failed` + thông báo in-app cho người yêu cầu. Hủy: `queued` → `cancelled` ngay, `running` → `cancel_requested`, dừng trước bước kế. Quá `timeout_sec` → `timed_out`. Hook theo loại job: `config('itso.job_handlers')` (`JobHandler`) |
+| /jobs | Admin (`jobs.read` / `jobs.write`) và Portal (job của account mình hoặc mình tạo): list (`filter[state]`, `q`, cursor), chi tiết (ETag), `/logs` (cursor theo seq), `/events` (`text/event-stream`, một bản chụp Job; luồng liên tục qua gateway ở Phase 11, client polling 2 giây), `:cancel` (409 `invalid_state_transition` nếu đã xong), `:retry` (202, chạy lại từ bước chưa xong) |
+| Idempotency-Key | Middleware `itso.idempotent` cho POST tạo job: header UUID bắt buộc (422); lưu 24 giờ theo (user, key); cùng request → trả lại response cũ + `Idempotent-Replayed: true`; khác request → `409 idempotency_key_reused` (theo contract, thay cho 422 trong prompt) |
+| Audit | `AuditLogger` che secret; DB chặn UPDATE/DELETE, trigger tính hash chain; `php artisan itso:audit-verify` kiểm chuỗi. Middleware `AuditDenied`: thao tác ghi bị 403 → bản ghi `access.denied`, `result = denied`. `/audit-logs` (`audit.read`, ADMIN chỉ thấy hành động của mình và tài nguyên trong phạm vi; `filter[action]` hỗ trợ `prefix.*`, `filter[actor]`) và `/audit-logs/export` (`audit.export`, CSV UTF-8 BOM, ô bắt đầu bằng `= + - @ tab CR` thêm `'`) |
+| Thông báo | In-app, chỉ của chính user (admin và portal): list, `{id}:read`, `:read-all` (204). Email/Telegram: Phase 11 |
+| Cài đặt | `/admin/settings/{group}` (`general`, `security`, `smtp`, `backup`, `updates`; định nghĩa ở `config/itso_settings.php`): chỉ SA (`settings.read/write`), PATCH cần step-up; secret (mật khẩu SMTP) lưu mã hóa, GET chỉ trả `<key>_set`; ETag/If-Match → 412; khóa lạ → 422 |
+| Server | `/admin/servers` list/chi tiết/PATCH (`servers.read/write`, ADMIN chỉ server trong phạm vi): `name`, `role_tags`, `accepting_new_accounts`, mỗi thay đổi tăng `spec_version`; ETag/If-Match. Server local tạo từ cấu hình (`ITSO_LOCAL_SERVER*`, `LocalServerSeeder`), dữ kiện observed lấy bằng `php artisan itso:server-local` (op `system.ping` + `system.info`); `agent_connected` = agent liên lạc trong `ITSO_AGENT_CONNECTED_WINDOW` giây |
+| Dashboard | `/admin/dashboard/summary`: đếm server/account/user/gói theo phạm vi, phân bổ gói, job đang chạy; `alerts_firing` và `security_events_24h` = 0 tới Phase 11/7 |
+
+## 1d. Gói, hosting account, Portal (Prompt 3.5)
+
+| Mục | Cách làm |
+|---|---|
+| Gói | `/admin/hosting-packages` (`packages.read`, ghi `packages.write` = SA): tạo kèm phiên bản 1; PATCH `limits` khác phiên bản hiện tại → phiên bản mới (bất biến, trigger DB chặn sửa/xóa), account giữ phiên bản cũ; ETag/If-Match; DELETE khi còn account → 409. `/versions` liệt kê kèm số account; `/versions/{n}:migrate-accounts` (Idempotency-Key) chuyển account active/suspended từ phiên bản n sang phiên bản hiện tại bằng một job (mỗi account một bước `quota.apply`) |
+| Provisioning (D-49, D-62) | `App\Domain\Hosting\ProvisioningService` là lớp duy nhất đổi account. Tạo: kiểm username (regex + tên hệ thống), chủ là USER Portal đang hoạt động, gói đang bán, server trong phạm vi và nhận account mới (`422 server_not_accepting`), trùng username trên server → 409; cấp UID 20000–59999 theo server (`uid_allocations`, UID đã nhả chỉ dùng lại sau 90 ngày); job `account.ensure` + `quota.apply` → `active`, lỗi → `failed`, retry job → `active`. `primary_domain` nhận nhưng website tạo ở Phase 5 |
+| Vòng đời | `:suspend` (lý do ≥ 5 ký tự), `:unsuspend` (cũng là khôi phục account `terminated` trước `purge_after`), `:terminate` (step-up, `accounts.terminate`, `confirm_username` sai → 422 `confirmation_mismatch`; `purge_after = terminated_at + retention_days_after_terminate` ≥ 30 ngày), `:change-package`. Chuyển không hợp lệ → 409 `invalid_state_transition`; account đang có job → 409 `resource_locked`. `:schedule-purge`, `:confirm-purge` → 501 `purge_not_available` (Phase 8); `:migrate` → 501 `migration_not_available` (Phase 9). PATCH: `owner_user_uuid`, `limits_override` (job `quota.apply`), `legal_hold` (chỉ SA) |
+| Quota | `QuotaService`: giới hạn hiệu lực = phiên bản gói + `limits_override`; mức dùng = đếm phía panel (website/database/FTP/cron, bảng có từ Phase 5–6) + số đo gần nhất (`php artisan itso:usage-refresh` gọi `quota.report`, lưu `observed_facts.usage`; Phase 4 chuyển sang `account_usage_snapshots`). Đổi gói/giảm override/chuyển phiên bản dưới mức đang dùng, hoặc `ensureCanAdd()` vượt giới hạn → 422 `quota_exceeded` |
+| Đọc | `/features` (D-57), `/usage`, `/lifecycle-events`; `/placement/suggestions?package=` xếp hạng server trong phạm vi (gợi ý, không tự cấp) |
+| Portal | `/portal/hosting-accounts` (+ chi tiết, `/features`, `/usage`) chỉ account `owner_user_id` của mình, khác → 404; `/portal/overview` (account + cảnh báo dung lượng/khóa/chấm dứt, 5 job gần nhất, số thông báo chưa đọc); `/portal/profile` GET/PATCH (`name`, `locale`, `timezone`, ETag/If-Match); `/portal/jobs`, `/portal/notifications` (3.4) |
+
+## 1e. Chạy với giao diện thật (Prompt 3.6)
+
+| Mục | Cách làm |
+|---|---|
+| Client | `apps/web/src/api/realm-http.ts`: mọi request gửi `X-ITSO-Realm`; request ghi gửi `X-XSRF-TOKEN` (lấy từ `GET /auth/csrf` nếu chưa có cookie), nhận 419 thì lấy CSRF mới và thử lại một lần; 401 ngoài `/auth/*` → phiên hết, về trang đăng nhập đúng realm |
+| Phiên | `/auth/me` quyết định trạng thái: chưa đăng nhập → `/login`; chưa xác minh MFA → `/login/mfa`; SUPER_ADMIN chưa bật MFA → chỉ vào `/profile`. Bản demo (MSW) và Vitest vẫn dùng persona |
+| Chưa có ở bản này | Route `/api/v1/*` không khớp (module của Phase sau) → 404 `type` `…/errors/not_available`, `code` `not_available`; giao diện hiện "Chưa có ở bản này" cho 404 `not_available` và 501 |
+| Reconcile | `php artisan itso:reconcile [--account=<username>]` tạo job `hosting_account.reconcile` (đẩy lại `account.ensure` + `quota.apply` theo trạng thái mong muốn) để trạng thái observed khớp desired; `make dev` tự chạy sau khi agent sẵn sàng |
+| Dữ liệu demo | `php artisan db:seed --class=DemoSeeder` (từ chối chạy ở production): người dùng, gói, account mẫu; chi tiết ở `docs/runbooks/phase-3-demo.md` |
+
 ## 2. Hosting Provisioning Service (lớp nội bộ)
 
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.

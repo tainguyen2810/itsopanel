@@ -19,6 +19,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/impersonation:accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Nhận phiên giả danh từ Admin (vé dùng một lần)
+         * @description Vé do `POST /api/v1/admin/users/{id}:impersonate` tạo, hết hạn sau 60 giây, dùng một lần. Phiên giả danh không đổi được mật khẩu/MFA và tự hết hạn theo `expires_at`.
+         */
+        post: operations["acceptImpersonation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/impersonation:end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kết thúc giả danh */
+        post: operations["endImpersonation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -30,7 +67,7 @@ export interface paths {
         put?: never;
         /**
          * Đăng nhập (realm theo origin)
-         * @description Origin admin chỉ chấp nhận user realm `admin`, origin portal chỉ chấp nhận realm `portal`. Sai realm trả cùng lỗi như sai mật khẩu.
+         * @description Origin admin chỉ chấp nhận user realm `admin`, origin portal chỉ chấp nhận realm `portal` (một origin: theo header `X-ITSO-Realm`, D-58). Sai realm trả cùng lỗi như sai mật khẩu.
          */
         post: operations["login"];
         delete?: never;
@@ -1504,7 +1541,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -1518,16 +1555,6 @@ export interface components {
             errors?: {
                 [key: string]: string[];
             };
-        };
-        LoginRequest: {
-            /** Format: email */
-            email: string;
-            password: string;
-            remember?: boolean;
-        };
-        LoginResult: {
-            mfa_required: boolean;
-            mfa_methods: ("totp" | "recovery")[];
         };
         User: {
             /** Format: uuid */
@@ -1571,6 +1598,16 @@ export interface components {
             /** Format: date-time */
             mfa_verified_at: string | null;
             impersonating: components["schemas"]["UserRef"] | null;
+        };
+        LoginRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+            remember?: boolean;
+        };
+        LoginResult: {
+            mfa_required: boolean;
+            mfa_methods: ("totp" | "recovery")[];
         };
         MfaVerifyRequest: {
             code: string;
@@ -2521,6 +2558,8 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+        Realm: "admin" | "portal";
         /** @description Cursor trang tiếp theo. */
         Cursor: string;
         /** @description Số bản ghi mỗi trang. */
@@ -2564,7 +2603,10 @@ export interface operations {
     getCsrfCookie: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2580,10 +2622,107 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    acceptImpersonation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ticket": "q7Yb2kV9xW4mN8pR3tL6sD1fG5hJ0aZcE2uI7oP9"
+                 *     }
+                 */
+                "application/json": {
+                    ticket: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "user": {
+                     *           "uuid": "01938a01-0003-7000-8000-000001000003",
+                     *           "realm": "portal",
+                     *           "name": "Công ty An Phát",
+                     *           "email": "it@anphat.vn",
+                     *           "role": "USER",
+                     *           "status": "active",
+                     *           "mfa_enabled": true,
+                     *           "locale": "vi",
+                     *           "timezone": "Asia/Ho_Chi_Minh",
+                     *           "last_login_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         "permissions": [
+                     *           "own.*"
+                     *         ],
+                     *         "scopes": [],
+                     *         "mfa_verified_at": "2026-11-20T08:15:00+07:00",
+                     *         "impersonating": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["Me"];
+                    };
+                };
+            };
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    endImpersonation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công, không có nội dung */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     login: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2629,7 +2768,10 @@ export interface operations {
     logout: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2652,7 +2794,10 @@ export interface operations {
     getMe: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2703,7 +2848,10 @@ export interface operations {
     confirmTotp: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2736,7 +2884,10 @@ export interface operations {
     enrollTotp: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2775,7 +2926,10 @@ export interface operations {
     verifyMfa: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2835,7 +2989,10 @@ export interface operations {
     changePassword: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2868,7 +3025,10 @@ export interface operations {
     forgotPassword: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2900,7 +3060,10 @@ export interface operations {
     resetPassword: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2945,7 +3108,10 @@ export interface operations {
                 /** @description Tìm kiếm tự do. */
                 q?: components["parameters"]["Q"];
             };
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -2997,7 +3163,10 @@ export interface operations {
     revokeSession: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path: {
                 /** @description UUID tài nguyên. */
                 id: components["parameters"]["Id"];
@@ -3023,7 +3192,10 @@ export interface operations {
     stepUp: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
             path?: never;
             cookie?: never;
         };

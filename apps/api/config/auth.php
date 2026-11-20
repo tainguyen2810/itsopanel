@@ -42,6 +42,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // Token nội bộ (App\\Auth\\ApiTokenAuth), đăng ký ở AppServiceProvider.
+        'token' => [
+            'driver' => 'itso-token',
+            'provider' => 'users',
+        ],
     ],
 
     /*

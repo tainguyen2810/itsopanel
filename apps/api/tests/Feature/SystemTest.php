@@ -1,16 +1,9 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\OpenApi;
-
-function assertMatchesContract(string $file, string $method, string $path, int $status, $response): void
-{
-    ['schema' => $schema, 'contentType' => $ct, 'file' => $ctx] = OpenApi::responseSchema($file, $method, $path, $status);
-    expect($response->status())->toBe($status)
-        ->and($response->headers->get('Content-Type'))->toStartWith($ct);
-    $error = OpenApi::validate($ctx, $schema, $response->json());
-    expect($error)->toBeNull();
-}
+use Tests\Support\Spa;
 
 it('GET /api/v1/system/health khớp schema getHealth (admin và portal)', function () {
     $res = $this->getJson('/api/v1/system/health');
@@ -21,7 +14,7 @@ it('GET /api/v1/system/health khớp schema getHealth (admin và portal)', funct
 });
 
 it('GET /api/v1/admin/system/version khớp schema getSystemVersion', function () {
-    $res = $this->getJson('/api/v1/admin/system/version');
+    $res = adminSpa($this)->get('/api/v1/admin/system/version');
     assertMatchesContract('itso-admin-v1.yaml', 'get', '/api/v1/admin/system/version', 200, $res);
     expect($res->json('data.version'))->toBe('0.1.0-alpha');
 });
@@ -40,26 +33,26 @@ it('GET /api/v1/admin/system/status: agent mock trả pong → reachable, khớp
     }]);
     config(['itso.agent.socket' => null, 'itso.agent.url' => 'http://127.0.0.1:7810']);
 
-    $res = $this->getJson('/api/v1/admin/system/status');
+    $res = adminSpa($this)->get('/api/v1/admin/system/status');
     assertMatchesContract('itso-admin-v1.yaml', 'get', '/api/v1/admin/system/status', 200, $res);
     expect($res->json('data.agent'))->toMatchArray(['reachable' => true, 'mode' => 'mock', 'version' => '0.1.0-mock'])
         ->and($res->json('data.database.ok'))->toBeTrue();
 });
 
 it('GET /api/v1/admin/system/status: agent không chạy → reachable=false, api=degraded', function () {
-    $res = $this->getJson('/api/v1/admin/system/status');
+    $res = adminSpa($this)->get('/api/v1/admin/system/status');
     assertMatchesContract('itso-admin-v1.yaml', 'get', '/api/v1/admin/system/status', 200, $res);
     expect($res->json('data.agent.reachable'))->toBeFalse()
         ->and($res->json('data.api'))->toBe('degraded')
         ->and($res->json('data.agent.error'))->toContain('AgentUnavailable');
 });
 
-it('route không tồn tại trả 404 application/problem+json đúng schema Problem', function () {
+it('route không tồn tại trả 404 application/problem+json đúng schema Problem (mã not_available: module chưa có ở bản này)', function () {
     $res = $this->getJson('/api/v1/khong-ton-tai');
     $res->assertNotFound();
     expect($res->headers->get('Content-Type'))->toBe('application/problem+json')
         ->and($res->json())->toMatchArray([
-            'type' => 'https://docs.itso.local/errors/not_found', 'status' => 404, 'code' => 'not_found',
+            'type' => 'https://docs.itso.local/errors/not_available', 'status' => 404, 'code' => 'not_found',
             'instance' => '/api/v1/khong-ton-tai',
         ]);
     expect(OpenApi::validate('common.yaml', ['$ref' => '#/components/schemas/Problem'], $res->json()))->toBeNull();
@@ -84,10 +77,11 @@ it('lỗi không lường trước trả 500 problem+json, không lộ chi tiế
         ->and($res->getContent())->not->toContain('bí mật');
 });
 
-it('route admin/system không đăng ký ngoài local/testing', function () {
-    $routes = file_get_contents(base_path('routes/api.php'));
-    expect($routes)->toContain("app()->environment(config('itso.dev_routes_envs'))")
-        ->and(config('itso.dev_routes_envs'))->toBe(['local', 'testing']);
+it('route admin/system cần đăng nhập realm admin (không còn mở ở local/testing)', function () {
+    $this->getJson('/api/v1/admin/system/version')->assertStatus(401)->assertJsonPath('code', 'unauthenticated');
+    $portal = $this->spa('portal');
+    $portal->login(User::factory()->portalUser()->create())->assertOk();
+    $portal->get('/api/v1/admin/system/version')->assertStatus(401);
 });
 
 it('bộ kiểm contract bắt được dữ liệu sai (tự kiểm helper)', function () {
@@ -100,3 +94,12 @@ it('mặc định không bật CORS (web gọi API cùng origin)', function () {
     $res = $this->getJson('/api/v1/system/health', ['Origin' => 'https://evil.example']);
     expect($res->headers->has('Access-Control-Allow-Origin'))->toBeFalse();
 });
+
+/** Phiên admin (ADMIN, chưa bật MFA) đã đăng nhập. */
+function adminSpa($test): Spa
+{
+    $spa = $test->spa('admin');
+    $spa->login(User::factory()->admin()->create())->assertOk();
+
+    return $spa;
+}

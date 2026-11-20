@@ -98,6 +98,7 @@ Khi đó trong `apps/api/.env` đặt `ITSO_AGENT_SOCKET=` (rỗng) và `ITSO_AG
 | Fuzz parser envelope (CI chạy 30 giây) | `make test-fuzz` hoặc `make test-fuzz FUZZTIME=2m` |
 | Build web + mock agent | `make build` |
 | Chỉ test một phần | `make test-web`, `make test-api`, `make test-agent` |
+| Pest (từ Phase 3) | `make test-api` cần PostgreSQL 16 ở `127.0.0.1:5432` với database `itso_test` (user `itso`): `make services-up` hoặc cluster cục bộ (D-59) |
 
 ## 6. Biến môi trường dev
 
