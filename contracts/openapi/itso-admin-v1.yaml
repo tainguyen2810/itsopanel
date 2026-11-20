@@ -4026,6 +4026,22 @@ paths:
                   records_count: 3
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a13-0002-7000-8000-000013000002
+                  name: binhminh.vn
+                  provider: manual
+                  hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  records_count: 4
+                  created_at: '2026-11-13T10:20:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a13-0003-7000-8000-000013000003
+                  name: itso.vn
+                  provider: powerdns
+                  hosting_account: null
+                  records_count: 4
+                  created_at: '2026-11-12T09:10:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50

@@ -26,6 +26,7 @@ const ID_BY_SEGMENT: Record<string, string> = {
   'alert-rules': first('alert_rules'),
   zones: first('dns_zones'),
   'cron-jobs': first('cron'),
+  'git-repositories': first('git_repositories'),
 };
 const OTHER: Record<string, string> = {
   group: 'general',
@@ -35,6 +36,10 @@ const OTHER: Record<string, string> = {
 const QUERY: Record<string, string> = {
   '/api/v1/admin/metrics/servers/{id}': '?metric=cpu_pct&range=24h',
   '/api/v1/admin/metrics/hosting-accounts/{id}': '?metric=ram_pct&range=7d',
+  '/api/v1/admin/hosting-accounts/{id}/files': '?path=.',
+  '/api/v1/admin/hosting-accounts/{id}/files/content': '?path=sites/anphat.vn/public/index.php',
+  '/api/v1/admin/hosting-accounts/{id}/files/download': '?path=sites/anphat.vn/public/index.php',
+  '/api/v1/admin/websites/{id}/logs': '?kind=access',
 };
 
 function urlFor(path: string): string {

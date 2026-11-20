@@ -780,6 +780,14 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
                           "status": "expiring" if exp.startswith("2026-12") else "valid", **ts()})
         w["domains_count"] = sum(1 for d in DOMAINS if d["website"]["uuid"] == w["uuid"])
 
+    # ---- thêm zone DNS: một zone của account mới, một zone nội bộ không gắn account
+    bm = next(a for a in ACCOUNTS if a["username"] == "binhminh")
+    DNS_ZONES.append({"uuid": u("dns_zone", 2), "name": "binhminh.vn", "provider": "manual",
+                      "hosting_account": {"uuid": bm["uuid"], "username": "binhminh"}, "records_count": 4,
+                      **ts(_DAY[1], T1)})
+    DNS_ZONES.append({"uuid": u("dns_zone", 3), "name": "itso.vn", "provider": "powerdns", "hosting_account": None,
+                      "records_count": 4, **ts(_DAY[0], T1)})
+
     # ---- job, audit, sự kiện bảo mật, thông báo
     job_specs = [
         ("hosting_account.create", "running", 40, "hosting_account", ACCOUNTS[-1]["uuid"], 1,
@@ -878,8 +886,10 @@ def _recompute() -> None:
     for v in PACKAGE_VERSIONS:
         v["account_count"] = sum(1 for a in live if a["package"]["uuid"] == v["package_uuid"]
                                  and a["package"]["version"] == v["version"])
-    for z in DNS_ZONES:
-        z["records_count"] = len(DNS_RECORDS)
+    # Zone đầu dùng DNS_RECORDS; zone thêm ở Phase 2 có 4 record mặc định (A @, CNAME www, MX, TXT SPF)
+    # do API giả lập sinh ra khi đọc lần đầu.
+    for i, z in enumerate(DNS_ZONES):
+        z["records_count"] = len(DNS_RECORDS) if i == 0 else 4
     CAPACITY["account_count"] = SERVERS[0]["account_count"]
 
     DASHBOARD["counts"] = {"servers": len(SERVERS), "hosting_accounts": len(live), "websites": len(WEBSITES),

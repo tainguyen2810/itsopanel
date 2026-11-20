@@ -193,6 +193,15 @@ export const ADMIN_LISTS: ListSpec[] = [
     search: ['website.primary_domain'],
   },
   {
+    path: '/api/v1/admin/git-repositories',
+    detail: '/api/v1/admin/git-repositories/{id}',
+    rows: d('git_repositories'),
+    scope: 'account',
+    search: ['repo_url', 'website.primary_domain'],
+    filters: { hosting_account: 'hosting_account.uuid' },
+    what: 'kho Git',
+  },
+  {
     path: '/api/v1/admin/alert-rules',
     detail: '/api/v1/admin/alert-rules/{id}',
     rows: d('alert_rules'),
@@ -329,18 +338,6 @@ export function registerAdminLists() {
     if (!j) return problem(404, 'not_found', 'Không tìm thấy job');
     return page(ctx, logsOf(j));
   });
-  on('get', '/api/v1/admin/websites/{id}/domains', (ctx) =>
-    page(
-      ctx,
-      ctx.db.data.domains.filter((x) => x.website.uuid === ctx.params.id),
-    ),
-  );
-  on('get', '/api/v1/admin/dns/zones/{id}/records', (ctx) =>
-    page(ctx, ctx.db.data.dns_records as Row[]),
-  );
-  on('get', '/api/v1/admin/cron-jobs/{id}/runs', (ctx) =>
-    page(ctx, ctx.db.data.cron_runs as Row[]),
-  );
   on('get', '/api/v1/admin/users/{id}/scopes', (ctx) => {
     const minh = ctx.db.data.users.find((u) => u.role === 'ADMIN');
     return page(ctx, ctx.params.id === minh?.uuid ? (ctx.db.data.scopes as Row[]) : []);
