@@ -71,6 +71,8 @@ DEFS = {
 A = d("Account")
 OPS = [
     # -- system
+    ("system.ping", "system", "low", True, 1, "root", 5, obj({}),
+     obj({"pong": {"const": True}, "agent_version": s(), "mode": enum("mock", "real")})),
     ("system.info", "system", "low", True, 4, "root", 10, obj({}), obj({"os": s(), "kernel": s(), "hostname": s(), "uptime_sec": i(), "cpu_cores": i(), "ram_mb": i()})),
     ("service.status", "system", "low", True, 4, "root", 10, obj({"names": arr(d("ServiceName"), minItems=1)}),
      obj({"services": arr(obj({"name": s(), "active": b(), "enabled": b(), "version": {"type": ["string", "null"]}}))})),

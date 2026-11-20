@@ -391,6 +391,14 @@ def admin_paths(api: Api):
             ok=ref("DashboardSummary"), ok_example=one(D.DASHBOARD))
     api.add("get", "/system/version", "getSystemVersion", "Phiên bản panel", "System", ok=ref("SystemVersion"),
             ok_example=one({"version": "0.1.0-alpha", "commit": "8793c63", "agent_min_version": "0.1.0", "update_available": None}))
+    api.add("get", "/system/status", "getSystemStatus", "Tình trạng API, PostgreSQL, Redis, agent", "System",
+            ok=ref("SystemStatus"),
+            ok_example=one({"api": "ok", "database": {"ok": True, "latency_ms": 1.8, "error": None},
+                            "redis": {"ok": True, "latency_ms": 0.4, "error": None},
+                            "agent": {"reachable": True, "mode": "mock", "version": "0.1.0-mock", "latency_ms": 2.1,
+                                      "error": None},
+                            "checked_at": D.T2}),
+            desc="Agent được gọi bằng op `system.ping`. Trước khi có xác thực (Phase 3), route chỉ đăng ký khi APP_ENV=local/testing.")
     # -- servers
     api.crud("/servers", "server", ref("Server"), "Servers", D.SERVERS, ops="lru", update_body=ref("ServerUpdate"),
              update_example={"accepting_new_accounts": False})

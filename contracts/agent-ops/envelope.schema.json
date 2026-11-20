@@ -21,6 +21,7 @@
     "op": {
       "type": "string",
       "enum": [
+        "system.ping",
         "system.info",
         "service.status",
         "service.control",
@@ -155,6 +156,25 @@
     }
   },
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "system.ping"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/system.ping.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
     {
       "if": {
         "properties": {

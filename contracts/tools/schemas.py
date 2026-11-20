@@ -455,5 +455,12 @@ ADMIN = {
                      "job_uuid": nullable(UUID), "result": enum("success", "failure", "denied"), "changes": nullable(map_of({})),
                      "hash": s(pattern="^[0-9a-f]{64}$")}),
     "SettingsGroup": map_of({}),
+    "SystemStatus": obj({
+        "api": enum("ok", "degraded"),
+        "database": obj({"ok": b(), "latency_ms": nullable(n(minimum=0)), "error": NS}),
+        "redis": obj({"ok": b(), "latency_ms": nullable(n(minimum=0)), "error": NS}),
+        "agent": obj({"reachable": b(), "mode": nullable(enum("mock", "real")), "version": NS,
+                      "latency_ms": nullable(n(minimum=0)), "error": NS}),
+        "checked_at": DT}, desc="Tình trạng các thành phần. Chỉ Admin API; không lộ chi tiết qua portal."),
     "SystemVersion": obj({"version": s(), "commit": s(), "agent_min_version": s(), "update_available": nullable(s())}),
 }

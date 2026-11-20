@@ -10080,6 +10080,49 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/system/status:
+    get:
+      operationId: getSystemStatus
+      summary: Tình trạng API, PostgreSQL, Redis, agent
+      tags:
+      - System
+      description: Agent được gọi bằng op `system.ping`. Trước khi có xác thực (Phase 3), route chỉ đăng ký khi APP_ENV=local/testing.
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SystemStatus'
+                required:
+                - data
+              example:
+                data:
+                  api: ok
+                  database:
+                    ok: true
+                    latency_ms: 1.8
+                    error: null
+                  redis:
+                    ok: true
+                    latency_ms: 0.4
+                    error: null
+                  agent:
+                    reachable: true
+                    mode: mock
+                    version: 0.1.0-mock
+                    latency_ms: 2.1
+                    error: null
+                  checked_at: '2026-11-20T08:15:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
   /api/v1/admin/system/version:
     get:
       operationId: getSystemVersion
@@ -15109,6 +15152,96 @@ components:
     SettingsGroup:
       type: object
       additionalProperties: {}
+    SystemStatus:
+      type: object
+      properties:
+        api:
+          type: string
+          enum:
+          - ok
+          - degraded
+        database:
+          type: object
+          properties:
+            ok:
+              type: boolean
+            latency_ms:
+              type:
+              - number
+              - 'null'
+              minimum: 0
+            error:
+              type:
+              - string
+              - 'null'
+          required:
+          - ok
+          - latency_ms
+          - error
+          additionalProperties: false
+        redis:
+          type: object
+          properties:
+            ok:
+              type: boolean
+            latency_ms:
+              type:
+              - number
+              - 'null'
+              minimum: 0
+            error:
+              type:
+              - string
+              - 'null'
+          required:
+          - ok
+          - latency_ms
+          - error
+          additionalProperties: false
+        agent:
+          type: object
+          properties:
+            reachable:
+              type: boolean
+            mode:
+              type:
+              - string
+              - 'null'
+              enum:
+              - mock
+              - real
+              - null
+            version:
+              type:
+              - string
+              - 'null'
+            latency_ms:
+              type:
+              - number
+              - 'null'
+              minimum: 0
+            error:
+              type:
+              - string
+              - 'null'
+          required:
+          - reachable
+          - mode
+          - version
+          - latency_ms
+          - error
+          additionalProperties: false
+        checked_at:
+          type: string
+          format: date-time
+      required:
+      - api
+      - database
+      - redis
+      - agent
+      - checked_at
+      additionalProperties: false
+      description: Tình trạng các thành phần. Chỉ Admin API; không lộ chi tiết qua portal.
     SystemVersion:
       type: object
       properties:

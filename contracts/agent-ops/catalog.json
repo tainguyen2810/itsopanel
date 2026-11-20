@@ -2,6 +2,17 @@
   "version": 1,
   "ops": [
     {
+      "op": "system.ping",
+      "domain": "system",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 1,
+      "runs_as": "root",
+      "timeout_sec": 5,
+      "schema": "ops/system.ping.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "system.info",
       "domain": "system",
       "risk": "low",
