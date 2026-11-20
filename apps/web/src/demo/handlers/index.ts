@@ -3,6 +3,7 @@ import { visibility, canSeeServer, canSeeAccount } from '../scope';
 import { registerAdminLists } from './admin';
 import { registerCommon } from './common';
 import { registerDashboard } from './dashboard';
+import { registerGovernance } from './governance';
 import { registerHosting } from './hosting';
 import { registerInfra } from './infra';
 import { registerSites } from './sites';
@@ -19,6 +20,7 @@ export function registerAll() {
   registerInfra();
   registerHosting();
   registerSites();
+  registerGovernance();
   registerAuthWrites(on);
 
   // Hủy / chạy lại job: ADMIN chỉ job thuộc server hoặc account trong phạm vi.

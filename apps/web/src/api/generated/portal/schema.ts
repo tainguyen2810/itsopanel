@@ -7444,6 +7444,31 @@ export interface operations {
                      *           },
                      *           "created_at": "2026-11-19T14:05:00+07:00",
                      *           "finished_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a10-0002-7000-8000-000010000002",
+                     *           "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "target_server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "mode": "overwrite",
+                     *           "items": [
+                     *             "database:anphat_shop"
+                     *           ],
+                     *           "state": "failed",
+                     *           "job_uuid": null,
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "created_at": "2026-11-18T16:20:00+07:00",
+                     *           "finished_at": "2026-11-18T16:21:10+07:00"
                      *         }
                      *       ],
                      *       "meta": {

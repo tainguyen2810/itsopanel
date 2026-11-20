@@ -27,6 +27,7 @@ const ID_BY_SEGMENT: Record<string, string> = {
   zones: first('dns_zones'),
   'cron-jobs': first('cron'),
   'git-repositories': first('git_repositories'),
+  'backup-snapshots': first('snapshots'),
 };
 const OTHER: Record<string, string> = {
   group: 'general',
@@ -40,6 +41,7 @@ const QUERY: Record<string, string> = {
   '/api/v1/admin/hosting-accounts/{id}/files/content': '?path=sites/anphat.vn/public/index.php',
   '/api/v1/admin/hosting-accounts/{id}/files/download': '?path=sites/anphat.vn/public/index.php',
   '/api/v1/admin/websites/{id}/logs': '?kind=access',
+  '/api/v1/admin/backup-snapshots/{id}/browse': '?path=.',
 };
 
 function urlFor(path: string): string {
@@ -69,6 +71,12 @@ describe('API giả lập (MSW) đúng theo OpenAPI', () => {
     'GET %s trả body hợp lệ theo schema',
     async (_p, r) => {
       const res = await fetch(`http://demo.local${urlFor(r.path)}${QUERY[r.path] ?? ''}`);
+      if (res.headers.get('Content-Type')?.startsWith('text/csv')) {
+        // Xuất CSV (audit log): contract khai báo text/csv, kiểm dòng tiêu đề.
+        expect(res.status).toBe(200);
+        expect((await res.text()).split('\n')[0]).toMatch(/^at,actor,/);
+        return;
+      }
       const body: unknown = res.status === 204 ? undefined : await res.json();
       expect(res.status, JSON.stringify(body)).toBeLessThan(300);
       expect(validateResponse(r.path, r.method, res.status, body)).toEqual([]);

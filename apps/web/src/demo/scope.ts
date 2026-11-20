@@ -7,11 +7,20 @@ interface ScopeRow {
   name: string;
 }
 
-/** Phạm vi của ADMIN trong demo: Trần Minh có dữ liệu `scopes`; ADMIN khác chưa được giao gì. */
-export function scopesOf(db: DemoDb, actor: Actor): ScopeRow[] {
-  if (actor.role !== 'ADMIN') return [];
+/**
+ * Phạm vi đã giao cho một ADMIN. Dữ liệu mẫu: Trần Minh có `scopes`, ADMIN khác chưa được giao gì;
+ * PUT /users/{id}/scopes ghi đè vào `scopes@<uuid>`.
+ */
+export function scopeRows(db: DemoDb, uuid: string): ScopeRow[] {
+  const saved = db.data[`scopes@${uuid}`] as ScopeRow[] | undefined;
+  if (saved) return saved;
   const minh = db.data.users.find((u) => u.role === 'ADMIN');
-  return actor.uuid === minh?.uuid ? (db.data.scopes as ScopeRow[]) : [];
+  return uuid === minh?.uuid ? (db.data.scopes as ScopeRow[]) : [];
+}
+
+/** Phạm vi của người đang thao tác (chỉ ADMIN có phạm vi; SUPER_ADMIN thấy hết, USER theo sở hữu). */
+export function scopesOf(db: DemoDb, actor: Actor): ScopeRow[] {
+  return actor.role === 'ADMIN' ? scopeRows(db, actor.uuid) : [];
 }
 
 /**

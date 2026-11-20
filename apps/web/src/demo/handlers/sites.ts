@@ -777,6 +777,20 @@ export function registerSites(realm: 'admin' = 'admin') {
       resource: { type: 'website', uuid: w.uuid },
       ops: ['malware.scan'],
       server: w.server,
+      onDone: (db) => {
+        // Kết quả quét hiện ở /security/malware (sạch: 0 phát hiện).
+        (db.data.malware_scans as S['MalwareScan'][]).unshift({
+          uuid: db.newUuid(),
+          website: siteRef(w),
+          hosting_account: w.hosting_account,
+          engine: 'clamav+yara',
+          state: 'succeeded',
+          files_scanned: 1200 + w.primary_domain.length * 97,
+          findings: 0,
+          started_at: db.now(),
+          finished_at: db.now(),
+        });
+      },
     });
   });
 

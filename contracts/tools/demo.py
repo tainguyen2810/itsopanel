@@ -864,6 +864,42 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
         NOTIFICATIONS.append({"uuid": u("notification", 3 + k), "type": ntype, "severity": sev, "title": title,
                               "body": body, "link": link, "read_at": None if k < 3 else T2, "created_at": T2})
 
+    # ---- Prompt 2.6: giám sát, quét malware, chính sách backup, khôi phục thêm cho trang quản trị
+    for k, (name, metric, scope, op, thr, for_sec, sev, ch, en) in enumerate([
+        ("Disk server > 90%", "disk_pct", "server", "gt", 90, 300, "critical", ["email", "telegram", "in_app"], True),
+        ("RAM server > 90% trong 15 phút", "ram_pct", "server", "gt", 90, 900, "medium", ["email"], True),
+        ("Quota disk account > 95%", "quota_disk_pct", "hosting_account", "gt", 95, 0, "medium", ["in_app"], True),
+        ("Website phản hồi chậm > 2 giây", "http_latency_ms", "website", "gt", 2000, 300, "low", ["in_app"], False),
+    ]):
+        ALERT_RULES.append({"uuid": u("alert_rule", 2 + k), "name": name, "metric": metric, "scope_type": scope,
+                            "scope_uuid": None, "operator": op, "threshold": thr, "for_sec": for_sec,
+                            "severity": sev, "channels": ch, "enabled": en, **ts()})
+    ALERTS.append({"uuid": u("alert", 2), "rule": {"uuid": ALERT_RULES[1]["uuid"], "name": ALERT_RULES[1]["name"]},
+                   "severity": "critical", "state": "resolved", "resource": {"type": "server", "uuid": SERVERS[0]["uuid"]},
+                   "value": 91.8, "started_at": "2026-11-19T02:10:00+07:00", "resolved_at": "2026-11-19T02:40:00+07:00"})
+    ALERTS.append({"uuid": u("alert", 3), "rule": {"uuid": ALERT_RULES[3]["uuid"], "name": ALERT_RULES[3]["name"]},
+                   "severity": "medium", "state": "acknowledged",
+                   "resource": {"type": "hosting_account", "uuid": ACCOUNTS[7]["uuid"]},
+                   "value": 96.4, "started_at": "2026-11-20T07:40:00+07:00", "resolved_at": None})
+    for k, (site, status, ms, up) in enumerate([(1, 200, 240, 99.95), (4, 200, 310, 99.9), (7, 200, 198, 100.0),
+                                               (15, 502, None, 98.72), (18, 200, 155, 99.99)]):
+        UPTIME.append({"uuid": u("uptime_check", 2 + k), "website": site_ref(site),
+                       "url": f"https://{WEBSITES[site]['primary_domain']}/", "interval_sec": 60,
+                       "last_status": status, "last_latency_ms": ms, "uptime_30d": up, "last_checked_at": T2})
+    for k, (site, acc, files) in enumerate([(0, 0, 9120), (4, 4, 14388), (7, 5, 22051)]):
+        MALWARE_SCANS.append({"uuid": u("malware_scan", 2 + k), "website": site_ref(site),
+                              "hosting_account": acc_ref(acc), "engine": "clamav+yara", "state": "succeeded",
+                              "files_scanned": files, "findings": 0, "started_at": "2026-11-20T02:00:00+07:00",
+                              "finished_at": "2026-11-20T02:20:00+07:00"})
+    BACKUP_POLICIES.append({"uuid": u("backup_policy", 2), "name": "Cấu hình panel hằng tuần", "scope_type": "panel",
+                            "scope_uuid": None, "schedule": "30 2 * * 0", "destination_uuids": [BACKUP_DESTS[1]["uuid"]],
+                            "retention": {"weekly": 8, "monthly": 12}, "enabled": True,
+                            "last_run_at": "2026-11-15T02:30:00+07:00", "last_status": "succeeded", **ts()})
+    RESTORES.append({"uuid": u("restore", 2), "snapshot_uuid": SNAPSHOTS[0]["uuid"], "hosting_account": acc_ref(0),
+                     "target_server": server_ref(0), "mode": "overwrite", "items": ["database:anphat_shop"],
+                     "state": "failed", "job_uuid": None, "requested_by": user_ref(0),
+                     "created_at": "2026-11-18T16:20:00+07:00", "finished_at": "2026-11-18T16:21:10+07:00"})
+
     _recompute()
 
 

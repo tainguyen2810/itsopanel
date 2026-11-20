@@ -1,7 +1,7 @@
 import type { DemoDb } from '../db';
 import { findOr404, isReply, page, type ListOptions } from '../list';
 import { ok, on, problem, type ApiPath, type Ctx, type Reply } from '../router';
-import { byAccount, canSeeAccount, canSeeServer, visibility } from '../scope';
+import { byAccount, canSeeAccount, canSeeServer, scopeRows, visibility } from '../scope';
 
 type Row = Record<string, unknown> & { uuid?: string };
 type Coll = (db: DemoDb) => Row[];
@@ -345,8 +345,9 @@ export function registerAdminLists() {
     return page(ctx, logsOf(j));
   });
   on('get', '/api/v1/admin/users/{id}/scopes', (ctx) => {
-    const minh = ctx.db.data.users.find((u) => u.role === 'ADMIN');
-    return page(ctx, ctx.params.id === minh?.uuid ? (ctx.db.data.scopes as Row[]) : []);
+    const u = ctx.db.data.users.find((x) => x.uuid === ctx.params.id);
+    if (!u) return problem(404, 'not_found', 'Không tìm thấy người dùng');
+    return page(ctx, scopeRows(ctx.db, u.uuid) as unknown as Row[]);
   });
 }
 

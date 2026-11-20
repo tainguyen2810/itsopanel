@@ -5585,6 +5585,42 @@ export interface operations {
                      *           "enabled": true,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a20-0002-7000-8000-000020000002",
+                     *           "name": "Disk server > 90%",
+                     *           "metric": "disk_pct",
+                     *           "scope_type": "server",
+                     *           "scope_uuid": null,
+                     *           "operator": "gt",
+                     *           "threshold": 90,
+                     *           "for_sec": 300,
+                     *           "severity": "critical",
+                     *           "channels": [
+                     *             "email",
+                     *             "telegram",
+                     *             "in_app"
+                     *           ],
+                     *           "enabled": true,
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a20-0003-7000-8000-000020000003",
+                     *           "name": "RAM server > 90% trong 15 phút",
+                     *           "metric": "ram_pct",
+                     *           "scope_type": "server",
+                     *           "scope_uuid": null,
+                     *           "operator": "gt",
+                     *           "threshold": 90,
+                     *           "for_sec": 900,
+                     *           "severity": "medium",
+                     *           "channels": [
+                     *             "email"
+                     *           ],
+                     *           "enabled": true,
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -5858,6 +5894,38 @@ export interface operations {
                      *           },
                      *           "value": 91.3,
                      *           "started_at": "2026-11-20T08:15:00+07:00",
+                     *           "resolved_at": null
+                     *         },
+                     *         {
+                     *           "uuid": "01938a21-0002-7000-8000-000021000002",
+                     *           "rule": {
+                     *             "uuid": "01938a20-0002-7000-8000-000020000002",
+                     *             "name": "Disk server > 90%"
+                     *           },
+                     *           "severity": "critical",
+                     *           "state": "resolved",
+                     *           "resource": {
+                     *             "type": "server",
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *           },
+                     *           "value": 91.8,
+                     *           "started_at": "2026-11-19T02:10:00+07:00",
+                     *           "resolved_at": "2026-11-19T02:40:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a21-0003-7000-8000-000021000003",
+                     *           "rule": {
+                     *             "uuid": "01938a20-0004-7000-8000-000020000004",
+                     *             "name": "Quota disk account > 95%"
+                     *           },
+                     *           "severity": "medium",
+                     *           "state": "acknowledged",
+                     *           "resource": {
+                     *             "type": "hosting_account",
+                     *             "uuid": "01938a05-0008-7000-8000-000005000008"
+                     *           },
+                     *           "value": 96.4,
+                     *           "started_at": "2026-11-20T07:40:00+07:00",
                      *           "resolved_at": null
                      *         }
                      *       ],
@@ -6560,6 +6628,25 @@ export interface operations {
                      *           },
                      *           "enabled": true,
                      *           "last_run_at": "2026-11-20T01:00:00+07:00",
+                     *           "last_status": "succeeded",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a18-0002-7000-8000-000018000002",
+                     *           "name": "Cấu hình panel hằng tuần",
+                     *           "scope_type": "panel",
+                     *           "scope_uuid": null,
+                     *           "schedule": "30 2 * * 0",
+                     *           "destination_uuids": [
+                     *             "01938a17-0002-7000-8000-000017000002"
+                     *           ],
+                     *           "retention": {
+                     *             "weekly": 8,
+                     *             "monthly": 12
+                     *           },
+                     *           "enabled": true,
+                     *           "last_run_at": "2026-11-15T02:30:00+07:00",
                      *           "last_status": "succeeded",
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
@@ -14859,6 +14946,31 @@ export interface operations {
                      *           },
                      *           "created_at": "2026-11-19T14:05:00+07:00",
                      *           "finished_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a10-0002-7000-8000-000010000002",
+                     *           "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "target_server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "mode": "overwrite",
+                     *           "items": [
+                     *             "database:anphat_shop"
+                     *           ],
+                     *           "state": "failed",
+                     *           "job_uuid": null,
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "created_at": "2026-11-18T16:20:00+07:00",
+                     *           "finished_at": "2026-11-18T16:21:10+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -15545,6 +15657,40 @@ export interface operations {
                      *           "findings": 1,
                      *           "started_at": "2026-11-19T14:05:00+07:00",
                      *           "finished_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1b-0002-7000-8000-00001b000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "engine": "clamav+yara",
+                     *           "state": "succeeded",
+                     *           "files_scanned": 9120,
+                     *           "findings": 0,
+                     *           "started_at": "2026-11-20T02:00:00+07:00",
+                     *           "finished_at": "2026-11-20T02:20:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a1b-0003-7000-8000-00001b000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0005-7000-8000-000006000005",
+                     *             "primary_domain": "binhminh.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0005-7000-8000-000005000005",
+                     *             "username": "binhminh"
+                     *           },
+                     *           "engine": "clamav+yara",
+                     *           "state": "succeeded",
+                     *           "files_scanned": 14388,
+                     *           "findings": 0,
+                     *           "started_at": "2026-11-20T02:00:00+07:00",
+                     *           "finished_at": "2026-11-20T02:20:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -18384,6 +18530,32 @@ export interface operations {
                      *           "last_status": 200,
                      *           "last_latency_ms": 182,
                      *           "uptime_30d": 99.97,
+                     *           "last_checked_at": "2026-11-20T08:15:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a2a-0002-7000-8000-00002a000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "url": "https://shop.anphat.vn/",
+                     *           "interval_sec": 60,
+                     *           "last_status": 200,
+                     *           "last_latency_ms": 240,
+                     *           "uptime_30d": 99.95,
+                     *           "last_checked_at": "2026-11-20T08:15:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a2a-0003-7000-8000-00002a000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0005-7000-8000-000006000005",
+                     *             "primary_domain": "binhminh.vn"
+                     *           },
+                     *           "url": "https://binhminh.vn/",
+                     *           "interval_sec": 60,
+                     *           "last_status": 200,
+                     *           "last_latency_ms": 310,
+                     *           "uptime_30d": 99.9,
                      *           "last_checked_at": "2026-11-20T08:15:00+07:00"
                      *         }
                      *       ],

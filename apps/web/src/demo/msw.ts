@@ -23,6 +23,12 @@ export const handlers = [
       );
     }
     if (r.status === 204) return new HttpResponse(null, { status: 204 });
+    // Body văn bản (vd. CSV xuất audit log) trả nguyên dạng, không bọc JSON.
+    if (typeof r.body === 'string')
+      return new HttpResponse(r.body, {
+        status: r.status,
+        ...(r.headers ? { headers: r.headers } : {}),
+      });
     return HttpResponse.json(r.body ?? null, {
       status: r.status,
       ...(r.headers ? { headers: r.headers } : {}),
