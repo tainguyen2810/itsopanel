@@ -10,11 +10,11 @@ endef
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-agent test-fuzz lint lint-web lint-api lint-agent no-exec build codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-agent test-fuzz test-e2e tokens tokens-check lint lint-web lint-api lint-agent no-exec build codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
 structure: ## Kiểm tra cấu trúc repository
 	@bash scripts/check-structure.sh
@@ -82,12 +82,22 @@ test-api:
 test-agent:
 	@cd agent && go test -race ./...
 
+test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự bật Vite)
+	@cd apps/web && $(PNPM) e2e
+
+tokens: ## Sinh tokens.css từ design/tokens/tokens.json
+	@node design/tools/gen-tokens.mjs
+
+tokens-check: ## Kiểm tokens.css khớp nguồn và tương phản WCAG AA
+	@node design/tools/gen-tokens.mjs --check
+	@node design/tools/check-contrast.mjs
+
 test-fuzz: ## Fuzz parser envelope của agent (FUZZTIME=30s)
 	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope
 
 lint: lint-web lint-api lint-agent no-exec ## Chạy lint cho mọi phần
 
-lint-web:
+lint-web: tokens-check
 	@cd apps/web && $(PNPM) lint
 
 lint-api:

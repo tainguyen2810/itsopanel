@@ -5,10 +5,10 @@
 ## Hiện tại
 
 - **Phase:** 1 — Foundation, Architecture, Database, API Contracts, Design System (đang làm)
-- **Prompt hiện tại:** 1.5 ✓ hoàn tất, chờ duyệt
-- **Task đang làm:** — (dừng chờ duyệt Prompt 1.5)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.5)
-- **Bước tiếp theo:** Người dùng duyệt 1.5 → Prompt 1.6 (Design System: tokens, Light/Dark, i18n, component nền, app shell)
+- **Prompt hiện tại:** 1.7 (chạy liền sau 1.6 theo yêu cầu "làm hàng loạt và tự merge")
+- **Task đang làm:** 1.7.1 codegen TS từ OpenAPI
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-1` (commit cập nhật trạng thái 1.6)
+- **Bước tiếp theo:** Xong 1.7 → `make check` trên clone sạch → merge `phase-1` vào `main` (local) → báo cáo Phase 1 và DỪNG (không bắt đầu Phase 2). Kế hoạch: `docs/plans/phase-1-batch-1.6-1.7.md`
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -38,8 +38,8 @@ Phase 1 (đang làm)
 - ✓ 1.3 Database schema (DBML) + kiểm chứng trên PostgreSQL
 - ✓ 1.4 API Contracts (OpenAPI admin/portal, agent schemas, test vectors)
 - ✓ 1.5 Scaffold web/api/agent + mock agent + dev env
-- ○ 1.6 Design System (tokens, Light/Dark, i18n, component nền, app shell 2 entry)
-- ○ 1.7 CI, codegen, kiểm tra tổng và báo cáo Phase 1
+- ✓ 1.6 Design System (tokens, Light/Dark, i18n, component nền, app shell 2 entry)
+- ✱ 1.7 CI, codegen, kiểm tra tổng và báo cáo Phase 1
 
 ## Nhật ký
 
@@ -56,3 +56,4 @@ Phase 1 (đang làm)
 | 2026-11-20 | 1 / 1.4 | OpenAPI admin 208 + portal 90 operation (+ common), agent-ops 60 op có schema + 21 khai báo, evil-inputs 93 vector, demo dataset, Redocly ruleset + check_contracts + ajv | 6a06302 |
 | 2026-11-20 | 1 / mockup | Mockup dashboard Admin (desktop/tablet/mobile) trước 1.5 theo yêu cầu | 7aefaf0 |
 | 2026-11-20 | 1 / 1.5 | Contract `GET /admin/system/status` + op `system.ping`; apps/web (Vite/React/Tailwind, 2 entry), apps/api (Laravel 13.43, RFC 9457, Pest, Larastan + rule cấm exec), agent mock (Go, unix socket), make setup/dev/test/lint, compose dev, runbook | 67211b5, e050c8c, 53f4a13, 16837e7, 1fd5485 |
+| 2026-11-20 | 1 / 1.6 | Token Light/Dark + sinh CSS/@theme + kiểm AA 84/84; lint cấm màu cứng; ThemeProvider + chặn nháy; i18n VI/EN; 25 component; AdminShell/PortalShell; trang /design (dev); Vitest 26, Playwright 30 (14 ảnh, axe 0 lỗi nghiêm trọng); design/docs | 6e48570, 18f5ea6, 50087c3 |
