@@ -38,3 +38,6 @@ build/
 release/
 *.tar.zst
 .cache/
+__pycache__/
+*.pyc
+dbml-error.log
