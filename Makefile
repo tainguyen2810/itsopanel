@@ -1,16 +1,12 @@
 # ITSO Panel — Makefile gốc
-# Target chưa hiện thực sẽ in thông báo kèm Prompt sẽ hiện thực.
+# `make help` liệt kê lệnh; `make check` chạy toàn bộ kiểm tra như CI.
 
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-define todo
-	@echo "[$(1)] chưa hiện thực — sẽ có ở Prompt $(2)"
-endef
-
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent codegen codegen-check check
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -95,6 +91,9 @@ tokens-check: ## Kiểm tokens.css khớp nguồn và tương phản WCAG AA
 	@node design/tools/gen-tokens.mjs --check
 	@node design/tools/check-contrast.mjs
 
+test-api-pg: ## Pest với PostgreSQL 16 + Redis thật (đọc DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD)
+	@cd apps/api && php artisan config:clear --ansi >/dev/null && bash ../../scripts/pest-pg.sh
+
 test-fuzz: ## Fuzz parser envelope của agent (FUZZTIME=30s)
 	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope
 
@@ -113,8 +112,12 @@ lint-agent:
 no-exec: ## Chặn lệnh hệ thống trong apps/api/app và agent/
 	@bash scripts/check-no-exec.sh
 
-build: ## Build web và mock agent
+build: build-web build-agent ## Build web và mock agent
+
+build-web:
 	@cd apps/web && $(PNPM) build
+
+build-agent:
 	@cd agent && go build -o bin/itso-mock-agent ./cmd/itso-mock-agent
 
 codegen: ## Sinh code từ contracts: TS (OpenAPI), Go structs + bản nhúng schema (agent-ops)
@@ -125,5 +128,5 @@ codegen: ## Sinh code từ contracts: TS (OpenAPI), Go structs + bản nhúng sc
 codegen-check: ## Báo lỗi nếu file sinh lệch với contracts (không ghi file)
 	@PNPM="$(PNPM)" bash scripts/codegen-check.sh
 
-check: structure docs-check ## Chạy toàn bộ kiểm tra (đầy đủ ở Prompt 1.7)
-	$(call todo,check (đầy đủ),1.7)
+check: ## Toàn bộ pipeline local như CI, in bảng kết quả (exit ≠ 0 nếu có bước đỏ)
+	@bash scripts/check-all.sh
