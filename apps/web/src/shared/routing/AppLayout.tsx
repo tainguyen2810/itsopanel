@@ -8,7 +8,7 @@ import { useCurrentRoute } from './useBreadcrumbs';
 /** Layout có shell cho mọi route không phải `bare`: sidebar active theo route, drawer job toàn cục. */
 export function AppLayout() {
   const session = useSession();
-  const { fetchJob } = useRoutesInfo();
+  const { fetchJob, search, basepath } = useRoutesInfo();
   const { def } = useCurrentRoute();
   const navigate = useNavigate();
   const Shell = session.realm === 'admin' ? AdminShell : PortalShell;
@@ -25,6 +25,8 @@ export function AppLayout() {
       onOpenNotifications={() => void navigate({ to: '/notifications' })}
       onSignOut={() => void navigate({ to: '/login' })}
       overlay={<JobDrawerHost fetchJob={fetchJob} />}
+      {...(search ? { searchFn: search } : {})}
+      onNavigate={(href) => void navigate({ to: href.slice(basepath.length) || '/' })}
     >
       <Outlet />
     </Shell>

@@ -3152,6 +3152,88 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/jobs/{id}:retry:
+    post:
+      operationId: portalRetryJob
+      summary: Chạy lại job thất bại/đã hủy (tạo job mới cùng tham số)
+      tags:
+      - Jobs
+      description: 'Chỉ job `failed`, `cancelled`, `timed_out`; job khác → 409 `conflict`. Job mới tham chiếu cùng tài nguyên.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-014d-7000-8000-00000f00014d
+                  type: website.create
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: website
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                  steps:
+                  - seq: 1
+                    op: fs.mkdir
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: php.pool.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 3
+                    op: nginx.vhost.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 4
+                    op: cert.issue
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d
+                    events: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d/events
+                resource:
+                  type: website
+                  uuid: 01938a06-0002-7000-8000-000006000002
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/portal/notification-preferences:
     get:
       operationId: portalGetNotificationPreferences

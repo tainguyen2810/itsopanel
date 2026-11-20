@@ -2,6 +2,16 @@ import { problem, type Ctx, type Reply } from './router';
 
 type Row = Record<string, unknown>;
 
+/** So khớp không phân biệt hoa thường và dấu tiếng Việt (như collation tìm kiếm của backend). */
+export function fold(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
 /** Lấy giá trị theo đường dẫn "a.b" (để lọc theo filter[server] → server.uuid…). */
 export function get(row: Row, path: string): unknown {
   return path
@@ -26,14 +36,10 @@ export function page<T>(ctx: Ctx, items: T[], opts: ListOptions = {}): Reply {
   const q = ctx.query;
   let rows = [...items] as Row[];
 
-  const term = q.get('q')?.trim().toLowerCase();
+  const term = fold(q.get('q')?.trim() ?? '');
   if (term && opts.search) {
     rows = rows.filter((r) =>
-      opts.search?.some((f) =>
-        String(get(r, f) ?? '')
-          .toLowerCase()
-          .includes(term),
-      ),
+      opts.search?.some((f) => fold(String(get(r, f) ?? '')).includes(term)),
     );
   }
   for (const [key, field] of Object.entries(opts.filters ?? {})) {

@@ -14,18 +14,19 @@ interface Props {
   pages: PageLoaders;
   homeId: string;
   fetchJob: RoutesInfo['fetchJob'];
+  search?: RoutesInfo['search'];
   history?: RouterHistory;
 }
 
 /** Entry có router: phiên (vai trò), bảng route, Link của router cho component nền. */
-export function RoutedApp({ realm, defs, pages, homeId, fetchJob, history }: Props) {
+export function RoutedApp({ realm, defs, pages, homeId, fetchJob, search, history }: Props) {
   const basepath = `/${realm}`;
   const [router] = useState(() =>
     createAppRouter({ basepath, defs, pages, Layout: AppLayout, ...(history ? { history } : {}) }),
   );
   const info = useMemo<RoutesInfo>(
-    () => ({ realm, basepath, defs, homeId, fetchJob }),
-    [realm, basepath, defs, homeId, fetchJob],
+    () => ({ realm, basepath, defs, homeId, fetchJob, ...(search ? { search } : {}) }),
+    [realm, basepath, defs, homeId, fetchJob, search],
   );
   const [link] = useState(() => routerLink(basepath));
   return (

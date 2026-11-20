@@ -43,7 +43,35 @@
     "inSync": "In sync",
     "desired": "Desired",
     "observed": "Observed",
-    "degraded": "Degraded"
+    "degraded": "Degraded",
+    "ready": "Ready",
+    "locked": "Locked",
+    "disabled": "Disabled",
+    "expiring": "Expiring",
+    "expired": "Expired",
+    "valid": "Valid",
+    "stopped": "Stopped",
+    "exited": "Exited",
+    "installed": "Installed",
+    "available": "Available",
+    "upgradable": "Update available",
+    "verifying": "Verifying",
+    "verified": "Verified",
+    "firing": "Firing",
+    "resolved": "Resolved",
+    "migrating": "Migrating",
+    "purged": "Purged",
+    "timed_out": "Timed out",
+    "cancel_requested": "Cancelling",
+    "pass": "Pass",
+    "warn": "Warning",
+    "fail": "Fail",
+    "success": "Success",
+    "failure": "Failure",
+    "error": "Error",
+    "skipped": "Skipped",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
   },
   "table": {
     "selected_one": "{{count}} row selected",
@@ -69,7 +97,8 @@
     "invalid": "Invalid value",
     "minLength": "At least {{min}} characters",
     "email": "Invalid email",
-    "optional": "optional"
+    "optional": "optional",
+    "mismatch": "Does not match"
   },
   "job": {
     "step": "Step {{current}} of {{total}}",
@@ -80,5 +109,127 @@
     "failed": "Job {{type}} failed"
   },
   "breadcrumb": "Breadcrumb",
-  "pagination": "Pagination"
+  "pagination": "Pagination",
+  "severity": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "info": "Info"
+  },
+  "events": {
+    "auth": {
+      "login": "Signed in"
+    },
+    "backup": {
+      "run": "Backup run"
+    },
+    "backup_policy": {
+      "update": "Backup policy updated"
+    },
+    "database": {
+      "create": "Database created"
+    },
+    "firewall": {
+      "apply": "Firewall applied"
+    },
+    "hosting_account": {
+      "create": "Hosting account created",
+      "suspend": "Hosting account suspended",
+      "unsuspend": "Hosting account unsuspended",
+      "change_package": "Package changed",
+      "migrate": "Server migration",
+      "terminate": "Account terminated",
+      "purge": "Account purged"
+    },
+    "hosting_package": {
+      "update": "Hosting package updated",
+      "create": "Hosting package created"
+    },
+    "impersonation": {
+      "start": "Impersonation started"
+    },
+    "server": {
+      "update": "Server updated",
+      "reboot": "Server reboot"
+    },
+    "service": {
+      "restart": "Service restarted"
+    },
+    "software": {
+      "install": "Software installed"
+    },
+    "user": {
+      "update": "User updated",
+      "password_change": "Password changed"
+    },
+    "website": {
+      "create": "Website created",
+      "ssl": {
+        "renew": "SSL renewed"
+      }
+    },
+    "job": {
+      "cancel": "Job cancelled"
+    }
+  },
+  "ops": {
+    "account": {
+      "ensure": "Create Linux user and home",
+      "suspend": "Suspend account",
+      "unsuspend": "Unsuspend account",
+      "remove": "Remove account"
+    },
+    "quota": {
+      "apply": "Apply disk and inode quota"
+    },
+    "php": {
+      "pool": {
+        "apply": "Configure PHP-FPM pool",
+        "remove": "Remove PHP-FPM pool"
+      }
+    },
+    "nginx": {
+      "vhost": {
+        "apply": "Apply Nginx vhost",
+        "remove": "Remove Nginx vhost"
+      }
+    },
+    "cert": {
+      "issue": "Issue SSL certificate",
+      "install": "Install SSL certificate"
+    },
+    "db": {
+      "pg": {
+        "create": "Create PostgreSQL database",
+        "user_ensure": "Ensure PostgreSQL user"
+      },
+      "mysql": {
+        "create": "Create MariaDB database"
+      }
+    },
+    "fs": {
+      "mkdir": "Create directory",
+      "archive": "Archive files"
+    },
+    "backup": {
+      "run": "Run backup (restic)",
+      "check": "Verify backup"
+    },
+    "service": {
+      "control": "Control service"
+    },
+    "software": {
+      "install": "Install software"
+    },
+    "firewall": {
+      "apply": "Apply firewall rules"
+    },
+    "wp": {
+      "install": "Install WordPress",
+      "update": "Update WordPress",
+      "clone": "Clone to staging",
+      "harden": "Harden WordPress"
+    }
+  }
 }

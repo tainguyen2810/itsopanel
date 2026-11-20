@@ -71,4 +71,4 @@ Portal **không có**: servers, packages, users, firewall, docker, software, set
 
 ## 5. Thao tác bất đồng bộ
 
-Mọi thao tác chạm Linux (tạo/khóa/mở/đổi gói/chuyển server/xóa, website, DB, backup…) trả `202` kèm `job`. Bắt buộc `Idempotency-Key`. Hủy qua `POST /…/jobs/{id}:cancel`. Theo dõi tiến độ qua SSE `/…/jobs/{id}/events`. Mọi thao tác đều được audit.
+Mọi thao tác chạm Linux (tạo/khóa/mở/đổi gói/chuyển server/xóa, website, DB, backup…) trả `202` kèm `job`. Bắt buộc `Idempotency-Key`. Hủy qua `POST /…/jobs/{id}:cancel`, chạy lại job lỗi qua `POST /…/jobs/{id}:retry`. Theo dõi tiến độ qua SSE `/…/jobs/{id}/events`. Mọi thao tác đều được audit.

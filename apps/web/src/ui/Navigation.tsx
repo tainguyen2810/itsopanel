@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { ChevronLeft, ChevronRight, ChevronRight as Sep } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
-import { useAppLink } from './AppLink';
+import { AppLink } from './AppLink';
 import { Button } from './Button';
 
 export interface Crumb {
@@ -12,7 +12,6 @@ export interface Crumb {
 
 export function Breadcrumb({ items, className }: { items: Crumb[]; className?: string }) {
   const { t } = useTranslation('common');
-  const Link = useAppLink();
   return (
     <nav aria-label={t('breadcrumb')} className={className}>
       <ol className="flex flex-wrap items-center gap-1 text-sm text-muted">
@@ -29,9 +28,9 @@ export function Breadcrumb({ items, className }: { items: Crumb[]; className?: s
                     {c.label}
                   </span>
                 ) : (
-                  <Link href={c.href} className="hover:text-fg hover:underline">
+                  <AppLink href={c.href} className="hover:text-fg hover:underline">
                     {c.label}
-                  </Link>
+                  </AppLink>
                 )}
               </li>
               {!last && (

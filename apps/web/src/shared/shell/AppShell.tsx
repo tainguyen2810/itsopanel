@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { readStorage, writeStorage } from '@/shared/lib/storage';
 import { Drawer, DrawerContent } from '@/ui/Dialog';
-import { CommandPalette } from './CommandPalette';
+import { CommandPalette, type SearchFn } from './CommandPalette';
 import { ADMIN_NAV, PORTAL_NAV, type NavGroup } from './nav';
 import { Sidebar, SidebarNav, type StorageInfo } from './Sidebar';
 import { Topbar, type DemoSwitch, type ShellUser } from './Topbar';
@@ -20,6 +20,9 @@ interface ShellProps {
   onSignOut?: () => void;
   /** Phần tử toàn cục thêm vào cuối shell (ví dụ drawer theo dõi job). */
   overlay?: ReactNode;
+  /** Ctrl+K tìm dữ liệu thật; điều hướng trong app. */
+  searchFn?: SearchFn;
+  onNavigate?: (href: string) => void;
   children: ReactNode;
 }
 
@@ -36,6 +39,8 @@ function Shell({
   onOpenProfile,
   onSignOut,
   overlay,
+  searchFn,
+  onNavigate,
   children,
 }: ShellProps & { groups: NavGroup[]; areaLabel: string; search: boolean }) {
   const { t } = useTranslation('shell');
@@ -100,7 +105,15 @@ function Shell({
         </main>
       </div>
       {overlay}
-      {search && <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} groups={groups} />}
+      {search && (
+        <CommandPalette
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          groups={groups}
+          {...(searchFn ? { search: searchFn } : {})}
+          {...(onNavigate ? { onNavigate } : {})}
+        />
+      )}
     </div>
   );
 }

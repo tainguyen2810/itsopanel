@@ -20,14 +20,15 @@ export function jobStatus(state: Job['state']) {
 }
 
 /** Tiến độ job (dùng trong drawer và trang chi tiết job). */
-export function JobView({ job }: { job: Job }) {
+export function JobView({ job, title }: { job: Job; title?: string }) {
+  const { t } = useTranslation('common');
   return (
     <JobProgress
-      title={job.type}
+      title={title ?? (t(`events.${job.type}` as never, { defaultValue: job.type }) as string)}
       status={jobStatus(job.state)}
       steps={job.steps.map((s) => ({
         op: s.op,
-        label: s.op,
+        label: t(`ops.${s.op}` as never, { defaultValue: s.op }) as string,
         state: s.state === 'cancelled' ? ('skipped' as const) : s.state,
         ...(job.error?.step === s.seq ? { detail: job.error.message } : {}),
       }))}

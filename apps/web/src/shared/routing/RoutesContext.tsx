@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { Job } from '@/shared/jobs/JobDrawer';
+import type { SearchFn } from '@/shared/shell/CommandPalette';
 import type { Realm } from '@/shared/session/personas';
 import type { RouteDef } from './types';
 
@@ -11,6 +12,8 @@ export interface RoutesInfo {
   homeId: string;
   /** Lấy job theo realm (admin/portal) cho drawer theo dõi job. */
   fetchJob: (uuid: string) => Promise<Job>;
+  /** Tìm kiếm toàn hệ thống (chỉ admin). */
+  search?: SearchFn;
 }
 
 export const RoutesContext = createContext<RoutesInfo | null>(null);

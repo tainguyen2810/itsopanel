@@ -29,7 +29,7 @@ export const ADMIN_LISTS: ListSpec[] = [
     detail: '/api/v1/admin/servers/{id}',
     rows: d('servers'),
     scope: 'server',
-    search: ['name', 'hostname'],
+    search: ['name', 'hostname', 'ip_addresses'],
     sort: 'name',
     what: 'server',
   },
@@ -269,7 +269,6 @@ export function registerAdminLists() {
   ];
   for (const [path, key] of singletons) on('get', path, (ctx) => ok(ctx.db.data[key]));
 
-  on('get', '/api/v1/admin/dashboard/summary', (ctx) => ok(ctx.db.data.dashboard));
   on('get', '/api/v1/admin/settings/{group}', (ctx) => {
     const s = (ctx.db.data.settings as Record<string, unknown>)[ctx.params.group ?? ''];
     return s === undefined

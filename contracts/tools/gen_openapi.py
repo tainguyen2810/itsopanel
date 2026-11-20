@@ -351,6 +351,11 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             ok_example=page(D.JOB_LOGS))
     api.add("post", jp + "/{id}:cancel", oid("cancelJob"), "Yêu cầu hủy job", "Jobs", params=idp, ok=cref("Job"),
             ok_example=one(jobs_ex[1] | {"state": "cancel_requested"}))
+    api.add("post", jp + "/{id}:retry", oid("retryJob"), "Chạy lại job thất bại/đã hủy (tạo job mới cùng tham số)",
+            "Jobs", params=idp, job=True,
+            desc="Chỉ job `failed`, `cancelled`, `timed_out`; job khác → 409 `conflict`. Job mới tham chiếu cùng tài nguyên.",
+            job_example=jobs(jobs_ex[1]["type"], jobs_ex[1]["resource"]["type"], jobs_ex[1]["resource"]["uuid"],
+                             [st["op"] for st in jobs_ex[1]["steps"]], realm=realm))
     ev = api.add("get", jp + "/{id}/events", oid("streamJobEvents"), "Luồng tiến độ (SSE qua gateway)", "Jobs",
                  params=idp, ok=None, desc="`text/event-stream`; mỗi sự kiện là một Job JSON. Fallback polling 2 giây.")
     ev["responses"]["200"]["content"] = {"text/event-stream": {"schema": s(),

@@ -43,7 +43,35 @@
     "inSync": "Đã đồng bộ",
     "desired": "Mong muốn",
     "observed": "Thực tế",
-    "degraded": "Suy giảm"
+    "degraded": "Suy giảm",
+    "ready": "Sẵn sàng",
+    "locked": "Bị khóa",
+    "disabled": "Vô hiệu",
+    "expiring": "Sắp hết hạn",
+    "expired": "Đã hết hạn",
+    "valid": "Hợp lệ",
+    "stopped": "Đã dừng",
+    "exited": "Đã thoát",
+    "installed": "Đã cài",
+    "available": "Có thể cài",
+    "upgradable": "Có bản mới",
+    "verifying": "Đang kiểm chứng",
+    "verified": "Đã kiểm chứng",
+    "firing": "Đang cảnh báo",
+    "resolved": "Đã xử lý",
+    "migrating": "Đang chuyển",
+    "purged": "Đã xóa vĩnh viễn",
+    "timed_out": "Quá thời gian",
+    "cancel_requested": "Đang hủy",
+    "pass": "Đạt",
+    "warn": "Cảnh báo",
+    "fail": "Không đạt",
+    "success": "Thành công",
+    "failure": "Thất bại",
+    "error": "Lỗi",
+    "skipped": "Bỏ qua",
+    "connected": "Đã kết nối",
+    "disconnected": "Mất kết nối"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",
@@ -69,7 +97,8 @@
     "invalid": "Giá trị không hợp lệ",
     "minLength": "Tối thiểu {{min}} ký tự",
     "email": "Email không hợp lệ",
-    "optional": "không bắt buộc"
+    "optional": "không bắt buộc",
+    "mismatch": "Không khớp"
   },
   "job": {
     "step": "Bước {{current}} / {{total}}",
@@ -80,5 +109,127 @@
     "failed": "Tác vụ {{type}} thất bại"
   },
   "breadcrumb": "Đường dẫn",
-  "pagination": "Phân trang"
+  "pagination": "Phân trang",
+  "severity": {
+    "critical": "Nghiêm trọng",
+    "high": "Cao",
+    "medium": "Trung bình",
+    "low": "Thấp",
+    "info": "Thông tin"
+  },
+  "events": {
+    "auth": {
+      "login": "Đăng nhập hệ thống"
+    },
+    "backup": {
+      "run": "Chạy sao lưu"
+    },
+    "backup_policy": {
+      "update": "Cập nhật chính sách sao lưu"
+    },
+    "database": {
+      "create": "Tạo cơ sở dữ liệu"
+    },
+    "firewall": {
+      "apply": "Áp dụng tường lửa"
+    },
+    "hosting_account": {
+      "create": "Tạo tài khoản hosting",
+      "suspend": "Tạm khóa tài khoản hosting",
+      "unsuspend": "Mở khóa tài khoản hosting",
+      "change_package": "Đổi gói hosting",
+      "migrate": "Chuyển máy chủ",
+      "terminate": "Chấm dứt tài khoản",
+      "purge": "Xóa vĩnh viễn tài khoản"
+    },
+    "hosting_package": {
+      "update": "Cập nhật gói hosting",
+      "create": "Tạo gói hosting"
+    },
+    "impersonation": {
+      "start": "Đăng nhập thay người dùng"
+    },
+    "server": {
+      "update": "Cập nhật máy chủ",
+      "reboot": "Khởi động lại máy chủ"
+    },
+    "service": {
+      "restart": "Khởi động lại dịch vụ"
+    },
+    "software": {
+      "install": "Cài phần mềm"
+    },
+    "user": {
+      "update": "Cập nhật người dùng",
+      "password_change": "Đổi mật khẩu"
+    },
+    "website": {
+      "create": "Tạo website",
+      "ssl": {
+        "renew": "Gia hạn SSL"
+      }
+    },
+    "job": {
+      "cancel": "Hủy tác vụ"
+    }
+  },
+  "ops": {
+    "account": {
+      "ensure": "Tạo người dùng Linux và thư mục home",
+      "suspend": "Khóa tài khoản",
+      "unsuspend": "Mở khóa tài khoản",
+      "remove": "Gỡ tài khoản"
+    },
+    "quota": {
+      "apply": "Áp quota ổ đĩa và inode"
+    },
+    "php": {
+      "pool": {
+        "apply": "Cấu hình PHP-FPM pool",
+        "remove": "Gỡ PHP-FPM pool"
+      }
+    },
+    "nginx": {
+      "vhost": {
+        "apply": "Áp dụng vhost Nginx",
+        "remove": "Gỡ vhost Nginx"
+      }
+    },
+    "cert": {
+      "issue": "Cấp chứng chỉ SSL",
+      "install": "Cài chứng chỉ SSL"
+    },
+    "db": {
+      "pg": {
+        "create": "Tạo database PostgreSQL",
+        "user_ensure": "Tạo user PostgreSQL"
+      },
+      "mysql": {
+        "create": "Tạo database MariaDB"
+      }
+    },
+    "fs": {
+      "mkdir": "Tạo thư mục",
+      "archive": "Nén file"
+    },
+    "backup": {
+      "run": "Chạy sao lưu (restic)",
+      "check": "Kiểm chứng bản sao lưu"
+    },
+    "service": {
+      "control": "Điều khiển dịch vụ"
+    },
+    "software": {
+      "install": "Cài phần mềm"
+    },
+    "firewall": {
+      "apply": "Áp dụng rule tường lửa"
+    },
+    "wp": {
+      "install": "Cài WordPress",
+      "update": "Cập nhật WordPress",
+      "clone": "Tạo bản staging",
+      "harden": "Hardening WordPress"
+    }
+  }
 }

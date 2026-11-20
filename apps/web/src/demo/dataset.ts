@@ -30,6 +30,10 @@ export interface DemoData {
   purges: S['PurgeRecord'][];
   jobs: S['Job'][];
   job_logs: S['JobLog'][];
+  audit: S['AuditLog'][];
+  security_events: S['SecurityEvent'][];
+  sessions: S['Session'][];
+  notifications: S['Notification'][];
   [k: string]: unknown;
 }
 

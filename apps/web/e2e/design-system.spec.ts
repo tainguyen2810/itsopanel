@@ -52,8 +52,11 @@ test.describe('ảnh chụp Design System', () => {
       const dialog = page.getByRole('dialog');
       await expect(dialog.getByRole('link', { name: /Máy chủ/ })).toBeVisible();
       // Chờ hiệu ứng mở drawer chạy xong để ảnh không bị mờ giữa chừng.
-      await page.evaluate(() =>
-        Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+      // Chỉ chờ animation của drawer (skeleton của trang chạy vô hạn khi API không được giả lập).
+      await dialog.evaluate((el) =>
+        Promise.all(
+          el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)),
+        ),
       );
       // Drawer phải nằm trên lớp phủ (z-index token): điểm giữa drawer thuộc về dialog.
       const onTop = await dialog.evaluate((el) => {
@@ -103,11 +106,11 @@ test.describe('hành vi shell', () => {
     await expect(page.locator('html')).toHaveClass(/dark/);
     await page.getByRole('button', { name: /^Ngôn ngữ/ }).click();
     await page.getByRole('menuitemradio', { name: 'English' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /^Welcome back/ })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await page.reload();
     await expect(page.locator('html')).toHaveClass(/dark/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /^Welcome back/ })).toBeVisible();
   });
 
   test('thu gọn sidebar ở desktop', async ({ page }) => {

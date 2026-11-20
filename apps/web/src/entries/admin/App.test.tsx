@@ -29,7 +29,7 @@ describe('admin entry', () => {
     );
     renderWithProviders(<App history={at('/admin/dashboard')} />);
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Bảng điều khiển' }),
+      await screen.findByRole('heading', { level: 1, name: /^Chào mừng trở lại/ }),
     ).toBeInTheDocument();
     const nav = screen.getByRole('navigation', { name: 'Điều hướng chính' });
     expect(within(nav).getByRole('link', { name: /^Máy chủ/ })).toHaveAttribute(
@@ -59,7 +59,9 @@ describe('admin entry', () => {
   it('hiển thị tiếng Anh khi chọn en', async () => {
     vi.stubGlobal('fetch', vi.fn(mockFetch({})));
     renderWithProviders(<App history={at('/admin/dashboard')} />, { lang: 'en' });
-    expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /^Welcome back/ }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
 
@@ -67,7 +69,7 @@ describe('admin entry', () => {
     vi.stubGlobal('fetch', vi.fn(mockFetch({})));
     const history = at('/admin/');
     renderWithProviders(<App history={history} />);
-    await screen.findByRole('heading', { level: 1, name: 'Bảng điều khiển' });
+    await screen.findByRole('heading', { level: 1, name: /^Chào mừng trở lại/ });
     expect(history.location.pathname).toBe('/admin/dashboard');
 
     history.push('/admin/servers/01938a02-0001-7000-8000-000002000001/nginx');

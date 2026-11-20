@@ -45,6 +45,36 @@ export class DemoDb {
     return toIso(new Date());
   }
 
+  /** Ghi nhật ký kiểm toán cho thao tác demo (hiện ở /audit-logs và hoạt động gần đây). */
+  audit(opts: {
+    actor: { uuid: string; name: string; email: string };
+    action: string;
+    resource: { type: string; uuid: string } | null;
+    server?: { uuid: string; name: string } | null;
+    jobUuid?: string | null;
+    result?: 'success' | 'failure';
+    changes?: Record<string, unknown>;
+  }) {
+    const uuid = this.newUuid();
+    const entry = {
+      uuid,
+      at: this.now(),
+      actor: opts.actor,
+      impersonator: null,
+      actor_ip: '10.10.5.20',
+      action: opts.action,
+      resource: opts.resource,
+      server: opts.server ?? null,
+      job_uuid: opts.jobUuid ?? null,
+      result: opts.result ?? 'success',
+      changes: opts.changes ?? {},
+      // Chuỗi băm mô phỏng (backend thật nối hash-chain, xem database/sql/extras.sql).
+      hash: uuid.replace(/-/g, '').padEnd(64, '0').slice(0, 64),
+    } as DemoData['audit'][number];
+    this.data.audit.unshift(entry);
+    return entry;
+  }
+
   /** Tạo job mới với các bước theo op agent; trạng thái tiến triển theo thời gian (xem tick). */
   createJob(opts: {
     type: string;

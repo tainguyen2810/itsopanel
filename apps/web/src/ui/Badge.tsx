@@ -45,7 +45,35 @@ export type StatusKey =
   | 'queued'
   | 'online'
   | 'offline'
-  | 'degraded';
+  | 'degraded'
+  | 'ready'
+  | 'locked'
+  | 'disabled'
+  | 'expiring'
+  | 'expired'
+  | 'valid'
+  | 'stopped'
+  | 'exited'
+  | 'installed'
+  | 'available'
+  | 'upgradable'
+  | 'verifying'
+  | 'verified'
+  | 'firing'
+  | 'resolved'
+  | 'migrating'
+  | 'purged'
+  | 'timed_out'
+  | 'cancel_requested'
+  | 'pass'
+  | 'warn'
+  | 'fail'
+  | 'success'
+  | 'failure'
+  | 'error'
+  | 'skipped'
+  | 'connected'
+  | 'disconnected';
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
@@ -61,10 +89,43 @@ const TONE: Record<StatusKey, Tone> = {
   offline: 'danger',
   degraded: 'warning',
   terminated: 'neutral',
+  ready: 'success',
+  locked: 'warning',
+  disabled: 'neutral',
+  expiring: 'warning',
+  expired: 'danger',
+  valid: 'success',
+  stopped: 'neutral',
+  exited: 'neutral',
+  installed: 'success',
+  available: 'neutral',
+  upgradable: 'info',
+  verifying: 'info',
+  verified: 'success',
+  firing: 'danger',
+  resolved: 'success',
+  migrating: 'info',
+  purged: 'neutral',
+  timed_out: 'danger',
+  cancel_requested: 'warning',
+  pass: 'success',
+  warn: 'warning',
+  fail: 'danger',
+  success: 'success',
+  failure: 'danger',
+  error: 'danger',
+  skipped: 'neutral',
+  connected: 'success',
+  disconnected: 'danger',
 };
 
+/** Trạng thái có trong bảng (dữ liệu API có thể có giá trị mới: hiện nguyên văn, tông trung tính). */
+export function isStatusKey(s: string): s is StatusKey {
+  return s in TONE;
+}
+
 interface StatusBadgeProps {
-  status: StatusKey;
+  status: StatusKey | (string & {});
   /** Mô hình desired/observed (D-xx): khi spec_version ≠ observed_version thì hiện "Lệch cấu hình". */
   desiredVersion?: number;
   observedVersion?: number | null;
@@ -85,9 +146,9 @@ export function StatusBadge({
     desiredVersion !== observedVersion;
   return (
     <span className={cn('inline-flex items-center gap-1.5', className)}>
-      <Badge tone={TONE[status]}>
+      <Badge tone={isStatusKey(status) ? TONE[status] : 'neutral'}>
         <span aria-hidden className="size-1.5 rounded-full bg-current" />
-        {t(`status.${status}`)}
+        {isStatusKey(status) ? t(`status.${status}`) : status}
       </Badge>
       {desiredVersion !== undefined && (
         <Badge
@@ -98,5 +159,24 @@ export function StatusBadge({
         </Badge>
       )}
     </span>
+  );
+}
+
+export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+const SEVERITY_TONE: Record<Severity, Tone> = {
+  critical: 'danger',
+  high: 'danger',
+  medium: 'warning',
+  low: 'info',
+  info: 'neutral',
+};
+
+/** Mức độ nghiêm trọng (sự kiện bảo mật, cảnh báo). */
+export function SeverityBadge({ severity, className }: { severity: Severity; className?: string }) {
+  const { t } = useTranslation('common');
+  return (
+    <Badge tone={SEVERITY_TONE[severity]} {...(className ? { className } : {})}>
+      {t(`severity.${severity}`)}
+    </Badge>
   );
 }

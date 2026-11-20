@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 2 — Complete UI Demo (đang làm; Phase 1 ✓ APPROVED 2026-11-20)
-- **Prompt hiện tại:** 2.2 Admin chung (Dashboard, Jobs, Profile, Ctrl+K, Login/MFA, wizard cài đặt). Chạy hàng loạt 2.1 → 2.8, tự merge local cuối Phase
-- **Task đang làm:** 2.2 — Dashboard
+- **Prompt hiện tại:** 2.3 Hạ tầng (Servers, dịch vụ, Docker, Compose, Registries). Chạy hàng loạt 2.1 → 2.8, tự merge local cuối Phase
+- **Task đang làm:** 2.3 — danh sách Server
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-2`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_2_PROMPTS.md`; cuối 2.8 báo cáo Phase 2 và DỪNG (không bắt đầu Phase 3)
 - **Blocker:** Không có (GitHub không bắt buộc; Phase 1 khởi tạo Git local — D-51)
@@ -34,8 +34,8 @@
 Phase 2 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_2_PROMPTS.md`
 
 - ✓ 2.1 Nền demo: router, MSW theo OpenAPI, dataset mở rộng, role switcher, khung trang, smoke test
-- ✱ 2.2 Admin chung: Dashboard, Jobs, Profile, Ctrl+K, Login/MFA, wizard cài đặt
-- ○ 2.3 Hạ tầng: Servers, dịch vụ, Docker, Compose
+- ✓ 2.2 Admin chung: Dashboard, Jobs, Profile, Ctrl+K, Login/MFA, wizard cài đặt
+- ✱ 2.3 Hạ tầng: Servers, dịch vụ, Docker, Compose
 - ○ 2.4 Hosting I: gói, tài khoản hosting
 - ○ 2.5 Hosting II: website, DB, file, SFTP, SSL, DNS, cron, WordPress, Git
 - ○ 2.6 Bảo mật, sao lưu, quản trị
@@ -63,3 +63,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-20 | 1 / 1.7 | Codegen TS (openapi-typescript + openapi-fetch) và Go structs (generator Python), codegen-check; CI 7 job; `make check` 21 bước (20 PASS, 1 SKIP); runbook GitHub; báo cáo Phase 1; clean clone xanh; merge `phase-1 → main` (local) | cde2c40, f1d6205, 62c12f2 + commit này |
 | 2026-11-20 | 1 → 2 | Người dùng duyệt Phase 1 ("Tiếp nhé"); D-54, D-55 APPROVED; viết PHASE_2_PROMPTS.md, mở nhánh `phase-2` | — |
 | 2026-11-20 | 2 / 2.1 | Dataset mở rộng + check_demo.py; MSW theo OpenAPI (dispatcher theo template, job giả lập theo thời gian, phạm vi vai trò); contract list khai báo 422; TanStack Router theo sitemap (58 admin + 18 portal), guard 403, breadcrumb, khung trang (PageHeader, ListPage URL state, DetailPage tabs URL, FormDialog, trạng thái), drawer job; `dev:demo`/`build:demo`; Vitest 110, Playwright 106 | 87c2fe0 + commit này |
+| 2026-11-20 | 2 / 2.2 | Contract thêm `jobs/{id}:retry` (admin + portal, theo 05-API); API giả lập ghi (auth/MFA/step-up/đổi mật khẩu/phiên, hủy/thử lại job sinh audit) và dashboard tính từ dữ liệu theo phạm vi vai trò; Dashboard theo mockup, Jobs + chi tiết, Hồ sơ (mật khẩu, MFA, phiên), Ctrl+K tìm thật, Đăng nhập/MFA, wizard cài đặt 10 bước; namespace i18n `admin` (575 key); Vitest 141, Playwright 112 | commit này |

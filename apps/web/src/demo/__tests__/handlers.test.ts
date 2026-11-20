@@ -28,6 +28,11 @@ const ID_BY_SEGMENT: Record<string, string> = {
   'cron-jobs': first('cron'),
 };
 const OTHER: Record<string, string> = { group: 'general' };
+/** Tham số query bắt buộc theo contract. */
+const QUERY: Record<string, string> = {
+  '/api/v1/admin/metrics/servers/{id}': '?metric=cpu_pct&range=24h',
+  '/api/v1/admin/metrics/hosting-accounts/{id}': '?metric=ram_pct&range=7d',
+};
 
 function urlFor(path: string): string {
   return path.replace(/\{(\w+)\}/g, (_, k: string, offset: number) => {
@@ -55,7 +60,7 @@ describe('API giả lập (MSW) đúng theo OpenAPI', () => {
   it.each(routes.filter((r) => r.method === 'get').map((r) => [r.path, r] as const))(
     'GET %s trả body hợp lệ theo schema',
     async (_p, r) => {
-      const res = await fetch(`http://demo.local${urlFor(r.path)}`);
+      const res = await fetch(`http://demo.local${urlFor(r.path)}${QUERY[r.path] ?? ''}`);
       const body: unknown = res.status === 204 ? undefined : await res.json();
       expect(res.status, JSON.stringify(body)).toBeLessThan(300);
       expect(validateResponse(r.path, r.method, res.status, body)).toEqual([]);

@@ -1,4 +1,10 @@
-import { createContext, useContext, type AnchorHTMLAttributes, type ComponentType } from 'react';
+import {
+  createContext,
+  createElement,
+  useContext,
+  type AnchorHTMLAttributes,
+  type ComponentType,
+} from 'react';
 
 export type AppLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & { href: string };
 
@@ -12,4 +18,9 @@ export const AppLinkContext = createContext<ComponentType<AppLinkProps>>(functio
 
 export function useAppLink() {
   return useContext(AppLinkContext);
+}
+
+/** Link nội bộ: dùng Link của router nếu app có router, ngược lại là thẻ <a>. */
+export function AppLink(props: AppLinkProps) {
+  return createElement(useContext(AppLinkContext), props);
 }

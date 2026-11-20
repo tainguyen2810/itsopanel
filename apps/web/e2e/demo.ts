@@ -54,6 +54,14 @@ export async function asPersona(page: Page, realm: 'admin' | 'portal', uuid: str
   ] as const);
 }
 
-export const test = base.extend({});
-test.use({ baseURL: DEMO_URL });
+/**
+ * baseURL đặt qua fixture (không dùng test.use trong module chung: module chỉ nạp một lần
+ * mỗi worker nên test.use chỉ áp cho file spec nạp đầu tiên).
+ */
+export const test = base.extend({
+  // eslint-disable-next-line no-empty-pattern
+  baseURL: async ({}, provide) => {
+    await provide(DEMO_URL);
+  },
+});
 export { expect };
