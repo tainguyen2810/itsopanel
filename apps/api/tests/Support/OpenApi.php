@@ -108,6 +108,9 @@ final class OpenApi
                 [$target, $pointer] = array_pad(explode('#', $v, 2), 2, '');
                 $target = $target === '' ? $file : ltrim($target, './');
                 $out[$k] = self::BASE.$target.'#'.str_replace('/components/schemas/', '/$defs/', $pointer);
+            } elseif (in_array($k, ['additionalProperties', 'items'], true) && $v === []) {
+                // YAML `{}` (schema rỗng = mọi giá trị) bị parse thành mảng rỗng PHP.
+                $out[$k] = true;
             } else {
                 $out[$k] = self::rewrite($v, $file);
             }

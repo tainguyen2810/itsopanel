@@ -26,22 +26,26 @@ final class AgentClient
 
     /**
      * @param  array<string, mixed>  $params
+     * @param  array{user_uuid: string|null, role: string}|null  $requestedBy  chỉ dùng cho audit phía agent
+     * @param  float|null  $timeout  giây; mặc định ITSO_AGENT_TIMEOUT (job truyền thời gian còn lại của job)
      */
-    public function call(string $op, array $params = [], ?string $opId = null): AgentResult
+    public function call(string $op, array $params = [], ?string $opId = null, ?array $requestedBy = null,
+        ?float $timeout = null): AgentResult
     {
         $now = time();
+        $timeout = $timeout !== null ? max(1.0, $timeout) : $this->timeout;
         $envelope = [
             'v' => 1,
             'op' => $op,
             'op_id' => $opId ?? Str::uuid()->toString().':1:1',
             'params' => (object) $params,
-            'deadline' => gmdate('Y-m-d\TH:i:s\Z', $now + (int) ceil($this->timeout)),
+            'deadline' => gmdate('Y-m-d\TH:i:s\Z', $now + (int) ceil($timeout)),
             'ts' => $now,
             'nonce' => Str::random(24),
-            'requested_by' => ['user_uuid' => null, 'role' => 'SYSTEM'],
+            'requested_by' => $requestedBy ?? ['user_uuid' => null, 'role' => 'SYSTEM'],
         ];
 
-        $options = ['timeout' => $this->timeout, 'connect_timeout' => min(2.0, $this->timeout)];
+        $options = ['timeout' => $timeout, 'connect_timeout' => min(2.0, $timeout)];
         if ($this->socket !== null && $this->socket !== '') {
             $options['curl'] = [CURLOPT_UNIX_SOCKET_PATH => $this->socket];
             $base = 'http://agent';

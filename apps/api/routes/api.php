@@ -1,13 +1,19 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\ApiTokenController;
+use App\Http\Controllers\Api\V1\Admin\AuditLogController;
+use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
+use App\Http\Controllers\Api\V1\Admin\ServerController;
+use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\MfaController;
 use App\Http\Controllers\Api\V1\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\JobController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\SystemController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,11 +80,40 @@ Route::prefix('v1')->group(function (): void {
             Route::post('api-tokens', [ApiTokenController::class, 'store'])
                 ->middleware(['itso.perm:api_tokens.manage', 'itso.self']);
             Route::delete('api-tokens/{id}', [ApiTokenController::class, 'destroy'])->middleware('itso.perm:api_tokens.manage');
+
+            // Job, audit, thông báo, cài đặt, server, dashboard (3.4)
+            Route::get('dashboard/summary', [DashboardController::class, 'summary']);
+            Route::get('jobs', [JobController::class, 'index'])->middleware('itso.perm:jobs.read');
+            Route::get('jobs/{id}', [JobController::class, 'show'])->middleware('itso.perm:jobs.read');
+            Route::get('jobs/{id}/events', [JobController::class, 'events'])->middleware('itso.perm:jobs.read');
+            Route::get('jobs/{id}/logs', [JobController::class, 'logs'])->middleware('itso.perm:jobs.read');
+            Route::post('jobs/{id}:cancel', [JobController::class, 'cancel'])->middleware('itso.perm:jobs.write');
+            Route::post('jobs/{id}:retry', [JobController::class, 'retry'])->middleware(['itso.perm:jobs.write', 'itso.idempotent']);
+            Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('itso.perm:audit.read');
+            Route::get('audit-logs/export', [AuditLogController::class, 'export'])->middleware('itso.perm:audit.export');
+            Route::get('notifications', [NotificationController::class, 'index']);
+            Route::post('notifications/{id}:read', [NotificationController::class, 'read']);
+            Route::post('notifications:read-all', [NotificationController::class, 'readAll']);
+            Route::get('settings/{group}', [SettingsController::class, 'show'])->middleware('itso.perm:settings.read');
+            Route::patch('settings/{group}', [SettingsController::class, 'update'])
+                ->middleware(['itso.perm:settings.write', 'itso.step-up']);
+            Route::get('servers', [ServerController::class, 'index'])->middleware('itso.perm:servers.read');
+            Route::get('servers/{id}', [ServerController::class, 'show'])->middleware('itso.perm:servers.read');
+            Route::patch('servers/{id}', [ServerController::class, 'update'])->middleware('itso.perm:servers.write');
         });
 
         // ---- /portal: realm portal (chỉ phiên cookie)
         Route::prefix('portal')->middleware(['itso.auth:portal', 'itso.mfa'])->group(function (): void {
-            // Endpoint portal: Prompt 3.5.
+            Route::get('jobs', [JobController::class, 'index']);
+            Route::get('jobs/{id}', [JobController::class, 'show']);
+            Route::get('jobs/{id}/events', [JobController::class, 'events']);
+            Route::get('jobs/{id}/logs', [JobController::class, 'logs']);
+            Route::post('jobs/{id}:cancel', [JobController::class, 'cancel']);
+            Route::post('jobs/{id}:retry', [JobController::class, 'retry'])->middleware('itso.idempotent');
+            Route::get('notifications', [NotificationController::class, 'index']);
+            Route::post('notifications/{id}:read', [NotificationController::class, 'read']);
+            Route::post('notifications:read-all', [NotificationController::class, 'readAll']);
+            // Gói, account, overview: Prompt 3.5.
         });
     });
 });

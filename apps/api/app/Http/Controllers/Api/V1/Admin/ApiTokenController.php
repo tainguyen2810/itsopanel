@@ -10,6 +10,7 @@ use App\Exceptions\ApiProblem;
 use App\Http\Support\Listing;
 use App\Models\ApiToken;
 use App\Models\User;
+use App\Support\PublicId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,7 +19,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * API token nội bộ của chính mình (CLI, automation). Secret chỉ trả một lần lúc tạo; DB chỉ giữ SHA-256.
- * Bảng api_tokens không có cột uuid → uuid công khai là HMAC(APP_KEY, id).
+ * Bảng api_tokens không có cột uuid → uuid công khai theo App\Support\PublicId.
  */
 final class ApiTokenController
 {
@@ -28,10 +29,7 @@ final class ApiTokenController
 
     public static function publicId(int $id): string
     {
-        $h = hash_hmac('sha256', 'api-token:'.$id, (string) config('app.key'));
-
-        return sprintf('%s-%s-8%s-%s-%s', substr($h, 0, 8), substr($h, 8, 4), substr($h, 13, 3),
-            substr($h, 16, 4), substr($h, 20, 12));
+        return PublicId::encode('api_token', $id);
     }
 
     public function index(Request $request): JsonResponse
@@ -77,15 +75,15 @@ final class ApiTokenController
     public function destroy(Request $request, string $id): Response
     {
         $user = $this->actor($request);
-        foreach (ApiToken::query()->where('user_id', $user->id)->get() as $t) {
-            if (hash_equals(self::publicId($t->id), strtolower($id))) {
-                $this->audit->record('api_token.delete', $t, ['name' => $t->name]);
-                $t->delete();
-
-                return response()->noContent();
-            }
+        $tokenId = PublicId::decode('api_token', $id);
+        $t = $tokenId !== null ? ApiToken::query()->where('user_id', $user->id)->find($tokenId) : null;
+        if ($t === null) {
+            throw new NotFoundHttpException;
         }
-        throw new NotFoundHttpException;
+        $this->audit->record('api_token.delete', $t, ['name' => $t->name]);
+        $t->delete();
+
+        return response()->noContent();
     }
 
     /** @return array<string, mixed> */

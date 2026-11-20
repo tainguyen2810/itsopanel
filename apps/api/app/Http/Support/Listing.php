@@ -42,7 +42,9 @@ final class Listing
             }
             $query->orderBy($sortable[$name], $desc ? 'desc' : 'asc');
         }
-        $query->orderBy("$table.id", 'desc');
+        if (! in_array("$table.id", array_map(fn (string $p): string => $sortable[ltrim($p, '-')], explode(',', $sort)), true)) {
+            $query->orderBy("$table.id", 'desc');
+        }
         $cursor = $request->query('cursor');
         try {
             $page = $query->cursorPaginate((int) $limit, ["$table.*"], 'cursor', is_string($cursor) ? $cursor : null);

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Auth;
 
 use App\Models\HostingAccount;
+use App\Models\Job;
+use App\Models\Server;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +53,24 @@ final class Access
     }
 
     /**
+     * Query servers mà user realm admin được thấy (SA: mọi server; ADMIN: server trong phạm vi).
+     *
+     * @return Builder<Server>
+     */
+    public function servers(User $u): Builder
+    {
+        $q = Server::query();
+        if ($this->isSuperAdmin($u)) {
+            return $q;
+        }
+        if ($u->realm !== Realm::ADMIN) {
+            return $q->whereRaw('false');
+        }
+
+        return $q->whereIn('servers.id', $this->scopedServerIds($u) ?: [0]);
+    }
+
+    /**
      * Query hosting_accounts mà user được thấy.
      *
      * @return Builder<HostingAccount>
@@ -86,6 +106,29 @@ final class Access
         return $q->where(fn (Builder $w) => $w->where('users.id', $actor->id)
             ->orWhere(fn (Builder $p) => $p->where('realm', Realm::PORTAL)
                 ->where(fn (Builder $o) => $o->whereIn('users.id', $owners)->orWhere('created_by_user_id', $actor->id))));
+    }
+
+    /**
+     * Job user được thấy: SA mọi job; ADMIN job trên server trong phạm vi, job của account trong phạm vi
+     * hoặc job mình tạo; USER job của account mình sở hữu hoặc mình tạo.
+     *
+     * @return Builder<Job>
+     */
+    public function jobs(User $u): Builder
+    {
+        $q = Job::query();
+        if ($this->isSuperAdmin($u)) {
+            return $q;
+        }
+        $accounts = $this->accounts($u)->select('hosting_accounts.id');
+
+        return $q->where(function (Builder $w) use ($u, $accounts): void {
+            $w->where('requested_by_user_id', $u->id)
+                ->orWhere(fn (Builder $r) => $r->where('resource_type', 'hosting_account')->whereIn('resource_id', $accounts));
+            if ($u->realm === Realm::ADMIN) {
+                $w->orWhereIn('server_id', $this->scopedServerIds($u) ?: [0]);
+            }
+        });
     }
 
     public function canSeeUser(User $actor, User $target): bool

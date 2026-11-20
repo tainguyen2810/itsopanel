@@ -2,8 +2,10 @@
 
 use App\Http\Middleware\ApplyRememberPreference;
 use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\AuditDenied;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureIpAllowed;
+use App\Http\Middleware\Idempotency;
 use App\Http\Middleware\RejectImpersonation;
 use App\Http\Middleware\RequireMfa;
 use App\Http\Middleware\RequirePermission;
@@ -37,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ApplyRememberPreference::class,
             VerifyCsrf::class,
             EnsureIpAllowed::class,
+            AuditDenied::class,
         ]);
         // ResolveRealm đặt tên cookie phiên nên phải chạy trước EncryptCookies/StartSession (sắp xếp theo priority).
         $middleware->prependToPriorityList(EncryptCookies::class, ResolveRealm::class);
@@ -47,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'itso.scope' => RequireTokenScope::class,
             'itso.perm' => RequirePermission::class,
             'itso.self' => RejectImpersonation::class,
+            'itso.idempotent' => Idempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

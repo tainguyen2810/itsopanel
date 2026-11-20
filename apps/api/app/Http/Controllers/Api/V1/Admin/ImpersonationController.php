@@ -11,6 +11,7 @@ use App\Exceptions\ApiProblem;
 use App\Http\Presenters\UserPresenter;
 use App\Models\ImpersonationSession;
 use App\Models\User;
+use App\Support\PublicId;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -34,10 +35,7 @@ final class ImpersonationController
 
     public static function publicId(int $id): string
     {
-        $h = hash_hmac('sha256', 'impersonation:'.$id, (string) config('app.key'));
-
-        return sprintf('%s-%s-8%s-%s-%s', substr($h, 0, 8), substr($h, 8, 4), substr($h, 13, 3),
-            substr($h, 16, 4), substr($h, 20, 12));
+        return PublicId::encode('impersonation', $id);
     }
 
     public function start(Request $request, string $id): JsonResponse

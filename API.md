@@ -54,6 +54,19 @@ Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so v
 | Giả danh | D-61: vé một lần 60 giây → `portal_url` (`{ITSO_PORTAL_URL}/impersonate?ticket=…`) → `POST /auth/impersonation:accept`; phiên 30 phút; `Me.impersonating` = người giả danh |
 | Ma trận kiểm thử | `apps/api/tests/Feature/Rbac/MatrixTest.php`: mỗi endpoint × SA / ADMIN trong phạm vi / ADMIN ngoài phạm vi / USER; Prompt 3.4–3.5 thêm dòng cho endpoint mới |
 
+## 1c. Job, audit, thông báo, cài đặt, server (Prompt 3.4)
+
+| Mục | Cách làm |
+|---|---|
+| Job (D-60) | `JobDispatcher` tạo `jobs` + `job_steps` (mỗi bước một op agent có kiểu, params không chứa secret) → queue Redis (`RunJob`, sau commit) → `JobRunner`. `op_id = job_uuid:seq:attempt`; agent cache theo op_id nên gửi lại không chạy hai lần. Lỗi `retryable` / agent không kết nối → xếp hàng lại, backoff 5·2^(n-1) giây (tối đa 300) tới `max_attempts`; lỗi khác → `failed` + thông báo in-app cho người yêu cầu. Hủy: `queued` → `cancelled` ngay, `running` → `cancel_requested`, dừng trước bước kế. Quá `timeout_sec` → `timed_out`. Hook theo loại job: `config('itso.job_handlers')` (`JobHandler`) |
+| /jobs | Admin (`jobs.read` / `jobs.write`) và Portal (job của account mình hoặc mình tạo): list (`filter[state]`, `q`, cursor), chi tiết (ETag), `/logs` (cursor theo seq), `/events` (`text/event-stream`, một bản chụp Job; luồng liên tục qua gateway ở Phase 11, client polling 2 giây), `:cancel` (409 `invalid_state_transition` nếu đã xong), `:retry` (202, chạy lại từ bước chưa xong) |
+| Idempotency-Key | Middleware `itso.idempotent` cho POST tạo job: header UUID bắt buộc (422); lưu 24 giờ theo (user, key); cùng request → trả lại response cũ + `Idempotent-Replayed: true`; khác request → `409 idempotency_key_reused` (theo contract, thay cho 422 trong prompt) |
+| Audit | `AuditLogger` che secret; DB chặn UPDATE/DELETE, trigger tính hash chain; `php artisan itso:audit-verify` kiểm chuỗi. Middleware `AuditDenied`: thao tác ghi bị 403 → bản ghi `access.denied`, `result = denied`. `/audit-logs` (`audit.read`, ADMIN chỉ thấy hành động của mình và tài nguyên trong phạm vi; `filter[action]` hỗ trợ `prefix.*`, `filter[actor]`) và `/audit-logs/export` (`audit.export`, CSV UTF-8 BOM, ô bắt đầu bằng `= + - @ tab CR` thêm `'`) |
+| Thông báo | In-app, chỉ của chính user (admin và portal): list, `{id}:read`, `:read-all` (204). Email/Telegram: Phase 11 |
+| Cài đặt | `/admin/settings/{group}` (`general`, `security`, `smtp`, `backup`, `updates`; định nghĩa ở `config/itso_settings.php`): chỉ SA (`settings.read/write`), PATCH cần step-up; secret (mật khẩu SMTP) lưu mã hóa, GET chỉ trả `<key>_set`; ETag/If-Match → 412; khóa lạ → 422 |
+| Server | `/admin/servers` list/chi tiết/PATCH (`servers.read/write`, ADMIN chỉ server trong phạm vi): `name`, `role_tags`, `accepting_new_accounts`, mỗi thay đổi tăng `spec_version`; ETag/If-Match. Server local tạo từ cấu hình (`ITSO_LOCAL_SERVER*`, `LocalServerSeeder`), dữ kiện observed lấy bằng `php artisan itso:server-local` (op `system.ping` + `system.info`); `agent_connected` = agent liên lạc trong `ITSO_AGENT_CONNECTED_WINDOW` giây |
+| Dashboard | `/admin/dashboard/summary`: đếm server/account/user/gói theo phạm vi, phân bổ gói, job đang chạy; `alerts_firing` và `security_events_24h` = 0 tới Phase 11/7 |
+
 ## 2. Hosting Provisioning Service (lớp nội bộ)
 
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.

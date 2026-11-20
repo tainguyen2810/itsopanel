@@ -11,6 +11,16 @@ return [
         'socket' => env('ITSO_AGENT_SOCKET', '/tmp/itso-mock-agent.sock'),
         'url' => env('ITSO_AGENT_URL'),
         'timeout' => (float) env('ITSO_AGENT_TIMEOUT', 5),
+        // Agent coi là "đang kết nối" nếu lần liên lạc cuối trong khoảng này (giây).
+        'connected_window_sec' => (int) env('ITSO_AGENT_CONNECTED_WINDOW', 300),
+    ],
+
+    // Server local (Phase 3: một server, agent local/mock). `itso:server-local` tạo/cập nhật bản ghi này.
+    'local_server' => [
+        'enabled' => (bool) env('ITSO_LOCAL_SERVER', true),
+        'name' => env('ITSO_LOCAL_SERVER_NAME') ?: 'srv-local',
+        'hostname' => env('ITSO_LOCAL_SERVER_HOSTNAME') ?: 'localhost',
+        'role_tags' => ['web', 'db'],
     ],
 
     // Xác thực (D-58). Realm của /api/v1/auth/*: theo host nếu khớp, ngược lại theo header X-ITSO-Realm.

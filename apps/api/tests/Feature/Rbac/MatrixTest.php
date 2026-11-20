@@ -28,6 +28,18 @@ const MATRIX = [
     ['GET', '/api/v1/admin/api-tokens', null, 200, 403, 403, 401],
     ['POST', '/api/v1/admin/api-tokens', ['name' => 'ci', 'scopes' => ['users:read'], 'expires_at' => '+1 month'], 201, 403, 403, 419],
     ['GET', '/api/v1/admin/system/version', null, 200, 200, 200, 401],
+    // 3.4: job, audit, thông báo, cài đặt, server, dashboard ({server} = server chứa account của US_OWNER)
+    ['GET', '/api/v1/admin/jobs', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/audit-logs', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/audit-logs/export', null, 200, 403, 403, 401],
+    ['GET', '/api/v1/admin/notifications', null, 200, 200, 200, 401],
+    ['POST', '/api/v1/admin/notifications:read-all', [], 204, 204, 204, 419],
+    ['GET', '/api/v1/admin/settings/general', null, 200, 403, 403, 401],
+    ['PATCH', '/api/v1/admin/settings/general', ['panel_name' => 'ITSO'], 200, 403, 403, 419],
+    ['GET', '/api/v1/admin/servers', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/servers/{server}', null, 200, 200, 404, 401],
+    ['PATCH', '/api/v1/admin/servers/{server}', ['accepting_new_accounts' => false], 200, 403, 403, 419],
+    ['GET', '/api/v1/admin/dashboard/summary', null, 200, 200, 200, 401],
 ];
 
 dataset('matrix', function () {
@@ -42,12 +54,12 @@ dataset('matrix', function () {
 it('ma trận quyền', function (string $method, string $path, ?array $body, string $persona, int $expected) {
     $a = new Actors($this);
     $spa = $a->spa($persona);
-    $uri = strtr($path, ['{owner}' => $a->owner->uuid, '{other}' => $a->adminOut->uuid]);
+    $uri = strtr($path, ['{owner}' => $a->owner->uuid, '{other}' => $a->adminOut->uuid, '{server}' => $a->server->uuid]);
     if (isset($body['expires_at'])) {
         $body['expires_at'] = now()->modify($body['expires_at'])->toIso8601String();
     }
     $res = $spa->call($method, $uri, $body ?? []);
-    expect($res->status())->toBe($expected, "$method $uri × $persona: ".$res->getContent());
+    expect($res->getStatusCode())->toBe($expected, "$method $uri × $persona: ".$res->getContent());
     if ($expected >= 400) {
         expect($res->headers->get('Content-Type'))->toBe('application/problem+json');
     }

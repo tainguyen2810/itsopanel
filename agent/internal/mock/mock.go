@@ -52,6 +52,9 @@ func Register(r *registry.Registry, started time.Time) error {
 	}); err != nil {
 		return err
 	}
+	if err := registerAccounts(r); err != nil {
+		return err
+	}
 	return r.Register(contracts.OpSystemInfo, func(context.Context, *envelope.Envelope) (map[string]any, error) {
 		return toData(contracts.SystemInfoResult{
 			OS:        srv.OS,

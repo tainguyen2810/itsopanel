@@ -1,0 +1,127 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Auth\Access;
+use App\Auth\Realm;
+use App\Domain\Audit\AuditLogger;
+use App\Domain\Jobs\JobRunner;
+use App\Exceptions\ApiProblem;
+use App\Http\Presenters\JobPresenter;
+use App\Http\Support\Listing;
+use App\Models\Job;
+use App\Models\JobLog;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+/**
+ * /admin/jobs và /portal/jobs (cùng controller, phạm vi theo App\Auth\Access::jobs). Tiến độ: polling
+ * GET /jobs/{id} hoặc /jobs/{id}/events (text/event-stream, một snapshot + retry 2 giây; luồng thật Phase 11).
+ */
+final class JobController
+{
+    public function __construct(
+        private readonly Access $access,
+        private readonly JobPresenter $present,
+        private readonly JobRunner $runner,
+        private readonly AuditLogger $audit,
+    ) {}
+
+    public function index(Request $request): JsonResponse
+    {
+        $request->validate(['filter.state' => ['sometimes', 'in:queued,running,succeeded,failed,cancel_requested,cancelled,timed_out']]);
+        $q = $this->access->jobs($this->user($request));
+        $state = $request->input('filter.state');
+        if (is_string($state)) {
+            $q->where('state', $state);
+        }
+        Listing::search($request, $q, ['jobs.type']);
+        $realm = Realm::of($request);
+
+        return response()->json(Listing::page($request, $q,
+            ['created_at' => 'jobs.created_at', 'state' => 'jobs.state', 'type' => 'jobs.type'],
+            '-created_at', fn (Job $j): array => $this->present->job($j, $realm)));
+    }
+
+    public function show(Request $request, string $id): JsonResponse
+    {
+        $job = $this->find($request, $id);
+
+        return response()->json(['data' => $this->present->job($job, Realm::of($request))])
+            ->header('ETag', '"'.sha1($job->state.$job->progress.$job->updated_at->format('U.u')).'"');
+    }
+
+    public function events(Request $request, string $id): Response
+    {
+        $job = $this->find($request, $id);
+        $data = json_encode($this->present->job($job, Realm::of($request)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return response("retry: 2000\nevent: job\ndata: $data\n\n", 200, [
+            'Content-Type' => 'text/event-stream; charset=utf-8',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
+
+    public function logs(Request $request, string $id): JsonResponse
+    {
+        $job = $this->find($request, $id);
+        $q = JobLog::query()->where('job_id', $job->id);
+        Listing::search($request, $q, ['job_logs.message']);
+
+        return response()->json(Listing::page($request, $q, ['seq' => 'job_logs.id', 'at' => 'job_logs.at'], 'seq',
+            fn (JobLog $l): array => JobPresenter::log($l)));
+    }
+
+    public function cancel(Request $request, string $id): JsonResponse
+    {
+        $job = $this->find($request, $id);
+        if (! in_array($job->state, ['queued', 'running'], true)) {
+            throw new ApiProblem(409, 'invalid_state_transition', 'Không hủy được', "Job đang ở trạng thái {$job->state}.");
+        }
+        $job = $this->runner->cancel($job);
+        $this->audit->record('job.cancel', $job, ['state' => $job->state], 'success', $job->server_id, $job->id);
+
+        return response()->json(['data' => $this->present->job($job, Realm::of($request))]);
+    }
+
+    public function retry(Request $request, string $id): JsonResponse
+    {
+        $job = $this->find($request, $id);
+        if (! in_array($job->state, ['failed', 'cancelled', 'timed_out'], true)) {
+            throw new ApiProblem(409, 'invalid_state_transition', 'Không chạy lại được', "Job đang ở trạng thái {$job->state}.");
+        }
+        $job = $this->runner->retry($job);
+        $this->audit->record('job.retry', $job, null, 'success', $job->server_id, $job->id);
+        $job->refresh();
+        $data = $this->present->job($job, Realm::of($request));
+
+        return response()->json(['job' => $data, 'resource' => $data['resource']], 202);
+    }
+
+    private function user(Request $request): User
+    {
+        $u = $request->user();
+        if (! $u instanceof User) {
+            throw ApiProblem::unauthenticated();
+        }
+
+        return $u;
+    }
+
+    private function find(Request $request, string $id): Job
+    {
+        $job = Str::isUuid($id) ? $this->access->jobs($this->user($request))->where('jobs.uuid', $id)->first() : null;
+        if (! $job instanceof Job) {
+            throw new NotFoundHttpException;
+        }
+
+        return $job;
+    }
+}
