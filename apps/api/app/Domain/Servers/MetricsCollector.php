@@ -43,7 +43,7 @@ final class MetricsCollector
         }
         $now = Carbon::now();
         try {
-            $m = $this->agent->call('metrics.snapshot');
+            $m = $this->agent->forServer($server->id)->call('metrics.snapshot');
             if ($m->ok && $m->data !== null) {
                 $this->storeSnapshot($server->refresh(), $m->data, $now);
                 $out['metrics'] = true;
@@ -59,7 +59,7 @@ final class MetricsCollector
     /** Hỏi trạng thái các dịch vụ trong allowlist rồi ghi server_services. Trả số dịch vụ đã ghi. */
     public function services(Server $server): int
     {
-        $res = $this->agent->call('service.status', ['names' => self::SERVICES]);
+        $res = $this->agent->forServer($server->id)->call('service.status', ['names' => self::SERVICES]);
         if (! $res->ok || ! is_array($res->data['services'] ?? null)) {
             return 0;
         }

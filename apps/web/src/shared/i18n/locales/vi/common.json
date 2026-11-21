@@ -195,7 +195,9 @@
       "update": "Cập nhật máy chủ",
       "reboot": "Khởi động lại máy chủ",
       "enroll": "Tạo token thêm máy chủ",
-      "revoke": "Thu hồi node"
+      "revoke": "Thu hồi node",
+      "join": "Node đã join control plane",
+      "cert_rotate": "Xoay chứng chỉ node"
     },
     "service": {
       "restart": "Khởi động lại dịch vụ",

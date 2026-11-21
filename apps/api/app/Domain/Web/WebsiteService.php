@@ -30,7 +30,7 @@ use Illuminate\Support\Str;
  */
 final class WebsiteService
 {
-    public const ACTIVE_JOB_STATES = ['queued', 'running', 'cancel_requested'];
+    public const ACTIVE_JOB_STATES = ['queued', 'running', 'cancel_requested', 'waiting_agent'];
 
     public function __construct(
         private readonly JobDispatcher $jobs,
@@ -330,7 +330,7 @@ final class WebsiteService
     {
         $a = $w->account;
         try {
-            $res = $this->agent->call('log.tail', ['account' => ProvisioningService::ref($a), 'site_dir' => $w->primary_domain,
+            $res = $this->agent->forServer($a->server_id)->call('log.tail', ['account' => ProvisioningService::ref($a), 'site_dir' => $w->primary_domain,
                 'kind' => $kind, 'lines' => max(1, min(500, $lines))], (string) Str::uuid7().':1:1',
                 ['user_uuid' => $actor->uuid, 'role' => $actor->roleKey() ?? 'SYSTEM'], 10.0);
         } catch (AgentUnavailable $e) {

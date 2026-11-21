@@ -630,7 +630,7 @@ def admin_paths(api: Api):
             ok=ref("NodeEnrollment"), ok_example=one(D.NODE_ENROLLMENT), status="201",
             desc="itso-relay nhận yêu cầu của node trên cổng 28444 (TLS, node ghim `ca_sha256`) rồi chuyển tiếp tới route này "
                  "qua 127.0.0.1 kèm header `X-Itso-Relay-Signature` (HMAC bằng khóa relay). Token sai/hết hạn/đã dùng → 422 "
-                 "`enrollment_invalid` (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256, CN = `server_uuid` được cấp.")
+                 "`enrollment_invalid` (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256 với CN `itso-enroll` (node chưa biết uuid); chứng chỉ cấp ra có CN = `server_uuid`.")
     api.add("post", "/servers/{id}:revoke", "revokeServer",
             "Thu hồi node: chặn chứng chỉ ngay, agent không kết nối lại được (chỉ khi không còn account)", "Servers",
             params=idp, body=obj({"confirm_name": s(pattern="^[a-z0-9][a-z0-9-]{1,62}$")}),

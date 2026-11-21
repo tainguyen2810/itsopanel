@@ -78,7 +78,7 @@ it('node chưa có khóa HMAC → AgentUnavailable', function () {
     expect(fn () => app(AgentClient::class)->forServer($s->id))->toThrow(AgentUnavailable::class, 'khóa HMAC');
 });
 
-it('JobRunner gửi bước của job tới đúng node qua relay; node mất kết nối → lỗi agent_unreachable có thể thử lại', function () {
+it('JobRunner gửi bước của job tới đúng node qua relay; node mất kết nối → job chờ node (waiting_agent) có hạn', function () {
     $node = p9node(str_repeat('k', 48));
     $calls = 0;
     Http::fake(['relay/v1/nodes/*' => function (Request $r) use (&$calls) {
@@ -90,5 +90,5 @@ it('JobRunner gửi bước của job tới đúng node qua relay; node mất k�
     $job = app(JobDispatcher::class)->dispatch((new JobSpec('system.ping', null, $node->id, 1, 60))->step('system.ping', []), null);
     app(JobRunner::class)->run($job->id);
     $job->refresh();
-    expect($calls)->toBe(1)->and($job->state)->toBe('failed')->and($job->error_code)->toBe('agent_unreachable');
+    expect($calls)->toBe(1)->and($job->state)->toBe('waiting_agent')->and($job->agent_deadline_at)->not->toBeNull();
 });

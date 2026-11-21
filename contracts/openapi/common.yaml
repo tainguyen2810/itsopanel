@@ -173,6 +173,8 @@ components:
       - invalid_state_transition
       - server_not_accepting
       - agent_unavailable
+      - agent_unreachable
+      - enrollment_invalid
       - job_failed
       - legal_hold_active
       - retention_not_elapsed

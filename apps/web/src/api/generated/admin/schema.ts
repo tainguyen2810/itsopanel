@@ -4053,7 +4053,7 @@ export interface paths {
         put?: never;
         /**
          * Node join bằng token: ký CSR, tạo server + khóa HMAC (chỉ itso-relay gọi qua loopback)
-         * @description itso-relay nhận yêu cầu của node trên cổng 28444 (TLS, node ghim `ca_sha256`) rồi chuyển tiếp tới route này qua 127.0.0.1 kèm header `X-Itso-Relay-Signature` (HMAC bằng khóa relay). Token sai/hết hạn/đã dùng → 422 `enrollment_invalid` (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256, CN = `server_uuid` được cấp.
+         * @description itso-relay nhận yêu cầu của node trên cổng 28444 (TLS, node ghim `ca_sha256`) rồi chuyển tiếp tới route này qua 127.0.0.1 kèm header `X-Itso-Relay-Signature` (HMAC bằng khóa relay). Token sai/hết hạn/đã dùng → 422 `enrollment_invalid` (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256 với CN `itso-enroll` (node chưa biết uuid); chứng chỉ cấp ra có CN = `server_uuid`.
          */
         post: operations["enrollNode"];
         delete?: never;
@@ -5551,7 +5551,7 @@ export interface components {
             email: string;
         };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "agent_unreachable" | "enrollment_invalid" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */

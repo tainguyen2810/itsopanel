@@ -58,6 +58,12 @@ final class AgentClient
             $server->uuid, self::decryptKey($agent));
     }
 
+    /** Server có agent qua relay (node từ xa)? */
+    public static function isRemote(?int $serverId): bool
+    {
+        return $serverId !== null && Agent::query()->where('server_id', $serverId)->where('transport', 'mtls')->exists();
+    }
+
     /** Khóa HMAC riêng của node: cột bytea chứa chuỗi Crypt (APP_KEY). */
     public static function decryptKey(Agent $agent): string
     {

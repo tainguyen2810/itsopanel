@@ -195,7 +195,9 @@
       "update": "Server updated",
       "reboot": "Server reboot",
       "enroll": "Create server enrollment token",
-      "revoke": "Revoke node"
+      "revoke": "Revoke node",
+      "join": "Node joined the control plane",
+      "cert_rotate": "Node certificate rotated"
     },
     "service": {
       "restart": "Service restarted",

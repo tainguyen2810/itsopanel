@@ -57,7 +57,7 @@ func newFakeCP(t *testing.T) *fakeCP {
 		f.token.Store(in.Token)
 		if in.Token != joinToken {
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			_, _ = w.Write([]byte(`{"code":"enrollment_invalid","message":"token sai hoặc đã dùng"}`))
+			_, _ = w.Write([]byte(`{"type":"about:blank","title":"Không join được","status":422,"code":"enrollment_invalid","detail":"token sai hoặc đã dùng"}`))
 			return
 		}
 		csr := in.CSR
@@ -71,8 +71,8 @@ func newFakeCP(t *testing.T) *fakeCP {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]any{"server_uuid": joinUUID, "cert_pem": string(is.CertPEM),
-			"chain_pem": string(certPEM), "ca_sha256": f.pin, "hmac_key": joinHMAC, "relay_url": "https://cp.itso.local:28444"})
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"server_uuid": joinUUID, "cert_pem": string(is.CertPEM),
+			"chain_pem": string(certPEM), "ca_sha256": f.pin, "hmac_key": joinHMAC, "relay_url": "https://cp.itso.local:28444"}})
 	})
 	f.srv = httptest.NewUnstartedServer(mux)
 	f.srv.TLS = &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS13}

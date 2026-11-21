@@ -242,7 +242,7 @@ final class DnsService
     private function ensureIdle(DnsZone $z): void
     {
         $busy = Job::query()->where('resource_type', 'dns_zone')->where('resource_id', $z->id)
-            ->whereIn('state', ['queued', 'running', 'cancel_requested'])->exists();
+            ->whereIn('state', ['queued', 'running', 'cancel_requested', 'waiting_agent'])->exists();
         if ($busy) {
             throw new ApiProblem(409, 'resource_locked', 'Đang có job khác', 'Chờ thay đổi DNS trước của zone xong.');
         }

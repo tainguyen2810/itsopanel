@@ -345,20 +345,23 @@ func (e *Env) Join(ctx context.Context, j JoinOptions) (string, error) {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 256<<10))
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		var p struct {
-			Code    string `json:"code"`
-			Message string `json:"message"`
+		var p struct { // RFC 9457 Problem Details (panel) hoặc {code} (relay)
+			Code   string `json:"code"`
+			Detail string `json:"detail"`
 		}
 		_ = json.Unmarshal(body, &p)
 		if p.Code == "" {
 			p.Code = http.StatusText(resp.StatusCode)
 		}
-		return "", fmt.Errorf("control plane từ chối join (HTTP %d %s): %s", resp.StatusCode, p.Code, p.Message)
+		return "", fmt.Errorf("control plane từ chối join (HTTP %d %s): %s", resp.StatusCode, p.Code, p.Detail)
 	}
-	var en enrollment
-	if err := json.Unmarshal(body, &en); err != nil {
+	var wrap struct {
+		Data enrollment `json:"data"`
+	}
+	if err := json.Unmarshal(body, &wrap); err != nil {
 		return "", errors.New("phản hồi join không hợp lệ")
 	}
+	en := wrap.Data
 	if err := checkEnrollment(en, keyPEM, caPEM, j.CASHA256); err != nil {
 		return "", err
 	}

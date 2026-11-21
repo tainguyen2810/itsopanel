@@ -32,7 +32,7 @@ final class ProvisioningService
         'sync', 'games', 'man', 'mail', 'news', 'proxy', 'backup', 'list', 'nobody', 'systemd', 'sshd', 'ftp', 'test',
         'user', 'support'];
 
-    public const ACTIVE_JOB_STATES = ['queued', 'running', 'cancel_requested'];
+    public const ACTIVE_JOB_STATES = ['queued', 'running', 'cancel_requested', 'waiting_agent'];
 
     public function __construct(
         private readonly JobDispatcher $jobs,

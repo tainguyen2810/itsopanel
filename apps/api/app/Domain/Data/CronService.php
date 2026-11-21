@@ -115,7 +115,7 @@ final class CronService
             return 0;
         }
         try {
-            $res = $this->agent->call('cron.inspect', ['account' => DataSpec::acct($a), 'uuids' => $jobs->keys()->values()->all()],
+            $res = $this->agent->forServer($a->server_id)->call('cron.inspect', ['account' => DataSpec::acct($a), 'uuids' => $jobs->keys()->values()->all()],
                 (string) Str::uuid7().':1:1', null, 20.0);
         } catch (AgentUnavailable) {
             return 0;

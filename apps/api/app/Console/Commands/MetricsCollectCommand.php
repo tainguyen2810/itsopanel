@@ -20,8 +20,10 @@ final class MetricsCollectCommand extends Command
 
     public function handle(MetricsCollector $collector): int
     {
-        // Phase 4: một agent local (AgentClient một kết nối). Server agent từ xa: Phase 9.
-        $servers = Server::query()->whereHas('agent', fn ($q) => $q->where('transport', 'local'))->orderBy('id')->get();
+        // Mọi server có agent (local hoặc node qua relay, Phase 9); node bị thu hồi/chưa enroll xong bị bỏ qua.
+        $servers = Server::query()->whereHas('agent', fn ($q) => $q->whereNull('revoked_at')
+            ->where(fn ($w) => $w->where('transport', 'local')->orWhere(fn ($m) => $m->where('transport', 'mtls')
+                ->whereNotNull('hmac_key_encrypted'))))->orderBy('id')->get();
         if ($servers->isEmpty()) {
             $this->warn('Chưa có server gắn agent local (chạy: php artisan itso:server-local).');
         }

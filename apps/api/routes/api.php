@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\MfaController;
 use App\Http\Controllers\Api\V1\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\Internal\NodeEnrollController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
@@ -42,6 +43,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('system/health', [SystemController::class, 'health']);
+    // Phase 9 (ADR 0035): node join — chỉ itso-relay gọi qua loopback, có chữ ký relay; không phiên, không CSRF.
+    Route::post('internal/nodes:enroll', [NodeEnrollController::class, 'enroll']);
 
     Route::middleware('itso.web')->group(function (): void {
         // ---- /auth: realm theo host hoặc header X-ITSO-Realm (D-58)
@@ -142,6 +145,10 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers', [ServerController::class, 'index'])->middleware('itso.perm:servers.read');
             Route::get('servers/{id}', [ServerController::class, 'show'])->middleware('itso.perm:servers.read');
             Route::patch('servers/{id}', [ServerController::class, 'update'])->middleware('itso.perm:servers.write');
+            Route::post('servers/enrollment-tokens', [ServerController::class, 'createEnrollmentToken'])
+                ->middleware(['itso.perm:servers.write', 'itso.step-up']);
+            Route::post('servers/{id}:revoke', [ServerController::class, 'revoke'])
+                ->middleware(['itso.perm:servers.write', 'itso.step-up']);
 
             // Dịch vụ, phần mềm, reboot, dung lượng, số liệu (4.5) — thao tác chạm Linux đi qua Job
             Route::get('servers/{id}/capacity', [ServerOpsController::class, 'capacity'])->middleware('itso.perm:servers.read');

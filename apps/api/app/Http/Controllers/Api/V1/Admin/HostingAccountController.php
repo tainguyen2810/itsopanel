@@ -12,8 +12,10 @@ use App\Domain\Hosting\ProvisioningService;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\HostingPresenter;
 use App\Http\Presenters\JobPresenter;
+use App\Http\Presenters\ServerPresenter;
 use App\Http\Support\Listing;
 use App\Models\AccountLifecycleEvent;
+use App\Models\Agent;
 use App\Models\HostingAccount;
 use App\Models\HostingPackage;
 use App\Models\Job;
@@ -249,15 +251,27 @@ final class HostingAccountController
             if ($s->status !== 'ready') {
                 $excluded[] = "Trạng thái server: {$s->status}";
             }
+            if (! in_array('web', $s->role_tags, true)) {
+                $excluded[] = 'Không có vai trò web';
+            }
+            $conn = ServerPresenter::connection(Agent::query()->where('server_id', $s->id)->first());
+            if ($conn !== 'online') {
+                $excluded[] = "Kết nối agent: {$conn}";
+                $score = min($score, 10);
+            }
             $disk = is_numeric($f['disk_mb'] ?? null) ? (int) $f['disk_mb'] : 0;
             $quota = (int) DB::table('hosting_package_versions')->whereIn('id', $accounts->pluck('package_version_id'))
                 ->get(['id', 'disk_mb'])->keyBy('id')->pipe(fn ($v) => $accounts->sum(fn (HostingAccount $a): int => (int) ($v[$a->package_version_id]->disk_mb ?? 0)));
+            $used = is_numeric($f['disk_used_mb'] ?? null) ? (int) $f['disk_used_mb'] : 0;
+            if ($disk > 0 && ($disk - $used - (int) $limits['disk_mb']) * 100 < 15 * $disk) {
+                $excluded[] = 'Đĩa còn dưới 15% sau khi cấp';
+            }
             $rows[] = ['server' => ['uuid' => $s->uuid, 'name' => $s->name], 'score' => max(0, min(100, $score)),
                 'reasons' => $reasons, 'accepting_new' => $s->accepting_new_accounts,
                 'eligible' => $excluded === [], 'excluded_reasons' => $excluded,
                 'commit_pct' => $disk > 0 ? (int) round($quota * 100 / $disk) : 0];
         }
-        usort($rows, fn (array $x, array $y): int => $y['score'] <=> $x['score']);
+        usort($rows, fn (array $x, array $y): int => [$y['eligible'], $y['score']] <=> [$x['eligible'], $x['score']]);
 
         return response()->json(['data' => $rows, 'meta' => ['next_cursor' => null, 'limit' => count($rows) ?: 1]]);
     }

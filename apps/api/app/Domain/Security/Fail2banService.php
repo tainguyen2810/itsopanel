@@ -94,7 +94,7 @@ final class Fail2banService
     public function status(Server $s): array
     {
         try {
-            $r = $this->agent->call('fail2ban.status', [], null, null, 10.0);
+            $r = $this->agent->forServer($s->id)->call('fail2ban.status', [], null, null, 10.0);
         } catch (AgentUnavailable) {
             return [];
         }

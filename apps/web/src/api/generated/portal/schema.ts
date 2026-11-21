@@ -1740,7 +1740,7 @@ export interface components {
             expires_at: string;
         };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "agent_unreachable" | "enrollment_invalid" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */

@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.4 (enroll, thu hồi, job chờ node, xoay chứng chỉ) — nhánh `phase-9`
+
+Phạm vi: `apps/api/app/Domain/Servers/{NodeEnrollment,RelaySync,CertRotation}.php`, `Infrastructure/Agent/RelayClient.php`, `Http/Controllers/Api/V1/Internal/NodeEnrollController.php`, `ServerController` (token, thu hồi), `JobRunner` (`waiting_agent`), lệnh `itso:relay-sync`, `itso:certs-rotate`, model `AgentEnrollmentToken`, `AgentCertificate`; mọi service gọi agent qua `forServer`; contracts (ErrorCode `agent_unreachable`, `enrollment_invalid`; CSR CN `itso-enroll`); `agent/internal/install/node.go` đọc phản hồi enroll dạng `{data}`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest Phase 9 | `vendor/bin/pest tests/Feature/Phase9` (PostgreSQL + Redis thật) | **14/14**. Mới (`NodeTest.php`): token một lần (DB chỉ sha256, ADMIN bị chặn, thiếu CA → 409); enroll tạo server/agent/chứng chỉ/khóa mã hóa, token dùng lại/hết hạn bị từ chối; thiếu/sai chữ ký relay → 401, CSR CN lạ → 422 không tạo server, sai > 10 lần → 429; thu hồi (còn account 409, sai tên 422, máy panel 409, đúng → revoked + đẩy relay); job chờ node → relay-sync chạy tiếp cùng op_id, quá hạn → `failed agent_unreachable`; relay-sync thông báo mất/kết nối lại; xoay chứng chỉ 2/3 hạn; gợi ý server có lý do loại; ma trận quyền ADMIN |
+| Pest toàn bộ | `bash scripts/pest-pg.sh --parallel` | **476/476** |
+| Installer Go | `go test -race ./internal/install/` | PASS |
+| Lint · no-exec · contracts | `make lint-api` · `make no-exec` · `make codegen-check` | PASS · OK · OK |
+| Web | `pnpm lint` · `pnpm vitest run` | sạch (i18n 2964 key, vi = en) · **561/561** |
+| Docs | `make docs-check` | 0 lỗi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** enroll node thật qua relay, mất mạng thật giữa node và control plane (9.8 `tests/vm/phase9.sh`).
+
 ## 2026-11-21 — Phase 9 / Prompt 9.3 (installer theo vai trò, `itso node`) — nhánh `phase-9`
 
 Phạm vi: `agent/internal/install/{node.go,steps.go,manage.go,release.go,env.go,preflight.go}` (+ `node_test.go`), `agent/internal/pki` (CSR join CN `itso-enroll`), `agent/cmd/itso` (`--role/--join/--token/--ca-sha256`, `pki`, `node`), `packaging/systemd/{itso-relay,itso-agent-node,itso-cert-rotate}.*`, `itso.target`, `packaging/Caddyfile`, `packaging/install.sh.in`, `scripts/release.sh` (build `itso-relay`), `tests/installer/install_sh_test.sh`, `docs/runbooks/multi-server.md`.
