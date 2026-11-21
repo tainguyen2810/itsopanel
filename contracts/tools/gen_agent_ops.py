@@ -76,7 +76,7 @@ A = d("Account")
 OPS = [
     # -- system
     ("system.ping", "system", "low", True, 1, "root", 5, obj({}),
-     obj({"pong": {"const": True}, "agent_version": s(), "mode": enum("mock", "real")})),
+     obj({"pong": {"const": True}, "agent_version": s(), "mode": enum("mock", "real", "sandbox")})),
     ("system.info", "system", "low", True, 4, "root", 10, obj({}),
      obj({"os": s(), "kernel": s(), "hostname": s(), "uptime_sec": i(), "cpu_cores": i(), "ram_mb": i(),
           "disk_total_mb": i(), "disk_free_mb": i(), "cgroup_v2": b(), "systemd": b(), "quota_mode": d("QuotaMode"),

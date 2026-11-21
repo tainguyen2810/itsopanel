@@ -1151,7 +1151,7 @@ type SystemPingParams struct {
 type SystemPingResult struct {
 	Pong         bool   `json:"pong"`
 	AgentVersion string `json:"agent_version"`
-	// Giá trị: "mock", "real".
+	// Giá trị: "mock", "real", "sandbox".
 	Mode string `json:"mode"`
 }
 

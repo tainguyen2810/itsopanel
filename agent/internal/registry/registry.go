@@ -52,6 +52,8 @@ type Registry struct {
 	handlers map[string]Handler
 	now      func() time.Time
 
+	allow func(op string) bool
+
 	mu     sync.Mutex
 	cache  map[string]Result
 	nonces map[string]time.Time
@@ -62,6 +64,9 @@ func New(version string) *Registry {
 	return &Registry{version: version, handlers: map[string]Handler{}, now: time.Now,
 		cache: map[string]Result{}, nonces: map[string]time.Time{}}
 }
+
+// SetAllow đặt bộ lọc op theo chính sách cục bộ: op bị tắt trả op_disabled (không chạy handler).
+func (r *Registry) SetAllow(allow func(op string) bool) { r.allow = allow }
 
 // SetClock thay đồng hồ (test).
 func (r *Registry) SetClock(now func() time.Time) { r.now = now }
@@ -101,6 +106,9 @@ func (r *Registry) Handle(ctx context.Context, raw []byte) Result {
 			return r.failed(pe.OpID, pe.Code, pe.Message, start)
 		}
 		return r.failed("", "internal", err.Error(), start)
+	}
+	if r.allow != nil && !r.allow(env.Op) {
+		return r.failed(env.OpID, "op_disabled", "op "+env.Op+" bị tắt bởi chính sách cục bộ của agent", start)
 	}
 	h, ok := r.handlers[env.Op]
 	if !ok {

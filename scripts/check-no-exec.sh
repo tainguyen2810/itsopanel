@@ -2,8 +2,8 @@
 # Chặn mọi cách chạy lệnh hệ thống:
 #  - apps/api/app: exec, shell_exec, system, passthru, proc_open, popen, pcntl_exec, backtick,
 #    Symfony Process, Laravel Process facade (CLAUDE.md §2).
-#  - agent/: mock agent và mọi package không được dùng os/exec, syscall.Exec, "sh -c".
-#    (Agent thật ở Phase 4 sẽ có allowlist binary cố định trong một package riêng, xem docs/planning.)
+#  - agent/: chỉ agent/internal/platform (lớp nền tảng D-63, bảng binary cố định) được import os/exec;
+#    mọi nơi khác cấm os/exec, syscall.Exec/ForkExec, "sh -c", /bin/sh.
 # Dùng: scripts/check-no-exec.sh [thư-mục-api-app] [thư-mục-agent]
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,8 +32,11 @@ else
 fi
 
 if [[ -d "$AGENT_DIR" ]]; then
-  report "chạy tiến trình trong $AGENT_DIR" < <(grep -rnE --include='*.go' \
-      '"os/exec"|syscall\.(Exec|ForkExec)|"sh",[[:space:]]*"-c"|/bin/sh' "$AGENT_DIR" || true)
+  report "chạy tiến trình ngoài internal/platform trong $AGENT_DIR" < <(grep -rnE --include='*.go' \
+      '"os/exec"|syscall\.(Exec|ForkExec)|"sh",[[:space:]]*"-c"|/bin/sh' "$AGENT_DIR" \
+      | grep -v "^$AGENT_DIR/internal/platform/" || true)
+  report "syscall.Exec/ForkExec hoặc shell trong internal/platform" < <(grep -rnE --include='*.go' \
+      'syscall\.(Exec|ForkExec)|"sh",[[:space:]]*"-c"|/bin/sh' "$AGENT_DIR/internal/platform" 2>/dev/null || true)
 fi
 
 if [[ $fail -ne 0 ]]; then

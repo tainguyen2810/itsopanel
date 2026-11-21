@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 4 — Go Agent, Installer, CLI, thực thi giới hạn (đang làm; Phase 3 ✓ APPROVED 2026-11-21 cùng D-56 → D-62)
-- **Prompt hiện tại:** 4.2 Agent core: transport, peercred + HMAC, policy, audit cục bộ, lớp nền tảng. Người dùng yêu cầu (2026-11-21) "tiếp tục với Phase 4"; làm hàng loạt 4.1 → 4.6, tự merge local
-- **Task đang làm:** 4.2 — bắt đầu (4.1 ✓)
+- **Prompt hiện tại:** 4.3 Ops system/service/account/quota/metrics/software. Người dùng yêu cầu (2026-11-21) "tiếp tục với Phase 4"; làm hàng loạt 4.1 → 4.6, tự merge local
+- **Task đang làm:** 4.3 — bắt đầu (4.2 ✓)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-4`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_4_PROMPTS.md`; cuối 4.6 báo cáo Phase 4 và DỪNG (không bắt đầu Phase 5)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
@@ -34,8 +34,8 @@
 Phase 4 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_4_PROMPTS.md`
 
 - ✓ 4.1 Spike slice/SSH/quota → ADR, contracts op Phase 4
-- ✱ 4.2 Agent core: transport, peercred + HMAC, policy, audit cục bộ, lớp nền tảng
-- ○ 4.3 Ops system/service/account/quota/metrics/software
+- ✓ 4.2 Agent core: transport, peercred + HMAC, policy, audit cục bộ, lớp nền tảng
+- ✱ 4.3 Ops system/service/account/quota/metrics/software
 - ○ 4.4 CLI `itso`, install.sh, release có ký, systemd units
 - ○ 4.5 Panel: bảng Phase 4, API server/metrics/usage/software, Wizard
 - ○ 4.6 VM harness, e2e agent thật (sandbox), báo cáo Phase 4
@@ -80,3 +80,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-20 | 3 / 3.6 | Client theo realm (`realm-http.ts`: X-ITSO-Realm, CSRF + thử lại khi 419, 401 → đăng nhập đúng realm); phiên thật thay persona ở build thường (loading/anonymous/mfa/enroll/ready); route `/api/v1/*` chưa có → 404 `not_available`, UI hiện "Chưa có ở bản này"; DemoSeeder; `itso:reconcile`; `make dev` thêm queue worker + đăng ký server + reconcile; Playwright stack thật 4 test (`make test-e2e-real`); test cho 7 endpoint còn thiếu (87/87 route); 4xx có chủ đích không ghi log lỗi; báo cáo Phase 3, runbook `phase-3-demo.md`. Pest 292, `make check` 20 PASS · 1 SKIP | 59cb935 |
 | 2026-11-21 | 4 | Người dùng duyệt Phase 3 ("tiếp tục với Phase 4"): D-56 → D-62 APPROVED; kế hoạch Phase 4 (6 prompt, D-63 → D-66 đề xuất), mở nhánh `phase-4` | 09ad1e5 |
 | 2026-11-21 | 4 / 4.1 | ADR 0011 (slice `itso-acct-<uid>.slice`, SSH drop-in 50%), 0012 (disk quota kernel/soft), 0013 (lớp nền tảng agent); contracts: op mới `system.hostname.set`, `account.limits.apply`, `metrics.cgroup`, `audit.tail`, `software.install/remove` (recipe allowlist); `system.info` thêm disk, cgroup_v2, systemd, quota_mode, arch; `quota.apply` trả mode; 19 vector evil mới (hostname, service, recipe); mock agent cập nhật. Kiểm container: không cgroup v2, không systemd PID 1, không công cụ quota; `systemd-analyze verify` chạy offline được | 69ce0ef |
+| 2026-11-21 | 4 / 4.2 | `cmd/itso-agent`: socket Unix + SO_PEERCRED (allowlist uid), HMAC D-66 + ts ±60 s + nonce, policy YAML (`root_terminal`/`docker`/`backup_forget` + ghi đè op, strict root 0600), audit JSONL hash-chain (verify, tail, từ chối ghi tiếp chuỗi hỏng), `--sandbox`; `internal/platform` (Runner argv-only bảng binary cố định, FS gốc cấu hình được, ghi atomic, O_NOFOLLOW, FakeRunner); `internal/validate` + fuzz + vector evil; op `system.ping`, `audit.tail`; `check-no-exec` chỉ cho `internal/platform` dùng os/exec; Laravel `AgentClient` ký HMAC (`ITSO_AGENT_KEY_FILE`), vector chữ ký chung PHP/Go | (commit 4.2) |

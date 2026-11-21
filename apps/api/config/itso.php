@@ -13,6 +13,8 @@ return [
         'socket' => env('ITSO_AGENT_SOCKET', '/tmp/itso-mock-agent.sock'),
         'url' => env('ITSO_AGENT_URL'),
         'timeout' => (float) env('ITSO_AGENT_TIMEOUT', 5),
+        // Khóa HMAC dùng chung với agent thật (D-66). Trống = không ký (mock agent dev).
+        'key_file' => env('ITSO_AGENT_KEY_FILE'),
         // Agent coi là "đang kết nối" nếu lần liên lạc cuối trong khoảng này (giây).
         'connected_window_sec' => (int) env('ITSO_AGENT_CONNECTED_WINDOW', 300),
     ],

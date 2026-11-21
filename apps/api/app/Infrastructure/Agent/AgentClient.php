@@ -22,7 +22,29 @@ final class AgentClient
         private readonly ?string $socket,
         private readonly ?string $url,
         private readonly float $timeout = 5.0,
+        private readonly ?string $keyFile = null,
     ) {}
+
+    /** Header chữ ký HMAC-SHA256 (D-66) trên v1\n{method}\n{path}\n{ts}\n{nonce}\n{sha256(body)}. */
+    public static function signature(string $key, string $method, string $path, int $ts, string $nonce, string $body): string
+    {
+        $canonical = implode("\n", ['v1', $method, $path, (string) $ts, $nonce, hash('sha256', $body)]);
+
+        return hash_hmac('sha256', $canonical, $key);
+    }
+
+    private function key(): ?string
+    {
+        if ($this->keyFile === null) {
+            return null;
+        }
+        $raw = @file_get_contents($this->keyFile);
+        if ($raw === false || strlen(trim($raw)) < 32) {
+            throw new AgentUnavailable('Không đọc được khóa agent (ITSO_AGENT_KEY_FILE) hoặc khóa quá ngắn.');
+        }
+
+        return trim($raw);
+    }
 
     /**
      * @param  array<string, mixed>  $params
@@ -55,28 +77,39 @@ final class AgentClient
             throw new AgentUnavailable('Chưa cấu hình ITSO_AGENT_SOCKET hoặc ITSO_AGENT_URL.');
         }
 
+        $body = json_encode($envelope, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $headers = [];
+        $key = $this->key();
+        if ($key !== null) {
+            $headers = [
+                'X-ITSO-Timestamp' => (string) $now,
+                'X-ITSO-Nonce' => $envelope['nonce'],
+                'X-ITSO-Signature' => self::signature($key, 'POST', '/v1/ops', $now, $envelope['nonce'], $body),
+            ];
+        }
+
         try {
-            $response = $this->http->withOptions($options)->acceptJson()->asJson()
-                ->post($base.'/v1/ops', $envelope);
+            $response = $this->http->withOptions($options)->acceptJson()->withHeaders($headers)
+                ->withBody($body, 'application/json')->post($base.'/v1/ops');
         } catch (ConnectionException $e) {
             throw new AgentUnavailable('Không kết nối được agent: '.$e->getMessage(), 0, $e);
         }
-        $body = $response->json();
-        if (! $response->successful() || ! is_array($body) || ! isset($body['ok'], $body['op_id'])) {
+        $res = $response->json();
+        if (! $response->successful() || ! is_array($res) || ! isset($res['ok'], $res['op_id'])) {
             throw new AgentUnavailable('Agent trả về dữ liệu không hợp lệ (HTTP '.$response->status().').');
         }
 
         /** @var array{code: string, message: string, retryable: bool}|null $error */
-        $error = is_array($body['error'] ?? null) ? $body['error'] : null;
+        $error = is_array($res['error'] ?? null) ? $res['error'] : null;
 
         return new AgentResult(
-            opId: (string) $body['op_id'],
-            ok: $body['ok'] === true,
-            data: is_array($body['data'] ?? null) ? $body['data'] : null,
+            opId: (string) $res['op_id'],
+            ok: $res['ok'] === true,
+            data: is_array($res['data'] ?? null) ? $res['data'] : null,
             error: $error,
-            durationMs: (int) ($body['duration_ms'] ?? 0),
-            agentVersion: (string) ($body['agent_version'] ?? ''),
-            cached: ($body['cached'] ?? false) === true,
+            durationMs: (int) ($res['duration_ms'] ?? 0),
+            agentVersion: (string) ($res['agent_version'] ?? ''),
+            cached: ($res['cached'] ?? false) === true,
         );
     }
 }

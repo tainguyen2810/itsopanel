@@ -99,8 +99,10 @@ tokens-check: ## Kiểm tokens.css khớp nguồn và tương phản WCAG AA
 
 test-api-pg: test-api ## Tên cũ của test-api (từ Phase 3 Pest luôn chạy trên PostgreSQL)
 
-test-fuzz: ## Fuzz parser envelope của agent (FUZZTIME=30s)
+test-fuzz: ## Fuzz parser envelope + validator của agent (FUZZTIME=30s cho envelope, 10s mỗi validator)
 	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope
+	@cd agent && go test -run='^$$' -fuzz=FuzzUsername -fuzztime=10s ./internal/validate
+	@cd agent && go test -run='^$$' -fuzz=FuzzHostname -fuzztime=10s ./internal/validate
 
 lint: lint-web lint-api lint-agent no-exec ## Chạy lint cho mọi phần
 
