@@ -1,0 +1,8 @@
+# Việc bảo trì nặng (quét malware, prune backup): ưu tiên thấp.
+[Unit]
+Description=ITSO maintenance jobs
+
+[Slice]
+CPUQuota=50%
+CPUWeight=20
+IOWeight=10

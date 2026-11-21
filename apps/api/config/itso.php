@@ -1,18 +1,28 @@
 <?php
 
 use App\Domain\Hosting\AccountJobHandler;
+use App\Domain\Servers\SoftwareJobHandler;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
     'version' => env('ITSO_VERSION', '0.1.0-alpha'),
     'commit' => env('ITSO_COMMIT', 'dev'),
     'agent_min_version' => '0.1.0',
+    // Kênh cập nhật hiển thị ở /system/updates (panel không tự cập nhật; root chạy `itso update`).
+    'update_channel' => env('ITSO_UPDATE_CHANNEL', 'stable'),
+    // Thư mục release do installer quản lý (chỉ đọc tên thư mục để liệt kê phiên bản).
+    'releases_dir' => env('ITSO_RELEASES_DIR', '/opt/itso/releases'),
+    'current_link' => env('ITSO_CURRENT_LINK', '/opt/itso/current'),
+    // Wizard bước 0: file băm mã thiết lập do `itso setup-code` ghi (/var/lib/itso/setup-code.json).
+    'setup_code_file' => env('ITSO_SETUP_CODE_FILE', '/var/lib/itso/setup-code.json'),
 
     'agent' => [
         // Linux: unix socket. Windows dev: ITSO_AGENT_URL=http://127.0.0.1:7810.
         'socket' => env('ITSO_AGENT_SOCKET', '/tmp/itso-mock-agent.sock'),
         'url' => env('ITSO_AGENT_URL'),
         'timeout' => (float) env('ITSO_AGENT_TIMEOUT', 5),
+        // Khóa HMAC dùng chung với agent thật (D-66). Trống = không ký (mock agent dev).
+        'key_file' => env('ITSO_AGENT_KEY_FILE'),
         // Agent coi là "đang kết nối" nếu lần liên lạc cuối trong khoảng này (giây).
         'connected_window_sec' => (int) env('ITSO_AGENT_CONNECTED_WINDOW', 300),
     ],
@@ -22,7 +32,10 @@ return [
         'hosting_account.create', 'hosting_account.suspend', 'hosting_account.unsuspend', 'hosting_account.restore',
         'hosting_account.terminate', 'hosting_account.change_package', 'hosting_account.update', 'hosting_account.reconcile',
         'package.migrate_accounts',
-    ], AccountJobHandler::class),
+    ], AccountJobHandler::class) + [
+        'software.install' => SoftwareJobHandler::class,
+        'software.remove' => SoftwareJobHandler::class,
+    ],
 
     // Server local (Phase 3: một server, agent local/mock). `itso:server-local` tạo/cập nhật bản ghi này.
     'local_server' => [

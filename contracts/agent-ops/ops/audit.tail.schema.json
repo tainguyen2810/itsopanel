@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/audit.tail.schema.json",
+  "title": "audit.tail",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "after_seq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [
+        "after_seq",
+        "limit"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "ts": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string"
+              },
+              "op_id": {
+                "type": "string"
+              },
+              "caller_uid": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "error",
+                  "rejected"
+                ]
+              },
+              "error_code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "params_hash": {
+                "$ref": "../defs.schema.json#/$defs/Sha256"
+              },
+              "prev_hash": {
+                "$ref": "../defs.schema.json#/$defs/Sha256"
+              },
+              "hash": {
+                "$ref": "../defs.schema.json#/$defs/Sha256"
+              }
+            },
+            "required": [
+              "seq",
+              "ts",
+              "op",
+              "op_id",
+              "caller_uid",
+              "result",
+              "error_code",
+              "params_hash",
+              "prev_hash",
+              "hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "chain_ok": {
+          "type": "boolean"
+        },
+        "last_seq": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "entries",
+        "chain_ok",
+        "last_seq"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

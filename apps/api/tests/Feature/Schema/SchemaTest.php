@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
-// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql.
+// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql. Prompt 4.5: thêm 6 bảng Phase 4.
 
 const PHASE3_TABLES = [
     'users', 'roles', 'permissions', 'role_permissions', 'user_roles', 'user_scopes', 'mfa_credentials',
@@ -17,6 +17,9 @@ const PHASE3_TABLES = [
     'account_lifecycle_events', 'uid_allocations', 'jobs', 'job_steps', 'job_logs', 'audit_logs',
     'notifications', 'settings',
 ];
+
+const PHASE4_TABLES = ['server_services', 'server_capacity', 'software_catalog', 'server_software',
+    'account_usage_snapshots', 'metric_samples'];
 
 function rejects(callable $fn, string $pattern): void
 {
@@ -30,12 +33,13 @@ function rejects(callable $fn, string $pattern): void
     throw new RuntimeException('Mong đợi lỗi DB khớp '.$pattern);
 }
 
-it('tạo đủ 26 bảng Phase 3 (không hơn), audit_logs có partition mặc định', function () {
+it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 (không hơn), audit_logs và metric_samples có partition mặc định', function () {
     $tables = collect(DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         ->pluck('tablename')
-        ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default'], true))
+        ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default'], true))
         ->sort()->values()->all();
-    expect($tables)->toEqual(collect(PHASE3_TABLES)->sort()->values()->all());
+    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES])->sort()->values()->all());
+    expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'metric_samples_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'audit_logs_default'"))->toBe(1);
 });
 

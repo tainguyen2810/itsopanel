@@ -2,6 +2,105 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 4 / Prompt 4.6 — nhánh `phase-4`
+
+Môi trường: PostgreSQL 16 + Redis local; agent thật `itso-agent --sandbox` (runner giả, gốc riêng `.dev/agent-sandbox/root`, ký HMAC D-66). Container không có KVM/systemd/cgroup v2 nên **bộ test VM chưa chạy (chờ VM)**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Toàn bộ pipeline | `make check` | **22 PASS · 1 SKIP (staticcheck) · 0 FAIL**, git-clean PASS, 576 s. Lần đầu: 3 FAIL (e2e demo wizard 1/259 vì test còn dùng mã bất kỳ, nay API demo chỉ nhận `DEMO-2026-ITSO`; docs-check + git-clean do runbook đang viết dở lúc chạy) → sửa test, chạy lại file lỗi (6/6) rồi chạy lại toàn bộ trên cây sạch |
+| Playwright stack thật + agent sandbox | `make dev` · `DemoSeeder` · `make test-e2e-real` | PASS 6/6: 4 luồng Phase 3 qua agent sandbox; Server detail (thẻ Nền tảng "Sandbox", amd64; restart nginx → job `service.restart` → op `service.control` thành công; dung lượng đã cấp); account có mức sử dụng từ snapshot + API usage 200 |
+| Agent sandbox kiểm tay | `tests/vm/lib/agent_call.py --socket … --key-file …` | `system.ping` ok; `system.exec` → `unknown_op`; username `../root` → `invalid_params`; không ký / ký sai → `unauthorized_caller`; `account.ensure` ok; audit JSONL có `op_id`, `params_hash` |
+| `make dev` | chạy nền + `itso:server-local`, `itso:reconcile`, `itso:metrics-collect`, `itso:usage-refresh` | 8 job reconcile thành công qua agent sandbox; platform `agent_mode=sandbox`; 12 dịch vụ; 3 snapshot usage |
+| Script VM | `bash -n tests/vm/*.sh tests/vm/lib/common.sh` · `ruby -c tests/vm/Vagrantfile` · `python3 -m py_compile tests/vm/lib/agent_call.py` | PASS cú pháp. **Chạy thật: chờ VM** (`make release && make test-vm`) |
+| Laravel | `make test-api` | PASS 347 (ServerOpsTest cập nhật: job `service.restart`) |
+
+**Test bị bỏ qua:** không. **Chờ VM:** cài sạch ≤ 10 phút, enforcement E1–E8 (CPU, OOM, TasksMax, EDQUOT, cách ly /home, ps, `sudo -l -U itso`), agent từ chối trên máy thật, update → rollback, uninstall. `staticcheck`, `shellcheck` không có trên container.
+
+## 2026-11-21 — Phase 4 / Prompt 4.5 — nhánh `phase-4`
+
+Môi trường: như 4.1 (PostgreSQL 16 + Redis local). Agent trong Pest là `FakeAgent` (HTTP giả theo envelope thật); UI chạy trên API giả lập MSW.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts-check` · `make codegen-check` | PASS: admin 228 operation (+7 wizard, +1 `/system/updates`), Redocly 0 lỗi, ajv, codegen khớp |
+| Server/metrics/dịch vụ/phần mềm | `php artisan test tests/Feature/Phase4/ServerOpsTest.php` | PASS 9 test: `itso:metrics-collect` ghi platform (quota soft, cgroup v2, systemd, amd64, sandbox), disk, 4 metric, 12 dịch vụ, capacity; agent tắt → lệnh FAIL, server `degraded`, platform giữ nguyên; `service.control` qua job (params đúng), ngoài allowlist/hành động lạ 422, trùng job 409; software: catalog 5 recipe, cài qua job ghi bản thật, gỡ → available, gỡ acl/quota/nftables 409, upgrade 409, key lạ 404, lỗi → failed, đang cài 409; reboot qua job `system.reboot` 60 giây; usage-refresh ghi snapshot + metric account, usage/metrics account khớp OpenAPI, metric sai 422; prune xóa partition > 7 ngày; `/system/updates` liệt kê release có `.complete`, đánh dấu bản active |
+| Wizard | `php artisan test tests/Feature/Phase4/SetupWizardTest.php` | PASS 6 test: đi hết 6 bước có API (mọi phản hồi khớp OpenAPI, audit `setup.*`); TOTP bắt buộc trước bước 3 (403); complete khi chưa lưu bước 3 → 409; sau khóa: verify/admin/access/quota/complete → **410** `setup_completed`; dùng lại mã ở phiên khác → **409** `setup_code_used`; mã sai 422; hết hạn/không có file → 409 `setup_code_expired`; mã mới vô hiệu phiên cũ (403 `setup_not_verified`); 10 lần sai → 429; đã có SA ngoài wizard → 410 |
+| Ma trận quyền | `php artisan test tests/Feature/Rbac/MatrixTest.php` | PASS: 46 endpoint admin × 4 nhân vật (thêm 9 endpoint 4.5: ADMIN đọc trong phạm vi, ghi dịch vụ/reboot/phần mềm và `/system/updates` → 403, ngoài phạm vi 404) |
+| Laravel toàn bộ | `php artisan test --parallel` · `make lint-api` | PASS: 347 test (thêm 51); pint, phpstan 0 lỗi; `make no-exec` OK |
+| Web | `pnpm lint` · `npx vitest run` | PASS: eslint, prettier, tsc, i18n 2486 key (vi = en); Vitest 465 test (thêm: wizard 10 bước trên MSW gọi đủ 8 API, panel đã cài hiện thẻ khóa; logic wizard 9 test; thẻ Nền tảng 3 test) |
+
+**Test bị bỏ qua:** không. Chưa chạy với agent thật trên VM: số liệu cgroup/quota kernel thật → 4.6 (chờ VM).
+
+## 2026-11-21 — Phase 4 / Prompt 4.4 — nhánh `phase-4`
+
+Môi trường: như 4.1. Cài đặt chỉ chạy trên gốc giả (thư mục tạm) với runner giả `ops.Sim`; trên container chỉ chạy preflight/dry-run (chỉ đọc).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go toàn bộ (race) | `cd agent && go test -race -count=1 ./...` | PASS: 12 package (thêm `internal/install`) |
+| Installer | `go test ./internal/install -v` | PASS 8 test: preflight trên máy không systemd/cgroup v2 → FAIL đúng, không ghi gì; `--dry-run` không ghi; cài hỏng ở bước database → chạy lại tiếp từ database, không làm lại users/packages; lần chạy thứ 3 không có lệnh ghi, khóa agent giữ nguyên; quyền 0640 root:itso cho agent.key/itso.env/panel.key/setup-code; update → rollback → update, health lỗi → tự rollback, giữ 3 bản; chữ ký sai, sha sai, tar có `..`/symlink ra ngoài/thiết bị → từ chối; uninstall giữ /home, đổi tên /etc/itso, purge cần xác nhận hostname; repair phát hiện unit/file bị sửa và `--fix`; policy set/get; admin reset từ chối email lạ; setup code chỉ lưu băm |
+| install.sh | `make test-installer` | PASS 8/8: đúng → chạy `itso install` với tham số; manifest sửa, ký khóa khác, binary/tarball bị thay, phiên bản lạ, OS Debian, user không phải root → dừng |
+| Unit systemd | `make units-check` | PASS 12 unit (target, 7 service/timer, 3 slice + 2 drop-in mẫu); kiểm đối chứng: thêm khóa lạ → FAIL |
+| Release | `make release` | PASS: `itso-0.4.0-dev-linux-amd64.tar.gz` 25,6 MB (api `--no-dev --prefer-dist`, không .git), `itso`, `install.sh` nhúng khóa công khai, `sbom.json`, `manifest.json` + `manifest.sig` (openssl verify OK). Khóa dev tạm ở `build/` (không commit). **Thiếu frankenphp** (cần tải upstream) → manifest ghi `missing_components` |
+| Chuỗi thật trên container | `ITSO_RELEASE_DIR=build/release/0.4.0-dev bash install.sh --dry-run` | install.sh kiểm chữ ký + sha → `itso install --dry-run`: release PASS (chữ ký đúng), os PASS, **cgroup_v2 FAIL, systemd FAIL** (container) → dừng đúng, không thay đổi gì |
+| Laravel | `make test-api` · `make lint-api` | PASS: 296 test (thêm 2: `itso:admin-reset-password`, `itso:admin-reset-mfa`); pint, phpstan |
+| Khác | `make no-exec` · `make lint-agent` · `make docs-check` · `python3 scripts/check-ci.py` | PASS (CI thêm bước `make units-check test-installer`) |
+
+**Test bị bỏ qua:** không. Chưa chạy trên máy thật: cài đặt đầy đủ (apt, pg_createcluster, systemd) → chờ VM (4.6). `shellcheck` không có trên container.
+
+## 2026-11-21 — Phase 4 / Prompt 4.3 — nhánh `phase-4`
+
+Môi trường: như 4.1. Op thật chạy với runner giả `ops.Sim` trên gốc FS tạm (`/etc/passwd|group|shadow`, `/home`) và `/proc`, `/sys` giả; không lệnh nào chạy trên máy.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go toàn bộ (race) | `cd agent && go test -race -count=1 ./...` | PASS: 11 package |
+| Op thật | `go test ./internal/ops -v` | PASS 10 test: golden argv cho 15 op (`testdata/golden/*.argv`) + 3 drop-in slice; lần 2 cùng tham số không có lệnh ghi (account.ensure, limits.apply, suspend, unsuspend, quota.apply, hostname.set, service.control, software.install/remove); quyền/chủ home đúng 07 §5; soft quota đo được file 3 MB; system.info/metrics đọc đúng /proc, cgroup (throttled, memory.max, oom_kill, pids); lệnh lỗi → `internal` / `dependency_unavailable` (retryable) / `precondition_failed`; op.cancel hủy op đang chạy → `cancelled` |
+| Vector độc | `TestEvilInputsRejectedBeforeAnyCommand` | PASS: gọi thẳng handler (bỏ qua schema) với mọi vector reject của username/hostname/service_name/recipe + uid 0, home `..`, shell lạ → từ chối, **0 lệnh** được chạy |
+| Contract dùng chung | `internal/contracttest` từ `internal/mock` và `internal/ops` | PASS cả hai: vòng đời account, idempotent, mã lỗi already_exists/not_found/precondition_failed/path_outside_home; ví dụ `valid-06-account.ensure.json` chạy qua agent thật |
+| Drop-in slice | `systemd-analyze verify itso-acct-20001.slice user-20001.slice` (nội dung golden) | PASS, không cảnh báo. Kiểm đối chứng: `Slice=` trong unit `.slice` bị báo "Failed to assign slice" → sửa ADR 0011/D-64/07 §3 (cha suy ra từ tên). Ghi chú: báo cáo 4.1 ghi PASS cho mẫu cũ vì `verify` trả mã 0 cả khi có cảnh báo; từ nay đọc cả output |
+| Contracts | `make contracts-check` · `make codegen-check` | PASS (sửa `ts` trong ví dụ envelope cho khớp `deadline`: 2026-11-20 01:15Z thay vì 11-26) |
+| Laravel | `make test-api` | PASS: 294 test (không đổi) |
+| Lint / no-exec / docs | `make lint-agent` · `make no-exec` · `make docs-check` · `make structure` | PASS |
+| Smoke binary | `itso-agent --sandbox` không có `--root` | Từ chối đúng ("sandbox cần --root là thư mục riêng") |
+
+**Test bị bỏ qua:** không. Chưa kiểm trên hệ thống thật: useradd/setquota/setfacl/systemctl thật (chờ VM, `tests/vm/` ở 4.6).
+
+## 2026-11-21 — Phase 4 / Prompt 4.2 — nhánh `phase-4`
+
+Môi trường: như 4.1 (PostgreSQL 16 + Redis cục bộ cho Pest).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go toàn bộ (race) | `cd agent && go test -race ./...` | PASS: 10 package |
+| Xác thực | `go test ./internal/auth` | PASS: chữ ký đúng; sai body/khóa/path, lệch giờ 120 s, thiếu chữ ký, nonce ngắn → từ chối; nonce lặp → từ chối; khóa others đọc được/ngắn/symlink → từ chối; SO_PEERCRED trả đúng uid/pid; allowlist; vector chữ ký chung với PHP |
+| Handler có xác thực | `go test ./internal/server` | PASS: qua socket Unix thật — ký đúng → ok; không ký → `unauthorized_caller`; op bị policy tắt → `op_disabled`; op lạ → lỗi; uid ngoài allowlist → `unauthorized_caller`; audit ghi 4 bản ghi đúng kết quả + uid caller, chuỗi hợp lệ |
+| Policy | `go test ./internal/policy` | PASS: mặc định theo catalog (docker/backup.forget tắt), ghi đè op, cờ docker thắng ops, op/khóa lạ, sai version → từ chối; strict: quyền 0644 hoặc chủ không phải root → từ chối; lưu 0600 |
+| Audit cục bộ | `go test ./internal/audit` | PASS: chuỗi nối tiếp qua lần mở lại; sửa một dòng hoặc xóa dòng giữa → phát hiện, không ghi tiếp |
+| Lớp nền tảng | `go test ./internal/platform` | PASS: bảng lệnh không có sh/bash/env/sudo…, đường dẫn tuyệt đối; argv có NUL/xuống dòng → từ chối; FakeRunner; ExecRunner chỉ chạy lệnh chỉ-đọc `findmnt`; FS: đường dẫn tương đối/chưa chuẩn hóa → từ chối, ghi atomic idempotent, symlink → từ chối ghi/đọc/EnsureDir |
+| Validator + vector evil | `go test ./internal/validate` | PASS: mọi vector username/hostname/service/recipe đúng expect (kể cả layer semantic) |
+| Fuzz | `go test -fuzz=FuzzUsername/FuzzHostname -fuzztime=10s` | PASS (thêm vào `make test-fuzz`) |
+| Laravel | `make test-api` · `make lint-api` | PASS: 294 test (thêm 2: vector chữ ký, header khớp body đã gửi + khóa ngắn → AgentUnavailable); pint, phpstan |
+| No-exec | `make no-exec` | PASS (os/exec chỉ trong `agent/internal/platform`) |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 4 / Prompt 4.1 — nhánh `phase-4`
+
+Môi trường: container cloud Ubuntu 24.04, kernel 6.18, **không có** cgroup v2 (`/sys/fs/cgroup` là tmpfs), systemd không phải PID 1, không có `setquota`/`repquota`/`setfacl`; có `systemd-analyze` (verify offline).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS: agent-ops 67 op có schema (thêm 6), 21 op khai báo; evil-inputs 112 vector (thêm 19); ajv examples hợp lệ/không hợp lệ |
+| Go | `cd agent && go vet ./... && go test ./...` | PASS (mock `system.info` trả đủ trường mới, khớp schema) |
+| Kiểm cú pháp slice mẫu | `systemd-analyze verify itso-acct-20001.slice` | PASS (không cảnh báo) |
+| Docs | `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không. Test cần VM (slice, quota thật) ghi trong ADR 0011/0012 và chạy ở 4.6 bằng `tests/vm/`.
+
+Ghi chú: `account.remove` giữ ở Phase 8 (cần backup cuối hợp lệ theo D-46), không đưa vào Phase 4.
+
 ## 2026-11-20 — Phase 3 / Prompt 3.6 — nhánh `phase-3`
 
 Môi trường: như 3.4; stack thật chạy bằng `make dev` (Vite 5173, Laravel 8000, mock agent, queue worker), DB `itso` đã `migrate:fresh --seed` + `DemoSeeder`.

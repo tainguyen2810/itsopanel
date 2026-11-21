@@ -104,7 +104,7 @@ final class QuotaService
         return [
             'disk_mb' => $item($snap['disk_mb'] ?? 0, $l['disk_mb']),
             'inodes' => $item($snap['inode_count'] ?? 0, $l['inode_limit']),
-            'cpu_percent' => $item(0, $l['cpu_percent']),
+            'cpu_percent' => $item($snap['cpu_pct'] ?? 0, $l['cpu_percent']),
             'ram_mb' => $item($snap['mem_peak_mb'] ?? 0, $l['ram_mb']),
             'websites' => $item($this->count($a, 'websites'), $l['website_limit']),
             'databases' => $item($this->count($a, 'databases'), $l['database_limit']),
@@ -117,27 +117,22 @@ final class QuotaService
     }
 
     /**
-     * Số đo gần nhất: bảng account_usage_snapshots (Phase 4) nếu có, nếu không thì `observed_facts.usage`
-     * (ghi bởi `php artisan itso:usage-refresh` từ op quota.report).
+     * Số đo gần nhất từ account_usage_snapshots và mẫu CPU gần nhất (metric_samples), cả hai ghi bởi
+     * `php artisan itso:usage-refresh` từ op quota.report.
      *
-     * @return array{disk_mb: int, inode_count: int, mem_peak_mb: int, backup_size_mb: int, at: string}|null */
+     * @return array{disk_mb: int, inode_count: int, mem_peak_mb: int, backup_size_mb: int, cpu_pct: float, at: string}|null */
     private function snapshot(HostingAccount $a): ?array
     {
-        $this->tableExists['account_usage_snapshots'] ??= DB::getSchemaBuilder()->hasTable('account_usage_snapshots');
-        if ($this->tableExists['account_usage_snapshots']) {
-            $r = DB::table('account_usage_snapshots')->where('hosting_account_id', $a->id)->orderByDesc('at')->first();
-            $u = $r !== null ? ['disk_mb' => $r->disk_mb ?? 0, 'inodes' => $r->inode_count ?? 0, 'ram_mb' => $r->mem_peak_mb ?? 0,
-                'backup_mb' => $r->backup_size_mb ?? 0, 'at' => $r->at] : null;
-        } else {
-            $u = $a->observed_facts['usage'] ?? null;
-        }
-        if (! is_array($u)) {
+        $r = DB::table('account_usage_snapshots')->where('hosting_account_id', $a->id)->orderByDesc('at')->first();
+        if ($r === null) {
             return null;
         }
-        $int = fn (string $k): int => is_numeric($u[$k] ?? null) ? (int) $u[$k] : 0;
+        $cpu = DB::table('metric_samples')->where('hosting_account_id', $a->id)->where('metric', 'cpu_pct')
+            ->where('at', '>=', Carbon::parse($r->at)->subMinutes(1))->orderByDesc('at')->value('value');
 
-        return ['disk_mb' => $int('disk_mb'), 'inode_count' => $int('inodes'), 'mem_peak_mb' => $int('ram_mb'),
-            'backup_size_mb' => $int('backup_mb'), 'at' => is_string($u['at'] ?? null) ? $u['at'] : $a->updated_at->toIso8601String()];
+        return ['disk_mb' => (int) ($r->disk_mb ?? 0), 'inode_count' => (int) ($r->inode_count ?? 0),
+            'mem_peak_mb' => (int) ($r->mem_peak_mb ?? 0), 'backup_size_mb' => (int) ($r->backup_size_mb ?? 0),
+            'cpu_pct' => is_numeric($cpu) ? (float) $cpu : 0.0, 'at' => Carbon::parse($r->at)->toIso8601String()];
     }
 
     public static function exceeded(string $resource, string $detail): ApiProblem

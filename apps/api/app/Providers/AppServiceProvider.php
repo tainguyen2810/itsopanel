@@ -24,12 +24,14 @@ class AppServiceProvider extends ServiceProvider
             $socket = config('itso.agent.socket');
             $url = config('itso.agent.url');
             $timeout = config('itso.agent.timeout');
+            $keyFile = config('itso.agent.key_file');
 
             return new AgentClient(
                 $app->make(Http::class),
                 is_string($socket) && $socket !== '' ? $socket : null,
                 is_string($url) && $url !== '' ? $url : null,
                 is_numeric($timeout) ? (float) $timeout : 5.0,
+                is_string($keyFile) && $keyFile !== '' ? $keyFile : null,
             );
         });
     }

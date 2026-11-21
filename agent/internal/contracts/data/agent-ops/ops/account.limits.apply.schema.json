@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/account.limits.apply.schema.json",
+  "title": "account.limits.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "limits": {
+          "$ref": "../defs.schema.json#/$defs/Limits"
+        }
+      },
+      "required": [
+        "account",
+        "limits"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "applied": {
+          "type": "boolean"
+        },
+        "slice": {
+          "type": "string",
+          "pattern": "^itso-acct-[0-9]{5}\\.slice$"
+        }
+      },
+      "required": [
+        "applied",
+        "slice"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

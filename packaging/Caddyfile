@@ -1,0 +1,37 @@
+# FrankenPHP (Caddy) của panel. Biến lấy từ /etc/itso/itso.env.
+{
+	admin off
+	auto_https disable_redirects
+	frankenphp
+}
+
+:{$ITSO_PANEL_PORT:28443} {
+	tls /etc/itso/tls/panel.crt /etc/itso/tls/panel.key
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		Content-Security-Policy "default-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+	log {
+		output file /var/log/itso/web-access.log
+	}
+
+	@api path /api/* /sanctum/* /up
+	handle @api {
+		root * /opt/itso/current/api/public
+		php_server
+	}
+	handle /portal* {
+		root * /opt/itso/current/web
+		try_files {path} /portal/index.html
+		file_server
+	}
+	handle {
+		root * /opt/itso/current/web
+		try_files {path} /admin/index.html
+		file_server
+	}
+}

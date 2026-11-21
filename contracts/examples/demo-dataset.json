@@ -226,6 +226,14 @@
         "uptime_sec": 3888000
       },
       "account_count": 5,
+      "platform": {
+        "quota_mode": "kernel",
+        "cgroup_v2": true,
+        "systemd": true,
+        "arch": "amd64",
+        "agent_mode": "real",
+        "facts_at": "2026-11-20T08:15:00+07:00"
+      },
       "status": "ready",
       "spec_version": 3,
       "observed_version": 3,
@@ -260,6 +268,14 @@
         "uptime_sec": 864000
       },
       "account_count": 5,
+      "platform": {
+        "quota_mode": "soft",
+        "cgroup_v2": true,
+        "systemd": true,
+        "arch": "amd64",
+        "agent_mode": "real",
+        "facts_at": "2026-11-20T08:15:00+07:00"
+      },
       "status": "ready",
       "spec_version": 1,
       "observed_version": 1,
@@ -295,6 +311,7 @@
         "uptime_sec": 1728000
       },
       "account_count": 1,
+      "platform": null,
       "status": "degraded",
       "spec_version": 5,
       "observed_version": 4,
@@ -5962,6 +5979,44 @@
     "max_accounts": 200,
     "accepting_new": true,
     "updated_at": "2026-11-20T08:15:00+07:00"
+  },
+  "system_updates": {
+    "current_version": "0.4.0",
+    "commit": "28bb3fc",
+    "channel": "stable",
+    "latest_version": null,
+    "update_available": false,
+    "checked_at": null,
+    "update_command": "sudo itso update --release-dir <thư mục>",
+    "releases": [
+      {
+        "version": "0.4.0",
+        "active": true
+      },
+      {
+        "version": "0.3.0",
+        "active": false
+      }
+    ]
+  },
+  "setup_access": {
+    "panel_domain": "panel.itso.local",
+    "panel_port": 8443,
+    "entrance_path": "/itso-a7k2",
+    "allowlist": [
+      "10.10.5.0/24",
+      "203.0.113.7"
+    ]
+  },
+  "setup_status": {
+    "installed": false,
+    "code_verified": false,
+    "admin_created": false,
+    "admin_mfa_enabled": false,
+    "locale": "vi",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "access": null,
+    "steps_done": []
   },
   "services": [
     {

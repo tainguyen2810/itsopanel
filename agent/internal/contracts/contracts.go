@@ -36,6 +36,7 @@ type CatalogEntry struct {
 	Op         string `json:"op"`
 	Domain     string `json:"domain"`
 	Risk       string `json:"risk"`
+	Default    bool   `json:"default_enabled"`
 	Phase      int    `json:"phase"`
 	TimeoutSec int    `json:"timeout_sec"`
 	Schema     string `json:"schema"`

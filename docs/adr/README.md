@@ -14,5 +14,8 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0008](0008-chuyen-hosting-account-giua-cac-server.md) | Chuyển Hosting Account giữa các server | Accepted | D-48 |
 | [0009](0009-chinh-sach-pentest.md) | Chính sách pentest | Accepted | D-50 |
 | [0010](0010-git-local-truoc-github-sau.md) | Git local trước, GitHub sau | Accepted | D-51 |
+| [0011](0011-slice-account-va-phien-ssh.md) | Slice cho hosting account và phiên SSH | Proposed | D-12, D-64 |
+| [0012](0012-disk-quota.md) | Disk quota cho hosting account | Proposed | D-64 |
+| [0013](0013-lop-nen-tang-agent.md) | Lớp nền tảng của agent (Runner, FS, sandbox) | Proposed | D-13, D-63 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

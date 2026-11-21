@@ -1,0 +1,24 @@
+# Bộ test VM Phase 4 bằng Vagrant (VirtualBox/libvirt). KHÔNG dùng máy chủ thật.
+#   make release
+#   ITSO_RELEASE=build/release/<phiên bản> vagrant up      (từ thư mục tests/vm)
+#   vagrant ssh -c 'cat /vagrant/build/vm-report.md' ; vagrant destroy -f
+# Thư mục repo được gắn vào /vagrant; run-all.sh ghi báo cáo vào /vagrant/build/vm-report.md.
+release = ENV.fetch("ITSO_RELEASE") { Dir.glob(File.expand_path("../../build/release/*", __dir__)).max }
+abort "Chưa có release: chạy make release hoặc đặt ITSO_RELEASE" if release.nil? || !File.exist?(File.join(release, "install.sh"))
+rel_in_vm = "/vagrant/" + File.expand_path(release).sub(File.expand_path("../..", __dir__) + "/", "")
+release2 = ENV["ITSO_RELEASE2"]
+extra = release2 ? " --release2 /vagrant/" + File.expand_path(release2).sub(File.expand_path("../..", __dir__) + "/", "") : ""
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.hostname = "itso-test"
+  config.vm.synced_folder "../..", "/vagrant"
+  %w[virtualbox libvirt].each do |p|
+    config.vm.provider p do |v|
+      v.cpus = 2
+      v.memory = 2048
+    end
+  end
+  config.vm.provision "shell", privileged: true,
+    inline: "bash /vagrant/tests/vm/run-all.sh --release #{rel_in_vm}#{extra} --report /vagrant/build/vm-report.md"
+end

@@ -1,0 +1,31 @@
+# Redis riêng của panel: chỉ socket Unix /run/itso-redis/redis.sock (group itso-redis), không TCP.
+[Unit]
+Description=ITSO Panel Redis
+PartOf=itso.target
+
+[Service]
+ExecStart=/usr/bin/redis-server /etc/itso/redis.conf --supervised systemd --daemonize no
+Type=notify
+User=itso-redis
+Group=itso-redis
+Slice=itso-panel.slice
+RuntimeDirectory=itso-redis
+RuntimeDirectoryMode=0750
+StateDirectory=itso-redis
+UMask=0007
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+MemoryDenyWriteExecute=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=itso.target

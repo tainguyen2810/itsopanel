@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check units-check test-installer test-vm release
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -61,7 +61,7 @@ COMPOSE ?= docker compose -f docker-compose.dev.yml
 setup: ## Cài dependency (web, api, agent), không cần Docker
 	@bash scripts/setup.sh
 
-dev: ## Chạy web + api + queue worker + mock agent (Ctrl+C để dừng)
+dev: ## Chạy web + api + queue worker + itso-agent --sandbox (ITSO_DEV_AGENT=mock dùng mock; Ctrl+C để dừng)
 	@bash scripts/dev.sh
 
 services-up: ## (Tùy chọn) PostgreSQL 16 + Redis 7 bằng Docker, chỉ cho dev
@@ -84,7 +84,7 @@ test-agent:
 test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự bật Vite)
 	@cd apps/web && $(PNPM) e2e
 
-test-e2e-real: ## Playwright trên stack thật (cần `make dev` đang chạy + DemoSeeder, xem docs/runbooks/phase-3-demo.md)
+test-e2e-real: ## Playwright trên stack thật + agent sandbox (cần `make dev` đang chạy + DemoSeeder, xem docs/runbooks/phase-3-demo.md)
 	@cd apps/web && $(PNPM) exec playwright test -c playwright.real.config.ts --trace off
 
 screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/) và trang chính Phase 2 (docs/screenshots/phase-2/)
@@ -99,8 +99,10 @@ tokens-check: ## Kiểm tokens.css khớp nguồn và tương phản WCAG AA
 
 test-api-pg: test-api ## Tên cũ của test-api (từ Phase 3 Pest luôn chạy trên PostgreSQL)
 
-test-fuzz: ## Fuzz parser envelope của agent (FUZZTIME=30s)
+test-fuzz: ## Fuzz parser envelope + validator của agent (FUZZTIME=30s cho envelope, 10s mỗi validator)
 	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope
+	@cd agent && go test -run='^$$' -fuzz=FuzzUsername -fuzztime=10s ./internal/validate
+	@cd agent && go test -run='^$$' -fuzz=FuzzHostname -fuzztime=10s ./internal/validate
 
 lint: lint-web lint-api lint-agent no-exec ## Chạy lint cho mọi phần
 
@@ -138,6 +140,18 @@ codegen: ## Sinh code từ contracts: TS (OpenAPI), Go structs + bản nhúng sc
 
 codegen-check: ## Báo lỗi nếu file sinh lệch với contracts (không ghi file)
 	@PNPM="$(PNPM)" bash scripts/codegen-check.sh
+
+units-check: ## Kiểm unit systemd của panel + drop-in slice mẫu (systemd-analyze verify, đọc cả cảnh báo)
+	@bash scripts/verify-units.sh
+
+test-vm: ## Kiểm thử trên VM Ubuntu 24.04 (Multipass; RELEASE=build/release/<ver>, VM_ARGS="--keep …"), xem docs/runbooks/phase-4-vm-test.md
+	@bash tests/vm/multipass.sh $(if $(RELEASE),--release $(RELEASE)) $(VM_ARGS)
+
+test-installer: ## Test install.sh: chữ ký/sha sai, OS sai, không phải root → từ chối (bash thuần)
+	@bash tests/installer/install_sh_test.sh
+
+release: ## Đóng gói bản phát hành vào build/release/<ver> (VERSION=…; khóa ITSO_RELEASE_KEY hoặc khóa dev tạm)
+	@bash scripts/release.sh
 
 check: ## Toàn bộ pipeline local như CI, in bảng kết quả (exit ≠ 0 nếu có bước đỏ)
 	@bash scripts/check-all.sh

@@ -1,0 +1,2 @@
+dpkg-query -W -f=${Status}	${Version} restic
+apt-get remove -y -q restic

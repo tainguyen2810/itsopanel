@@ -22,7 +22,8 @@
           "type": "string",
           "enum": [
             "mock",
-            "real"
+            "real",
+            "sandbox"
           ]
         }
       },

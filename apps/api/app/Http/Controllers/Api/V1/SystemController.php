@@ -33,6 +33,35 @@ final class SystemController
         ]);
     }
 
+    /** Phiên bản hiện tại + các release còn giữ trong /opt/itso/releases (chỉ đọc tên thư mục, không chạy lệnh). */
+    public function updates(): JsonResponse
+    {
+        $dir = (string) config('itso.releases_dir');
+        $link = (string) config('itso.current_link');
+        $active = is_link($link) ? basename((string) readlink($link)) : null;
+        $releases = [];
+        if (is_dir($dir)) {
+            foreach (scandir($dir) ?: [] as $name) {
+                if (preg_match('/^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/', $name) === 1 && is_file("$dir/$name/.complete")) {
+                    $releases[] = ['version' => $name, 'active' => $name === $active];
+                }
+            }
+        }
+        usort($releases, fn (array $a, array $b): int => version_compare($b['version'], $a['version']));
+        $channel = (string) config('itso.update_channel');
+
+        return self::data([
+            'current_version' => (string) config('itso.version'),
+            'commit' => (string) config('itso.commit'),
+            'channel' => in_array($channel, ['stable', 'beta'], true) ? $channel : 'stable',
+            'latest_version' => null,
+            'update_available' => false,
+            'checked_at' => null,
+            'update_command' => 'sudo itso update --release-dir <thư mục release đã tải>',
+            'releases' => $releases,
+        ]);
+    }
+
     public function status(AgentClient $agent): JsonResponse
     {
         $database = self::probe(static fn () => DB::connection()->select('select 1'));

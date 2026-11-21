@@ -1,0 +1,2 @@
+findmnt -n -o TARGET,FSTYPE,OPTIONS --target /home
+repquota -u -n -p -O csv /

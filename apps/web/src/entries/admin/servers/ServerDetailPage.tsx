@@ -89,7 +89,16 @@ export default function ServerDetailPage() {
             content: <Services id={s.uuid} />,
           },
           { value: 'resources', label: t('servers.tabs.resources'), content: <Resources s={s} /> },
-          { value: 'agent', label: t('servers.tabs.agent'), content: <Agent s={s} /> },
+          {
+            value: 'agent',
+            label: t('servers.tabs.agent'),
+            content: (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Agent s={s} />
+                <Platform s={s} />
+              </div>
+            ),
+          },
           {
             value: 'accounts',
             label: t('servers.tabs.accounts'),
@@ -405,6 +414,54 @@ function Agent({ s }: { s: Server }) {
             [t('servers.createdAt'), fmt.dateTime(s.created_at)],
           ]}
         />
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Sự thật nền tảng agent báo (system.info): quota, cgroup v2, systemd, kiến trúc, chế độ agent. */
+export function Platform({ s }: { s: Server }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  const p = s.platform;
+  return (
+    <Card>
+      <CardHeader title={t('servers.platform.title')} description={t('servers.platform.hint')} />
+      <CardContent>
+        {p === null ? (
+          <p className="text-base text-muted">{t('servers.platform.none')}</p>
+        ) : (
+          <InfoList
+            items={[
+              [
+                t('servers.platform.quota'),
+                <Badge key="q" tone={p.quota_mode === 'kernel' ? 'success' : 'warning'}>
+                  {t(`servers.platform.quotaMode.${p.quota_mode}`)}
+                </Badge>,
+              ],
+              [
+                t('servers.platform.cgroup'),
+                <Badge key="c" tone={p.cgroup_v2 ? 'success' : 'danger'}>
+                  {p.cgroup_v2 ? t('servers.yes') : t('servers.no')}
+                </Badge>,
+              ],
+              [
+                t('servers.platform.systemd'),
+                <Badge key="s" tone={p.systemd ? 'success' : 'danger'}>
+                  {p.systemd ? t('servers.yes') : t('servers.no')}
+                </Badge>,
+              ],
+              [t('servers.platform.arch'), p.arch || '—'],
+              [
+                t('servers.platform.mode'),
+                <Badge key="m" tone={p.agent_mode === 'real' ? 'neutral' : 'warning'}>
+                  {t(`servers.platform.agentMode.${p.agent_mode}`)}
+                </Badge>,
+              ],
+              [t('servers.platform.factsAt'), fmt.opt(p.facts_at)],
+            ]}
+          />
+        )}
       </CardContent>
     </Card>
   );

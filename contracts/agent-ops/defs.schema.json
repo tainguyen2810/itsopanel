@@ -133,6 +133,30 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
     },
+    "Hostname": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 253,
+      "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$",
+      "description": "Hostname máy chủ (RFC 1123, chữ thường)."
+    },
+    "Recipe": {
+      "type": "string",
+      "enum": [
+        "acl",
+        "quota",
+        "nftables",
+        "restic",
+        "stress-ng"
+      ]
+    },
+    "QuotaMode": {
+      "type": "string",
+      "enum": [
+        "kernel",
+        "soft"
+      ]
+    },
     "Mode": {
       "type": "string",
       "pattern": "^0[0-7]{3}$"

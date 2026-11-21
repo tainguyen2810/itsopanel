@@ -11,7 +11,7 @@ use Tests\Support\FakeAgent;
  * SA = SUPER_ADMIN; AD_IN = ADMIN có phạm vi server chứa account của US_OWNER; AD_OUT = ADMIN không phạm vi;
  * US_OWNER = USER Portal chủ account: không có phiên admin nên GET → 401, ghi → 419 (chặn ở CSRF trước xác thực). Ngoài phạm vi → 404, thiếu quyền → 403.
  * {owner} = uuid USER chủ account, {other} = uuid ADMIN ngoài phạm vi.
- * Prompt 3.4/3.5 bổ sung endpoint mới vào bảng này.
+ * Prompt 3.4/3.5/4.5 bổ sung endpoint mới vào bảng này.
  */
 const MATRIX = [
     // [method, path, body, SA, AD_IN, AD_OUT, US_OWNER]
@@ -54,6 +54,16 @@ const MATRIX = [
     ['PATCH', '/api/v1/admin/hosting-accounts/{account}', ['legal_hold' => true], 200, 403, 404, 419],
     ['POST', '/api/v1/admin/hosting-accounts/{account}:suspend', ['reason' => 'Kiểm tra ma trận'], 202, 202, 404, 419],
     ['POST', '/api/v1/admin/hosting-accounts/{account}:terminate', ['reason' => 'Kiểm tra ma trận', 'confirm_username' => '{username}'], 202, 403, 403, 419],
+    // 4.5: dịch vụ, phần mềm, reboot, dung lượng, số liệu, cập nhật
+    ['GET', '/api/v1/admin/servers/{server}/services', null, 200, 200, 404, 401],
+    ['POST', '/api/v1/admin/servers/{server}/services/nginx:restart', [], 202, 403, 403, 419],
+    ['POST', '/api/v1/admin/servers/{server}:reboot', [], 202, 403, 403, 419],
+    ['GET', '/api/v1/admin/servers/{server}/software', null, 200, 200, 404, 401],
+    ['POST', '/api/v1/admin/servers/{server}/software/restic:install', [], 202, 403, 403, 419],
+    ['GET', '/api/v1/admin/servers/{server}/capacity', null, 200, 200, 404, 401],
+    ['GET', '/api/v1/admin/metrics/servers/{server}?metric=cpu_pct&range=1h', null, 200, 200, 404, 401],
+    ['GET', '/api/v1/admin/metrics/hosting-accounts/{account}?metric=disk_pct', null, 200, 200, 404, 401],
+    ['GET', '/api/v1/admin/system/updates', null, 200, 403, 403, 401],
 ];
 
 /*
@@ -92,7 +102,8 @@ it('ma trận quyền', function (string $method, string $path, ?array $body, st
     if (($body['confirm_username'] ?? null) === '{username}') {
         $body['confirm_username'] = $a->account->username;
     }
-    $headers = str_contains($path, '/hosting-accounts/{account}:') ? ['Idempotency-Key' => (string) Str::uuid()] : [];
+    $headers = preg_match('#/(hosting-accounts/\{account\}|servers/\{server\}|services/[a-z0-9.-]+|software/[a-z0-9.-]+):#', $path) === 1
+        ? ['Idempotency-Key' => (string) Str::uuid()] : [];
     new FakeAgent(['*' => fn () => ['ok' => true]]);
     if (isset($body['expires_at'])) {
         $body['expires_at'] = now()->modify($body['expires_at'])->toIso8601String();

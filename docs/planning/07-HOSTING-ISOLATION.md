@@ -29,19 +29,24 @@ Một USER có thể có nhiều hosting account (vd trên 2 server). Giới h�
 
 ## 3. Cấu trúc systemd slice
 
+> Cập nhật Phase 4 (D-64, ADR 0011): systemd suy ra slice cha **từ tên** (dấu `-`), không dùng được `Slice=` trong unit `.slice`
+> (`systemd-analyze verify` báo "Failed to assign slice"). Vì vậy slice account `itso-acct-<uid>.slice` nằm dưới `itso-acct.slice`
+> → `itso.slice`; slice của panel đổi thành `itso-panel.slice` để không chứa hosting.
+
 ```
 -.slice
-├── system.slice           (nginx, mysqld, postgresql, itso-*)
-├── itso.slice             (panel: itso-web, workers — MemoryMax bảo vệ panel)
-├── itso-maintenance.slice (malware scan, backup: CPUQuota thấp, IOWeight thấp)
-└── itso-hosting.slice     (giới hạn tổng cho toàn bộ hosting, chừa tài nguyên cho hệ thống)
-    ├── itso-acct-12.slice
-    │   ├── itso-php@8.3-acct12.service   (php-fpm master riêng, User=acct12)
-    │   ├── itso-cron-341.service         (từ timer)
-    │   └── itso-app-77.service           (managed app/Node, Phase 10)
-    └── itso-acct-13.slice …
+├── system.slice           (nginx, mysqld, postgresql, itso-agent)
+└── itso.slice             (gốc ITSO, không đặt giới hạn riêng)
+    ├── itso-panel.slice   (panel: itso-web, workers — MemoryMax bảo vệ panel)
+    ├── itso-maint.slice   (malware scan, backup: CPUQuota thấp, IOWeight thấp)
+    └── itso-acct.slice    (giới hạn tổng cho toàn bộ hosting, chừa tài nguyên cho hệ thống)
+        ├── itso-acct-20012.slice
+        │   ├── itso-php@8.3-acct12.service   (php-fpm master riêng, User=acct12)
+        │   ├── itso-cron-341.service         (từ timer)
+        │   └── itso-app-77.service           (managed app/Node, Phase 10)
+        └── itso-acct-20013.slice …
 user.slice
-└── user-1012.slice        (phiên SSH của acct12 — logind tạo)
+└── user-20012.slice       (phiên SSH của acct12 — logind tạo)
 ```
 
 **Vấn đề cần spike (Phase 4):** phiên SSH/SFTP do `pam_systemd` đặt vào `user-<uid>.slice`, không vào `itso-acct-<id>.slice`. Hai phương án:

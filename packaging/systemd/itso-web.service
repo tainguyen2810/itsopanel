@@ -1,0 +1,33 @@
+# Panel web: FrankenPHP phục vụ web/dist và Laravel (api/public) qua HTTPS cổng panel.
+[Unit]
+Description=ITSO Panel web (FrankenPHP)
+PartOf=itso.target
+After=network-online.target itso-redis.service postgresql@16-itso.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=itso
+Group=itso
+Slice=itso-panel.slice
+EnvironmentFile=/etc/itso/itso.env
+WorkingDirectory=/opt/itso/current/api
+ExecStart=/opt/itso/current/bin/frankenphp run --config /opt/itso/current/packaging/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/itso/current/api/storage /opt/itso/current/api/bootstrap/cache /var/log/itso
+StateDirectory=itso-web
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=itso.target

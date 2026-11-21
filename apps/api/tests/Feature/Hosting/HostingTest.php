@@ -5,6 +5,7 @@ use App\Domain\Hosting\QuotaService;
 use App\Domain\Hosting\UidAllocator;
 use App\Exceptions\ApiProblem;
 use App\Models\AccountLifecycleEvent;
+use App\Models\AccountUsageSnapshot;
 use App\Models\HostingAccount;
 use App\Models\HostingPackage;
 use App\Models\HostingPackageVersion;
@@ -194,7 +195,8 @@ it('đổi gói + quota: vượt giới hạn → 422 quota_exceeded; chuyển a
     $a = new Actors($this);
     $sa = $a->spa('SA');
     $u = "/api/v1/admin/hosting-accounts/{$a->account->uuid}";
-    $a->account->forceFill(['observed_facts' => ['usage' => ['disk_mb' => 8000, 'inodes' => 1000, 'ram_mb' => 0, 'at' => now()->toIso8601String()]]])->save();
+    AccountUsageSnapshot::query()->create(['hosting_account_id' => $a->account->id, 'disk_mb' => 8000, 'inode_count' => 1000,
+        'mem_peak_mb' => 0, 'at' => now()]);
     $small = $sa->post('/api/v1/admin/hosting-packages', ['code' => 'nho', 'name' => 'Nhỏ', 'limits' => limits(['disk_mb' => 5000])])->json('data.uuid');
     $big = $sa->post('/api/v1/admin/hosting-packages', ['code' => 'lon', 'name' => 'Lớn', 'limits' => limits(['disk_mb' => 50000])])->json('data.uuid');
     $q = idem($sa, "$u:change-package", ['package_uuid' => $small, 'version' => null, 'reason' => 'Giảm gói']);

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/software.install.schema.json",
+  "title": "software.install",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "recipe": {
+          "$ref": "../defs.schema.json#/$defs/Recipe"
+        }
+      },
+      "required": [
+        "recipe"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "installed": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "installed",
+        "version",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

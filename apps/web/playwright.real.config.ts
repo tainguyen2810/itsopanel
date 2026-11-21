@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// E2E trên stack thật (Prompt 3.6): Laravel + PostgreSQL + Redis + mock agent + Vite (không MSW).
+// E2E trên stack thật (Prompt 3.6, 4.6): Laravel + PostgreSQL + Redis + itso-agent --sandbox + Vite (không MSW).
 // Cần `make dev` đang chạy và DB đã seed DemoSeeder (xem docs/runbooks/phase-3-demo.md).
 // Chạy: `make test-e2e-real`. Các test tạo dữ liệu với hậu tố ngẫu nhiên nên chạy lại được.
 export default defineConfig({

@@ -92,6 +92,12 @@ fi
 run test-agent       make -s test-agent
 run test-fuzz        make -s test-fuzz FUZZTIME="${CHECK_FUZZTIME:-30s}"
 run build-agent      make -s build-agent
+if have systemd-analyze; then
+  run units-check    make -s units-check
+else
+  skip units-check   "không có systemd-analyze"
+fi
+run test-installer   make -s test-installer
 
 # Kiểm tra không được làm bẩn repo (file sinh lệch, ảnh, cache chưa ignore).
 dirty_after="$(git status --porcelain 2>/dev/null)"

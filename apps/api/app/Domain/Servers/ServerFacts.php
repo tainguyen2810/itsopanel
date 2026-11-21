@@ -65,9 +65,18 @@ final class ServerFacts
             'observed_facts' => array_merge($server->observed_facts, [
                 'cpu_cores' => (int) ($d['cpu_cores'] ?? 0),
                 'ram_mb' => (int) ($d['ram_mb'] ?? 0),
+                'disk_mb' => (int) ($d['disk_total_mb'] ?? 0),
+                'disk_used_mb' => max(0, (int) ($d['disk_total_mb'] ?? 0) - (int) ($d['disk_free_mb'] ?? 0)),
                 'uptime_sec' => (int) ($d['uptime_sec'] ?? 0),
                 'agent_hostname' => (string) ($d['hostname'] ?? ''),
                 'agent_mode' => (string) ($ping->data['mode'] ?? ''),
+                'platform' => [
+                    'quota_mode' => in_array($d['quota_mode'] ?? null, ['kernel', 'soft'], true) ? $d['quota_mode'] : 'unknown',
+                    'cgroup_v2' => (bool) ($d['cgroup_v2'] ?? false),
+                    'systemd' => (bool) ($d['systemd'] ?? false),
+                    'arch' => (string) ($d['arch'] ?? ''),
+                    'facts_at' => $now->toIso8601String(),
+                ],
             ]),
             'observed_at' => $now,
             'observed_version' => $server->spec_version,

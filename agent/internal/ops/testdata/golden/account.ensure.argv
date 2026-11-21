@@ -1,0 +1,7 @@
+groupadd -g 20001 lehoa
+useradd -u 20001 -g 20001 -d /home/lehoa -s /usr/sbin/nologin -M -N -c ITSO hosting lehoa lehoa
+getfacl --omit-header --absolute-names /home/lehoa
+setfacl -m u:www-data:--x /home/lehoa
+getfacl --omit-header --absolute-names /home/lehoa/sites
+setfacl -m u:www-data:--x /home/lehoa/sites
+systemctl daemon-reload

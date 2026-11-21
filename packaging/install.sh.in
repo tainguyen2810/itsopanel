@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# install.sh — trình cài ITSO Panel (10-INSTALLER §2). Cố ý tối giản: kiểm root/OS/arch, tải manifest
+# đã ký + binary itso + tarball, kiểm chữ ký Ed25519 (openssl) và SHA-256, rồi chạy `itso install`.
+# Mọi logic còn lại nằm trong `itso install` (Go, có test).
+#
+#   sudo bash install.sh [--version X] [tùy chọn của itso install…]
+#
+# Biến môi trường: ITSO_RELEASE_URL (máy chủ phát hành), ITSO_RELEASE_DIR (thư mục có sẵn file, cài offline),
+# ITSO_BOOTSTRAP_DIR (nơi chép file đã kiểm, mặc định /opt/itso/bootstrap).
+set -euo pipefail
+
+ITSO_RELEASE_URL="${ITSO_RELEASE_URL:-@RELEASE_URL@}"
+CHANNEL_VERSION="@VERSION@"
+# Khóa công khai phát hành (Ed25519), nhúng lúc build release.
+PUBKEY_PEM='@PUBKEY_PEM@'
+
+die() { echo "install.sh: $*" >&2; exit 1; }
+
+[ "$(id -u)" -eq 0 ] || die "cần chạy bằng root (sudo bash install.sh)"
+
+OS_RELEASE="${ITSO_OS_RELEASE:-/etc/os-release}"
+# shellcheck disable=SC1090
+. "$OS_RELEASE"
+[ "${ID:-}" = "ubuntu" ] && [ "${VERSION_ID:-}" = "24.04" ] || die "chỉ hỗ trợ Ubuntu 24.04 (đang là ${PRETTY_NAME:-không rõ})"
+
+case "$(uname -m)" in
+  x86_64) ARCH=amd64 ;;
+  aarch64) ARCH=arm64 ;;
+  *) die "kiến trúc $(uname -m) không hỗ trợ" ;;
+esac
+
+VERSION="$CHANNEL_VERSION"
+if [ "${1:-}" = "--version" ]; then
+  [ -n "${2:-}" ] || die "--version cần giá trị"
+  VERSION="$2"; shift 2
+fi
+case "$VERSION" in
+  *[!0-9A-Za-z.-]*|"") die "phiên bản không hợp lệ: $VERSION" ;;
+esac
+
+command -v openssl >/dev/null || die "thiếu openssl"
+command -v sha256sum >/dev/null || die "thiếu sha256sum"
+
+WORK="$(mktemp -d /tmp/itso-install.XXXXXX)"
+trap 'rm -rf "$WORK"' EXIT
+
+fetch() { # fetch <tên file>
+  if [ -n "${ITSO_RELEASE_DIR:-}" ]; then
+    cp -- "$ITSO_RELEASE_DIR/$1" "$WORK/$1" || die "không có $1 trong $ITSO_RELEASE_DIR"
+  else
+    command -v curl >/dev/null || die "thiếu curl"
+    curl -fsSL --proto '=https' --tlsv1.2 -o "$WORK/$1" "$ITSO_RELEASE_URL/$VERSION/$1" || die "không tải được $1"
+  fi
+}
+
+fetch manifest.json
+fetch manifest.sig
+printf '%s\n' "$PUBKEY_PEM" > "$WORK/release.pub"
+openssl pkeyutl -verify -pubin -inkey "$WORK/release.pub" -rawin -in "$WORK/manifest.json" -sigfile "$WORK/manifest.sig" >/dev/null 2>&1 \
+  || die "chữ ký manifest KHÔNG hợp lệ: dừng cài đặt"
+
+# Lấy tên + sha256 từ manifest (định dạng do make release sinh: mỗi artifact một dòng JSON).
+artifact() { # artifact <kind> → "tên sha256"
+  grep -o "{\"name\": *\"[A-Za-z0-9._-]*\", *\"kind\": *\"$1\", *\"sha256\": *\"[0-9a-f]\{64\}\"" "$WORK/manifest.json" \
+    | head -n1 | sed -E 's/.*"name": *"([^"]+)".*"sha256": *"([0-9a-f]+)".*/\1 \2/'
+}
+
+for kind in binary tarball; do
+  read -r name sum <<<"$(artifact "$kind")" || true
+  [ -n "${name:-}" ] && [ -n "${sum:-}" ] || die "manifest thiếu artifact $kind"
+  fetch "$name"
+  echo "$sum  $WORK/$name" | sha256sum -c --quiet - >/dev/null 2>&1 || die "sha256 của $name sai: dừng cài đặt"
+done
+
+read -r bin _ <<<"$(artifact binary)"
+chmod 0755 "$WORK/$bin"
+BOOT="${ITSO_BOOTSTRAP_DIR:-/opt/itso/bootstrap}"
+mkdir -p "$BOOT"
+cp -- "$WORK"/* "$BOOT"/
+echo "install.sh: đã kiểm chữ ký và checksum bản $VERSION ($ARCH), chạy itso install…"
+exec "$BOOT/$bin" install --release-dir "$BOOT" "$@"

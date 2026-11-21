@@ -29,6 +29,24 @@
         },
         "ram_mb": {
           "type": "integer"
+        },
+        "disk_total_mb": {
+          "type": "integer"
+        },
+        "disk_free_mb": {
+          "type": "integer"
+        },
+        "cgroup_v2": {
+          "type": "boolean"
+        },
+        "systemd": {
+          "type": "boolean"
+        },
+        "quota_mode": {
+          "$ref": "../defs.schema.json#/$defs/QuotaMode"
+        },
+        "arch": {
+          "type": "string"
         }
       },
       "required": [
@@ -37,7 +55,13 @@
         "hostname",
         "uptime_sec",
         "cpu_cores",
-        "ram_mb"
+        "ram_mb",
+        "disk_total_mb",
+        "disk_free_mb",
+        "cgroup_v2",
+        "systemd",
+        "quota_mode",
+        "arch"
       ],
       "additionalProperties": false
     }

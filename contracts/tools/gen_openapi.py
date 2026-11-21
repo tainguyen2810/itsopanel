@@ -435,6 +435,58 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
     return pre
 
 
+# ---------------------------------------------------------------- wizard cài đặt lần đầu (Phase 4)
+def setup_paths(api: Api):
+    csrf = [{"csrfToken": []}]
+    gone = {"$ref": "./common.yaml#/components/responses/Gone"}
+    conflict = {"$ref": "./common.yaml#/components/responses/Conflict"}
+    forbidden = {"$ref": "./common.yaml#/components/responses/Forbidden"}
+    st = D.SETUP_STATUS
+
+    def public(method, path, op_id, summary, *, extra=(), **kw):
+        op = api.add(method, path, op_id, summary, "Setup", public=True, security=csrf if method != "get" else [], **kw)
+        for code in extra:
+            op["responses"][code] = {"409": conflict, "410": gone, "403": forbidden}[code]
+        return op
+
+    public("get", "/setup/status", "getSetupStatus", "Trạng thái wizard cài đặt", ok=ref("SetupStatus"),
+           ok_example=one(st), desc="Công khai để trang /install biết bước hiện tại. Không lộ dữ liệu khi đã cài xong.")
+    public("post", "/setup/code:verify", "verifySetupCode", "Xác minh mã thiết lập một lần", extra=("409", "410"),
+           body=ref("SetupCodeVerify"), body_example={"code": "K7QM-2XPA-9RTD"}, ok=ref("SetupStatus"),
+           ok_example=one({**st, "code_verified": True, "steps_done": ["code"]}),
+           desc="Mã do `sudo itso setup-code` tạo (agent chỉ lưu sha256, hết hạn sau 60 phút). Mã sai → 422; "
+                "mã đã dùng hoặc hết hạn → 409 `setup_code_used`/`setup_code_expired`; đã cài xong → 410.")
+    public("put", "/setup/preferences", "putSetupPreferences", "Bước 1: ngôn ngữ, múi giờ", extra=("403", "410"),
+           body=ref("SetupPreferences"), body_example={"locale": "vi", "timezone": "Asia/Ho_Chi_Minh"},
+           ok=ref("SetupStatus"), ok_example=one({**st, "code_verified": True, "steps_done": ["code", "language"]}),
+           desc="Cần phiên đã xác minh mã (403 nếu chưa).")
+    public("post", "/setup/admin", "createSetupAdmin", "Bước 2: tạo SUPER_ADMIN đầu tiên và đăng nhập",
+           extra=("403", "409", "410"), body=ref("SetupAdmin"),
+           body_example={"name": "Nguyễn Văn An", "email": "an.nguyen@itso.local", "password": "Mat-khau-du-dai-2026"},
+           ok=cref("Me"), ok_example=one(D.ME_ADMIN), status="201",
+           desc="Cần phiên đã xác minh mã. Tạo một lần (409 nếu wizard đã tạo SA). TOTP bắt buộc đăng ký ngay sau đó "
+                "qua `/api/v1/auth/mfa/totp:enroll` và `:confirm`.")
+    op = api.add("put", "/setup/access", "putSetupAccess", "Bước 3: truy cập panel (domain, port, entrance, allowlist)",
+                 "Setup", body=ref("SetupAccess"),
+                 body_example={"panel_domain": "panel.itso.local", "panel_port": 8443, "entrance_path": "/itso-a7k2",
+                               "allowlist": ["10.10.5.0/24", "203.0.113.7"]},
+                 ok=ref("SetupStatus"), ok_example=one({**st, "code_verified": True, "admin_created": True,
+                                                        "admin_mfa_enabled": True, "access": D.SETUP_ACCESS,
+                                                        "steps_done": ["code", "language", "admin", "access"]}),
+                 desc="Chỉ SUPER_ADMIN do wizard tạo, đã bật TOTP (403 nếu chưa).")
+    op["responses"]["410"] = gone
+    op = api.add("get", "/setup/quota", "getSetupQuota", "Bước 6: trạng thái disk quota của server panel", "Setup",
+                 ok=ref("SetupQuota"), ok_example=one({"mode": "kernel", "server": D.server_ref(0), "facts_at": D.T2}))
+    op["responses"]["410"] = gone
+    op = api.add("post", "/setup:complete", "completeSetup", "Bước 9: tổng kết và khóa wizard", "Setup",
+                 ok=ref("SetupStatus"), ok_example=one({**st, "installed": True, "code_verified": True,
+                                                        "admin_created": True, "admin_mfa_enabled": True,
+                                                        "access": D.SETUP_ACCESS,
+                                                        "steps_done": ["code", "language", "admin", "access", "quota"]}),
+                 desc="Ghi `installed_at`; sau đó mọi endpoint ghi của wizard trả 410.")
+    op["responses"]["410"] = gone
+
+
 # ---------------------------------------------------------------- admin
 def admin_paths(api: Api):
     jobs = JobSeq(100)
@@ -454,6 +506,10 @@ def admin_paths(api: Api):
                                       "error": None},
                             "checked_at": D.T2}),
             desc="Agent được gọi bằng op `system.ping`. Trước khi có xác thực (Phase 3), route chỉ đăng ký khi APP_ENV=local/testing.")
+    api.add("get", "/system/updates", "getSystemUpdates", "Phiên bản hiện tại, kênh và lệnh cập nhật", "System",
+            ok=ref("SystemUpdates"), ok_example=one(D.SYSTEM_UPDATES),
+            desc="Chỉ đọc. Cập nhật chạy bằng CLI root `itso update` trên server (D-65: release ký Ed25519, tự rollback).")
+    setup_paths(api)
     # -- servers
     api.crud("/servers", "server", ref("Server"), "Servers", D.SERVERS, ops="lru", update_body=ref("ServerUpdate"),
              update_example={"accepting_new_accounts": False})
@@ -467,7 +523,7 @@ def admin_paths(api: Api):
     api.add("post", "/servers/{id}/services/{service}:{action}", "controlServerService",
             "start/stop/restart dịch vụ trong allowlist", "Servers",
             params=idp + [Api.p("ServiceName"), Api.p("ServiceAction")], job=True,
-            job_example=jobs("service.control", "server", srv["uuid"], ["service.control"]))
+            job_example=jobs("service.restart", "server", srv["uuid"], ["service.control"]))
     api.add("post", "/servers/{id}:reboot", "rebootServer", "Khởi động lại server", "Servers", params=idp, job=True,
             step_up=True, job_example=jobs("server.reboot", "server", srv["uuid"], ["system.reboot"]))
     api.add("get", "/servers/{id}/software", "listServerSoftware", "Phần mềm trên server", "Software", params=idp,
@@ -782,6 +838,7 @@ def common_components():
         "PreconditionFailed": problem_resp(412, "precondition_failed", "Phiên bản đã thay đổi", "If-Match không khớp ETag hiện tại."),
         "ValidationFailed": v422,
         "TooManyRequests": t429,
+        "Gone": problem_resp(410, "setup_completed", "Wizard đã khóa", "Panel đã cài đặt xong; wizard không dùng lại được."),
         "NotImplemented": problem_resp(501, "purge_not_available", "Chưa có ở phiên bản này",
                                        "Purge hiện thực ở Phase 8."),
     }

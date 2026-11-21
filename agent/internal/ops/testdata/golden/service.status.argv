@@ -1,0 +1,6 @@
+systemctl is-active nginx.service
+systemctl is-enabled nginx.service
+dpkg-query -W -f=${Status}	${Version} nginx
+systemctl is-active mariadb.service
+systemctl is-enabled mariadb.service
+dpkg-query -W -f=${Status}	${Version} mariadb-server

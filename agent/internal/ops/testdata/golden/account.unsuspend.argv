@@ -1,0 +1,2 @@
+gpasswd -d lehoa itso-suspended
+usermod -e  lehoa

@@ -1,0 +1,29 @@
+# Queue worker Laravel (instance = số thứ tự). Job gọi agent qua socket (user itso thuộc itso-agent-clients).
+[Unit]
+Description=ITSO Panel queue worker %i
+PartOf=itso.target
+After=itso-redis.service postgresql@16-itso.service
+
+[Service]
+Type=simple
+User=itso
+Group=itso
+Slice=itso-panel.slice
+EnvironmentFile=/etc/itso/itso.env
+WorkingDirectory=/opt/itso/current/api
+ExecStart=/opt/itso/current/bin/frankenphp php-cli /opt/itso/current/api/artisan queue:work --sleep=1 --tries=1 --max-time=3600
+Restart=always
+RestartSec=2s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/itso/current/api/storage /var/log/itso
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=itso.target

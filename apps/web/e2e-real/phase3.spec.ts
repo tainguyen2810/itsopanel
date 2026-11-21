@@ -1,75 +1,19 @@
-import { createHmac } from 'node:crypto';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import {
+  PASSWORD,
+  SA_EMAIL,
+  SA_TOTP,
+  PORTAL_EMAIL,
+  SUFFIX,
+  totp,
+  password,
+  submitTotp,
+  adminLogin,
+  watchServerErrors,
+} from './helpers';
 
-// Prompt 3.6: luồng chính trên stack thật (Laravel + PostgreSQL + Redis + mock agent).
+// Prompt 3.6: luồng chính trên stack thật (Laravel + PostgreSQL + Redis + agent; từ 4.6 là itso-agent --sandbox).
 // Tài khoản lấy từ DemoSeeder (mật khẩu và secret TOTP chỉ dùng cho môi trường dev).
-const PASSWORD = 'password-dev-only';
-const SA_EMAIL = 'superadmin@itso.local';
-const SA_TOTP = 'ITSODEVTOTPSECRETONLYFORLOCALDEV';
-const PORTAL_EMAIL = 'it@anphat.vn';
-const HOME = /\/admin\/(dashboard)?$/;
-// Hậu tố ngẫu nhiên để chạy lại nhiều lần trên cùng một DB.
-const SUFFIX = Math.random().toString(36).slice(2, 7).replace(/[0-9]/g, 'x');
-
-function base32(s: string): Buffer {
-  const abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const bits = [...s].map((c) => abc.indexOf(c).toString(2).padStart(5, '0')).join('');
-  const out: number[] = [];
-  for (let i = 0; i + 8 <= bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8), 2));
-  return Buffer.from(out);
-}
-
-/** TOTP RFC 6238 (SHA1, 6 số, chu kỳ 30 giây). */
-function totp(secret: string, at = Date.now()): string {
-  const counter = Buffer.alloc(8);
-  counter.writeBigUInt64BE(BigInt(Math.floor(at / 30_000)));
-  const h = createHmac('sha1', base32(secret)).update(counter).digest();
-  const o = h[19]! & 15;
-  return String((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000).padStart(6, '0');
-}
-
-// Server chặn dùng lại mã TOTP trong cùng chu kỳ 30 giây (chống replay): mỗi lần đăng nhập chờ chu kỳ mới.
-let lastStep = 0;
-async function freshTotp(page: Page): Promise<string> {
-  while (Math.floor(Date.now() / 30_000) <= lastStep) await page.waitForTimeout(1000);
-  lastStep = Math.floor(Date.now() / 30_000);
-  return totp(SA_TOTP);
-}
-
-async function password(page: Page, realm: 'admin' | 'portal', email: string) {
-  await page.goto(`/${realm}/`);
-  await expect(page).toHaveURL(new RegExp(`/${realm}/login`));
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Mật khẩu').fill(PASSWORD);
-  await page.getByRole('button', { name: 'Đăng nhập' }).click();
-}
-
-/** Nhập mã TOTP; nếu mã của chu kỳ này đã dùng ở lần chạy trước thì chờ chu kỳ sau và nhập lại. */
-async function submitTotp(page: Page) {
-  for (let i = 0; i < 2; i++) {
-    await page.locator('#mfa').fill(await freshTotp(page));
-    const res = page.waitForResponse((r) => r.url().endsWith('/api/v1/auth/mfa/verify'));
-    await page.getByRole('button', { name: 'Xác nhận', exact: true }).click();
-    if ((await res).ok()) break;
-  }
-  await expect(page).toHaveURL(HOME);
-}
-
-async function adminLogin(page: Page) {
-  await password(page, 'admin', SA_EMAIL);
-  await expect(page).toHaveURL(/\/admin\/login\/mfa/);
-  await submitTotp(page);
-}
-
-/** Request /api trả ≥ 500 trong khi test (4xx có thể là kỳ vọng của bước kiểm tra). */
-function watchServerErrors(page: Page) {
-  const errors: string[] = [];
-  page.on('response', (r) => {
-    if (r.url().includes('/api/') && r.status() >= 500) errors.push(`${r.status()} ${r.url()}`);
-  });
-  page.on('pageerror', (e) => errors.push(e.message));
-  return errors;
-}
 
 test('Admin: đăng nhập có MFA (mã sai bị từ chối), Hồ sơ đúng người', async ({ page }) => {
   const errors = watchServerErrors(page);

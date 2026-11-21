@@ -1,0 +1,35 @@
+# itso-agent: tác tử root, chỉ nhận typed op qua socket Unix (peercred + HMAC). Hardening theo 06 §4.
+[Unit]
+Description=ITSO Panel agent
+PartOf=itso.target
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/itso/current/bin/itso-agent --listen unix:/run/itso/agent.sock --key-file /etc/itso/agent.key --policy /etc/itso/agent-policy.yaml --audit-log /var/log/itso/agent-audit.jsonl
+Restart=on-failure
+RestartSec=2s
+User=root
+RuntimeDirectory=itso
+RuntimeDirectoryMode=0755
+UMask=0027
+# Cần setresuid cho tiến trình con chạy dưới UID account, truy cập /home và ghi cgroup/slice.
+NoNewPrivileges=no
+ProtectHome=no
+ProtectControlGroups=no
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service @privileged @mount @chown
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=itso.target
