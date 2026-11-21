@@ -12,6 +12,9 @@
         "website_uuid": {
           "$ref": "../defs.schema.json#/$defs/Uuid"
         },
+        "site_dir": {
+          "$ref": "../defs.schema.json#/$defs/Domain"
+        },
         "version": {
           "$ref": "../defs.schema.json#/$defs/PhpVersion"
         },
@@ -36,12 +39,14 @@
           "items": {
             "type": "string",
             "pattern": "^[a-z_0-9]+$"
-          }
+          },
+          "maxItems": 100
         }
       },
       "required": [
         "account",
         "website_uuid",
+        "site_dir",
         "version",
         "pm_max_children",
         "memory_limit",
@@ -57,13 +62,21 @@
         "socket": {
           "type": "string"
         },
+        "unit": {
+          "type": "string"
+        },
         "reloaded": {
+          "type": "boolean"
+        },
+        "changed": {
           "type": "boolean"
         }
       },
       "required": [
         "socket",
-        "reloaded"
+        "unit",
+        "reloaded",
+        "changed"
       ],
       "additionalProperties": false
     }

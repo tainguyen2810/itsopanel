@@ -2357,6 +2357,10 @@ export interface components {
         NginxSize: string;
         /** @description Giá trị đưa vào cấu hình Nginx: cấm ký tự phá cú pháp. */
         HeaderValue: string;
+        /** @description Đường dẫn URL cho redirect/location: không khoảng trắng, dấu nháy, $, ;, {}. */
+        UrlPath: string;
+        /** @description URL đích redirect (http/https, domain chữ thường, path an toàn). */
+        RedirectTarget: string;
         WebsiteNginx: {
             client_max_body_size?: components["schemas"]["NginxSize"];
             http2?: boolean;
@@ -2365,9 +2369,8 @@ export interface components {
                 [key: string]: components["schemas"]["HeaderValue"];
             };
             redirects?: {
-                from: components["schemas"]["RelPath"];
-                /** Format: uri */
-                to: string;
+                from: components["schemas"]["UrlPath"];
+                to: components["schemas"]["RedirectTarget"];
                 /** @enum {string} */
                 code: "301" | "302";
             }[];

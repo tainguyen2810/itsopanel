@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
-// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql. Prompt 4.5: thêm 6 bảng Phase 4.
+// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql. Prompt 4.5: thêm 6 bảng Phase 4. Prompt 5.1: thêm 9 bảng Phase 5.
 
 const PHASE3_TABLES = [
     'users', 'roles', 'permissions', 'role_permissions', 'user_roles', 'user_scopes', 'mfa_credentials',
@@ -20,6 +20,9 @@ const PHASE3_TABLES = [
 
 const PHASE4_TABLES = ['server_services', 'server_capacity', 'software_catalog', 'server_software',
     'account_usage_snapshots', 'metric_samples'];
+
+const PHASE5_TABLES = ['websites', 'domains', 'website_settings', 'acme_accounts', 'certificates', 'php_versions',
+    'dns_providers', 'dns_zones', 'dns_records'];
 
 function rejects(callable $fn, string $pattern): void
 {
@@ -33,12 +36,12 @@ function rejects(callable $fn, string $pattern): void
     throw new RuntimeException('Mong đợi lỗi DB khớp '.$pattern);
 }
 
-it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 (không hơn), audit_logs và metric_samples có partition mặc định', function () {
+it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 (không hơn), audit_logs và metric_samples có partition mặc định', function () {
     $tables = collect(DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         ->pluck('tablename')
         ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default'], true))
         ->sort()->values()->all();
-    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES])->sort()->values()->all());
+    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES])->sort()->values()->all());
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'metric_samples_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'audit_logs_default'"))->toBe(1);
 });
@@ -108,4 +111,21 @@ it('lịch sử vòng đời account append-only', function () {
 it('job: trạng thái và tiến độ trong miền cho phép', function () {
     rejects(fn () => DB::table('jobs')->insert(['type' => 'x', 'state' => 'weird']), '/jobs_state_chk/');
     rejects(fn () => DB::table('jobs')->insert(['type' => 'x', 'state' => 'queued', 'progress' => 101]), '/jobs_progress_chk/');
+});
+
+it('Phase 5: domain duy nhất khi còn hoạt động, chữ thường; khóa ACME chỉ ở agent hoặc db (D-69)', function () {
+    $acc = \App\Models\HostingAccount::factory()->create();
+    $site = DB::table('websites')->insertGetId(['hosting_account_id' => $acc->id, 'server_id' => $acc->server_id,
+        'primary_domain' => 'shop.anphat.vn'], 'id');
+    DB::table('domains')->insert(['website_id' => $site, 'name' => 'www.anphat.vn']);
+    rejects(fn () => DB::table('domains')->insert(['website_id' => $site, 'name' => 'www.anphat.vn']), '/domains_name_active_uq/');
+    rejects(fn () => DB::table('domains')->insert(['website_id' => $site, 'name' => 'WWW.Other.vn']), '/domains_lowercase_chk/');
+    DB::table('domains')->where('name', 'www.anphat.vn')->update(['deleted_at' => now()]);
+    DB::table('domains')->insert(['website_id' => $site, 'name' => 'www.anphat.vn']);
+    expect(DB::table('domains')->where('name', 'www.anphat.vn')->count())->toBe(2);
+
+    DB::table('acme_accounts')->insert(['server_id' => $acc->server_id, 'email' => 'it@anphat.vn',
+        'directory_url' => 'https://acme-v02.api.letsencrypt.org/directory']);
+    rejects(fn () => DB::table('acme_accounts')->insert(['server_id' => $acc->server_id, 'email' => 'x@anphat.vn',
+        'directory_url' => 'https://acme-staging-v02.api.letsencrypt.org/directory', 'key_location' => 'db']), '/acme_accounts_key_chk/');
 });

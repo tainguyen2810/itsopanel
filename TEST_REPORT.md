@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 5 / Prompt 5.1 — nhánh `phase-5`
+
+Môi trường: như Phase 4 (PostgreSQL 16 + Redis local, container không có systemd).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen-check` | PASS: admin 239 operation (+11: DNS provider/zone 6, PHP install/extension 2, wizard bước stack 2, cộng `syncDnsZone`), portal 103; agent-ops 73 op có schema (+6: `fs.site_layout.ensure`, `nginx.vhost.inspect`, `php.version.remove`, `php.ext.install`, `cert.inspect`, `log.tail`; sửa `nginx.vhost.apply`, `php.pool.apply`, `cert.issue`, `cert.install`, `nginx.global.apply`, `php.version.install`); envelope mẫu cập nhật; Redocly 0 lỗi; 416+ example hợp lệ |
+| Vector độc | `python3 contracts/tools/gen_vectors.py` + check_contracts | PASS: 138 vector (+26: HeaderValue CRLF/`;`/`$`/`{}`, UrlPath, RedirectTarget `javascript:`/không scheme, NginxSize, PhpExtension ngoài allowlist, email chèn cờ lego, recipe php8.1 cần PPA) |
+| DB | `make db-schema` · `make db-verify` · `make db-migrations PHASE=5` | PASS 41 test SQL; Phase 3 → 11 áp lần lượt = itso.sql + extras.sql; migration Phase 5: 9 bảng, 62 câu lệnh. Thay đổi đặc tả: `domains.uuid`, `dns_records.uuid` + `priority`, `dns_providers.account_label`, `acme_accounts.server_id` + `key_location` (CHECK khóa chỉ ở agent hoặc db), `certificates.private_key_encrypted` + `acme_account_id` + `auto_renew` + `last_renew_attempt_at` + `last_error` |
+| Schema Laravel | `pest tests/Feature/Schema/SchemaTest.php` | PASS 10 test (thêm: đủ 9 bảng Phase 5; domain duy nhất khi còn hoạt động, chữ thường; CHECK `acme_accounts_key_chk`) |
+| Go | `go vet ./...` · `go test -count=1 ./...` | PASS (validator recipe thêm nginx, php8.3, lego; vector chung PHP/Go) |
+| Laravel toàn bộ · Web | `pest --parallel` · `npx vitest run` · `tsc` | PASS 348 · 465 · tsc sạch |
+
+**Test bị bỏ qua:** không. Ghi chú môi trường: `make db-verify` dừng cụm PostgreSQL dev trên cổng 5432; khởi động lại bằng `pg_ctl` trước khi chạy Pest.
+
 ## 2026-11-21 — Phase 4 / Prompt 4.6 — nhánh `phase-4`
 
 Môi trường: PostgreSQL 16 + Redis local; agent thật `itso-agent --sandbox` (runner giả, gốc riêng `.dev/agent-sandbox/root`, ký HMAC D-66). Container không có KVM/systemd/cgroup v2 nên **bộ test VM chưa chạy (chờ VM)**.

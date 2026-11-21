@@ -227,7 +227,7 @@ t("hosting", "websites", ID + [
     "document_root text [not null, default: 'public']", "php_version text",
     "ssl_mode text [not null, default: 'none', note: 'none|acme|custom']",
 ] + DO + TS + SOFT, ["hosting_account_id", "server_id"])
-t("hosting", "domains", IDN + [
+t("hosting", "domains", ID + [
     "website_id bigint [not null, ref: > websites.id]",
     "name text [not null, note: 'lowercase punycode']",
     "type text [not null, default: 'alias', note: 'primary|alias|redirect|subdomain']",
@@ -241,12 +241,18 @@ t("hosting", "website_settings", [
     "updated_at timestamptz [not null, default: `now()`]",
 ])
 t("hosting", "acme_accounts", IDN + [
-    "email citext [not null]", "directory_url text [not null]", "key_encrypted bytea [not null]",
-] + TS, ["(email, directory_url) [unique]"])
+    "server_id bigint [not null, ref: > servers.id]",
+    "email citext [not null]", "directory_url text [not null]",
+    "key_location text [not null, default: 'agent', note: 'agent: khóa ACME giữ trên máy do agent quản lý (D-69)']",
+    "key_encrypted bytea [note: 'chỉ dùng khi key_location = db']",
+] + TS, ["(server_id, email, directory_url) [unique]"])
 t("hosting", "certificates", ID + [
     "website_id bigint [ref: > websites.id]", "server_id bigint [not null, ref: > servers.id]",
     "issuer text", "domains text[] [not null]", "source text [not null, note: 'acme|upload']",
     "not_before timestamptz", "not_after timestamptz", "private_key_ref text",
+    "private_key_encrypted bytea [note: 'chứng chỉ tải lên: khóa riêng mã hóa (D-69), không đưa vào job']",
+    "acme_account_id bigint [ref: > acme_accounts.id]", "auto_renew boolean [not null, default: true]",
+    "last_renew_attempt_at timestamptz", "last_error text",
 ] + DO + TS, ["website_id", "not_after"])
 t("hosting", "databases", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
@@ -286,16 +292,17 @@ t("hosting", "cron_runs", IDN + [
 ], ["(cron_job_id, started_at)"])
 t("hosting", "dns_providers", ID + [
     "type text [not null, note: 'cloudflare']", "name text [not null]",
-    "credentials_encrypted bytea [not null]", "created_by_user_id bigint [ref: > users.id]",
+    "credentials_encrypted bytea [not null]", "account_label text",
+    "created_by_user_id bigint [ref: > users.id]",
 ] + TS)
 t("hosting", "dns_zones", ID + [
     "provider_id bigint [not null, ref: > dns_providers.id]", "name text [not null]",
     "external_id text", "hosting_account_id bigint [ref: > hosting_accounts.id]",
 ] + TS, ["(provider_id, name) [unique]"])
-t("hosting", "dns_records", IDN + [
+t("hosting", "dns_records", ID + [
     "zone_id bigint [not null, ref: > dns_zones.id]", "type text [not null]", "name text [not null]",
-    "content text [not null]", "ttl int [not null, default: 300]", "proxied boolean [not null, default: false]",
-    "external_id text",
+    "content text [not null]", "ttl int [not null, default: 300]", "priority int",
+    "proxied boolean [not null, default: false]", "external_id text",
 ] + TS, ["zone_id"])
 t("hosting", "upload_sessions", IDN + [
     "uid text [not null, unique]", "user_id bigint [not null, ref: > users.id]",

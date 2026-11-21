@@ -1,6 +1,6 @@
 # ADR 0011: Slice cho hosting account và phiên SSH
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 4; xác nhận bằng bảng test VM `tests/vm/`)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 4; bảng test VM `tests/vm/` vẫn chờ chạy)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-12, D-64
 

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/php.ext.install.schema.json",
+  "title": "php.ext.install",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "$ref": "../defs.schema.json#/$defs/PhpVersion"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/PhpExtension"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "version",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "installed": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/PhpExtension"
+          }
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "installed",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

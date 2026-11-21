@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.site_layout.ensure.schema.json",
+  "title": "fs.site_layout.ensure",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "site_dir": {
+          "$ref": "../defs.schema.json#/$defs/Domain"
+        }
+      },
+      "required": [
+        "account",
+        "site_dir"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "created": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "created"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

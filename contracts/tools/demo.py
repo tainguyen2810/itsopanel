@@ -10,7 +10,7 @@ user server package package_version account website domain certificate database 
 sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_record migration purge
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
-uptime_check impersonation scope channel git_repository git_deployment""".split())}
+uptime_check impersonation scope channel git_repository git_deployment dns_provider""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -272,6 +272,11 @@ CRON = [
 CRON_RUNS = [
     {"uuid": u("cron_run", 1), "started_at": T2, "finished_at": "2026-11-20T08:15:03+07:00", "exit_code": 0,
      "status": "succeeded", "output_tail": "Running scheduled command: emails:send"},
+]
+
+DNS_PROVIDERS = [
+    {"uuid": u("dns_provider", 1), "type": "cloudflare", "name": "Cloudflare IT", "zones_count": 1,
+     "account_label": "IT An Phát", **ts()},
 ]
 
 DNS_ZONES = [
@@ -577,6 +582,12 @@ SETUP_ACCESS = {"panel_domain": "panel.itso.local", "panel_port": 8443, "entranc
 
 SETUP_STATUS = {"installed": False, "code_verified": False, "admin_created": False, "admin_mfa_enabled": False,
                 "locale": "vi", "timezone": "Asia/Ho_Chi_Minh", "access": None, "steps_done": []}
+
+SETUP_STACK = {"server": server_ref(0), "ready": False, "job_uuid": None, "components": [
+    {"key": "nginx", "name": "Nginx", "installed_version": "1.24.0", "state": "installed"},
+    {"key": "php8.3", "name": "PHP 8.3 (FPM)", "installed_version": None, "state": "available"},
+    {"key": "lego", "name": "lego (ACME)", "installed_version": None, "state": "available"},
+]}
 
 SERVICES = [
     {"name": "nginx", "active": True, "enabled": True, "version": "1.26.2", "since": T0},

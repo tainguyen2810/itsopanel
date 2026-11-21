@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 112,
+  "total": 138,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -510,16 +510,10 @@
           "note": "Hợp lệ"
         },
         {
-          "input": "64m; include /etc/shadow",
+          "input": "64m;",
           "expect": "reject",
           "layer": "schema",
-          "note": "Chèn directive"
-        },
-        {
-          "input": "64M",
-          "expect": "reject",
-          "layer": "schema",
-          "note": "Chữ hoa (chuẩn hóa trước)"
+          "note": "Dấu ;"
         },
         {
           "input": "-1",
@@ -528,10 +522,10 @@
           "note": "Số âm"
         },
         {
-          "input": "64mb",
+          "input": "64M",
           "expect": "reject",
           "layer": "schema",
-          "note": "Đơn vị không hợp lệ"
+          "note": "Chữ hoa (chuẩn hóa trước)"
         }
       ]
     },
@@ -542,37 +536,43 @@
           "input": "SAMEORIGIN",
           "expect": "accept",
           "layer": "schema",
-          "note": "Hợp lệ"
+          "note": "Giá trị header hợp lệ"
         },
         {
-          "input": "max-age=31536000, includeSubDomains",
+          "input": "max-age=31536000",
           "expect": "accept",
           "layer": "schema",
-          "note": "Hợp lệ"
+          "note": "Có dấu = hợp lệ"
         },
         {
-          "input": "x; add_header Set-Cookie evil",
+          "input": "x\r\nSet-Cookie: a=b",
           "expect": "reject",
           "layer": "schema",
-          "note": "Chèn directive bằng ;"
+          "note": "CRLF tách header"
         },
         {
-          "input": "x }\nserver { listen 80;",
+          "input": "a; include /etc/passwd",
           "expect": "reject",
           "layer": "schema",
-          "note": "Phá khối cấu hình"
+          "note": "Dấu ; kết thúc directive nginx"
         },
         {
-          "input": "$request_uri",
+          "input": "${host}",
           "expect": "reject",
           "layer": "schema",
           "note": "Biến nginx"
         },
         {
-          "input": "x\" always",
+          "input": "\"quoted\"",
           "expect": "reject",
           "layer": "schema",
-          "note": "Thoát chuỗi"
+          "note": "Dấu nháy phá cú pháp"
+        },
+        {
+          "input": "a } server { listen 80",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoặc nhọn đóng block"
         }
       ]
     },
@@ -731,6 +731,182 @@
           "expect": "reject",
           "layer": "schema",
           "note": "Ngoài allowlist"
+        },
+        {
+          "input": "nginx",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 5"
+        },
+        {
+          "input": "php8.3",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 5"
+        },
+        {
+          "input": "php8.1",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "PHP ngoài kho Ubuntu (cần PPA, D-68)"
+        }
+      ]
+    },
+    "url_path": {
+      "schema": "agent-ops/defs.schema.json#/$defs/UrlPath",
+      "vectors": [
+        {
+          "input": "/old-shop",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Đường dẫn redirect hợp lệ"
+        },
+        {
+          "input": "/a/b-c_d.html",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Có ký tự an toàn"
+        },
+        {
+          "input": "old-shop",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Không bắt đầu bằng /"
+        },
+        {
+          "input": "/a b",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng"
+        },
+        {
+          "input": "/a;return 200",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn directive"
+        },
+        {
+          "input": "/a{",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoặc nhọn"
+        },
+        {
+          "input": "/$uri",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Biến nginx"
+        }
+      ]
+    },
+    "redirect_target": {
+      "schema": "agent-ops/defs.schema.json#/$defs/RedirectTarget",
+      "vectors": [
+        {
+          "input": "https://shop.anphat.vn/",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "URL đích hợp lệ"
+        },
+        {
+          "input": "http://anphat.vn:8080/sale",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Có port và path"
+        },
+        {
+          "input": "javascript:alert(1)",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Scheme nguy hiểm"
+        },
+        {
+          "input": "https://anphat.vn/a b",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng"
+        },
+        {
+          "input": "https://anphat.vn/$request_uri",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Biến nginx"
+        },
+        {
+          "input": "//evil.example",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "URL không scheme"
+        },
+        {
+          "input": "https://anphat.vn/x;rewrite",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Dấu ;"
+        }
+      ]
+    },
+    "php_extension": {
+      "schema": "agent-ops/defs.schema.json#/$defs/PhpExtension",
+      "vectors": [
+        {
+          "input": "intl",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Extension trong allowlist"
+        },
+        {
+          "input": "redis",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Extension trong allowlist"
+        },
+        {
+          "input": "php8.3-intl",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tên gói thay cho tên extension"
+        },
+        {
+          "input": "xdebug",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoài allowlist (không dùng cho production)"
+        },
+        {
+          "input": "intl curl",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Nhiều giá trị trong một chuỗi"
+        }
+      ]
+    },
+    "email": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Email",
+      "vectors": [
+        {
+          "input": "it@anphat.vn",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Email hợp lệ cho ACME"
+        },
+        {
+          "input": "it@anphat.vn\n--server=https://evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn tham số dòng lệnh lego"
+        },
+        {
+          "input": "--email=x@y.z",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Bắt đầu như cờ dòng lệnh"
+        },
+        {
+          "input": "it@localhost",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Thiếu TLD"
         }
       ]
     }

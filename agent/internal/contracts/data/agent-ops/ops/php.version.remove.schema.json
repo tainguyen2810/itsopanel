@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/php.version.remove.schema.json",
+  "title": "php.version.remove",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "$ref": "../defs.schema.json#/$defs/PhpVersion"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "removed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

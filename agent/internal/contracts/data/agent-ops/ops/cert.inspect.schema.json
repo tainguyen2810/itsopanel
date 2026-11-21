@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cert.inspect.schema.json",
+  "title": "cert.inspect",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "cert_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "cert_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "exists": {
+          "type": "boolean"
+        },
+        "cert": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/CertInfo"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "exists",
+        "cert"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
