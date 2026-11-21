@@ -2,6 +2,17 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.5 (agent: migrate.*, http.check, account.remove) — nhánh `phase-9`
+
+Phạm vi: `agent/internal/ops/{migrate.go,account_remove.go}` (+ `migrate_test.go`), `ops/sandbox*.go` (Sim `userdel`, `groupdel`, `pure-pw list`, đếm bảng), `platform/runner.go` (thêm `groupdel` vào bảng lệnh cho phép), `ops.Deps.HTTPAddrs` (test).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Op mới | `go test ./internal/ops/ -run 'TestHTTPCheck\|TestAccountRemove\|TestMigrate\|TestBackupRestoreCrossServer'` | **PASS** (restic 0.16.4 thật, 2 gốc sandbox). `http.check`: Host header đúng, không theo redirect, 6 path độc + host có cổng bị chặn, không kết nối được → status 0. `account.remove`: sai confirm/uid/user hệ thống bị chặn; xóa đủ 11 loại đối tượng đúng thứ tự vhost → pool → cron → SFTP → DB → user; symlink trong home trỏ sang account khác không bị theo; vhost/pool/DB/user của account khác còn nguyên; chạy lại trả rỗng. Chuyển account: preflight ok và 5 mục `block` (username/uid, đĩa, PHP, domain, mật khẩu repo); backup ở nguồn → restore ở đích → verify khớp (file mẫu, chủ, DB 2/2 bảng, HTTP); sửa file sau lượt đầu → verify báo lệch → lượt cuối mang theo → khớp; cutover nguồn dừng pool/timer, gỡ SFTP, bật bảo trì, chạy lại không lặp; cutover đích bật pool; rollback đích khóa, nguồn mở lại đúng, rollback lần 2 trả false. Khôi phục sang server khác ra bản mới đúng nội dung |
+| Go toàn bộ | `go test -race ./...` · `make lint-agent` · `make no-exec` | PASS · sạch · OK |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** verify DB so số bảng với dump (MariaDB); PostgreSQL (-Fc) chỉ báo số bảng ở đích; chưa so số dòng/checksum từng bảng (để `tests/vm/phase9.sh` với MariaDB thật). **Chờ VM:** nginx/systemd/userdel thật, đo downtime.
+
 ## 2026-11-21 — Phase 9 / Prompt 9.4 (enroll, thu hồi, job chờ node, xoay chứng chỉ) — nhánh `phase-9`
 
 Phạm vi: `apps/api/app/Domain/Servers/{NodeEnrollment,RelaySync,CertRotation}.php`, `Infrastructure/Agent/RelayClient.php`, `Http/Controllers/Api/V1/Internal/NodeEnrollController.php`, `ServerController` (token, thu hồi), `JobRunner` (`waiting_agent`), lệnh `itso:relay-sync`, `itso:certs-rotate`, model `AgentEnrollmentToken`, `AgentCertificate`; mọi service gọi agent qua `forServer`; contracts (ErrorCode `agent_unreachable`, `enrollment_invalid`; CSR CN `itso-enroll`); `agent/internal/install/node.go` đọc phản hồi enroll dạng `{data}`.

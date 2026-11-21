@@ -47,6 +47,8 @@ type Deps struct {
 	RecordUser   bool
 	// NodeMode: agent chạy trên node (Phase 9, D-88): nhận op qua relay, chặn pki.sign_csr.
 	NodeMode bool
+	// HTTPAddrs (tùy chọn, test): địa chỉ http.check gọi theo scheme; mặc định 127.0.0.1:80 / 127.0.0.1:443.
+	HTTPAddrs map[string]string
 
 	mu       sync.Mutex
 	inflight map[string]context.CancelFunc

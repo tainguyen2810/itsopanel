@@ -100,6 +100,10 @@ func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
 		return r, true
 	case "usermod":
 		return s.usermod(a), true
+	case "userdel":
+		return s.dropEntry(last, "/etc/passwd", "/etc/shadow"), true
+	case "groupdel":
+		return s.dropEntry(last, "/etc/group"), true
 	case "gpasswd":
 		if len(a) == 3 {
 			return s.editGroup(a[2], a[1], a[0] == "-a"), true
@@ -340,4 +344,44 @@ func (s *Sim) usermod(a []string) platform.Result {
 		sh[i] = strings.Join(f, ":")
 	}
 	return s.write("/etc/shadow", sh)
+}
+
+// dropEntry mô phỏng userdel/groupdel: xóa dòng "<name>:" và tên khỏi danh sách thành viên group.
+func (s *Sim) dropEntry(name string, files ...string) platform.Result {
+	found := false
+	for _, f := range files {
+		var keep []string
+		for _, l := range s.lines(f) {
+			if strings.HasPrefix(l, name+":") {
+				found = true
+				continue
+			}
+			keep = append(keep, l)
+		}
+		if r := s.write(f, keep); r.ExitCode != 0 {
+			return r
+		}
+	}
+	if !found {
+		return fail(6, "user/group "+name+" does not exist")
+	}
+	if files[0] == "/etc/passwd" {
+		var keep []string
+		for _, l := range s.lines("/etc/group") {
+			f := strings.SplitN(l, ":", 4)
+			if len(f) == 4 && f[3] != "" {
+				var ms []string
+				for _, m := range strings.Split(f[3], ",") {
+					if m != name {
+						ms = append(ms, m)
+					}
+				}
+				f[3] = strings.Join(ms, ",")
+				l = strings.Join(f, ":")
+			}
+			keep = append(keep, l)
+		}
+		return s.write("/etc/group", keep)
+	}
+	return ok("")
 }
