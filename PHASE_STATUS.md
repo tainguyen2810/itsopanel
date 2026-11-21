@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 4 — Go Agent, Installer, CLI, thực thi giới hạn (đang làm; Phase 3 ✓ APPROVED 2026-11-21 cùng D-56 → D-62)
-- **Prompt hiện tại:** 4.4 itso CLI, install.sh, release có ký, systemd units. Người dùng yêu cầu (2026-11-21) "tiếp tục với Phase 4"; làm hàng loạt 4.1 → 4.6, tự merge local
-- **Task đang làm:** 4.4 — bắt đầu (4.3 ✓)
+- **Prompt hiện tại:** 4.5 Panel nối agent thật: bảng Phase 4, API server/metrics/usage/software, Wizard. Người dùng yêu cầu (2026-11-21) "tiếp tục với Phase 4"; làm hàng loạt 4.1 → 4.6, tự merge local
+- **Task đang làm:** 4.5 — bắt đầu (4.4 ✓)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-4`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_4_PROMPTS.md`; cuối 4.6 báo cáo Phase 4 và DỪNG (không bắt đầu Phase 5)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
@@ -36,8 +36,8 @@ Phase 4 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_4_PROMPTS.
 - ✓ 4.1 Spike slice/SSH/quota → ADR, contracts op Phase 4
 - ✓ 4.2 Agent core: transport, peercred + HMAC, policy, audit cục bộ, lớp nền tảng
 - ✓ 4.3 Ops system/service/account/quota/metrics/software
-- ✱ 4.4 CLI `itso`, install.sh, release có ký, systemd units
-- ○ 4.5 Panel: bảng Phase 4, API server/metrics/usage/software, Wizard
+- ✓ 4.4 CLI `itso`, install.sh, release có ký, systemd units
+- ✱ 4.5 Panel: bảng Phase 4, API server/metrics/usage/software, Wizard
 - ○ 4.6 VM harness, e2e agent thật (sandbox), báo cáo Phase 4
 
 Phase 3: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-3.md`, merge `97f227e`).
@@ -82,3 +82,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 4 / 4.1 | ADR 0011 (slice `itso-acct-<uid>.slice`, SSH drop-in 50%), 0012 (disk quota kernel/soft), 0013 (lớp nền tảng agent); contracts: op mới `system.hostname.set`, `account.limits.apply`, `metrics.cgroup`, `audit.tail`, `software.install/remove` (recipe allowlist); `system.info` thêm disk, cgroup_v2, systemd, quota_mode, arch; `quota.apply` trả mode; 19 vector evil mới (hostname, service, recipe); mock agent cập nhật. Kiểm container: không cgroup v2, không systemd PID 1, không công cụ quota; `systemd-analyze verify` chạy offline được | 69ce0ef |
 | 2026-11-21 | 4 / 4.2 | `cmd/itso-agent`: socket Unix + SO_PEERCRED (allowlist uid), HMAC D-66 + ts ±60 s + nonce, policy YAML (`root_terminal`/`docker`/`backup_forget` + ghi đè op, strict root 0600), audit JSONL hash-chain (verify, tail, từ chối ghi tiếp chuỗi hỏng), `--sandbox`; `internal/platform` (Runner argv-only bảng binary cố định, FS gốc cấu hình được, ghi atomic, O_NOFOLLOW, FakeRunner); `internal/validate` + fuzz + vector evil; op `system.ping`, `audit.tail`; `check-no-exec` chỉ cho `internal/platform` dùng os/exec; Laravel `AgentClient` ký HMAC (`ITSO_AGENT_KEY_FILE`), vector chữ ký chung PHP/Go | 6a44671 |
 | 2026-11-21 | 4 / 4.3 | Handler thật (`internal/ops`): account.ensure (groupadd/useradd GID=UID, home 07 §5 + ACL www-data `--x`, slice drop-in), account.limits.apply (drop-in `itso-acct-<uid>.slice` + `user-<uid>.slice` 50%, daemon-reload khi đổi), suspend/unsuspend (group `itso-suspended`, `usermod -L -e 1`, dừng slice), quota.apply/report (kernel `setquota`/`repquota` hoặc soft đo cây thư mục), system.info/hostname.set/reboot, service.status/control (allowlist), metrics.snapshot/cgroup, software.install/remove (recipe, không gỡ recipe lõi), op.cancel; `ops.Sim` cho `--sandbox`; bộ test contract dùng chung mock + agent thật (`internal/contracttest`); golden argv/file; sửa cây slice (cha suy ra từ tên: `itso-acct.slice`, panel `itso-panel.slice`); sửa `ts` ví dụ envelope | c5bffe0 |
+| 2026-11-21 | 4 / 4.4 | CLI `itso` (`cmd/itso` + `internal/install`): preflight 10 §3, install 9 bước có checkpoint (`--dry-run`, `--yes`, `--port`, `--no-firewall`), status/doctor/url/setup-code, update/rollback (chữ ký Ed25519 + sha256, pg_dump, giữ 3 bản, tự rollback khi health lỗi), repair, uninstall giữ /home, policy, logs, admin reset (artisan `itso:admin-reset-password/mfa`); `Cmd.As` hạ quyền không qua su/sudo; `packaging/systemd` (target, agent hardening 06 §4, web FrankenPHP, worker@, scheduler timer, redis, 3 slice) + Caddyfile; `install.sh.in` (openssl verify + sha256); `make release` (tar.gz + manifest ký + SBOM, khóa dev tạm), `make units-check`, `make test-installer`; sửa content-hash composer.lock | (commit 4.4) |

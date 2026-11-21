@@ -24,7 +24,7 @@ type Sim struct {
 	quota     map[string][4]string // uid → block soft/hard, inode soft/hard
 }
 
-// NewSim tạo trình mô phỏng trên fs. Dịch vụ (.service) mặc định đang chạy; slice chưa chạy.
+// NewSim tạo trình mô phỏng trên fs. Dịch vụ (.service, .timer) mặc định đang chạy; slice chưa chạy.
 func NewSim(fs *platform.FS) *Sim {
 	return &Sim{FS: fs, Mount: "/ ext4 rw,relatime,usrjquota=aquota.user,jqfmt=vfsv1",
 		acl: map[string][]string{}, active: map[string]bool{}, installed: map[string]string{}, quota: map[string][4]string{}}
@@ -57,11 +57,21 @@ func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
 	case "groupadd":
 		gid := flag(a, "-g")
 		if gid == "" {
-			gid = s.freeSystemGID()
+			gid = s.freeSystemID("/etc/group")
 		}
 		return s.appendLine("/etc/group", fmt.Sprintf("%s:x:%s:", last, gid)), true
 	case "useradd":
-		r := s.appendLine("/etc/passwd", fmt.Sprintf("%s:x:%s:%s:%s:%s:%s", last, flag(a, "-u"), flag(a, "-g"), flag(a, "-c"), flag(a, "-d"), flag(a, "-s")))
+		uid, gid := flag(a, "-u"), flag(a, "-g")
+		if uid == "" { // -r: user hệ thống, uid tự cấp
+			uid = s.freeSystemID("/etc/passwd")
+		}
+		if contains(a, "-U") {
+			gid = uid
+			if r := s.appendLine("/etc/group", fmt.Sprintf("%s:x:%s:", last, gid)); r.ExitCode != 0 {
+				return r, true
+			}
+		}
+		r := s.appendLine("/etc/passwd", fmt.Sprintf("%s:x:%s:%s:%s:%s:%s", last, uid, gid, flag(a, "-c"), flag(a, "-d"), flag(a, "-s")))
 		if r.ExitCode == 0 {
 			r = s.appendLine("/etc/shadow", last+":!:20000:0:99999:7:::")
 		}
@@ -136,7 +146,7 @@ func (s *Sim) systemctl(a []string) platform.Result {
 		unit = a[1]
 	}
 	isActive := s.active[unit]
-	if _, set := s.active[unit]; !set && strings.HasSuffix(unit, ".service") {
+	if _, set := s.active[unit]; !set && (strings.HasSuffix(unit, ".service") || strings.HasSuffix(unit, ".timer")) {
 		isActive = true
 	}
 	switch a[0] {
@@ -194,9 +204,9 @@ func (s *Sim) appendLine(p, line string) platform.Result {
 	return s.write(p, append(ls, line))
 }
 
-func (s *Sim) freeSystemGID() string {
+func (s *Sim) freeSystemID(file string) string {
 	used := map[string]bool{}
-	for _, l := range s.lines("/etc/group") {
+	for _, l := range append(s.lines("/etc/group"), s.lines(file)...) {
 		if f := strings.Split(l, ":"); len(f) > 2 {
 			used[f[2]] = true
 		}

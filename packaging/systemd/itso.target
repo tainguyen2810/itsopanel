@@ -1,0 +1,8 @@
+# ITSO Panel: nhóm mọi dịch vụ của panel. Dữ liệu hosting (nginx, php, db) KHÔNG phụ thuộc target này.
+[Unit]
+Description=ITSO Panel
+Wants=itso-agent.service itso-redis.service itso-web.service itso-worker@1.service itso-worker@2.service itso-scheduler.timer
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target

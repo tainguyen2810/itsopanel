@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 // Bins là bảng tên logic → đường dẫn tuyệt đối trên Ubuntu 24.04. Không có shell, env, sudo, su.
@@ -31,6 +32,14 @@ var Bins = map[string]string{
 	"dpkg-query":  "/usr/bin/dpkg-query",
 	"shutdown":    "/usr/sbin/shutdown",
 	"findmnt":     "/usr/bin/findmnt",
+	// Installer / CLI itso (Prompt 4.4).
+	"ss":               "/usr/bin/ss",
+	"journalctl":       "/usr/bin/journalctl",
+	"pg_createcluster": "/usr/bin/pg_createcluster",
+	"pg_dropcluster":   "/usr/bin/pg_dropcluster",
+	"pg_dump":          "/usr/bin/pg_dump",
+	"psql":             "/usr/bin/psql",
+	"frankenphp":       "/opt/itso/current/bin/frankenphp",
 }
 
 // forbidden là tên không bao giờ được thêm vào Bins (kiểm trong test).
@@ -41,9 +50,20 @@ type Cmd struct {
 	Bin   string   // tên logic trong Bins
 	Args  []string // argv (không gồm argv[0])
 	Stdin []byte
+	// As (tùy chọn): chạy dưới uid/gid này (setresuid trong tiến trình con), không qua su/sudo.
+	As *Cred
 }
 
-func (c Cmd) String() string { return strings.Join(append([]string{c.Bin}, c.Args...), " ") }
+// Cred là uid/gid để hạ quyền tiến trình con.
+type Cred struct{ UID, GID uint32 }
+
+func (c Cmd) String() string {
+	s := strings.Join(append([]string{c.Bin}, c.Args...), " ")
+	if c.As != nil {
+		s = fmt.Sprintf("[uid=%d] %s", c.As.UID, s)
+	}
+	return s
+}
 
 // Result là kết quả chạy lệnh.
 type Result struct {
@@ -101,6 +121,9 @@ func (ExecRunner) Run(ctx context.Context, c Cmd) (Result, error) {
 	cmd := exec.CommandContext(ctx, path, c.Args...)
 	cmd.Env = []string{"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "LC_ALL=C.UTF-8", "DEBIAN_FRONTEND=noninteractive"}
 	cmd.Dir = "/"
+	if c.As != nil {
+		cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: c.As.UID, Gid: c.As.GID, NoSetGroups: true}}
+	}
 	var out, errb capped
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if c.Stdin != nil {

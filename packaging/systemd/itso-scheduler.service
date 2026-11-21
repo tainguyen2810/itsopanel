@@ -1,0 +1,18 @@
+# Laravel scheduler (chạy mỗi phút bởi itso-scheduler.timer).
+[Unit]
+Description=ITSO Panel scheduler
+After=itso-redis.service postgresql@16-itso.service
+
+[Service]
+Type=oneshot
+User=itso
+Group=itso
+Slice=itso-panel.slice
+EnvironmentFile=/etc/itso/itso.env
+WorkingDirectory=/opt/itso/current/api
+ExecStart=/opt/itso/current/bin/frankenphp php-cli /opt/itso/current/api/artisan schedule:run
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/itso/current/api/storage /var/log/itso
+PrivateTmp=yes

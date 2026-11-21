@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 4 / Prompt 4.4 — nhánh `phase-4`
+
+Môi trường: như 4.1. Cài đặt chỉ chạy trên gốc giả (thư mục tạm) với runner giả `ops.Sim`; trên container chỉ chạy preflight/dry-run (chỉ đọc).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go toàn bộ (race) | `cd agent && go test -race -count=1 ./...` | PASS: 12 package (thêm `internal/install`) |
+| Installer | `go test ./internal/install -v` | PASS 8 test: preflight trên máy không systemd/cgroup v2 → FAIL đúng, không ghi gì; `--dry-run` không ghi; cài hỏng ở bước database → chạy lại tiếp từ database, không làm lại users/packages; lần chạy thứ 3 không có lệnh ghi, khóa agent giữ nguyên; quyền 0640 root:itso cho agent.key/itso.env/panel.key/setup-code; update → rollback → update, health lỗi → tự rollback, giữ 3 bản; chữ ký sai, sha sai, tar có `..`/symlink ra ngoài/thiết bị → từ chối; uninstall giữ /home, đổi tên /etc/itso, purge cần xác nhận hostname; repair phát hiện unit/file bị sửa và `--fix`; policy set/get; admin reset từ chối email lạ; setup code chỉ lưu băm |
+| install.sh | `make test-installer` | PASS 8/8: đúng → chạy `itso install` với tham số; manifest sửa, ký khóa khác, binary/tarball bị thay, phiên bản lạ, OS Debian, user không phải root → dừng |
+| Unit systemd | `make units-check` | PASS 12 unit (target, 7 service/timer, 3 slice + 2 drop-in mẫu); kiểm đối chứng: thêm khóa lạ → FAIL |
+| Release | `make release` | PASS: `itso-0.4.0-dev-linux-amd64.tar.gz` 25,6 MB (api `--no-dev --prefer-dist`, không .git), `itso`, `install.sh` nhúng khóa công khai, `sbom.json`, `manifest.json` + `manifest.sig` (openssl verify OK). Khóa dev tạm ở `build/` (không commit). **Thiếu frankenphp** (cần tải upstream) → manifest ghi `missing_components` |
+| Chuỗi thật trên container | `ITSO_RELEASE_DIR=build/release/0.4.0-dev bash install.sh --dry-run` | install.sh kiểm chữ ký + sha → `itso install --dry-run`: release PASS (chữ ký đúng), os PASS, **cgroup_v2 FAIL, systemd FAIL** (container) → dừng đúng, không thay đổi gì |
+| Laravel | `make test-api` · `make lint-api` | PASS: 296 test (thêm 2: `itso:admin-reset-password`, `itso:admin-reset-mfa`); pint, phpstan |
+| Khác | `make no-exec` · `make lint-agent` · `make docs-check` · `python3 scripts/check-ci.py` | PASS (CI thêm bước `make units-check test-installer`) |
+
+**Test bị bỏ qua:** không. Chưa chạy trên máy thật: cài đặt đầy đủ (apt, pg_createcluster, systemd) → chờ VM (4.6). `shellcheck` không có trên container.
+
 ## 2026-11-21 — Phase 4 / Prompt 4.3 — nhánh `phase-4`
 
 Môi trường: như 4.1. Op thật chạy với runner giả `ops.Sim` trên gốc FS tạm (`/etc/passwd|group|shadow`, `/home`) và `/proc`, `/sys` giả; không lệnh nào chạy trên máy.

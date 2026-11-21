@@ -104,12 +104,16 @@ func (d *Deps) systemInfo(ctx context.Context, env *envelope.Envelope) (map[stri
 	if err != nil {
 		return nil, err
 	}
+	osText := d.hostFile("/etc/os-release")
+	if osText == "" { // thường là symlink → /usr/lib/os-release (FS không theo symlink)
+		osText = d.hostFile("/usr/lib/os-release")
+	}
 	hostname := d.hostFile("/proc/sys/kernel/hostname")
 	if hostname == "" {
 		hostname = d.hostFile("/etc/hostname")
 	}
 	return toData(contracts.SystemInfoResult{
-		OS: osName(d.hostFile("/etc/os-release")), Kernel: d.hostFile("/proc/sys/kernel/osrelease"),
+		OS: osName(osText), Kernel: d.hostFile("/proc/sys/kernel/osrelease"),
 		Hostname: hostname, UptimeSec: int64(up), CPUCores: cores, RAMMB: d.meminfo()["MemTotal"] / 1024,
 		DiskTotalMB: total, DiskFreeMB: free,
 		CgroupV2: h.Exists("/sys/fs/cgroup/cgroup.controllers"), Systemd: h.Exists("/run/systemd/system"),

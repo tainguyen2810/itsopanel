@@ -25,7 +25,7 @@ func (f *FakeRunner) Run(_ context.Context, c Cmd) (Result, error) {
 		return Result{ExitCode: -1}, err
 	}
 	f.mu.Lock()
-	f.Calls = append(f.Calls, Cmd{Bin: c.Bin, Args: append([]string(nil), c.Args...), Stdin: c.Stdin})
+	f.Calls = append(f.Calls, Cmd{Bin: c.Bin, Args: append([]string(nil), c.Args...), Stdin: c.Stdin, As: c.As})
 	hook := f.Hook
 	f.mu.Unlock()
 	if hook != nil {

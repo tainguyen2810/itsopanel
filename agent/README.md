@@ -29,6 +29,21 @@ go run ./cmd/itso-agent --sandbox --root /tmp/itso-sandbox --listen unix:/tmp/it
   --key-file /tmp/agent.key --audit-log /tmp/itso-sandbox/audit.jsonl --policy /tmp/itso-sandbox/policy.yaml
 ```
 
+## itso (CLI quản trị, Prompt 4.4)
+
+Logic ở `internal/install` (test được trên gốc giả + runner giả), lệnh ở `cmd/itso`. Lệnh hệ thống chỉ qua `platform.Runner`; thao tác DB/artisan chạy dưới uid `postgres`/`itso` bằng `Cmd.As` (setresuid, không su/sudo).
+
+| Lệnh | Việc |
+|---|---|
+| `itso preflight` · `itso install [--dry-run] [--yes] [--port N] [--no-firewall] [--release-dir D]` | Kiểm 10 §3 rồi chạy 9 bước 10 §4 có checkpoint `/var/lib/itso/install-state.json`; chạy lại bỏ qua bước đã xong, secret không bị sinh lại |
+| `itso status` · `itso doctor` · `itso url` · `itso setup-code` | Trạng thái, kiểm sâu, URL, mã thiết lập một lần (lưu băm SHA-256, 60 phút) |
+| `itso update --release-dir D` · `itso rollback` | Kiểm chữ ký Ed25519 + sha256 → pg_dump + sao lưu /etc/itso → giải nén `releases/<ver>` → migrate → đổi symlink `current` → kiểm sức khỏe, lỗi thì tự rollback; giữ 3 bản |
+| `itso repair [--fix]` | Kiểm checksums.txt của release, unit systemd, quyền file khóa |
+| `itso uninstall [--purge-panel-data --confirm-hostname H]` | Gỡ panel, giữ `/home` và dữ liệu hosting, đổi tên `/etc/itso` |
+| `itso admin reset-password EMAIL` · `itso admin reset-mfa EMAIL` · `itso policy get` · `itso policy set` · `itso logs DỊCH_VỤ` | Khôi phục truy cập (artisan argv cố định), policy agent, journal |
+
+`--sandbox --root DIR`: chạy trên gốc giả với runner giả (dev/test). Bản build thường không có khóa công khai phát hành nên từ chối mọi release; `make release` nhúng khóa bằng `-ldflags`.
+
 ## Schema nhúng
 
 `go:embed` không đọc được ngoài module, nên `internal/contracts/data/` là **bản sao** từ `contracts/` (nguồn sự thật). Sau khi đổi contracts:

@@ -216,3 +216,68 @@ func (f *FS) chownFile(p string, fd *os.File, owner Owner) error {
 	}
 	return fd.Chown(owner.UID, owner.GID)
 }
+
+// Readlink đọc đích symlink (rỗng nếu không phải symlink).
+func (f *FS) Readlink(p string) (string, error) {
+	rp, err := f.Path(p)
+	if err != nil {
+		return "", err
+	}
+	return os.Readlink(rp)
+}
+
+// SwapSymlink trỏ link tới target một cách atomic (symlink tạm + rename). target là đường dẫn
+// tương đối với thư mục chứa link (không bao giờ ra ngoài Root).
+func (f *FS) SwapSymlink(link, target string) (bool, error) {
+	if filepath.IsAbs(target) || strings.Contains(target, "..") || strings.ContainsRune(target, 0) {
+		return false, fmt.Errorf("platform: đích symlink phải tương đối, không có '..': %q", target)
+	}
+	if cur, err := f.Readlink(link); err == nil && cur == target {
+		return false, nil
+	}
+	rp, err := f.Path(link)
+	if err != nil {
+		return false, err
+	}
+	tmp := filepath.Join(filepath.Dir(rp), ".itso-link-"+filepath.Base(rp))
+	_ = os.Remove(tmp)
+	if err := os.Symlink(target, tmp); err != nil {
+		return false, err
+	}
+	return true, os.Rename(tmp, rp)
+}
+
+// Rename đổi tên trong cùng Root.
+func (f *FS) Rename(from, to string) error {
+	a, err := f.Path(from)
+	if err != nil {
+		return err
+	}
+	b, err := f.Path(to)
+	if err != nil {
+		return err
+	}
+	return os.Rename(a, b)
+}
+
+// RemoveTree xóa cây thư mục. Chỉ chấp nhận đường dẫn ≥ 3 cấp (vd. /opt/itso/releases/x) hoặc
+// nằm trong danh sách được phép, để lỗi lập trình không thể xóa /, /home, /etc.
+func (f *FS) RemoveTree(p string, allowed ...string) error {
+	rp, err := f.Path(p)
+	if err != nil {
+		return err
+	}
+	ok := strings.Count(p, "/") >= 3
+	for _, a := range allowed {
+		ok = ok || p == a
+	}
+	for _, never := range []string{"/", "/home", "/etc", "/var", "/usr", "/opt", "/root"} {
+		if p == never {
+			ok = false
+		}
+	}
+	if !ok {
+		return fmt.Errorf("platform: từ chối xóa cây %q", p)
+	}
+	return os.RemoveAll(rp)
+}

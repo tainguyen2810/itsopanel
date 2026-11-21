@@ -1,0 +1,11 @@
+[Unit]
+Description=ITSO Panel scheduler mỗi phút
+PartOf=itso.target
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Persistent=false
+
+[Install]
+WantedBy=itso.target

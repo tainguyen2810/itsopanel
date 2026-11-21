@@ -1,0 +1,7 @@
+# Panel (web, worker, redis): giới hạn để panel không ăn tài nguyên của hosting, và ngược lại (07 §3).
+[Unit]
+Description=ITSO Panel services
+
+[Slice]
+MemoryMax=25%
+CPUWeight=100

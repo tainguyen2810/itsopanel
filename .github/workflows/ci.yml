@@ -180,3 +180,5 @@ jobs:
         run: make test-agent
       - name: Fuzz parser envelope (30 giây)
         run: make test-fuzz FUZZTIME=30s
+      - name: Unit systemd (systemd-analyze verify) + test install.sh
+        run: make units-check test-installer

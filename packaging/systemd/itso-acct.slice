@@ -1,0 +1,8 @@
+# Tổng cho mọi hosting account (cha của itso-acct-<uid>.slice, suy ra từ tên). Chừa tài nguyên cho hệ thống.
+[Unit]
+Description=ITSO hosting accounts
+
+[Slice]
+MemoryMax=85%
+CPUWeight=80
+IOWeight=80

@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check
+.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check units-check test-installer release
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -140,6 +140,15 @@ codegen: ## Sinh code từ contracts: TS (OpenAPI), Go structs + bản nhúng sc
 
 codegen-check: ## Báo lỗi nếu file sinh lệch với contracts (không ghi file)
 	@PNPM="$(PNPM)" bash scripts/codegen-check.sh
+
+units-check: ## Kiểm unit systemd của panel + drop-in slice mẫu (systemd-analyze verify, đọc cả cảnh báo)
+	@bash scripts/verify-units.sh
+
+test-installer: ## Test install.sh: chữ ký/sha sai, OS sai, không phải root → từ chối (bash thuần)
+	@bash tests/installer/install_sh_test.sh
+
+release: ## Đóng gói bản phát hành vào build/release/<ver> (VERSION=…; khóa ITSO_RELEASE_KEY hoặc khóa dev tạm)
+	@bash scripts/release.sh
 
 check: ## Toàn bộ pipeline local như CI, in bảng kết quả (exit ≠ 0 nếu có bước đỏ)
 	@bash scripts/check-all.sh
