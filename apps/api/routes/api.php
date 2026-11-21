@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
 use App\Http\Controllers\Api\V1\Admin\ServerOpsController;
+use App\Http\Controllers\Api\V1\Admin\ServerWebController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\SetupController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
+use App\Http\Controllers\Api\V1\Shared\WebsiteController;
 use App\Http\Controllers\Api\V1\SystemController;
 use Illuminate\Support\Facades\Route;
 
@@ -69,10 +71,13 @@ Route::prefix('v1')->group(function (): void {
             Route::middleware(['itso.auth:admin', 'itso.mfa'])->group(function (): void {
                 Route::put('access', [SetupController::class, 'access']);
                 Route::get('quota', [SetupController::class, 'quota']);
+                Route::get('stack', [SetupController::class, 'stack']);
             });
         });
         Route::post('admin/setup:complete', [SetupController::class, 'complete'])
             ->middleware(['itso.auth:admin', 'itso.mfa']);
+        Route::post('admin/setup/stack:install', [SetupController::class, 'installStack'])
+            ->middleware(['itso.auth:admin', 'itso.mfa', 'itso.idempotent']);
 
         // ---- /admin: realm admin (phiên cookie hoặc API token)
         Route::prefix('admin')->middleware(['itso.auth:admin', 'itso.mfa'])->group(function (): void {
@@ -132,6 +137,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers/{id}/software', [ServerOpsController::class, 'software'])->middleware('itso.perm:servers.read');
             Route::post('servers/{id}/software/{key}:{action}', [ServerOpsController::class, 'manageSoftware'])
                 ->middleware(['itso.perm:software.write', 'itso.idempotent']);
+            Route::get('servers/{id}/php-versions', [ServerWebController::class, 'phpVersions'])->middleware('itso.perm:servers.read');
+            Route::post('servers/{id}/php-versions/{version}/extensions', [ServerWebController::class, 'installExtensions'])
+                ->middleware(['itso.perm:software.write', 'itso.idempotent']);
+            Route::post('servers/{id}/php-versions/{version}:{action}', [ServerWebController::class, 'managePhp'])
+                ->middleware(['itso.perm:software.write', 'itso.idempotent']);
+            Route::get('servers/{id}/nginx', [ServerWebController::class, 'nginx'])->middleware('itso.perm:servers.read');
+            Route::patch('servers/{id}/nginx', [ServerWebController::class, 'updateNginx'])
+                ->middleware(['itso.perm:servers.write', 'itso.idempotent']);
             Route::get('metrics/servers/{id}', [ServerOpsController::class, 'serverMetrics'])->middleware('itso.perm:servers.read');
             Route::get('metrics/hosting-accounts/{id}', [ServerOpsController::class, 'accountMetrics'])->middleware('itso.perm:accounts.read');
 
@@ -164,6 +177,21 @@ Route::prefix('v1')->group(function (): void {
                 Route::post("hosting-accounts/{id}:$action", [HostingAccountController::class, 'notAvailable'])
                     ->middleware(['itso.perm:accounts.terminate', 'itso.step-up']);
             }
+
+            // ---- Website (Prompt 5.3); quét mã độc/WAF thuộc Phase 7, chưa có route.
+            Route::get('websites', [WebsiteController::class, 'index'])->middleware('itso.perm:websites.read');
+            Route::post('websites', [WebsiteController::class, 'store'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('websites/{id}', [WebsiteController::class, 'show'])->middleware('itso.perm:websites.read');
+            Route::patch('websites/{id}', [WebsiteController::class, 'update'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::delete('websites/{id}', [WebsiteController::class, 'destroy'])->middleware(['itso.perm:websites.write', 'itso.step-up', 'itso.idempotent']);
+            Route::get('websites/{id}/domains', [WebsiteController::class, 'domains'])->middleware('itso.perm:websites.read');
+            Route::post('websites/{id}/domains', [WebsiteController::class, 'addDomain'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::delete('websites/{id}/domains/{domain}', [WebsiteController::class, 'removeDomain'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('websites/{id}/nginx', [WebsiteController::class, 'nginx'])->middleware('itso.perm:websites.read');
+            Route::patch('websites/{id}/nginx', [WebsiteController::class, 'updateNginx'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('websites/{id}/php', [WebsiteController::class, 'php'])->middleware('itso.perm:websites.read');
+            Route::patch('websites/{id}/php', [WebsiteController::class, 'updatePhp'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('websites/{id}/logs', [WebsiteController::class, 'logs'])->middleware('itso.perm:websites.read');
         });
 
         // ---- /portal: realm portal (chỉ phiên cookie)
@@ -184,6 +212,21 @@ Route::prefix('v1')->group(function (): void {
             Route::get('hosting-accounts/{id}', [PortalController::class, 'account']);
             Route::get('hosting-accounts/{id}/features', [PortalController::class, 'features']);
             Route::get('hosting-accounts/{id}/usage', [PortalController::class, 'usage']);
+
+            // ---- Website (Prompt 5.3); quét mã độc/WAF thuộc Phase 7, chưa có route.
+            Route::get('websites', [WebsiteController::class, 'index']);
+            Route::post('websites', [WebsiteController::class, 'store'])->middleware(['itso.idempotent']);
+            Route::get('websites/{id}', [WebsiteController::class, 'show']);
+            Route::patch('websites/{id}', [WebsiteController::class, 'update'])->middleware(['itso.idempotent']);
+            Route::delete('websites/{id}', [WebsiteController::class, 'destroy'])->middleware(['itso.step-up', 'itso.idempotent']);
+            Route::get('websites/{id}/domains', [WebsiteController::class, 'domains']);
+            Route::post('websites/{id}/domains', [WebsiteController::class, 'addDomain'])->middleware(['itso.idempotent']);
+            Route::delete('websites/{id}/domains/{domain}', [WebsiteController::class, 'removeDomain'])->middleware(['itso.idempotent']);
+            Route::get('websites/{id}/nginx', [WebsiteController::class, 'nginx']);
+            Route::patch('websites/{id}/nginx', [WebsiteController::class, 'updateNginx'])->middleware(['itso.idempotent']);
+            Route::get('websites/{id}/php', [WebsiteController::class, 'php']);
+            Route::patch('websites/{id}/php', [WebsiteController::class, 'updatePhp'])->middleware(['itso.idempotent']);
+            Route::get('websites/{id}/logs', [WebsiteController::class, 'logs']);
         });
     });
 });

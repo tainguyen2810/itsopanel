@@ -2632,7 +2632,7 @@ export interface paths {
         put?: never;
         /**
          * Bước 4: cài web stack còn thiếu qua job
-         * @description Cài các recipe `nginx`, `php8.3`, `lego` chưa có trên server panel (bỏ qua recipe đã cài).
+         * @description Cài phần còn thiếu trên server panel (bỏ qua phần đã cài): recipe `nginx`, PHP 8.3 qua `php.version.install` (tắt master mặc định của gói, D-68), recipe `lego`.
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
@@ -3105,7 +3105,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Log truy cập/lỗi (dòng cuối) */
+        /**
+         * Log truy cập/lỗi (dòng cuối)
+         * @description Đọc trực tiếp qua op `log.tail` của agent (không tạo job); tối đa 500 dòng, `lines` lớn hơn bị giới hạn ở 500. Agent không kết nối → 503.
+         */
         get: operations["getWebsiteLogs"];
         put?: never;
         post?: never;
@@ -5655,6 +5658,25 @@ export interface components {
                  *       "status": 410,
                  *       "code": "setup_completed",
                  *       "detail": "Panel đã cài đặt xong; wizard không dùng lại được.",
+                 *       "request_id": "req_01JD8K2M4N"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Agent không kết nối */
+        AgentUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "https://docs.itso.local/errors/agent_unavailable",
+                 *       "title": "Agent không kết nối",
+                 *       "status": 503,
+                 *       "code": "agent_unavailable",
+                 *       "detail": "Không gọi được agent của server; thử lại sau.",
                  *       "request_id": "req_01JD8K2M4N"
                  *     }
                  */
@@ -14647,7 +14669,7 @@ export interface operations {
                      *           "steps": [
                      *             {
                      *               "seq": 1,
-                     *               "op": "fs.mkdir",
+                     *               "op": "fs.site_layout.ensure",
                      *               "state": "succeeded",
                      *               "started_at": "2026-11-20T08:15:00+07:00",
                      *               "finished_at": "2026-11-20T08:15:00+07:00"
@@ -14799,7 +14821,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "succeeded",
                      *             "started_at": "2026-11-20T08:15:00+07:00",
                      *             "finished_at": "2026-11-20T08:15:00+07:00"
@@ -14985,7 +15007,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "succeeded",
                      *             "started_at": "2026-11-20T08:15:00+07:00",
                      *             "finished_at": "2026-11-20T08:15:00+07:00"
@@ -15083,7 +15105,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -19345,7 +19367,7 @@ export interface operations {
                      *           },
                      *           {
                      *             "seq": 2,
-                     *             "op": "software.install",
+                     *             "op": "php.version.install",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -20927,7 +20949,7 @@ export interface operations {
                      *           },
                      *           "primary_domain": "marketing.itso.vn",
                      *           "type": "static",
-                     *           "document_root": "dist",
+                     *           "document_root": "public/dist",
                      *           "php_version": null,
                      *           "ssl_mode": "acme",
                      *           "waf_enabled": false,
@@ -21006,7 +21028,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -21028,6 +21050,13 @@ export interface operations {
                      *           {
                      *             "seq": 4,
                      *             "op": "cert.issue",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 5,
+                     *             "op": "nginx.vhost.apply",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -21709,6 +21738,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     getWebsiteNginx: {

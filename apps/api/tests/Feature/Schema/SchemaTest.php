@@ -114,7 +114,7 @@ it('job: trạng thái và tiến độ trong miền cho phép', function () {
 });
 
 it('Phase 5: domain duy nhất khi còn hoạt động, chữ thường; khóa ACME chỉ ở agent hoặc db (D-69)', function () {
-    $acc = \App\Models\HostingAccount::factory()->create();
+    $acc = HostingAccount::factory()->create();
     $site = DB::table('websites')->insertGetId(['hosting_account_id' => $acc->id, 'server_id' => $acc->server_id,
         'primary_domain' => 'shop.anphat.vn'], 'id');
     DB::table('domains')->insert(['website_id' => $site, 'name' => 'www.anphat.vn']);

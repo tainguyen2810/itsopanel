@@ -2,6 +2,8 @@
 
 use App\Domain\Hosting\AccountJobHandler;
 use App\Domain\Servers\SoftwareJobHandler;
+use App\Domain\Web\ServerWebJobHandler;
+use App\Domain\Web\WebsiteJobHandler;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
@@ -35,7 +37,10 @@ return [
     ], AccountJobHandler::class) + [
         'software.install' => SoftwareJobHandler::class,
         'software.remove' => SoftwareJobHandler::class,
-    ],
+    ] + array_fill_keys(['website.create', 'website.update', 'website.nginx.update', 'website.php.update',
+        'website.domain.add', 'website.domain.remove', 'website.delete'], WebsiteJobHandler::class)
+      + array_fill_keys(['php.version.install', 'php.version.remove', 'php.extensions.install', 'setup.stack'],
+          ServerWebJobHandler::class),
 
     // Server local (Phase 3: một server, agent local/mock). `itso:server-local` tạo/cập nhật bản ghi này.
     'local_server' => [

@@ -2916,6 +2916,19 @@ components:
             code: setup_completed
             detail: Panel đã cài đặt xong; wizard không dùng lại được.
             request_id: req_01JD8K2M4N
+    AgentUnavailable:
+      description: Agent không kết nối
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://docs.itso.local/errors/agent_unavailable
+            title: Agent không kết nối
+            status: 503
+            code: agent_unavailable
+            detail: Không gọi được agent của server; thử lại sau.
+            request_id: req_01JD8K2M4N
     NotImplemented:
       description: Chưa có ở phiên bản này
       content:

@@ -41,6 +41,10 @@ final class Permissions
             'accounts.write' => 'Tạo/sửa/tạm ngưng tài khoản hosting',
             'accounts.terminate' => 'Chấm dứt tài khoản hosting',
         ],
+        'web' => [
+            'websites.read' => 'Xem website, tên miền, cấu hình Nginx/PHP, log',
+            'websites.write' => 'Tạo/sửa/xóa website và tên miền',
+        ],
         'operations' => [
             'jobs.read' => 'Xem job',
             'jobs.write' => 'Hủy/thử lại job',

@@ -2,6 +2,20 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 5 / Prompt 5.3 — nhánh `phase-5`
+
+Môi trường: như 5.1 (PostgreSQL 16 + Redis local). Agent giả qua `Http::fake` (FakeAgent), job chạy đồng bộ.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Website Phase 5 | `pest tests/Feature/Phase5` | PASS 9 test, 352 assertion: tạo site PHP → op `fs.site_layout.ensure` → `php.pool.apply` → `nginx.vhost.apply` (static bỏ pool); sửa `document_root` chỉ áp vhost; nginx/php áp đúng op; If-Match lệch 412; header chèn `;`/CRLF, redirect `javascript:`, hàm PHP lạ → 422; quota website/alias/PHP worker → 422 `quota_exceeded`; domain trùng (khác hoa thường) 409; `nginx -t` lỗi khi tạo → website `failed` + thông báo `job.failed`; lỗi khi thêm domain → domain bị gỡ, site vẫn `ready`; suspend/unsuspend áp lại vhost mọi site; xóa: `nginx.vhost.remove` → `php.pool.remove`, job còn đọc được; ma trận quyền (ADMIN ngoài phạm vi, USER khác → 404; ADMIN không có `software.write`/`servers.write` → 403); PHP Manager (8.2 → 409, gỡ khi còn site → 409 `resource_locked`, extension ngoài allowlist 422); Nginx toàn server (không đổi 409, ngoài khoảng 422); log agent lỗi → 503; wizard bước 4 cài phần thiếu qua `setup.stack`, đủ → `steps_done` có `stack`. Mọi phản hồi khớp OpenAPI admin + portal |
+| Laravel toàn bộ | `make test-api` | PASS 357 test, 2947 assertion. Sửa 2 test cũ theo tính năng mới: catalog recipe 7 mục (thêm nginx, lego); endpoint mẫu "chưa có ở bản này" đổi từ websites sang databases (Phase 6) |
+| Helper hợp đồng | `tests/Pest.php` | Sửa `assertMatchesContract` giải mã JSON dạng object: trước đây `{}` thành `[]` nên map rỗng (`extra_headers`) bị báo sai kiểu |
+| Lint · tĩnh | `pint --test` · `phpstan` · `make no-exec` | PASS (0 lỗi phpstan) |
+| Contracts · Web | `make contracts-check` · `make codegen-check` · `tsc` · `vitest run` | PASS · PASS · sạch · 465 test |
+
+**Test bị bỏ qua:** không. **Chờ VM:** áp vhost/pool thật qua agent sandbox → VM ở 5.6.
+
 ## 2026-11-21 — Phase 5 / Prompt 5.2 — nhánh `phase-5`
 
 Môi trường: như 5.1. Đã cài `nginx` 1.24.0 và `php8.3-fpm` 8.3.6 (kho Ubuntu 24.04) **trong container dev** chỉ để kiểm cú pháp file sinh ra; không khởi động dịch vụ nào (policy-rc.d chặn).

@@ -1566,7 +1566,7 @@
       },
       "primary_domain": "marketing.itso.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -1670,7 +1670,7 @@
       },
       "primary_domain": "docs.binhminh.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -1826,7 +1826,7 @@
       },
       "primary_domain": "cdn.thientam.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -1878,7 +1878,7 @@
       },
       "primary_domain": "menu.gionui.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -2008,7 +2008,7 @@
       },
       "primary_domain": "portfolio.mayxanh.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -4032,7 +4032,7 @@
       "steps": [
         {
           "seq": 1,
-          "op": "fs.mkdir",
+          "op": "fs.site_layout.ensure",
           "state": "succeeded",
           "started_at": "2026-11-20T08:15:00+07:00",
           "finished_at": "2026-11-20T08:15:00+07:00"
@@ -4365,7 +4365,7 @@
       "steps": [
         {
           "seq": 1,
-          "op": "fs.mkdir",
+          "op": "fs.site_layout.ensure",
           "state": "succeeded",
           "started_at": "2026-11-18T08:40:00+07:00",
           "finished_at": "2026-11-18T08:40:00+07:00"

@@ -179,7 +179,7 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             body_example={"hosting_account_uuid": acc["uuid"], "primary_domain": "shop.anphat.vn", "type": "php",
                           "document_root": "public", "php_version": "8.2", "ssl_mode": "acme", "proxy_target": None},
             job=True, job_example=jobs("website.create", "website", D.WEBSITES[1]["uuid"],
-                                       ["fs.mkdir", "php.pool.apply", "nginx.vhost.apply", "cert.issue"], realm=realm))
+                                       ["fs.site_layout.ensure", "php.pool.apply", "nginx.vhost.apply", "cert.issue", "nginx.vhost.apply"], realm=realm))
     api.add("get", "/websites/{id}", oid("getWebsite"), "Chi tiết website", "Websites", params=idp, ok=cref("Website"),
             ok_example=one(w))
     api.add("patch", "/websites/{id}", oid("updateWebsite"), "Cập nhật website", "Websites", params=idp,
@@ -209,9 +209,12 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
     api.add("patch", "/websites/{id}/php", oid("updateWebsitePhp"), "Đổi cấu hình PHP (trong giới hạn gói)", "Websites",
             params=idp, body=cref("WebsitePhp"), body_example={"memory_limit": "512m"}, job=True,
             job_example=jobs("website.php.update", "website", w["uuid"], ["php.pool.apply"], realm=realm))
-    api.add("get", "/websites/{id}/logs", oid("getWebsiteLogs"), "Log truy cập/lỗi (dòng cuối)", "Websites",
+    op = api.add("get", "/websites/{id}/logs", oid("getWebsiteLogs"), "Log truy cập/lỗi (dòng cuối)", "Websites",
             params=idp + [Api.p("LogKind"), Api.p("Lines")], ok=arr(s()),
-            ok_example=one(['203.0.113.50 - - [20/Nov/2026:08:14:59 +0700] "GET / HTTP/2.0" 200 5123']))
+            ok_example=one(['203.0.113.50 - - [20/Nov/2026:08:14:59 +0700] "GET / HTTP/2.0" 200 5123']),
+            desc="Đọc trực tiếp qua op `log.tail` của agent (không tạo job); tối đa 500 dòng, `lines` lớn hơn bị giới hạn ở 500. "
+                 "Agent không kết nối → 503.")
+    op["responses"]["503"] = Api.r("AgentUnavailable")
     # -- SSL
     api.add("get", "/certificates", oid("listCertificates"), "Chứng chỉ SSL", "SSL", list_=True, params=acc_filter,
             ok=cref("Certificate"), ok_example=page(D.CERTS if realm == "admin" else D.CERTS[:1]))
@@ -502,8 +505,9 @@ def setup_paths(api: Api, jobs):
     op["responses"]["410"] = gone
     op = api.add("post", "/setup/stack:install", "installSetupStack", "Bước 4: cài web stack còn thiếu qua job", "Setup",
                  job=True, job_example=jobs("setup.stack", "server", D.SERVERS[0]["uuid"],
-                                            ["software.install", "software.install", "software.install"]),
-                 desc="Cài các recipe `nginx`, `php8.3`, `lego` chưa có trên server panel (bỏ qua recipe đã cài).")
+                                            ["software.install", "php.version.install", "software.install"]),
+                 desc="Cài phần còn thiếu trên server panel (bỏ qua phần đã cài): recipe `nginx`, PHP 8.3 qua "
+                      "`php.version.install` (tắt master mặc định của gói, D-68), recipe `lego`.")
     op["responses"]["410"] = gone
     op = api.add("get", "/setup/quota", "getSetupQuota", "Bước 6: trạng thái disk quota của server panel", "Setup",
                  ok=ref("SetupQuota"), ok_example=one({"mode": "kernel", "server": D.server_ref(0), "facts_at": D.T2}))
@@ -878,6 +882,8 @@ def common_components():
         "ValidationFailed": v422,
         "TooManyRequests": t429,
         "Gone": problem_resp(410, "setup_completed", "Wizard đã khóa", "Panel đã cài đặt xong; wizard không dùng lại được."),
+        "AgentUnavailable": problem_resp(503, "agent_unavailable", "Agent không kết nối",
+                                         "Không gọi được agent của server; thử lại sau."),
         "NotImplemented": problem_resp(501, "purge_not_available", "Chưa có ở phiên bản này",
                                        "Purge hiện thực ở Phase 8."),
     }

@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Auth\MfaService;
+use App\Auth\Realm;
 use App\Auth\SessionKeys;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Setup\SetupWizard;
 use App\Domain\Users\UserService;
+use App\Domain\Web\ServerWebService;
 use App\Exceptions\ApiProblem;
+use App\Http\Presenters\JobPresenter;
 use App\Http\Presenters\ServerPresenter;
 use App\Http\Presenters\UserPresenter;
-use App\Models\Server;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +26,7 @@ use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * /admin/setup/* — wizard cài đặt lần đầu (Prompt 4.5): bước 0 (mã), 1 (ngôn ngữ), 2 (SA + TOTP), 3 (truy cập),
- * 6 (quota), 9 (khóa). Bước 0–2 công khai nhưng cần phiên đã xác minh mã; bước 3+ cần SA do wizard tạo, đã bật TOTP.
+ * 4 (web stack, Prompt 5.3), 6 (quota), 9 (khóa). Bước 0–2 công khai nhưng cần phiên đã xác minh mã; bước 3+ cần SA do wizard tạo, đã bật TOTP.
  */
 final class SetupController
 {
@@ -34,6 +36,8 @@ final class SetupController
         private readonly UserService $users,
         private readonly UserPresenter $present,
         private readonly AuditLogger $audit,
+        private readonly ServerWebService $web,
+        private readonly JobPresenter $jobs,
     ) {}
 
     public function status(Request $request): JsonResponse
@@ -142,8 +146,7 @@ final class SetupController
     public function quota(Request $request): JsonResponse
     {
         $user = $this->requireWizardAdmin($request);
-        $server = Server::query()->where('name', (string) config('itso.local_server.name'))->first()
-            ?? Server::query()->orderBy('id')->first();
+        $server = SetupWizard::localServer();
         $p = $server !== null ? ServerPresenter::platform($server->observed_facts) : null;
         $this->wizard->put('quota_seen_at', Carbon::now()->toIso8601String(), $user->id);
 
@@ -152,6 +155,26 @@ final class SetupController
             'server' => $server !== null ? ['uuid' => $server->uuid, 'name' => $server->name] : null,
             'facts_at' => $p['facts_at'] ?? null,
         ]]);
+    }
+
+    /** Bước 4: web stack (Nginx, PHP 8.3, lego) trên server cài panel. */
+    public function stack(Request $request): JsonResponse
+    {
+        $this->requireWizardAdmin($request);
+
+        return response()->json(['data' => $this->web->stack(SetupWizard::localServer())]);
+    }
+
+    public function installStack(Request $request): JsonResponse
+    {
+        $user = $this->requireWizardAdmin($request);
+        $server = SetupWizard::localServer();
+        if ($server === null) {
+            throw new ApiProblem(409, 'precondition_failed', 'Chưa có server', 'Agent trên máy cài panel chưa đăng ký server.');
+        }
+        $data = $this->jobs->job($this->web->installStack($user, $server)->refresh(), Realm::ADMIN);
+
+        return response()->json(['job' => $data, 'resource' => $data['resource']], 202);
     }
 
     public function complete(Request $request): JsonResponse

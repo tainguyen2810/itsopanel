@@ -7,6 +7,7 @@ namespace App\Domain\Hosting;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Jobs\JobDispatcher;
 use App\Domain\Jobs\JobSpec;
+use App\Domain\Web\WebsiteSpec;
 use App\Exceptions\ApiProblem;
 use App\Models\AccountLifecycleEvent;
 use App\Models\HostingAccount;
@@ -15,6 +16,7 @@ use App\Models\HostingPackageVersion;
 use App\Models\Job;
 use App\Models\Server;
 use App\Models\User;
+use App\Models\Website;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -86,7 +88,8 @@ final class ProvisioningService
     public function suspend(User $actor, HostingAccount $a, string $reason): Job
     {
         return $this->transition($actor, $a, 'suspend', $reason, ['suspended_reason' => $reason],
-            fn (JobSpec $s) => $s->step('account.suspend', ['account' => self::ref($a), 'reason' => $reason]));
+            fn (JobSpec $s) => WebsiteSpec::reapplyAccount(
+                $s->step('account.suspend', ['account' => self::ref($a), 'reason' => $reason]), $a, true));
     }
 
     /** Mở khóa (suspended → active) hoặc khôi phục account đã chấm dứt trong thời gian giữ (terminated → active). */
@@ -100,11 +103,11 @@ final class ProvisioningService
 
             return $this->transition($actor, $a, 'restore', 'Khôi phục trong thời gian giữ',
                 ['terminated_at' => null, 'purge_after' => null, 'suspended_reason' => null],
-                fn (JobSpec $s) => $s->step('account.unsuspend', ['account' => self::ref($a)]));
+                fn (JobSpec $s) => WebsiteSpec::reapplyAccount($s->step('account.unsuspend', ['account' => self::ref($a)]), $a, false));
         }
 
         return $this->transition($actor, $a, 'unsuspend', null, ['suspended_reason' => null],
-            fn (JobSpec $s) => $s->step('account.unsuspend', ['account' => self::ref($a)]));
+            fn (JobSpec $s) => WebsiteSpec::reapplyAccount($s->step('account.unsuspend', ['account' => self::ref($a)]), $a, false));
     }
 
     public function terminate(User $actor, HostingAccount $a, string $reason, string $confirmUsername): Job
@@ -118,7 +121,8 @@ final class ProvisioningService
 
         return $this->transition($actor, $a, 'terminate', $reason,
             ['terminated_at' => $now, 'purge_after' => $now->copy()->addDays($days), 'suspended_reason' => $reason],
-            fn (JobSpec $s) => $s->step('account.suspend', ['account' => self::ref($a), 'reason' => 'terminated: '.$reason]));
+            fn (JobSpec $s) => WebsiteSpec::reapplyAccount(
+                $s->step('account.suspend', ['account' => self::ref($a), 'reason' => 'terminated: '.$reason]), $a, true));
     }
 
     public function changePackage(User $actor, HostingAccount $a, HostingPackage $package, ?int $version, ?string $reason): Job
@@ -212,6 +216,10 @@ final class ProvisioningService
             if ($a->lifecycle_state !== 'active') {
                 $spec->step('account.suspend', ['account' => self::ref($a), 'reason' => (string) ($a->suspended_reason ?: $a->lifecycle_state)]);
             }
+            // Website (Phase 5): dựng lại bố cục, pool, vhost theo desired state.
+            foreach (Website::query()->where('hosting_account_id', $a->id)->whereIn('status', ['ready', 'degraded', 'suspended'])->orderBy('id')->get() as $w) {
+                WebsiteSpec::provision($spec, $w, $a);
+            }
             $job = $this->dispatch($spec, $actor, [$a]);
 
             return $job;
@@ -228,6 +236,11 @@ final class ProvisioningService
     {
         if ($a->last_job_id !== null && Job::query()->whereKey($a->last_job_id)->whereIn('state', self::ACTIVE_JOB_STATES)->exists()) {
             throw new ApiProblem(409, 'resource_locked', 'Account đang có tác vụ chạy', 'Chờ tác vụ hiện tại xong rồi thử lại.');
+        }
+        // Website của account đang áp cấu hình (vhost): đợi xong để không ghi đè trạng thái suspended.
+        $siteJobs = Website::query()->where('hosting_account_id', $a->id)->whereNotNull('last_job_id')->select('last_job_id');
+        if (Job::query()->whereIn('id', $siteJobs)->whereIn('state', self::ACTIVE_JOB_STATES)->exists()) {
+            throw new ApiProblem(409, 'resource_locked', 'Website của account đang có tác vụ chạy', 'Chờ tác vụ website xong rồi thử lại.');
         }
     }
 

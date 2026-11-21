@@ -20,6 +20,9 @@ class SoftwareCatalogSeeder extends Seeder
         ['nftables', 'nftables', 'security', '1.0.9'],
         ['restic', 'Restic (sao lưu)', 'backup', '0.16.4'],
         ['stress-ng', 'stress-ng (kiểm tải VM test)', 'tools', '0.17.06'],
+        // Phase 5 (web stack). PHP 8.3 quản lý ở PHP Manager (php.version.install), không qua recipe.
+        ['nginx', 'Nginx', 'web', '1.24.0'],
+        ['lego', 'lego (ACME client)', 'web', '4.9.1'],
     ];
 
     public function run(): void

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Setup;
 
+use App\Domain\Web\ServerWebService;
 use App\Exceptions\ApiProblem;
+use App\Models\Server;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -124,6 +126,10 @@ final class SetupWizard
         if (is_array($access)) {
             $steps[] = 'access';
         }
+        $server = self::localServer();
+        if ($server !== null && app(ServerWebService::class)->stack($server)['ready']) {
+            $steps[] = 'stack';
+        }
         if ($this->get('quota_seen_at') !== null) {
             $steps[] = 'quota';
         }
@@ -145,6 +151,13 @@ final class SetupWizard
             'panel_port' => (int) ($a['panel_port'] ?? 0),
             'entrance_path' => is_string($a['entrance_path'] ?? null) ? $a['entrance_path'] : null,
             'allowlist' => array_values(array_map('strval', (array) ($a['allowlist'] ?? [])))];
+    }
+
+    /** Server cài panel (bước stack/quota của wizard): theo config, nếu không có thì server đầu tiên. */
+    public static function localServer(): ?Server
+    {
+        return Server::query()->where('name', (string) config('itso.local_server.name'))->first()
+            ?? Server::query()->orderBy('id')->first();
     }
 
     public function locale(): string

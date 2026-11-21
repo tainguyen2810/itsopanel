@@ -118,7 +118,7 @@ it('phần mềm: catalog + trạng thái; cài qua job software.install ghi b�
     $id = $a->server->uuid;
     $l = $sa->get("/api/v1/admin/servers/$id/software");
     assertMatchesContract(P4, 'get', '/api/v1/admin/servers/{id}/software', 200, $l);
-    expect(collect($l->json('data'))->pluck('key')->all())->toBe(['acl', 'nftables', 'quota', 'restic', 'stress-ng'])
+    expect(collect($l->json('data'))->pluck('key')->all())->toBe(['acl', 'lego', 'nftables', 'nginx', 'quota', 'restic', 'stress-ng'])
         ->and(collect($l->json('data'))->firstWhere('key', 'restic'))->toMatchArray(['state' => 'available', 'installed_version' => null]);
 
     $r = p4idem($sa, "/api/v1/admin/servers/$id/software/restic:install");
