@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
+import { useSession } from '@/shared/session/SessionContext';
 import { JobView } from '@/shared/jobs/JobDrawer';
 import { InfoList } from '@/shared/page/InfoList';
 import { PageHeader } from '@/shared/page/PageHeader';
@@ -246,6 +247,11 @@ function Running({ m }: { m: Migration }) {
           {t('migrate.cutoverRunning')}
         </p>
       )}
+      {job.data?.state === 'waiting_agent' && (
+        <Alert tone="warning" title={t('migrate.waitingNode')}>
+          {t('migrate.waitingNodeHint')}
+        </Alert>
+      )}
       {job.data && (
         <JobView
           job={job.data}
@@ -277,11 +283,18 @@ function Verify({ m }: { m: Migration }) {
       }),
     { invalidate: inv },
   );
+  const bad = m.verification.length === 0 || m.verification.some((c) => !c.ok);
   return (
     <div className="flex flex-col gap-4">
-      <Alert tone="success" title={t('migrate.verified', { server: m.target_server.name })}>
-        {t('migrate.verifiedHint', { size: fmt.bytes(m.bytes_synced) })}
-      </Alert>
+      {bad ? (
+        <Alert tone="danger" title={t('migrate.mismatch', { server: m.target_server.name })}>
+          {m.error ?? t('migrate.mismatchHint')}
+        </Alert>
+      ) : (
+        <Alert tone="success" title={t('migrate.verified', { server: m.target_server.name })}>
+          {t('migrate.verifiedHint', { size: fmt.bytes(m.bytes_synced) })}
+        </Alert>
+      )}
       <Card>
         <CardHeader title={t('migrate.checks')} />
         <CardContent>
@@ -305,11 +318,20 @@ function Verify({ m }: { m: Migration }) {
           <Undo2 aria-hidden />
           {t('migrate.rollback')}
         </Button>
-        <Button onClick={() => setConfirm('cutover')}>
+        <Button
+          disabled={bad}
+          aria-describedby={bad ? 'cutover-blocked' : undefined}
+          onClick={() => setConfirm('cutover')}
+        >
           <ArrowLeftRight aria-hidden />
           {t('migrate.cutover')}
         </Button>
       </div>
+      {bad && (
+        <p id="cutover-blocked" className="text-right text-sm text-muted">
+          {t('migrate.mismatchHint')}
+        </p>
+      )}
       <ConfirmDialog
         open={confirm === 'cutover'}
         onOpenChange={(o) => !o && setConfirm(null)}
@@ -319,11 +341,12 @@ function Verify({ m }: { m: Migration }) {
           <span className="flex flex-col gap-2">
             <span>{t('migrate.cutoverHint', { seconds: m.downtime_estimate_sec ?? 60 })}</span>
             {m.dns && <DnsPlan dns={m.dns} />}
+            <span className="text-muted">{t('migrate.tlsNote')}</span>
           </span>
         }
         confirmName={m.hosting_account.username}
         confirmLabel={t('migrate.cutover')}
-        disabled={m.verification.some((c) => !c.ok)}
+        disabled={bad}
         onConfirm={() => cutover.mutateAsync().then(() => undefined)}
       />
       <ConfirmDialog
@@ -378,6 +401,9 @@ function Holding({ m }: { m: Migration }) {
     { invalidate: inv },
   );
   const left = daysLeft(m.cleanup_after) ?? 0;
+  const { user } = useSession();
+  const early = m.cleanup_after !== null && left > 0;
+  const canClean = !early || user.role === 'SUPER_ADMIN';
   return (
     <div className="flex flex-col gap-4">
       <Alert tone="success" title={t('migrate.running', { server: m.target_server.name })}>
@@ -385,7 +411,8 @@ function Holding({ m }: { m: Migration }) {
           server: m.source_server.name,
           count: left,
           date: fmt.opt(m.cleanup_after),
-        })}
+        })}{' '}
+        {t('migrate.tlsNote')}
       </Alert>
       <InfoList
         items={[
@@ -405,11 +432,21 @@ function Holding({ m }: { m: Migration }) {
           <Undo2 aria-hidden />
           {t('migrate.rollback')}
         </Button>
-        <Button variant="danger" onClick={() => setConfirm('cleanup')}>
+        <Button
+          variant="danger"
+          disabled={!canClean}
+          aria-describedby={canClean ? undefined : 'cleanup-early'}
+          onClick={() => setConfirm('cleanup')}
+        >
           <Trash2 aria-hidden />
           {t('migrate.cleanupNow')}
         </Button>
       </div>
+      {!canClean && (
+        <p id="cleanup-early" className="text-right text-sm text-muted">
+          {t('migrate.earlyOnlySa', { date: fmt.opt(m.cleanup_after) })}
+        </p>
+      )}
       <ConfirmDialog
         open={confirm === 'cleanup'}
         onOpenChange={(o) => !o && setConfirm(null)}
@@ -435,20 +472,36 @@ function Holding({ m }: { m: Migration }) {
 function Done({ m, a, onAgain }: { m: Migration; a: Account; onAgain: () => void }) {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
+  const [confirm, setConfirm] = useState(false);
   const ok = m.state === 'completed';
+  const failed = m.state === 'failed';
+  // Lỗi từ cutover trở đi: account vẫn `migrating` (nguồn khóa) → phải hoàn tác; lỗi trước cutover: đã chạy lại ở nguồn.
+  const locked = failed && a.lifecycle_state === 'migrating';
+  const rollback = useAction(
+    () =>
+      send('POST', '/api/v1/admin/account-migrations/{id}:rollback', {
+        path: { id: m.uuid },
+        body: {},
+      }),
+    { invalidate: [['admin', 'account', a.uuid]] },
+  );
   return (
     <div className="flex flex-col gap-4">
       <Alert
-        tone={ok ? 'success' : m.state === 'failed' ? 'danger' : 'info'}
+        tone={ok ? 'success' : failed ? 'danger' : 'info'}
         title={
           ok
             ? t('migrate.completed', { server: m.target_server.name })
-            : t('migrate.ended', { state: m.state })
+            : failed
+              ? t('migrate.failed')
+              : t('migrate.ended', { state: m.state })
         }
       >
         {ok
           ? t('migrate.completedHint', { seconds: m.downtime_sec ?? 0 })
-          : t('migrate.rolledBackHint', { server: m.source_server.name })}
+          : failed
+            ? `${m.error ?? ''} ${locked ? t('migrate.failedLocked', { server: m.source_server.name }) : t('migrate.failedActive', { server: m.source_server.name })}`.trim()
+            : t('migrate.rolledBackHint', { server: m.source_server.name })}
       </Alert>
       <InfoList
         items={[
@@ -460,13 +513,29 @@ function Done({ m, a, onAgain }: { m: Migration; a: Account; onAgain: () => void
         ]}
       />
       <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4">
-        <Button variant="outline" onClick={onAgain}>
-          {t('migrate.again')}
-        </Button>
+        {failed && (
+          <Button variant={locked ? 'primary' : 'outline'} onClick={() => setConfirm(true)}>
+            <Undo2 aria-hidden />
+            {t('migrate.rollback')}
+          </Button>
+        )}
+        {!locked && (
+          <Button variant="outline" onClick={onAgain}>
+            {t('migrate.again')}
+          </Button>
+        )}
         <AppLink href={`/admin/hosting-accounts/${a.uuid}`} className={buttonVariants()}>
           {t('migrate.backToAccount')}
         </AppLink>
       </div>
+      <ConfirmDialog
+        open={confirm}
+        onOpenChange={setConfirm}
+        title={t('migrate.rollbackTitle')}
+        description={t('migrate.rollbackHint', { server: m.source_server.name })}
+        confirmLabel={t('migrate.rollback')}
+        onConfirm={() => rollback.mutateAsync().then(() => undefined)}
+      />
     </div>
   );
 }

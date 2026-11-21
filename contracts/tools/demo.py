@@ -375,8 +375,7 @@ MIGRATIONS = [
      "verification": [
          {"kind": "files", "name": "sites/", "ok": True, "detail": "50.300 file, sha256 khớp"},
          {"kind": "database", "name": "lehoa_wp", "ok": True, "detail": "12 bảng, 48.211 dòng, checksum khớp"},
-         {"kind": "http", "name": "lehoa.vn", "ok": True, "detail": "HTTP 200 ở server đích (Host: lehoa.vn)"},
-         {"kind": "ssl", "name": "lehoa.vn", "ok": True, "detail": "Chứng chỉ đã sao chép, hết hạn 2027-01-18"},
+         {"kind": "ownership", "name": "lehoa.vn", "ok": True, "detail": "Chủ sở hữu file đúng UID account"},
          {"kind": "cron", "name": "cron", "ok": True, "detail": "2 job"},
          {"kind": "ownership", "name": "UID", "ok": True, "detail": "Giữ UID 20004"}],
      "dns": {"mode": "auto", "zone": "lehoa.vn",

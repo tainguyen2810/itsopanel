@@ -397,6 +397,14 @@
       "update": "Sửa cron job",
       "delete": "Xóa cron job",
       "run": "Chạy cron job"
+    },
+    "migration": {
+      "sync": "Đồng bộ dữ liệu sang máy chủ đích",
+      "cutover": "Cutover chuyển máy chủ",
+      "cutover_target": "Mở account ở máy chủ đích",
+      "rollback": "Hoàn tác chuyển máy chủ",
+      "rollback_source": "Mở lại account ở máy chủ nguồn",
+      "cleanup": "Dọn máy nguồn sau khi chuyển"
     }
   },
   "ops": {

@@ -6880,16 +6880,10 @@ export interface operations {
                      *               "detail": "12 bảng, 48.211 dòng, checksum khớp"
                      *             },
                      *             {
-                     *               "kind": "http",
+                     *               "kind": "ownership",
                      *               "name": "lehoa.vn",
                      *               "ok": true,
-                     *               "detail": "HTTP 200 ở server đích (Host: lehoa.vn)"
-                     *             },
-                     *             {
-                     *               "kind": "ssl",
-                     *               "name": "lehoa.vn",
-                     *               "ok": true,
-                     *               "detail": "Chứng chỉ đã sao chép, hết hạn 2027-01-18"
+                     *               "detail": "Chủ sở hữu file đúng UID account"
                      *             },
                      *             {
                      *               "kind": "cron",
@@ -7003,16 +6997,10 @@ export interface operations {
                      *             "detail": "12 bảng, 48.211 dòng, checksum khớp"
                      *           },
                      *           {
-                     *             "kind": "http",
+                     *             "kind": "ownership",
                      *             "name": "lehoa.vn",
                      *             "ok": true,
-                     *             "detail": "HTTP 200 ở server đích (Host: lehoa.vn)"
-                     *           },
-                     *           {
-                     *             "kind": "ssl",
-                     *             "name": "lehoa.vn",
-                     *             "ok": true,
-                     *             "detail": "Chứng chỉ đã sao chép, hết hạn 2027-01-18"
+                     *             "detail": "Chủ sở hữu file đúng UID account"
                      *           },
                      *           {
                      *             "kind": "cron",

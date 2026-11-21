@@ -397,6 +397,14 @@
       "update": "Update cron job",
       "delete": "Delete cron job",
       "run": "Run cron job"
+    },
+    "migration": {
+      "sync": "Sync data to target server",
+      "cutover": "Server move cutover",
+      "cutover_target": "Start account on target server",
+      "rollback": "Server move rollback",
+      "rollback_source": "Reopen account on source server",
+      "cleanup": "Source cleanup after move"
     }
   },
   "ops": {

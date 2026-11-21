@@ -94,7 +94,7 @@ export default function AccountDetailPage() {
                     {t('accounts.changePackage')}
                   </DropdownMenuItem>
                 )}
-                {sa && (s === 'active' || s === 'suspended' || s === 'migrating') && (
+                {(s === 'active' || s === 'migrating') && (
                   <DropdownMenuItem asChild>
                     <AppLink href={`/admin/hosting-accounts/${a.uuid}/migrate`}>
                       {t('accounts.migrate')}
@@ -179,14 +179,12 @@ function Overview({ a }: { a: Account }) {
           tone="info"
           title={t('accounts.migratingBanner')}
           action={
-            user.role === 'SUPER_ADMIN' ? (
-              <AppLink
-                href={`/admin/hosting-accounts/${a.uuid}/migrate`}
-                className={buttonVariants({ size: 'sm', variant: 'outline' })}
-              >
-                {t('accounts.openMigration')}
-              </AppLink>
-            ) : undefined
+            <AppLink
+              href={`/admin/hosting-accounts/${a.uuid}/migrate`}
+              className={buttonVariants({ size: 'sm', variant: 'outline' })}
+            >
+              {t('accounts.openMigration')}
+            </AppLink>
           }
         />
       )}

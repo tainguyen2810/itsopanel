@@ -48,10 +48,11 @@ export function JobProgress({ title, status, steps, className }: Props) {
       />
       <p className="text-xs text-muted">{t('job.step', { current, total: steps.length })}</p>
       <ol aria-label={t('job.steps')} className="flex flex-col gap-2">
-        {steps.map((s) => {
+        {steps.map((s, i) => {
           const { icon: Icon, cls } = ICON[s.state];
           return (
-            <li key={s.op} className="flex items-start gap-2.5" data-state={s.state}>
+            // Một job có thể lặp op (vd. backup.run cho file rồi cho DB): khóa theo vị trí bước.
+            <li key={`${i}:${s.op}`} className="flex items-start gap-2.5" data-state={s.state}>
               <Icon aria-hidden className={cn('mt-0.5 size-4 shrink-0', cls)} />
               <div className="min-w-0">
                 <p className={cn('text-base', s.state === 'pending' && 'text-muted')}>{s.label}</p>

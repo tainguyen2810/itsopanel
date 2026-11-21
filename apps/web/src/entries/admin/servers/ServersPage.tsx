@@ -1,8 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import { ListPage } from '@/shared/page/ListPage';
 import { useSession } from '@/shared/session/SessionContext';
+import { Alert } from '@/ui/Alert';
 import { AppLink } from '@/ui/AppLink';
 import { Badge, StatusBadge } from '@/ui/Badge';
 import { buttonVariants } from '@/ui/Button';
@@ -22,6 +24,16 @@ export default function ServersPage() {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const { user } = useSession();
+  // Banner node mất kết nối (D-91): job tới các node này đang chờ (waiting_agent) hoặc sẽ chờ.
+  const offline = useQuery({
+    queryKey: ['admin', 'servers', 'offline'],
+    queryFn: async () =>
+      (await list('/api/v1/admin/servers')).filter(
+        (s) => s.connection === 'unreachable' || s.connection === 'degraded',
+      ),
+    refetchInterval: 30_000,
+  });
+  const down = offline.data ?? [];
   const bar = (label: string, v: number) => (
     <div className="flex w-28 items-center gap-2">
       <ProgressBar
@@ -155,6 +167,27 @@ export default function ServersPage() {
       columns={columns}
       getRowId={(s) => s.uuid}
       primaryColumnId="name"
-    />
+    >
+      {down.length > 0 && (
+        <Alert
+          tone="danger"
+          className="mb-4"
+          title={t('servers.offlineBanner', {
+            count: down.length,
+            names: down.map((s) => s.name).join(', '),
+          })}
+          action={
+            <AppLink
+              href="/admin/jobs?state=waiting_agent"
+              className="text-sm font-medium underline"
+            >
+              {t('servers.offline.jobs')}
+            </AppLink>
+          }
+        >
+          {t('servers.offlineBannerHint')}
+        </Alert>
+      )}
+    </ListPage>
   );
 }

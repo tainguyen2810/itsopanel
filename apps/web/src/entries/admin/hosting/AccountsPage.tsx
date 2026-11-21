@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Archive, Plus } from 'lucide-react';
+import { Archive, ArrowLeftRight, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import { ListPage } from '@/shared/page/ListPage';
@@ -123,6 +123,13 @@ export default function AccountsPage() {
               {t('accounts.terminatedLink')}
             </AppLink>
           )}
+          <AppLink
+            href="/admin/hosting-accounts/migrations"
+            className={buttonVariants({ variant: 'outline' })}
+          >
+            <ArrowLeftRight aria-hidden />
+            {t('migrate.listLink')}
+          </AppLink>
           <AppLink href="/admin/hosting-accounts/new" className={buttonVariants()}>
             <Plus aria-hidden />
             {t('accounts.add')}

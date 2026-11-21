@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.7 (UI multi-server khớp API thật) — nhánh `phase-9`
+
+Phạm vi: trang mới **Lượt chuyển máy chủ** (`/admin/hosting-accounts/migrations`, lọc trạng thái, mở wizard); wizard chuyển account: ADMIN (có phạm vi cả hai server) vào được như API, kiểm chứng lệch → cảnh báo + khóa nút cutover, lượt chuyển lỗi → hiện lỗi + hoàn tác (account khóa sau cutover) hoặc chuyển lại, chặng chờ node mất kết nối (`waiting_agent`), dọn nguồn sớm chỉ SA, ghi chú HTTPS cấp lại ở đích; banner danh sách server khi node mất kết nối; Portal: banner "đang chuyển" + cảnh báo tổng quan `account_migrating` (API + MSW); nhãn job `migration.*`; `JobProgress` khóa theo vị trí bước (job thật có thể lặp op `backup.run`). MSW theo hành vi API: quyền ADMIN + phạm vi đích, chỉ account active, `connection`/`accepting` (warn), HTTP chỉ có sau cutover, cutover 409 khi lệch, hoàn tác 409 lúc đang đồng bộ, dọn sớm ADMIN 403, account `migrating` → ghi dữ liệu 409. API: link thông báo lượt chuyển trỏ về wizard của account. Commit (commit 9.7).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest | `pnpm -s vitest run` | **562/562 PASS** (lần đầu 2 lỗi ở `demo/__tests__/hosting.test.ts` do MSW đổi theo API: ADMIN chuyển sang đích ngoài phạm vi 403 → 422, khóa kiểm tra `agent` → `connection`; sửa test, thêm 1 test hành vi mới) |
+| Playwright demo | `playwright test e2e/demo-hosting.spec.ts e2e/demo-infra.spec.ts e2e/demo-backup8.spec.ts e2e/demo-portal.spec.ts` | **20/20 PASS** (mới: danh sách lượt chuyển → wizard; banner node mất kết nối). Lần đầu 1 lỗi: cảnh báo React trùng key khi job có 2 bước `backup.run` → sửa `JobProgress` |
+| axe + 390px + EN | `playwright test e2e/demo-audit.spec.ts` (mọi route, gồm route mới) | **77/77 PASS** |
+| Ảnh Phase 9 | `SCREENSHOT_DIR_P9=docs/screenshots/phase-9 playwright test e2e/screenshots-phase9.spec.ts` | 52/52 (thêm `admin-migrations`, chụp lại wizard) |
+| API | `vendor/bin/pest tests/Feature/Phase9` · `tests/Feature/Hosting` · `make lint-api` · `make no-exec` | 20/20 · 25/25 · sạch · OK |
+| Lint web | `pnpm -s lint` · `tsc -b` | sạch (i18n 2999 key, vi = en) |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** dữ liệu demo giữ `lehoa` ở `suspended` (mockup Phase 2) dù đang có lượt chuyển; API thật chỉ chuyển account active.
+
 ## 2026-11-21 — Phase 9 / Prompt 9.6 (điều phối chuyển account, khôi phục chéo server) — nhánh `phase-9`
 
 Phạm vi: `app/Domain/Migration/{MigrationService,MigrationJobHandler}.php`, `Models/AccountMigration.php`, `Admin/AccountMigrationController.php` (preflight, migrate, danh sách/chi tiết, cutover, rollback, cleanup), `RestoreService` (khôi phục sang server khác), lệnh `itso:migrations-cleanup` (hàng giờ), route Phase 9 (`accounts.write` + step-up: SA/ADMIN có phạm vi cả 2 server), contracts (bỏ 501 của `:migrate`). Commit 8dfa8c2.

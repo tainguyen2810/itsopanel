@@ -587,9 +587,10 @@ final class MigrationService
 
     private function notifyAdmins(AccountMigration $m, string $type, string $title, string $body, string $severity): void
     {
+        $link = '/hosting-accounts/'.HostingAccount::query()->whereKey($m->hosting_account_id)->value('uuid').'/migrate';
         User::query()->where('realm', 'admin')->where('status', 'active')
             ->where(fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('key', 'SUPER_ADMIN'))->orWhere('id', $m->requested_by_user_id))
-            ->get()->each(fn (User $u) => $this->notifier->notify($u, $type, $title, $body, $severity, '/migrations/'.$m->uuid));
+            ->get()->each(fn (User $u) => $this->notifier->notify($u, $type, $title, $body, $severity, $link));
     }
 
     /** uuid tất định từ uuid lượt chuyển + nhãn (restore_uuid ổn định khi chạy lại). */

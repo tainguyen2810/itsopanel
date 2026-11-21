@@ -25,6 +25,7 @@ export const ADMIN_PAGES: PageLoaders = {
   accounts: () => import('./hosting/AccountsPage'),
   accountNew: () => import('./hosting/AccountNewPage'),
   accountsTerminated: () => import('./hosting/TerminatedPage'),
+  accountMigrations: () => import('./hosting/MigrationsPage'),
   accountDetail: () => import('./hosting/AccountDetailPage'),
   accountMigrate: () => import('./hosting/AccountMigratePage'),
   websites: () => import('./sites/WebsitesPage'),

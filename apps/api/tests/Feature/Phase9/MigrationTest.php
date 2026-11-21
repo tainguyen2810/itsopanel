@@ -165,6 +165,7 @@ it('chuyển trọn vẹn: preflight → sync → verifying → cutover → hold
     // Portal: thấy "đang chuyển"; thao tác ghi bị chặn 409. Lượt chuyển thứ hai cùng lúc → 409.
     $own = $a->spa('US_OWNER');
     expect($own->get('/api/v1/portal/hosting-accounts/'.$acc->uuid)->json('data.lifecycle_state'))->toBe('migrating');
+    expect(collect($own->get('/api/v1/portal/overview')->json('data.warnings'))->pluck('code')->all())->toContain('account_migrating');
     expect(p8($own, 'POST', '/api/v1/portal/cron-jobs', ['hosting_account_uuid' => $acc->uuid, 'schedule' => '0 3 * * *', 'command' => 'true'])->status())->toBe(409);
     $sa = $a->spa('SA');
     p96touch($node);
@@ -373,7 +374,7 @@ it('node đích mất kết nối giữa chặng đồng bộ → job chờ node
     expect($sync->refresh()->state)->toBe('failed')->and($sync->error_code)->toBe('agent_unreachable')
         ->and($m->refresh()->state)->toBe('failed')->and($m->error)->toContain('migration.sync')
         ->and($a->account->refresh()->lifecycle_state)->toBe('active')->and($a->account->server_id)->toBe($a->server->id);
-    expect(DB::table('notifications')->where('type', 'migration.failed')->exists())->toBeTrue();
+    expect(json_decode((string) DB::table('notifications')->where('type', 'migration.failed')->value('data'), true)['link'])->toBe('/hosting-accounts/'.$a->account->uuid.'/migrate');
     expect($errors)->toBe([]);
 });
 

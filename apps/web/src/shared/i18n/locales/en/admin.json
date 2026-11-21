@@ -482,7 +482,10 @@
     "revokeBlocked_other": "The server still has {{count}} accounts. Move all accounts elsewhere before revoking.",
     "revokeHint": "The node certificate is revoked; the relay drops and refuses its connection. Reusing the machine requires a reinstall with a new token. Type the server name to confirm.",
     "tokenExpiresLabel": "Token expires",
-    "tokenOnce": "The token works once and is shown only now. The command verifies the CA pin before sending the token."
+    "tokenOnce": "The token works once and is shown only now. The command verifies the CA pin before sending the token.",
+    "offlineBanner_one": "{{count}} server is disconnected: {{names}}",
+    "offlineBanner_other": "{{count}} servers are disconnected: {{names}}",
+    "offlineBannerHint": "Jobs for these servers wait for the node to reconnect (up to 30 minutes for writes) before failing."
   },
   "nginx": {
     "title": "Nginx",
@@ -1056,7 +1059,17 @@
     "cleanupNow": "Clean up source now",
     "cleanupTitle": "Delete the old copy on {{server}}?",
     "cleanupHint": "Removes the account user, home, databases and vhosts on {{server}}. Rollback is no longer possible afterwards. Type the username to confirm.",
-    "rollbackHoldingHint": "The account runs on {{server}} again and DNS is restored. Changes made on the target after cutover are lost. Type the username to confirm."
+    "rollbackHoldingHint": "The account runs on {{server}} again and DNS is restored. Changes made on the target after cutover are lost. Type the username to confirm.",
+    "mismatch": "Verification on {{server}} does not match",
+    "mismatchHint": "Cutover is blocked while any check fails. Roll back, fix the cause, then migrate again.",
+    "tlsNote": "HTTPS: certificates are not copied; the panel issues new ones on the target once DNS points to it.",
+    "waitingNode": "The server for this stage is disconnected",
+    "waitingNodeHint": "The stage waits for the node to reconnect and then continues; if the wait expires the migration fails.",
+    "failed": "Migration failed",
+    "failedLocked": "The account is locked after cutover. Roll back to run it on {{server}} again.",
+    "failedActive": "The account keeps running on {{server}}; you can migrate again after fixing the error.",
+    "earlyOnlySa": "Before {{date}} only a Super Admin can clean up the source early.",
+    "listLink": "Migrations"
   },
   "terminated": {
     "title": "Terminated accounts",
@@ -2707,6 +2720,25 @@
     "findingsHint": "You can quarantine or delete files. To restore a quarantined file, contact an admin.",
     "deleteFile": "Delete file",
     "deleteFileTitle": "Delete suspicious file?",
-    "deleteFileHint": "Permanently delete {{path}} from the account. This cannot be undone (except from backups)."
+    "deleteFileHint": "Permanently delete {{path}} from the account. This cannot be undone (except from backups).",
+    "migratingTitle": "This account is being moved to a new server",
+    "migratingHint": "Websites keep running during the move, but the account is read-only for now: creating, editing and deleting are refused. Everything works as before once the move finishes."
+  },
+  "migrations": {
+    "title": "Server migrations",
+    "description": "Account moves between servers in your scope: syncing, waiting for cutover, holding the source and finished.",
+    "account": "Account",
+    "route": "From → to",
+    "to": "to",
+    "empty": "No migrations yet.",
+    "states": {
+      "syncing": "Syncing",
+      "verifying": "Waiting for cutover",
+      "cutover": "Cutting over",
+      "holding": "Holding source",
+      "completed": "Completed",
+      "rolled_back": "Rolled back",
+      "failed": "Failed"
+    }
   }
 }

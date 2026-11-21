@@ -5,7 +5,8 @@ import { asPersona, data, expect, test } from './demo';
 // Mockup Phase 9 (Prompt 9.0, trước khi code): nhiều máy chủ & chuyển tài khoản ở chế độ demo, 1440/390 ×
 // light/dark: thêm node (token một lần + ghim CA), danh sách server theo vai trò/kênh/kết nối, node mất kết nối
 // (banner + job chờ node), kênh mTLS + chứng chỉ, thu hồi node, gợi ý server kèm lý do loại, chuyển account
-// (kiểm tra trước → kiểm tra dữ liệu → cutover có DNS → giữ nguồn), khôi phục sang server khác.
+// (kiểm tra trước → kiểm tra dữ liệu → cutover có DNS → giữ nguồn), danh sách lượt chuyển (9.7), khôi phục sang
+// server khác.
 // Mặc định ghi vào test-results; `make screenshots` đặt SCREENSHOT_DIR_P9=docs/screenshots/phase-9.
 const OUT = process.env.SCREENSHOT_DIR_P9
   ? resolve(process.env.SCREENSHOT_DIR_P9)
@@ -75,6 +76,7 @@ const PAGES: readonly Shot[] = [
     },
   ],
   ['admin-migrate-verify', `/admin/hosting-accounts/${acc('lehoa')}/migrate`],
+  ['admin-migrations', '/admin/hosting-accounts/migrations'],
   [
     'admin-migrate-cutover',
     `/admin/hosting-accounts/${acc('lehoa')}/migrate`,

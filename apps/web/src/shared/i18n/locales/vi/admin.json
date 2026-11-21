@@ -482,7 +482,10 @@
     "revokeBlocked_other": "Máy còn {{count}} account. Chuyển hết account sang máy khác trước khi thu hồi.",
     "revokeHint": "Chứng chỉ của node bị thu hồi, relay ngắt kết nối và từ chối kết nối lại. Muốn dùng lại máy phải cài lại với token mới. Gõ tên máy để xác nhận.",
     "tokenExpiresLabel": "Token hết hạn",
-    "tokenOnce": "Token chỉ dùng được một lần và chỉ hiện lúc này. Lệnh kiểm tra CA theo mã ghim trước khi gửi token."
+    "tokenOnce": "Token chỉ dùng được một lần và chỉ hiện lúc này. Lệnh kiểm tra CA theo mã ghim trước khi gửi token.",
+    "offlineBanner_one": "{{count}} máy chủ đang mất kết nối: {{names}}",
+    "offlineBanner_other": "{{count}} máy chủ đang mất kết nối: {{names}}",
+    "offlineBannerHint": "Job tới các máy này chờ node kết nối lại (tối đa 30 phút với thao tác ghi) rồi mới báo lỗi."
   },
   "nginx": {
     "title": "Nginx",
@@ -1056,7 +1059,17 @@
     "cleanupNow": "Dọn nguồn ngay",
     "cleanupTitle": "Xóa bản cũ trên {{server}}?",
     "cleanupHint": "Xóa user, home, database và vhost của account trên {{server}}. Sau bước này không hoàn tác được nữa. Gõ username để xác nhận.",
-    "rollbackHoldingHint": "Account chạy lại ở {{server}}; DNS đổi về như cũ. Thay đổi phát sinh ở đích sau cutover sẽ mất. Gõ username để xác nhận."
+    "rollbackHoldingHint": "Account chạy lại ở {{server}}; DNS đổi về như cũ. Thay đổi phát sinh ở đích sau cutover sẽ mất. Gõ username để xác nhận.",
+    "mismatch": "Kiểm tra ở {{server}} chưa khớp",
+    "mismatchHint": "Không cutover được khi còn mục lệch. Hoàn tác rồi chuyển lại sau khi xử lý nguyên nhân.",
+    "tlsNote": "HTTPS: chứng chỉ không chép sang máy đích; panel cấp lại ở đích sau khi DNS trỏ về máy mới.",
+    "waitingNode": "Máy chủ của chặng này đang mất kết nối",
+    "waitingNodeHint": "Chặng đang chờ node kết nối lại rồi chạy tiếp; quá hạn chờ thì lượt chuyển lỗi.",
+    "failed": "Lượt chuyển bị lỗi",
+    "failedLocked": "Account đang khóa sau cutover. Hoàn tác để chạy lại ở {{server}}.",
+    "failedActive": "Account vẫn hoạt động ở {{server}}; có thể chuyển lại sau khi xử lý lỗi.",
+    "earlyOnlySa": "Trước {{date}} chỉ Super Admin được dọn nguồn sớm.",
+    "listLink": "Lượt chuyển"
   },
   "terminated": {
     "title": "Tài khoản đã chấm dứt",
@@ -2707,6 +2720,25 @@
     "findingsHint": "Bạn có thể cách ly hoặc xóa file. Khôi phục file đã cách ly: liên hệ quản trị.",
     "deleteFile": "Xóa file",
     "deleteFileTitle": "Xóa file nghi nhiễm?",
-    "deleteFileHint": "Xóa hẳn {{path}} khỏi tài khoản. Không khôi phục được (trừ từ backup)."
+    "deleteFileHint": "Xóa hẳn {{path}} khỏi tài khoản. Không khôi phục được (trừ từ backup).",
+    "migratingTitle": "Tài khoản đang được chuyển sang máy chủ mới",
+    "migratingHint": "Trong lúc chuyển, website vẫn chạy nhưng bạn tạm thời chỉ xem được: tạo, sửa, xóa sẽ bị từ chối. Khi chuyển xong mọi thứ hoạt động như cũ."
+  },
+  "migrations": {
+    "title": "Lượt chuyển máy chủ",
+    "description": "Các lần chuyển account giữa máy chủ trong phạm vi của bạn: đang đồng bộ, chờ cutover, đang giữ nguồn và đã kết thúc.",
+    "account": "Account",
+    "route": "Từ → đến",
+    "to": "sang",
+    "empty": "Chưa có lượt chuyển nào.",
+    "states": {
+      "syncing": "Đang đồng bộ",
+      "verifying": "Chờ cutover",
+      "cutover": "Đang cutover",
+      "holding": "Đang giữ nguồn",
+      "completed": "Hoàn tất",
+      "rolled_back": "Đã hoàn tác",
+      "failed": "Lỗi"
+    }
   }
 }
