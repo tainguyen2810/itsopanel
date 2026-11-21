@@ -500,5 +500,68 @@
   },
   "wizard": {
     "stepOf": "Bước {{current}}/{{total}}"
+  },
+  "jobErrors": {
+    "generic": "Tác vụ thất bại",
+    "config_test_failed": {
+      "title": "Cấu hình mới không qua kiểm tra (nginx -t / php-fpm -t)",
+      "hint": "Panel đã hoàn tác về cấu hình cũ, website vẫn chạy như trước. Xem dòng lỗi bên dưới, sửa cấu hình (thường là cấu hình Nginx tùy chỉnh) rồi lưu lại."
+    },
+    "precondition_failed": {
+      "title": "Điều kiện trước chưa thỏa",
+      "hint": "Ví dụ domain chưa trỏ về máy chủ nên không cấp được chứng chỉ, hoặc phiên bản chưa được hỗ trợ. Kiểm tra DNS và điều kiện rồi thử lại."
+    },
+    "invalid_params": {
+      "title": "Dữ liệu không hợp lệ",
+      "hint": "Máy chủ hoặc nhà cung cấp (Cloudflare) từ chối dữ liệu gửi lên. Sửa lại theo thông báo bên dưới."
+    },
+    "dependency_unavailable": {
+      "title": "Dịch vụ phụ thuộc chưa phản hồi",
+      "hint": "Lỗi tạm thời (Cloudflare, Let's Encrypt, apt…). Panel tự thử lại; nếu vẫn lỗi, thử lại sau ít phút."
+    },
+    "agent_unavailable": {
+      "title": "Không kết nối được agent trên máy chủ",
+      "hint": "Kiểm tra dịch vụ itso-agent trên máy chủ rồi thử lại."
+    },
+    "quota_exceeded": {
+      "title": "Vượt giới hạn của gói",
+      "hint": "Nâng gói hoặc giải phóng tài nguyên rồi thử lại."
+    },
+    "busy": {
+      "title": "Máy chủ đang bận",
+      "hint": "Một thao tác khác đang giữ khóa (ví dụ apt). Thử lại sau ít phút."
+    },
+    "deadline_exceeded": {
+      "title": "Quá thời gian chờ",
+      "hint": "Bước chạy quá lâu nên đã dừng. Thử lại; nếu lặp lại, kiểm tra tải máy chủ."
+    },
+    "timed_out": {
+      "title": "Quá thời gian chờ",
+      "hint": "Tác vụ chạy quá thời gian cho phép. Thử lại; nếu lặp lại, kiểm tra tải máy chủ."
+    },
+    "already_exists": {
+      "title": "Đối tượng đã tồn tại",
+      "hint": "Trên máy chủ đã có đối tượng cùng tên với cấu hình khác. Đổi tên hoặc gỡ đối tượng cũ."
+    },
+    "not_found": {
+      "title": "Không tìm thấy đối tượng",
+      "hint": "Đối tượng có thể đã bị xóa trên máy chủ. Tải lại trang rồi thử lại."
+    },
+    "internal": {
+      "title": "Lỗi nội bộ của agent",
+      "hint": "Thử lại; nếu lặp lại, xem log của itso-agent trên máy chủ."
+    }
+  },
+  "problems": {
+    "quota": "Gói hosting của account đã hết hạn mức {{resource}}. {{detail}} Nâng gói hoặc gỡ bớt rồi thử lại.",
+    "quotaResource": {
+      "websites": "website",
+      "databases": "database",
+      "ftp_accounts": "tài khoản FTP",
+      "cron_jobs": "cron job",
+      "disk_mb": "dung lượng đĩa",
+      "inodes": "inode",
+      "other": "tài nguyên"
+    }
   }
 }

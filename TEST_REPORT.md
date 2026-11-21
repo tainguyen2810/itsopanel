@@ -2,6 +2,20 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 5 / Prompt 5.5 — nhánh `phase-5`
+
+Môi trường: Node 22, Chromium Playwright có sẵn, MSW (bản demo) theo OpenAPI.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest | `pnpm -C apps/web test` | PASS 483 test (31 file). Mới: `jobErrors.test.ts` (mọi mã lỗi có giải thích VI+EN; `quota_exceeded` diễn giải theo tài nguyên gói), `JobView.test.tsx` (`nginx -t` lỗi hiện "đã hoàn tác" + dòng lỗi gốc; mã lạ → tiêu đề chung), schema tải chứng chỉ (PEM, wildcard, khóa có mật khẩu bị chặn), schema provider/zone DNS, MSW: provider chỉ SUPER_ADMIN, token không trả về, gắn/đồng bộ/đổi account/gỡ zone, provider còn zone 409, quota website → `quota_exceeded` + `errors.websites`; wizard đi hết 10 bước có bước stack gọi `GET /admin/setup/stack` + `POST :install` |
+| Sửa test cũ theo tính năng mới | `wizard.test.ts`, `InstallPage.test.tsx`, `demo/__tests__/sites.test.ts` | Bước `stack` không còn "chưa có ở bản này"; vượt số website trả `quota_exceeded` như API thật (trước là `package_limit_reached`) |
+| Lint · i18n · tsc | `pnpm -C apps/web lint` | PASS (eslint, prettier, tsc, check-i18n: 2575 khóa, vi = en) |
+| Playwright demo (gồm axe) | `pnpm -C apps/web e2e` | PASS 261 test (6,3 phút). Mới: DNS gắn zone Cloudflare → đồng bộ → gỡ; SSL tải chứng chỉ riêng kiểm PEM |
+| Build | `make build-demo` | PASS: build thường không chứa MSW, build demo có worker |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 5 / Prompt 5.4 — nhánh `phase-5`
 
 Môi trường: như 5.3. Cloudflare giả bằng `Http::fake` (bộ nhớ record, ép mã lỗi); agent giả bằng FakeAgent.

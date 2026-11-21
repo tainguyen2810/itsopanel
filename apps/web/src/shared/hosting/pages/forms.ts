@@ -180,6 +180,49 @@ export const gitRepoSchema = z.object({
 });
 export type GitRepoForm = z.infer<typeof gitRepoSchema>;
 
+/** Tên miền chứng chỉ: domain thường hoặc wildcard `*.domain` (một nhãn). */
+export const CERT_DOMAIN_RE =
+  /^(\*\.)?(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+const PEM_CERT = /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/;
+const PEM_KEY =
+  /-----BEGIN (RSA |EC )?PRIVATE KEY-----[\s\S]+?-----END (RSA |EC )?PRIVATE KEY-----/;
+
+/** Tải chứng chỉ riêng (POST …/certificates source=upload): kiểm hình thức; API kiểm khóa khớp và hạn. */
+export const certUploadSchema = z.object({
+  domains: z
+    .string()
+    .refine((v) => splitDomains(v).length > 0, 'form.required')
+    .refine(
+      (v) => splitDomains(v).every((d) => CERT_DOMAIN_RE.test(d)),
+      'admin:sites.errors.certDomain',
+    ),
+  certificate_pem: z.string().trim().regex(PEM_CERT, 'admin:sites.errors.certPem'),
+  private_key_pem: z.string().trim().regex(PEM_KEY, 'admin:sites.errors.keyPem'),
+});
+export type CertUploadForm = z.infer<typeof certUploadSchema>;
+
+/** Danh sách domain từ ô nhập (dấu phẩy, khoảng trắng hoặc xuống dòng), chữ thường, không trùng. */
+export function splitDomains(v: string): string[] {
+  return [
+    ...new Set(
+      v
+        .split(/[\s,]+/)
+        .map((x) => x.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+/** Body CertificateRequest cho tải lên. */
+export function certUploadBody(v: CertUploadForm) {
+  return {
+    source: 'upload' as const,
+    domains: splitDomains(v.domains),
+    certificate_pem: v.certificate_pem.trim(),
+    private_key_pem: v.private_key_pem.trim(),
+  };
+}
+
 export function splitLines(v: string): string[] {
   return v
     .split('\n')

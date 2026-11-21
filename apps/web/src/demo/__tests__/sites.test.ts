@@ -83,7 +83,7 @@ describe('Website', () => {
       'vượt số website của gói',
       { hosting_account_uuid: GIONUI, primary_domain: 'x.gionui.vn', type: 'static' },
       422,
-      'package_limit_reached',
+      'quota_exceeded',
     ],
     [
       'PHP ngoài gói',
@@ -337,5 +337,74 @@ describe('Git deploy', () => {
         r.body,
       ),
     ).toEqual([]);
+  });
+});
+
+describe('DNS: nhà cung cấp và zone (Prompt 5.5)', () => {
+  it('chỉ SUPER_ADMIN thấy/thêm provider; token sai bị từ chối; token không trả về', async () => {
+    expect((await call('GET', A('/dns/providers'), undefined, MINH)).status).toBe(403);
+    const bad = await call('POST', A('/dns/providers'), {
+      type: 'cloudflare',
+      name: 'CF',
+      api_token: 'ngan',
+    });
+    expect(bad.status).toBe(422);
+    const r = await call('POST', A('/dns/providers'), {
+      type: 'cloudflare',
+      name: 'CF thử',
+      api_token: 'abcdefghijklmnopqrstuvwxyz0123456789',
+    });
+    expect(r.status).toBe(201);
+    expect(JSON.stringify(r.body)).not.toContain('abcdefghijklmnop');
+    const rows = data<{ name: string; zones_count: number }[]>(
+      await call('GET', A('/dns/providers')),
+    );
+    expect(rows.map((p) => p.name)).toContain('CF thử');
+  });
+
+  it('gắn zone, đồng bộ, đổi account, gỡ; provider còn zone không xóa được', async () => {
+    const [cf] = data<{ uuid: string; zones_count: number }[]>(
+      await call('GET', A('/dns/providers')),
+    );
+    expect(cf?.zones_count).toBeGreaterThan(0);
+    expect((await call('DELETE', A(`/dns/providers/${cf?.uuid}`))).status).toBe(409);
+    // ADMIN không tạo zone hệ thống (không gắn account)
+    const sys = await call(
+      'POST',
+      A('/dns/zones'),
+      { provider_uuid: cf?.uuid, name: 'moi.vn', hosting_account_uuid: null },
+      MINH,
+    );
+    expect(sys.status).toBe(422);
+    const r = await call('POST', A('/dns/zones'), {
+      provider_uuid: cf?.uuid,
+      name: 'Moi.VN',
+      hosting_account_uuid: ANPHAT,
+    });
+    expect(r.status, JSON.stringify(r.body)).toBe(201);
+    const z = data<{ uuid: string; name: string; records_count: number }>(r);
+    expect(z.name).toBe('moi.vn');
+    expect(z.records_count).toBeGreaterThan(0);
+    expect(
+      (await call('POST', A('/dns/zones'), { provider_uuid: cf?.uuid, name: 'moi.vn' })).status,
+    ).toBe(409);
+    expect((await call('POST', A(`/dns/zones/${z.uuid}:sync`))).status).toBe(200);
+    const moved = await call('PATCH', A(`/dns/zones/${z.uuid}`), { hosting_account_uuid: MKT });
+    expect(data<{ hosting_account: { uuid: string } }>(moved).hosting_account.uuid).toBe(MKT);
+    expect((await call('DELETE', A(`/dns/zones/${z.uuid}`))).status).toBe(204);
+    const zones = data<{ uuid: string }[]>(await call('GET', A('/dns/zones')));
+    expect(zones.some((x) => x.uuid === z.uuid)).toBe(false);
+  });
+});
+
+describe('Quota theo gói (Prompt 5.5)', () => {
+  it('vượt số website → 422 quota_exceeded kèm errors theo tài nguyên', async () => {
+    const r = await call('POST', A('/websites'), {
+      hosting_account_uuid: GIONUI,
+      primary_domain: 'z.gionui.vn',
+      type: 'static',
+    });
+    expect(code(r)).toBe('quota_exceeded');
+    expect(Object.keys((r.body as { errors: object }).errors)).toEqual(['websites']);
   });
 });

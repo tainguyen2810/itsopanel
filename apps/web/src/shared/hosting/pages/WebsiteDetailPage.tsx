@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDown, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import { SelectField, TextField } from '@/shared/page/fields';
@@ -30,11 +30,21 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/DropdownMenu';
 import { FormField } from '@/ui/FormField';
+import { Textarea } from '@/ui/Input';
 import { Select } from '@/ui/Select';
 import { get, list, send, type Data, type Row } from '@/shared/api/realm';
 import { useAction } from '@/shared/api/useAction';
 import { Mono, RowMenu, useFeatures, useRealmLinks, useRouteId } from './common';
-import { certDaysLeft, domainSchema, nginxSchema, phpSchema, type PhpForm } from './forms';
+import {
+  certDaysLeft,
+  certUploadBody,
+  certUploadSchema,
+  domainSchema,
+  nginxSchema,
+  phpSchema,
+  type CertUploadForm,
+  type PhpForm,
+} from './forms';
 
 export type Site = Data<'/websites/{id}'>;
 type Domain = Row<'/websites/{id}/domains'>;
@@ -492,6 +502,7 @@ function SslTab({ w }: { w: Site }) {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const [removing, setRemoving] = useState<Cert | null>(null);
+  const [uploading, setUploading] = useState(false);
   const issue = useAction(() =>
     send('POST', '/websites/{id}/certificates', {
       path: { id: w.uuid },
@@ -551,10 +562,16 @@ function SslTab({ w }: { w: Site }) {
         search={false}
         title={t('sites.tabs.ssl')}
         actions={
-          <Button size="sm" onClick={() => issue.mutate()} disabled={issue.isPending}>
-            <RefreshCw aria-hidden />
-            {t('sites.issueAcme')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" onClick={() => setUploading(true)}>
+              <Upload aria-hidden />
+              {t('sites.uploadCert')}
+            </Button>
+            <Button size="sm" onClick={() => issue.mutate()} disabled={issue.isPending}>
+              <RefreshCw aria-hidden />
+              {t('sites.issueAcme')}
+            </Button>
+          </div>
         }
         queryKey={[...keyOf(w.uuid), 'certs']}
         fetch={async () => (await list('/certificates')).filter((c) => c.website.uuid === w.uuid)}
@@ -573,7 +590,71 @@ function SslTab({ w }: { w: Site }) {
           removing ? remove.mutateAsync(removing).then(() => undefined) : undefined
         }
       />
+      <CertUploadDialog w={w} open={uploading} onOpenChange={setUploading} />
     </>
+  );
+}
+
+/** Tải chứng chỉ riêng (ssl_mode=custom): khóa riêng chỉ gửi một lần, API lưu mã hóa và không trả lại. */
+function CertUploadDialog({
+  w,
+  open,
+  onOpenChange,
+}: {
+  w: Site;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const { t } = useTranslation('admin');
+  const { control, handleSubmit, reset } = useForm<CertUploadForm>({
+    resolver: zodResolver(certUploadSchema),
+    defaultValues: { domains: w.primary_domain, certificate_pem: '', private_key_pem: '' },
+  });
+  const upload = useAction(
+    (v: CertUploadForm) =>
+      send('POST', '/websites/{id}/certificates', {
+        path: { id: w.uuid },
+        body: certUploadBody(v),
+      }),
+    {
+      onSuccess: () => {
+        reset();
+        onOpenChange(false);
+      },
+    },
+  );
+  const pem = (name: 'certificate_pem' | 'private_key_pem', label: string, hint: string) => (
+    <FormField
+      control={control}
+      name={name}
+      label={label}
+      description={hint}
+      render={(f) => (
+        <Textarea
+          {...f}
+          rows={5}
+          className="font-mono text-xs"
+          spellCheck={false}
+          autoComplete="off"
+          value={String(f.value ?? '')}
+        />
+      )}
+    />
+  );
+  return (
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('sites.uploadCertTitle', { name: w.primary_domain })}
+      description={t('sites.uploadCertHint')}
+      submitLabel={t('sites.uploadCert')}
+      pending={upload.isPending}
+      onSubmit={() => void handleSubmit((v) => upload.mutate(v))()}
+    >
+      <TextField control={control} name="domains" label={t('sites.certDomains')} />
+      {pem('certificate_pem', t('sites.certPem'), t('sites.certPemHint'))}
+      {pem('private_key_pem', t('sites.keyPem'), t('sites.keyPemHint'))}
+    </FormDialog>
   );
 }
 

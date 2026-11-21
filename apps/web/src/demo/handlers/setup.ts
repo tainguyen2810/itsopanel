@@ -1,5 +1,6 @@
 import type { components as A } from '@/api/generated/admin/schema';
 import { created, ok, on, problem, type Ctx } from '../router';
+import { startJob } from './writes';
 
 type S = A['schemas'];
 
@@ -19,7 +20,17 @@ interface WizardState {
   admin: boolean;
   access: S['SetupAccess'] | null;
   quotaSeen: boolean;
+  /** Bước 4: thành phần đã cài, job cài đang chạy (Prompt 5.5). */
+  stack: Record<StackKey, string | null>;
+  stackJob: string | null;
 }
+
+type StackKey = 'nginx' | 'php8.3' | 'lego';
+const STACK: { key: StackKey; name: string; version: string; op: string }[] = [
+  { key: 'nginx', name: 'Nginx', version: '1.24.0', op: 'software.install' },
+  { key: 'php8.3', name: 'PHP 8.3 (FPM)', version: '8.3.6', op: 'php.version.install' },
+  { key: 'lego', name: 'lego (ACME)', version: '4.9.1', op: 'software.install' },
+];
 
 const fresh = (): WizardState => ({
   installed: false,
@@ -31,6 +42,8 @@ const fresh = (): WizardState => ({
   admin: false,
   access: null,
   quotaSeen: false,
+  stack: { nginx: '1.24.0', 'php8.3': null, lego: null },
+  stackJob: null,
 });
 
 let state = fresh();
@@ -77,6 +90,7 @@ function status(): S['SetupStatus'] {
   if (state.verified && state.preferencesSaved) steps.push('language');
   if (state.admin) steps.push('admin');
   if (state.access) steps.push('access');
+  if (state.access && STACK.every((c) => state.stack[c.key])) steps.push('stack');
   if (state.quotaSeen) steps.push('quota');
   return {
     installed: false,
@@ -163,6 +177,58 @@ export function registerSetup() {
       server: srv ? { uuid: srv.uuid, name: srv.name } : null,
       facts_at: srv?.platform?.facts_at ?? null,
     });
+  });
+
+  const stackView = (ctx: Ctx): S['SetupStack'] => {
+    const job = state.stackJob
+      ? ctx.db.data.jobs.find((j) => j.uuid === state.stackJob)
+      : undefined;
+    const busy = job !== undefined && ['queued', 'running'].includes(job.state);
+    const srv = ctx.db.data.servers[0];
+    return {
+      server: srv ? { uuid: srv.uuid, name: srv.name } : null,
+      ready: STACK.every((c) => state.stack[c.key]),
+      job_uuid: state.stackJob,
+      components: STACK.map((c) => ({
+        key: c.key,
+        name: c.name,
+        installed_version: state.stack[c.key],
+        state: state.stack[c.key]
+          ? 'installed'
+          : busy
+            ? 'installing'
+            : job?.state === 'failed'
+              ? 'failed'
+              : 'available',
+      })),
+    };
+  };
+
+  on('get', P('/setup/stack'), (ctx) => {
+    if (state.installed) return gone();
+    return ok(stackView(ctx));
+  });
+
+  on('post', P('/setup/stack:install'), (ctx) => {
+    if (state.installed) return gone();
+    const view = stackView(ctx);
+    if (view.ready)
+      return problem(409, 'conflict', 'Web stack đã đủ', 'Không còn thành phần nào cần cài.');
+    if (view.components.some((c) => c.state === 'installing'))
+      return problem(409, 'resource_locked', 'Đang cài web stack', 'Chờ job cài hiện tại xong.');
+    const missing = STACK.filter((c) => !state.stack[c.key]);
+    const srv = ctx.db.data.servers[0];
+    const reply = startJob(ctx, {
+      type: 'setup.stack',
+      resource: { type: 'server', uuid: srv?.uuid ?? '' },
+      ops: missing.map((c) => c.op),
+      server: srv ? { uuid: srv.uuid, name: srv.name } : null,
+      onDone: () => {
+        for (const c of missing) state.stack[c.key] = c.version;
+      },
+    });
+    state.stackJob = (reply.body as { job: { uuid: string } }).job.uuid;
+    return reply;
   });
 
   on('post', P('/setup:complete'), () => {

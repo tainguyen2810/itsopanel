@@ -5,13 +5,16 @@ import { Check, ChevronLeft, ChevronRight, Rocket } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ApiError } from '@/api/http';
+import { errorText } from '@/shared/api/useAction';
 import { sendAuth } from '@/shared/api/realm';
+import { JobView } from '@/shared/jobs/JobDrawer';
 import { cn } from '@/shared/lib/utils';
 import { AuthLayout } from '@/shared/page/AuthLayout';
 import { useHomePath } from '@/shared/routing/RoutesContext';
 import { useSession } from '@/shared/session/SessionContext';
 import { Alert } from '@/ui/Alert';
 import { AppLink } from '@/ui/AppLink';
+import { StatusBadge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { CodeBlock } from '@/ui/CodeBlock';
 import { Input, Textarea } from '@/ui/Input';
@@ -35,6 +38,7 @@ import {
 type Errors = Partial<Record<keyof InstallState, string>>;
 type Status = Data<'/api/v1/admin/setup/status'>;
 type Quota = Data<'/api/v1/admin/setup/quota'>;
+type Stack = Data<'/api/v1/admin/setup/stack'>;
 interface Enroll {
   secret: string;
   otpauth_uri: string;
@@ -441,7 +445,7 @@ function Wizard({ initial }: { initial: Status }) {
         <p className="text-sm text-muted">{t('install.accessApplyHint')}</p>
       </>
     ),
-    stack: <Later />,
+    stack: <StackStep />,
     security: <Later />,
     quota: <QuotaStep q={quota.data} error={quota.error} />,
     backup: <Later />,
@@ -570,6 +574,96 @@ function Later() {
     <Alert tone="info" title={t('install.laterTitle')}>
       {t('install.laterHint')}
     </Alert>
+  );
+}
+
+/**
+ * Bước 4 (Prompt 5.5): trạng thái Nginx, PHP 8.3, lego trên server panel; cài phần còn thiếu qua job
+ * (POST /admin/setup/stack:install) và theo dõi tiến độ ngay trong wizard. Bước không bắt buộc.
+ */
+function StackStep() {
+  const { t } = useTranslation('admin');
+  const { t: tc } = useTranslation('common');
+  const [failure, setFailure] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const stack = useQuery({
+    queryKey: ['setup', 'stack'],
+    queryFn: () => get('/api/v1/admin/setup/stack'),
+    retry: false,
+    refetchInterval: (q) =>
+      q.state.data?.components.some((c) => c.state === 'installing') ? 1000 : false,
+  });
+  const jobUuid = stack.data?.job_uuid ?? null;
+  const job = useQuery({
+    queryKey: ['setup', 'stack-job', jobUuid],
+    queryFn: () => get('/api/v1/admin/jobs/{id}', { path: { id: jobUuid as string } }),
+    enabled: jobUuid !== null,
+    refetchInterval: (q) =>
+      q.state.data && ['succeeded', 'failed', 'cancelled'].includes(q.state.data.state)
+        ? false
+        : 1000,
+  });
+  const jobState = job.data?.state;
+  useEffect(() => {
+    if (jobState === 'succeeded' || jobState === 'failed') void stack.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ làm mới khi job kết thúc
+  }, [jobState]);
+
+  const install = async () => {
+    setFailure(null);
+    setStarting(true);
+    try {
+      await send('POST', '/api/v1/admin/setup/stack:install');
+      await stack.refetch();
+    } catch (e) {
+      setFailure(errorText(e, tc));
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  if (stack.isError) return <Alert tone="danger" title={errorText(stack.error, tc)} />;
+  const d: Stack | undefined = stack.data;
+  if (!d) return <p className="text-base text-muted">{t('install.loading')}</p>;
+  const running = d.components.some((c) => c.state === 'installing');
+  return (
+    <>
+      <Alert
+        tone={d.ready ? 'success' : 'info'}
+        title={t(d.ready ? 'install.stack.ready' : 'install.stack.missing')}
+      >
+        {t('install.stack.hint')}
+      </Alert>
+      {d.server && (
+        <p className="text-sm text-muted">{t('install.quotaServer', { name: d.server.name })}</p>
+      )}
+      <ul
+        aria-label={t('install.stack.components')}
+        className="flex flex-col divide-y divide-border rounded-md border"
+      >
+        {d.components.map((c) => (
+          <li key={c.key} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+            <span className="text-base">
+              {c.name}
+              {c.installed_version ? (
+                <span className="ms-2 font-mono text-xs text-muted">{c.installed_version}</span>
+              ) : null}
+            </span>
+            <StatusBadge status={c.state === 'installing' ? 'running' : c.state} />
+          </li>
+        ))}
+      </ul>
+      {failure && <Alert tone="danger" title={failure} />}
+      {!d.ready && (
+        <div>
+          <Button onClick={() => void install()} disabled={starting || running}>
+            {running ? t('install.stack.installing') : t('install.stack.install')}
+          </Button>
+        </div>
+      )}
+      {job.data && <JobView job={job.data} title={t('install.stack.job')} />}
+      {!d.ready && <p className="text-sm text-muted">{t('install.stack.optional')}</p>}
+    </>
   );
 }
 

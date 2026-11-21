@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 5 — Website / Nginx / PHP / SSL / DNS (đang làm; Phase 4 ✓ APPROVED 2026-11-21 cùng D-63 → D-66, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 5.5 UI nối API thật. Người dùng yêu cầu (2026-11-21) "ok, lên kế hoạch và làm Phase 5"; làm hàng loạt 5.1 → 5.6, tự merge local
-- **Task đang làm:** 5.5 — bắt đầu (5.1 → 5.4 ✓)
+- **Prompt hiện tại:** 5.6 E2E, VM Phase 5, báo cáo, merge. Người dùng yêu cầu (2026-11-21) "ok, lên kế hoạch và làm Phase 5"; làm hàng loạt 5.1 → 5.6, tự merge local
+- **Task đang làm:** 5.6 — bắt đầu (5.1 → 5.5 ✓)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-5`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_5_PROMPTS.md`; cuối 5.6 báo cáo Phase 5 và DỪNG (không bắt đầu Phase 6)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
@@ -37,8 +37,8 @@ Phase 5 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_5_PROMPTS.
 - ✓ 5.2 Agent: vhost + rollback, site layout, PHP-FPM, chứng chỉ, log
 - ✓ 5.3 Panel: websites, domain, PHP Manager, Nginx global, suspend, wizard stack
 - ✓ 5.4 SSL (ACME, gia hạn, tải lên) + DNS Cloudflare
-- ✱ 5.5 UI nối API thật
-- ○ 5.6 e2e, VM Phase 5, báo cáo, merge
+- ✓ 5.5 UI nối API thật
+- ✱ 5.6 e2e, VM Phase 5, báo cáo, merge
 
 Phase 4: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-4.md`, merge `806995b`). Chi tiết: `docs/planning/seed/PHASE_4_PROMPTS.md`
 
@@ -96,6 +96,7 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 4 / 4.6 | Bộ test VM `tests/vm/` (Multipass + Vagrant; `run-all.sh`: cài sạch ≤ 10 phút, cài lần 2, doctor, unit, HTTPS health, recipe stress-ng, enforcement 07 §9 E1–E8, agent từ chối A1–A5, update → rollback, uninstall giữ /home; `lib/agent_call.py` ký HMAC D-66), `make test-vm`; `make dev` chạy itso-agent `--sandbox` (khóa HMAC + gốc riêng ở `.dev/`, `ITSO_DEV_AGENT=mock` giữ mock); job dịch vụ đặt tên `service.<action>`; Playwright stack thật 6/6 với agent sandbox (thêm Server detail, usage; helper dùng chung); sửa e2e demo wizard theo mã demo; báo cáo `docs/reports/phase-4.md`, runbook `phase-4-vm-test.md`; merge phase-4 → main (local) | d6faf59 |
 | 2026-11-21 | 5 / kế hoạch | Người dùng duyệt Phase 4 (D-63…D-66 APPROVED); kế hoạch Phase 5 (6 prompt, D-67…D-70 đề xuất), mở nhánh phase-5 | 345ea41 |
 | 2026-11-21 | 5 / 5.1 | ADR 0014–0017 (D-67…D-70), ADR 0011–0013 Accepted; agent-ops: 6 op mới + sửa 6 op theo ADR (site_dir, loại site, redirect, proxy 127.0.0.1, TLS, ACME email/directory, khóa tải lên bí mật), recipe nginx/php8.3/lego, 26 vector độc; OpenAPI +11 (DNS provider/zone, PHP install/extension, wizard stack); DBML (uuid cho domains/dns_records, acme_accounts theo server + key_location, khóa chứng chỉ tải lên mã hóa) + migration Phase 5 (9 bảng) | 2af9ee5 |
+| 2026-11-21 | 5 / 5.5 | UI: job lỗi hiện giải thích dễ hiểu theo mã (`config_test_failed` → đã hoàn tác + dòng lỗi `nginx -t`, `precondition_failed`, `dependency_unavailable`…); `quota_exceeded` diễn giải theo tài nguyên của gói; wizard bước 4 (stack) gọi `/admin/setup/stack` + `:install`, theo dõi job ngay trong wizard; tab SSL tải chứng chỉ riêng (kiểm PEM/wildcard phía trình duyệt); trang DNS: nhà cung cấp Cloudflare (chỉ SUPER_ADMIN), gắn/đồng bộ/đổi account/gỡ zone; MSW thêm provider, zone, setup stack, quota_exceeded giống API thật | (commit 5.5) |
 | 2026-11-21 | 5 / 5.4 | Chứng chỉ: `CertificateService` (ACME: cert.issue → vhost tls → gỡ bản cũ; tải lên: kiểm PEM/khóa khớp/còn hạn/SAN, khóa Crypt, job chỉ mang `{"$secret"}`; gia hạn `itso:certs-renew` hằng ngày, lỗi → thông báo + audit; xóa: bỏ tls rồi cert.remove), `/certificates` admin + portal, website tạo/sửa với `ssl_mode=acme`; `JobRunner` thay bí mật khi gọi agent + bước panel (`PanelStep`); agent reload Nginx khi thay chứng chỉ đang dùng. DNS Cloudflare: provider (kiểm token), zone, record qua bước panel `dns.records.apply` (ghi Cloudflare trước), `itso:dns-sync`; quyền `dns.*`. Sửa lỗi cast `Bytea` đọc stream lần hai ra rỗng. Job CI `pebble` | 36d69db |
 | 2026-11-21 | 5 / 5.3 | Panel: model Website/Domain/WebsiteSetting/PhpVersion/Certificate; `WebsiteService` (tạo: layout → pool → vhost; sửa/nginx/php/domain áp lại đúng op; xóa: vhost.remove → pool.remove; quota website/domain/subdomain/PHP worker 422; domain trùng 409, domain nội bộ/của panel 422; `document_root` chỉ dưới `public/`); `WebsiteJobHandler` (`nginx -t` lỗi khi tạo → failed + thông báo, lỗi khi thêm domain → trả desired state); suspend/unsuspend/terminate áp lại vhost mọi site; PHP Manager + Nginx toàn server + wizard bước 4 (`setup.stack`); route admin (quyền `websites.read/write`) + portal; 9 test Pest mới | 4eb5856 |
 | 2026-11-21 | 5 / 5.2 | Agent: 15 op website thật (`fs.site_layout.ensure`, `nginx.vhost.apply/remove/inspect` với `nginx -t` + hoàn tác, `nginx.global.apply` sinh `nginx.conf`, `php.version.install/remove`, `php.ext.install`, `php.pool.apply/remove` (master itso-php@ dưới uid account, `php-fpm -t` dưới uid account), `cert.issue` (lego HTTP-01, Pebble theo policy `acme_pebble`), `cert.install/inspect/remove`, `log.tail`); template nhúng; Sim mô phỏng nginx/php-fpm/lego; mock agent 15 op; bộ contract chung `WebsiteLifecycle`; unit `itso-php@.service`; log site chuyển ra `/var/log/itso/sites` (ADR 0014 sửa đổi) | f5b9549 |

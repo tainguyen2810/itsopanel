@@ -127,3 +127,53 @@ test('Cron: xem trước lịch, chạy ngay và xem lịch sử; Git: deploy r�
   await expect(page.getByRole('row', { name: /a41c9e2/ }).first()).toContainText('Đang chạy');
   expect(errors).toEqual([]);
 });
+
+// Prompt 5.5: nhà cung cấp DNS, gắn/đồng bộ/gỡ zone; tải chứng chỉ riêng kiểm tra PEM.
+test('DNS: xem nhà cung cấp, gắn zone Cloudflare, đồng bộ rồi gỡ khỏi panel', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/admin/dns');
+  await page.getByRole('button', { name: 'Nhà cung cấp DNS' }).click();
+  const providers = page.getByRole('dialog', { name: 'Nhà cung cấp DNS' });
+  await expect(providers.getByText('Cloudflare ITSO')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: 'Gắn zone' }).first().click();
+  const dlg = page.getByRole('dialog', { name: 'Gắn zone' });
+  await dlg.getByRole('button', { name: 'Gắn zone' }).click();
+  await expect(dlg.getByRole('alert').filter({ hasText: 'Chọn nhà cung cấp' })).toBeVisible();
+  await dlg.getByRole('combobox', { name: 'Nhà cung cấp' }).click();
+  await page.getByRole('option', { name: 'Cloudflare ITSO' }).click();
+  await dlg.getByLabel('Tên zone').fill('Moi-Zone.vn');
+  await dlg.getByRole('combobox', { name: 'Tài khoản hosting' }).click();
+  await page.getByRole('option', { name: /^anphat/ }).click();
+  await dlg.getByRole('button', { name: 'Gắn zone' }).click();
+  await expect(page.getByText('Đã gắn zone')).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Record của moi-zone.vn' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Đồng bộ từ Cloudflare' }).click();
+  await expect(page.getByText('Đã đồng bộ moi-zone.vn từ Cloudflare')).toBeVisible();
+  await page.getByRole('button', { name: 'Thao tác zone moi-zone.vn' }).click();
+  await page.getByRole('menuitem', { name: 'Gỡ zone khỏi panel' }).click();
+  await page
+    .getByRole('alertdialog', { name: 'Gỡ moi-zone.vn khỏi panel?' })
+    .getByRole('button', { name: 'Gỡ zone khỏi panel' })
+    .click();
+  await expect(page.getByText('Đã gỡ moi-zone.vn khỏi panel')).toBeVisible();
+  await expect(page.getByRole('button', { name: /moi-zone\.vn/ })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('SSL: tải chứng chỉ riêng kiểm tra PEM trước khi gửi', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/admin/websites');
+  await page.getByRole('link', { name: 'anphat.vn', exact: true }).click();
+  await page.getByRole('tab', { name: 'SSL' }).click();
+  await page.getByRole('button', { name: 'Tải chứng chỉ riêng' }).click();
+  const dlg = page.getByRole('dialog', { name: /Tải chứng chỉ cho anphat\.vn/ });
+  await dlg.getByLabel('Chứng chỉ (PEM)').fill('không phải pem');
+  await dlg.getByRole('button', { name: 'Tải chứng chỉ riêng' }).click();
+  await expect(dlg.getByText('Cần chứng chỉ PEM')).toBeVisible();
+  await expect(dlg.getByText('Cần khóa riêng PEM không mật khẩu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  expect(errors).toEqual([]);
+});

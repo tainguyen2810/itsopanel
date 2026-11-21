@@ -28,6 +28,11 @@ const invalid = (detail: string) =>
   problem(422, 'validation_failed', 'Dữ liệu không hợp lệ', detail);
 const limit = (detail: string) =>
   problem(422, 'package_limit_reached', 'Vượt giới hạn của gói hosting', detail);
+/** Vượt hạn mức tài nguyên đếm theo gói: giống QuotaService (422 quota_exceeded, errors theo tài nguyên). */
+const quota = (resource: string, detail: string): Reply => {
+  const r = problem(422, 'quota_exceeded', 'Vượt giới hạn gói', detail);
+  return { ...r, body: { ...(r.body as object), errors: { [resource]: [detail] } } };
+};
 const notFound = (what: string) => problem(404, 'not_found', `Không tìm thấy ${what}`);
 const isReply = (x: unknown): x is Reply =>
   typeof x === 'object' && x !== null && 'status' in x && !('uuid' in x) && !('path' in x);
@@ -196,6 +201,9 @@ function etag(n: Node) {
 }
 
 // ---------------------------------------------------------------- DNS: record theo zone
+/** Nhà cung cấp DNS của mỗi DemoDb và provider của từng zone (dataset chưa có bảng provider). */
+const providerStore = new WeakMap<DemoDb, A['schemas']['DnsProvider'][]>();
+const zoneProvider = new Map<string, string>();
 function recordsOf(db: DemoDb, zone: S['DnsZone']): S['DnsRecord'][] {
   const key = `dns@${zone.uuid}`;
   if (db.data[key]) return db.data[key] as S['DnsRecord'][];
@@ -362,7 +370,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       return invalid('Chọn loại website.');
     const used = ctx.db.data.websites.filter((w) => w.hosting_account.uuid === a.uuid).length;
     if (L && used >= L.website_limit)
-      return limit(`Gói cho phép tối đa ${L.website_limit} website.`);
+      return quota('websites', `Đã dùng ${L.website_limit}/${L.website_limit} websites theo gói.`);
     const php = b.type === 'php' ? (b.php_version ?? L?.php_versions.at(-1) ?? '8.3') : null;
     if (php && L && !L.php_versions.includes(php))
       return limit(`Gói chỉ cho phép PHP ${L.php_versions.join(', ')}.`);
@@ -825,7 +833,10 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       return problem(409, 'conflict', 'Database đã tồn tại');
     const used = ctx.db.data.databases.filter((d) => d.hosting_account.uuid === a.uuid).length;
     if (L && used >= L.database_limit)
-      return limit(`Gói cho phép tối đa ${L.database_limit} database.`);
+      return quota(
+        'databases',
+        `Đã dùng ${L.database_limit}/${L.database_limit} databases theo gói.`,
+      );
     const d: S['Database'] = {
       uuid: ctx.db.newUuid(),
       hosting_account: accRef(a),
@@ -1330,7 +1341,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       return invalid('Mật khẩu tối thiểu 16 ký tự.');
     const used = ctx.db.data.sftp.filter((x) => x.hosting_account.uuid === a.uuid).length;
     if (L && used >= L.ftp_limit)
-      return limit(`Gói cho phép tối đa ${L.ftp_limit} tài khoản SFTP/FTP.`);
+      return quota('ftp_accounts', `Đã dùng ${L.ftp_limit}/${L.ftp_limit} ftp_accounts theo gói.`);
     const s: S['SftpAccount'] = {
       uuid: ctx.db.newUuid(),
       hosting_account: accRef(a),
@@ -1429,6 +1440,143 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       z && (v.all || (z.hosting_account !== null && canSeeAccount(v, z.hosting_account.uuid)));
     return okZone ? z : notFound('zone DNS');
   };
+  // Nhà cung cấp DNS (Prompt 5.5): demo có sẵn một tài khoản Cloudflare; token không bao giờ trả về.
+  const providersOf = (db: DemoDb): S['DnsProvider'][] => {
+    let rows = providerStore.get(db);
+    if (!rows) {
+      const first: S['DnsProvider'] = {
+        uuid: db.newUuid(),
+        type: 'cloudflare',
+        name: 'Cloudflare ITSO',
+        zones_count: 0,
+        account_label: 'ops@itso.vn',
+        created_at: db.now(),
+        updated_at: db.now(),
+      };
+      rows = [first];
+      providerStore.set(db, rows);
+      for (const z of db.data.dns_zones)
+        if (z.provider === 'cloudflare') zoneProvider.set(z.uuid, first.uuid);
+    }
+    for (const p of rows)
+      p.zones_count = db.data.dns_zones.filter((z) => zoneProvider.get(z.uuid) === p.uuid).length;
+    return rows;
+  };
+  const superOnly = (ctx: Ctx) =>
+    ctx.actor.role === 'SUPER_ADMIN'
+      ? null
+      : problem(403, 'forbidden', 'Không có quyền', 'Chỉ Super Admin quản lý nhà cung cấp DNS.');
+  on(
+    'get',
+    P('/dns/providers'),
+    (ctx) => superOnly(ctx) ?? page(ctx, providersOf(ctx.db), { search: ['name'] }),
+  );
+  on('post', P('/dns/providers'), (ctx) => {
+    const deny = superOnly(ctx);
+    if (deny) return deny;
+    const b = (ctx.body ?? {}) as Partial<S['DnsProviderCreate']>;
+    if (!b.name?.trim()) return invalid('Nhập tên nhà cung cấp.');
+    if (!/^[A-Za-z0-9_-]{20,200}$/.test(b.api_token ?? ''))
+      return problem(
+        422,
+        'validation_failed',
+        'Dữ liệu không hợp lệ',
+        'Cloudflare từ chối token: Invalid API Token',
+      );
+    const row: S['DnsProvider'] = {
+      uuid: ctx.db.newUuid(),
+      type: 'cloudflare',
+      name: b.name.trim(),
+      zones_count: 0,
+      account_label: 'demo@cloudflare',
+      created_at: ctx.db.now(),
+      updated_at: ctx.db.now(),
+    };
+    providersOf(ctx.db).push(row);
+    ctx.db.audit({
+      actor: actorRef(ctx),
+      action: 'dns.provider.create',
+      resource: null,
+      changes: { name: row.name },
+    });
+    return created(row);
+  });
+  on('delete', P('/dns/providers/{id}'), (ctx) => {
+    const deny = superOnly(ctx);
+    if (deny) return deny;
+    const rows = providersOf(ctx.db);
+    const p = rows.find((x) => x.uuid === ctx.params.id);
+    if (!p) return notFound('nhà cung cấp DNS');
+    if (p.zones_count > 0)
+      return problem(
+        409,
+        'resource_locked',
+        'Provider còn zone',
+        'Gỡ các zone của provider trước.',
+      );
+    rows.splice(rows.indexOf(p), 1);
+    return noContent();
+  });
+  on('post', P('/dns/zones'), (ctx) => {
+    const b = (ctx.body ?? {}) as Partial<S['DnsZoneCreate']>;
+    const p = providersOf(ctx.db).find((x) => x.uuid === b.provider_uuid);
+    if (!p) return invalid('Chọn nhà cung cấp DNS.');
+    const name = String(b.name ?? '').toLowerCase();
+    if (!DOMAIN.test(name)) return invalid('Tên zone không hợp lệ.');
+    const v = visibility(ctx.db, ctx.actor);
+    const acc = b.hosting_account_uuid
+      ? ctx.db.data.accounts.find((a) => a.uuid === b.hosting_account_uuid)
+      : undefined;
+    if (b.hosting_account_uuid && (!acc || !canSeeAccount(v, acc.uuid)))
+      return invalid('Tài khoản hosting không hợp lệ.');
+    if (!acc && !v.all) return invalid('ADMIN chỉ thêm zone gắn với account trong phạm vi.');
+    if (ctx.db.data.dns_zones.some((z) => z.name === name))
+      return problem(409, 'conflict', 'Xung đột', `Zone ${name} đã có.`);
+    if (name.endsWith('.invalid') || name.startsWith('khong-co.'))
+      return invalid(`Zone ${name} không có trong tài khoản Cloudflare của provider.`);
+    const z: S['DnsZone'] = {
+      uuid: ctx.db.newUuid(),
+      name,
+      provider: 'cloudflare',
+      hosting_account: acc ? { uuid: acc.uuid, username: acc.username } : null,
+      records_count: 0,
+      created_at: ctx.db.now(),
+      updated_at: ctx.db.now(),
+    };
+    ctx.db.data.dns_zones.push(z);
+    zoneProvider.set(z.uuid, p.uuid);
+    z.records_count = recordsOf(ctx.db, z).length;
+    return created(z);
+  });
+  on('patch', P('/dns/zones/{id}'), (ctx) => {
+    const z = zoneOf(ctx);
+    if (isReply(z)) return z;
+    const b = (ctx.body ?? {}) as Partial<S['DnsZoneUpdate']>;
+    const v = visibility(ctx.db, ctx.actor);
+    const acc = b.hosting_account_uuid
+      ? ctx.db.data.accounts.find((a) => a.uuid === b.hosting_account_uuid)
+      : undefined;
+    if (b.hosting_account_uuid && (!acc || !canSeeAccount(v, acc.uuid)))
+      return invalid('Tài khoản hosting không hợp lệ.');
+    if (!acc && !v.all) return invalid('ADMIN không bỏ gắn account khỏi zone.');
+    z.hosting_account = acc ? { uuid: acc.uuid, username: acc.username } : null;
+    z.updated_at = ctx.db.now();
+    return ok(z);
+  });
+  on('delete', P('/dns/zones/{id}'), (ctx) => {
+    const z = zoneOf(ctx);
+    if (isReply(z)) return z;
+    ctx.db.data.dns_zones = ctx.db.data.dns_zones.filter((x) => x.uuid !== z.uuid);
+    zoneProvider.delete(z.uuid);
+    return noContent();
+  });
+  on('post', P('/dns/zones/{id}:sync'), (ctx) => {
+    const z = zoneOf(ctx);
+    if (isReply(z)) return z;
+    z.records_count = recordsOf(ctx.db, z).length;
+    z.updated_at = ctx.db.now();
+    return ok(z);
+  });
   on('get', P('/dns/zones/{id}/records'), (ctx) => {
     const z = zoneOf(ctx);
     return isReply(z)
@@ -1531,7 +1679,8 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     if (e) return typeof e === 'string' ? invalid(e) : e;
     const L = limitsOf(ctx.db, a);
     const used = ctx.db.data.cron.filter((c) => c.hosting_account.uuid === a.uuid).length;
-    if (L && used >= L.cron_limit) return limit(`Gói cho phép tối đa ${L.cron_limit} cron job.`);
+    if (L && used >= L.cron_limit)
+      return quota('cron_jobs', `Đã dùng ${L.cron_limit}/${L.cron_limit} cron_jobs theo gói.`);
     const site = b.website_uuid
       ? ctx.db.data.websites.find(
           (w) => w.uuid === b.website_uuid && w.hosting_account.uuid === a.uuid,
@@ -1656,7 +1805,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     const L = limitsOf(ctx.db, a);
     const dbs = ctx.db.data.databases.filter((d) => d.hosting_account.uuid === a.uuid).length;
     if (L && dbs >= L.database_limit)
-      return limit('Cài WordPress cần thêm 1 database nhưng gói đã hết hạn mức.');
+      return quota('databases', 'Cài WordPress cần thêm 1 database nhưng gói đã hết hạn mức.');
     return startJob(ctx, {
       type: 'wordpress.install',
       resource: { type: 'website', uuid: w.uuid },
@@ -1727,7 +1876,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
           ctx.db.data.websites.filter((x) => x.hosting_account.uuid === a.uuid).length >=
             L.website_limit
         )
-          return limit('Tạo staging cần thêm 1 website nhưng gói đã hết hạn mức.');
+          return quota('websites', 'Tạo staging cần thêm 1 website nhưng gói đã hết hạn mức.');
       }
       return startJob(ctx, {
         type: `wordpress.${action.replace('-', '_')}`,

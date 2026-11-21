@@ -264,6 +264,16 @@
       "noAllowlist": "Admin Panel access is not limited by IP",
       "quotaSoft": "Using soft quota (disk usage is not hard-limited)",
       "quotaUnknown": "The server quota status is unknown"
+    },
+    "stack": {
+      "ready": "The web stack is ready",
+      "missing": "The web stack is missing components",
+      "hint": "Websites need Nginx, PHP 8.3 (FPM) and lego (ACME certificates) on the panel server. The panel installs whatever is missing from the official Ubuntu 24.04 packages and skips what is already there.",
+      "components": "Web stack components",
+      "install": "Install missing components",
+      "installing": "Installing…",
+      "job": "Install web stack",
+      "optional": "This step is optional: you can press Continue and install later under Servers → Software."
     }
   },
   "servers": {
@@ -1083,8 +1093,18 @@
       "wpUser": "3–31 lowercase letters/digits/underscores, not \"admin\"",
       "repoUrl": "Use git@host:owner/repo.git, ssh:// or https://",
       "branch": "Invalid branch name",
-      "ruleId": "Each rule ID has exactly six digits"
-    }
+      "ruleId": "Each rule ID has exactly six digits",
+      "certDomain": "Invalid domain (wildcard *.domain allowed)",
+      "certPem": "A PEM certificate is required (-----BEGIN CERTIFICATE-----)",
+      "keyPem": "An unencrypted PEM private key is required (-----BEGIN PRIVATE KEY-----)"
+    },
+    "uploadCert": "Upload own certificate",
+    "uploadCertTitle": "Upload a certificate for {{name}}",
+    "uploadCertHint": "Paste the certificate (with its intermediate chain) and the private key in PEM format. The private key is stored encrypted and never shown again. The website switches to custom certificate mode and is not renewed automatically.",
+    "certPem": "Certificate (PEM)",
+    "certPemHint": "Starts with -----BEGIN CERTIFICATE-----; include the intermediate chain if any.",
+    "keyPem": "Private key (PEM)",
+    "keyPemHint": "Starts with -----BEGIN PRIVATE KEY-----, without a passphrase."
   },
   "dbs": {
     "title": "Databases",
@@ -1272,7 +1292,7 @@
     "description": "DNS zones and records. Cloudflare/PowerDNS zones are pushed through the provider API; manual zones are reference only.",
     "zones": "Zones",
     "noZones": "No DNS zones yet",
-    "noZonesHint": "Zones are created when a domain is linked to a DNS provider.",
+    "noZonesHint": "Attach a zone that already exists on Cloudflare to manage its records from the panel.",
     "providers": {
       "cloudflare": "Cloudflare",
       "powerdns": "PowerDNS",
@@ -1326,8 +1346,46 @@
       "hostname": "Invalid hostname (not an IP)",
       "txt": "Text of 1–2048 characters",
       "srv": "Use weight port target",
-      "caa": "Use 0 issue \"letsencrypt.org\""
-    }
+      "caa": "Use 0 issue \"letsencrypt.org\"",
+      "token": "A Cloudflare token has 20–200 letters, digits, dashes or underscores",
+      "provider": "Choose a provider"
+    },
+    "providerList": "DNS providers",
+    "providerListHint": "Cloudflare accounts the panel uses to manage DNS. Tokens are stored encrypted and never shown again.",
+    "noProviders": "No DNS provider yet",
+    "noProvidersHint": "Add a Cloudflare API token before attaching zones.",
+    "zonesCount_one": "{{count}} zone",
+    "zonesCount_other": "{{count}} zones",
+    "addProvider": "Add Cloudflare",
+    "addProviderHint": "Create an API token on Cloudflare with Zone:Read and DNS:Edit permissions. The panel verifies the token with Cloudflare before saving.",
+    "providerName": "Display name",
+    "apiToken": "Cloudflare API token",
+    "apiTokenHint": "Sent once; the panel stores it encrypted and never shows or logs it.",
+    "providerAdded": "DNS provider added",
+    "providerRemoved": "DNS provider removed",
+    "removeProvider": "Remove provider {{name}}",
+    "removeProviderTitle": "Remove provider {{name}}?",
+    "removeProviderHint": "Only possible when no zone uses this provider. The token is deleted from the panel; DNS on Cloudflare stays as is.",
+    "removeProviderConfirm": "Remove provider",
+    "provider": "Provider",
+    "pickProvider": "Choose a provider",
+    "addZone": "Attach zone",
+    "addZoneHint": "The zone must already exist in the provider's Cloudflare account. The panel reads all records right after attaching.",
+    "zoneName": "Zone name",
+    "zoneAccount": "Hosting account",
+    "zoneAccountHint": "The zone is linked to an account within your scope.",
+    "zoneAccountHintSa": "Choose a hosting account, or System for the panel's own zone.",
+    "zoneAdded": "Zone attached",
+    "zoneUpdated": "Zone account changed",
+    "zoneAccountTitle": "Change the account of {{name}}",
+    "sync": "Sync from Cloudflare",
+    "synced": "Synced {{name}} from Cloudflare",
+    "zoneActions": "Zone actions for {{name}}",
+    "changeAccount": "Change account",
+    "removeZone": "Remove zone from panel",
+    "removeZoneTitle": "Remove {{name}} from the panel?",
+    "removeZoneHint": "The panel stops managing this zone. The zone and its records on Cloudflare stay as they are and can be attached again later.",
+    "zoneRemoved": "Removed {{name}} from the panel"
   },
   "cron": {
     "title": "Cron jobs",
