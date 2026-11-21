@@ -1,6 +1,7 @@
 /**
- * Logic wizard cài đặt lần đầu (10 bước, module 30). Chỉ giao diện ở Phase 2: không gọi API,
- * kiểm tra hợp lệ từng bước để không đi tiếp khi thiếu dữ liệu. Lỗi là khóa i18n (admin:install.errors.*).
+ * Logic wizard cài đặt lần đầu (10 bước, module 30). Kiểm tra hợp lệ phía trình duyệt trước khi gọi API
+ * /admin/setup/* (Phase 4: bước code, language, admin, access, quota, summary). Bước stack, security, backup,
+ * smtp chưa có ở bản này (LATER) nên không chặn. Lỗi là khóa i18n (admin:install.errors.*).
  */
 export const STEPS = [
   'code',
@@ -16,6 +17,9 @@ export const STEPS = [
 ] as const;
 export type Step = (typeof STEPS)[number];
 
+/** Bước chưa hiện thực ở bản này: hiện thông báo, không gọi API, không chặn đi tiếp. */
+export const LATER: readonly Step[] = ['stack', 'security', 'backup', 'smtp'];
+
 export interface InstallState {
   setupCode: string;
   locale: 'vi' | 'en';
@@ -24,24 +28,14 @@ export interface InstallState {
   adminEmail: string;
   adminPassword: string;
   mfaCode: string;
+  /** SA đã được tạo (POST /admin/setup/admin) → bước admin chuyển sang nhập mã TOTP. */
+  adminCreated: boolean;
+  totpSecret: string;
+  totpUri: string;
   panelDomain: string;
   panelPort: number;
+  entrancePath: string;
   allowlist: string;
-  php: string[];
-  database: 'postgresql' | 'mysql' | 'both';
-  redis: boolean;
-  firewall: boolean;
-  fail2ban: boolean;
-  sshPort: number;
-  sshPasswordAuth: boolean;
-  quota: boolean;
-  backupType: 'local' | 's3' | 'sftp';
-  backupTarget: string;
-  retentionDays: number;
-  smtpSkip: boolean;
-  smtpHost: string;
-  smtpPort: number;
-  smtpFrom: string;
 }
 
 export const INITIAL: InstallState = {
@@ -52,30 +46,20 @@ export const INITIAL: InstallState = {
   adminEmail: '',
   adminPassword: '',
   mfaCode: '',
+  adminCreated: false,
+  totpSecret: '',
+  totpUri: '',
   panelDomain: '',
   panelPort: 8443,
+  entrancePath: '',
   allowlist: '',
-  php: ['8.3'],
-  database: 'postgresql',
-  redis: true,
-  firewall: true,
-  fail2ban: true,
-  sshPort: 22,
-  sshPasswordAuth: false,
-  quota: true,
-  backupType: 'local',
-  backupTarget: '/var/backups/itso',
-  retentionDays: 14,
-  smtpSkip: false,
-  smtpHost: '',
-  smtpPort: 587,
-  smtpFrom: '',
 };
 
 const FQDN = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const IPV4 = /^((25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(25[0-5]|2[0-4]\d|1?\d?\d)(\/(3[0-2]|[12]?\d))?$/;
-const port = (n: number) => Number.isInteger(n) && n >= 1 && n <= 65535;
+const IPV6 = /^[0-9a-f:]+:[0-9a-f:]*(\/(12[0-8]|1[01]\d|[1-9]?\d))?$/i;
+const ENTRANCE = /^\/[a-z0-9][a-z0-9-]{3,31}$/;
 
 /** Các dòng allowlist (bỏ dòng trống, khoảng trắng). */
 export function allowlistLines(s: string): string[] {
@@ -94,33 +78,23 @@ export function validate(step: Step, s: InstallState): Partial<Record<keyof Inst
         e.setupCode = 'setupCode';
       break;
     case 'admin':
+      if (s.adminCreated) {
+        if (!/^[0-9]{6}$/.test(s.mfaCode)) e.mfaCode = 'mfa';
+        break;
+      }
       if (s.adminName.trim().length < 2) e.adminName = 'required';
       if (!EMAIL.test(s.adminEmail)) e.adminEmail = 'email';
       if (s.adminPassword.length < 12) e.adminPassword = 'password';
-      if (!/^[0-9]{6}$/.test(s.mfaCode)) e.mfaCode = 'mfa';
       break;
     case 'access':
-      if (!FQDN.test(s.panelDomain.trim().toLowerCase())) e.panelDomain = 'domain';
-      if (!port(s.panelPort) || [22, 80].includes(s.panelPort)) e.panelPort = 'port';
-      if (allowlistLines(s.allowlist).some((l) => !IPV4.test(l))) e.allowlist = 'ip';
-      break;
-    case 'stack':
-      if (s.php.length === 0) e.php = 'php';
-      break;
-    case 'security':
-      if (!port(s.sshPort)) e.sshPort = 'port';
-      break;
-    case 'backup':
-      if (s.backupType !== 'local' && s.backupTarget.trim() === '') e.backupTarget = 'required';
-      if (s.backupType === 'local' && !s.backupTarget.startsWith('/')) e.backupTarget = 'path';
-      if (!Number.isInteger(s.retentionDays) || s.retentionDays < 1 || s.retentionDays > 3650)
-        e.retentionDays = 'retention';
-      break;
-    case 'smtp':
-      if (s.smtpSkip) break;
-      if (!FQDN.test(s.smtpHost.trim().toLowerCase())) e.smtpHost = 'domain';
-      if (!port(s.smtpPort)) e.smtpPort = 'port';
-      if (!EMAIL.test(s.smtpFrom)) e.smtpFrom = 'email';
+      if (s.panelDomain.trim() !== '' && !FQDN.test(s.panelDomain.trim().toLowerCase()))
+        e.panelDomain = 'domain';
+      if (!Number.isInteger(s.panelPort) || s.panelPort < 1024 || s.panelPort > 65535)
+        e.panelPort = 'port';
+      if (s.entrancePath.trim() !== '' && !ENTRANCE.test(s.entrancePath.trim()))
+        e.entrancePath = 'entrance';
+      if (allowlistLines(s.allowlist).some((l) => !IPV4.test(l) && !IPV6.test(l)))
+        e.allowlist = 'ip';
       break;
     default:
       break;
@@ -137,13 +111,31 @@ export function firstInvalid(s: InstallState): Step | null {
   return STEPS.find((st) => !canProceed(st, s)) ?? null;
 }
 
-/** Cảnh báo không chặn (hiện ở tổng kết). */
-export function warnings(s: InstallState): string[] {
+/** Cảnh báo không chặn (hiện ở tổng kết). `quotaMode` lấy từ GET /admin/setup/quota. */
+export function warnings(s: InstallState, quotaMode?: 'kernel' | 'soft' | 'unknown'): string[] {
   const w: string[] = [];
   if (allowlistLines(s.allowlist).length === 0) w.push('noAllowlist');
-  if (s.sshPasswordAuth) w.push('sshPassword');
-  if (!s.firewall) w.push('noFirewall');
-  if (s.backupType === 'local') w.push('localBackup');
-  if (s.smtpSkip) w.push('noSmtp');
+  if (quotaMode === 'soft') w.push('quotaSoft');
+  if (quotaMode === 'unknown') w.push('quotaUnknown');
   return w;
+}
+
+/** Body PUT /admin/setup/access từ state. */
+export function accessBody(s: InstallState) {
+  return {
+    panel_domain: s.panelDomain.trim() === '' ? null : s.panelDomain.trim().toLowerCase(),
+    panel_port: s.panelPort,
+    entrance_path: s.entrancePath.trim() === '' ? null : s.entrancePath.trim(),
+    allowlist: allowlistLines(s.allowlist),
+  };
+}
+
+/** Bước tiếp tục khi mở lại trang, theo steps_done của GET /admin/setup/status. */
+export function resumeStep(done: readonly string[]): Step {
+  if (!done.includes('code')) return 'code';
+  if (!done.includes('language')) return 'language';
+  if (!done.includes('admin')) return 'admin';
+  if (!done.includes('access')) return 'access';
+  if (!done.includes('quota')) return 'stack';
+  return 'summary';
 }

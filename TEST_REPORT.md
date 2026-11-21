@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 4 / Prompt 4.5 — nhánh `phase-4`
+
+Môi trường: như 4.1 (PostgreSQL 16 + Redis local). Agent trong Pest là `FakeAgent` (HTTP giả theo envelope thật); UI chạy trên API giả lập MSW.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts-check` · `make codegen-check` | PASS: admin 228 operation (+7 wizard, +1 `/system/updates`), Redocly 0 lỗi, ajv, codegen khớp |
+| Server/metrics/dịch vụ/phần mềm | `php artisan test tests/Feature/Phase4/ServerOpsTest.php` | PASS 9 test: `itso:metrics-collect` ghi platform (quota soft, cgroup v2, systemd, amd64, sandbox), disk, 4 metric, 12 dịch vụ, capacity; agent tắt → lệnh FAIL, server `degraded`, platform giữ nguyên; `service.control` qua job (params đúng), ngoài allowlist/hành động lạ 422, trùng job 409; software: catalog 5 recipe, cài qua job ghi bản thật, gỡ → available, gỡ acl/quota/nftables 409, upgrade 409, key lạ 404, lỗi → failed, đang cài 409; reboot qua job `system.reboot` 60 giây; usage-refresh ghi snapshot + metric account, usage/metrics account khớp OpenAPI, metric sai 422; prune xóa partition > 7 ngày; `/system/updates` liệt kê release có `.complete`, đánh dấu bản active |
+| Wizard | `php artisan test tests/Feature/Phase4/SetupWizardTest.php` | PASS 6 test: đi hết 6 bước có API (mọi phản hồi khớp OpenAPI, audit `setup.*`); TOTP bắt buộc trước bước 3 (403); complete khi chưa lưu bước 3 → 409; sau khóa: verify/admin/access/quota/complete → **410** `setup_completed`; dùng lại mã ở phiên khác → **409** `setup_code_used`; mã sai 422; hết hạn/không có file → 409 `setup_code_expired`; mã mới vô hiệu phiên cũ (403 `setup_not_verified`); 10 lần sai → 429; đã có SA ngoài wizard → 410 |
+| Ma trận quyền | `php artisan test tests/Feature/Rbac/MatrixTest.php` | PASS: 46 endpoint admin × 4 nhân vật (thêm 9 endpoint 4.5: ADMIN đọc trong phạm vi, ghi dịch vụ/reboot/phần mềm và `/system/updates` → 403, ngoài phạm vi 404) |
+| Laravel toàn bộ | `php artisan test --parallel` · `make lint-api` | PASS: 347 test (thêm 51); pint, phpstan 0 lỗi; `make no-exec` OK |
+| Web | `pnpm lint` · `npx vitest run` | PASS: eslint, prettier, tsc, i18n 2486 key (vi = en); Vitest 465 test (thêm: wizard 10 bước trên MSW gọi đủ 8 API, panel đã cài hiện thẻ khóa; logic wizard 9 test; thẻ Nền tảng 3 test) |
+
+**Test bị bỏ qua:** không. Chưa chạy với agent thật trên VM: số liệu cgroup/quota kernel thật → 4.6 (chờ VM).
+
 ## 2026-11-21 — Phase 4 / Prompt 4.4 — nhánh `phase-4`
 
 Môi trường: như 4.1. Cài đặt chỉ chạy trên gốc giả (thư mục tạm) với runner giả `ops.Sim`; trên container chỉ chạy preflight/dry-run (chỉ đọc).

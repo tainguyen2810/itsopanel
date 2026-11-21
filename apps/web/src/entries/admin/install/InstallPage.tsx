@@ -1,22 +1,30 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Check, ChevronLeft, ChevronRight, Rocket } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { ApiError } from '@/api/http';
+import { sendAuth } from '@/shared/api/realm';
 import { cn } from '@/shared/lib/utils';
 import { AuthLayout } from '@/shared/page/AuthLayout';
+import { useHomePath } from '@/shared/routing/RoutesContext';
+import { useSession } from '@/shared/session/SessionContext';
 import { Alert } from '@/ui/Alert';
+import { AppLink } from '@/ui/AppLink';
 import { Button } from '@/ui/Button';
-import { Checkbox, Switch } from '@/ui/Checkbox';
 import { CodeBlock } from '@/ui/CodeBlock';
 import { Input, Textarea } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Select } from '@/ui/Select';
+import { get, send, type Data } from '../api';
 import {
+  accessBody,
   allowlistLines,
-  firstInvalid,
   INITIAL,
+  LATER,
+  resumeStep,
   STEPS,
   validate,
   warnings,
@@ -25,6 +33,25 @@ import {
 } from './wizard';
 
 type Errors = Partial<Record<keyof InstallState, string>>;
+type Status = Data<'/api/v1/admin/setup/status'>;
+type Quota = Data<'/api/v1/admin/setup/quota'>;
+interface Enroll {
+  secret: string;
+  otpauth_uri: string;
+  recovery_codes: string[];
+}
+
+/** Trường lỗi API (422 errors) → trường của state wizard. */
+const FIELD: Record<string, keyof InstallState> = {
+  code: 'setupCode',
+  name: 'adminName',
+  email: 'adminEmail',
+  password: 'adminPassword',
+  panel_domain: 'panelDomain',
+  panel_port: 'panelPort',
+  entrance_path: 'entrancePath',
+  allowlist: 'allowlist',
+};
 
 function Field({
   label,
@@ -55,46 +82,88 @@ function Field({
       )}
       {error && (
         <p id={`${id}-e`} role="alert" className="text-xs text-danger-text">
-          {t(`install.errors.${error}` as 'install.errors.required')}
+          {error.startsWith('api:')
+            ? error.slice(4)
+            : t(`install.errors.${error}` as 'install.errors.required')}
         </p>
       )}
     </div>
   );
 }
 
-function Toggle({
-  label,
-  hint,
-  checked,
-  onChange,
-}: {
-  label: string;
-  hint?: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  const id = useId();
+/** Wizard cài đặt lần đầu 10 bước, gọi /api/v1/admin/setup/* (Prompt 4.5). */
+export default function InstallPage() {
+  const { t } = useTranslation('admin');
+  const status = useQuery({
+    queryKey: ['setup', 'status'],
+    queryFn: () => get('/api/v1/admin/setup/status'),
+    retry: false,
+  });
+  if (status.isPending) {
+    return (
+      <AuthLayout title={t('install.title')} area={t('auth.adminArea')} wide>
+        <p className="text-base text-muted">{t('install.loading')}</p>
+      </AuthLayout>
+    );
+  }
+  if (status.isError) {
+    return (
+      <AuthLayout title={t('install.title')} area={t('auth.adminArea')} wide>
+        <Alert tone="danger" title={status.error.message} />
+      </AuthLayout>
+    );
+  }
+  if (status.data.installed) return <Installed />;
+  return <Wizard initial={status.data} />;
+}
+
+function Installed() {
+  const { t } = useTranslation('admin');
   return (
-    <div className="flex items-start justify-between gap-4 rounded-md border border-border p-3">
-      <div>
-        <Label htmlFor={id}>{label}</Label>
-        {hint && <p className="text-sm text-muted">{hint}</p>}
-      </div>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} />
-    </div>
+    <AuthLayout title={t('install.installedTitle')} area={t('auth.adminArea')}>
+      <p className="text-base">{t('install.installedHint')}</p>
+      <CodeBlock code="sudo itso admin reset-password <email>" label={t('install.resetCommand')} />
+      <AppLink href="/login" className="font-medium text-primary-text hover:underline">
+        {t('install.toLogin')}
+      </AppLink>
+    </AuthLayout>
   );
 }
 
-const PHP = ['7.4', '8.1', '8.2', '8.3', '8.4'];
-
-/** Wizard cài đặt lần đầu 10 bước (chỉ giao diện ở Phase 2; Phase 4 nối installer thật). */
-export default function InstallPage() {
+function Wizard({ initial }: { initial: Status }) {
   const { t } = useTranslation('admin');
   const navigate = useNavigate();
-  const [s, setS] = useState<InstallState>(INITIAL);
-  const [i, setI] = useState(0);
+  const home = useHomePath();
+  const qc = useQueryClient();
+  const { refresh } = useSession();
+  const [s, setS] = useState<InstallState>({
+    ...INITIAL,
+    locale: initial.locale,
+    timezone: initial.timezone,
+    adminCreated: initial.admin_created,
+    ...(initial.access
+      ? {
+          panelDomain: initial.access.panel_domain ?? '',
+          panelPort: initial.access.panel_port,
+          entrancePath: initial.access.entrance_path ?? '',
+          allowlist: initial.access.allowlist.join('\n'),
+        }
+      : {}),
+  });
+  const [i, setI] = useState(() => STEPS.indexOf(resumeStep(initial.steps_done)));
   const [errors, setErrors] = useState<Errors>({});
+  const [failure, setFailure] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [enroll, setEnroll] = useState<Enroll | null>(null);
+  const [mfaDone, setMfaDone] = useState(initial.admin_mfa_enabled);
   const step = STEPS[i] as Step;
+  const quota = useQuery({
+    queryKey: ['setup', 'quota'],
+    queryFn: () => get('/api/v1/admin/setup/quota'),
+    enabled: step === 'quota' || step === 'summary',
+    retry: false,
+  });
+
   const set = <K extends keyof InstallState>(k: K, v: InstallState[K]) => {
     setS((p) => ({ ...p, [k]: v }));
     setErrors((e) => Object.fromEntries(Object.entries(e).filter(([f]) => f !== k)));
@@ -103,27 +172,110 @@ export default function InstallPage() {
     value: String(s[k]),
     onChange: (e: { target: { value: string } }) => set(k, e.target.value as never),
   });
-  const num = (k: keyof InstallState) => ({
-    type: 'number' as const,
-    value: String(s[k]),
-    onChange: (e: { target: { value: string } }) => set(k, Number(e.target.value) as never),
-  });
 
-  const next = () => {
-    const e = validate(step, s);
-    setErrors(e);
-    if (Object.keys(e).length > 0) return;
-    setI((x) => Math.min(STEPS.length - 1, x + 1));
-  };
-  const finish = () => {
-    const bad = firstInvalid(s);
-    if (bad) {
-      setI(STEPS.indexOf(bad));
-      setErrors(validate(bad, s));
+  /** Bước admin sau khi tạo SA: lấy secret TOTP để hiển thị. */
+  useEffect(() => {
+    if (step !== 'admin' || !s.adminCreated || mfaDone || enroll) return;
+    sendAuth<Enroll>('POST', '/api/v1/auth/mfa/totp:enroll')
+      .then(setEnroll)
+      .catch((e: unknown) => setFailure(e instanceof Error ? e.message : String(e)));
+  }, [step, s.adminCreated, mfaDone, enroll]);
+
+  /** Lỗi API: 422 → lỗi theo trường; 410 → wizard đã khóa; còn lại → thông báo chung. */
+  const onError = (e: unknown) => {
+    if (!(e instanceof ApiError)) {
+      setFailure(String(e));
       return;
     }
-    toast.success(t('install.done'));
-    void navigate({ to: '/login' });
+    const p = e.problem;
+    if (p.status === 410) {
+      void qc.invalidateQueries({ queryKey: ['setup', 'status'] });
+      return;
+    }
+    const fieldErrors = (p as { errors?: Record<string, string[]> }).errors;
+    if (p.status === 422 && fieldErrors) {
+      const mapped: Errors = {};
+      for (const [k, msgs] of Object.entries(fieldErrors)) {
+        const f = FIELD[k.split('.')[0] ?? ''];
+        if (f) mapped[f] = `api:${msgs[0] ?? p.title}`;
+      }
+      if (Object.keys(mapped).length > 0) {
+        setErrors(mapped);
+        return;
+      }
+    }
+    setFailure(p.detail ?? p.title);
+  };
+
+  /** Gọi API của bước hiện tại; true = đi tiếp. */
+  const submit = async (): Promise<boolean> => {
+    switch (step) {
+      case 'code':
+        if (initial.steps_done.includes('code') && s.setupCode === '') return true;
+        await send('POST', '/api/v1/admin/setup/code:verify', {
+          body: { code: s.setupCode.trim().toUpperCase() },
+        });
+        return true;
+      case 'language':
+        await send('PUT', '/api/v1/admin/setup/preferences', {
+          body: { locale: s.locale, timezone: s.timezone },
+        });
+        return true;
+      case 'admin':
+        if (mfaDone) return true;
+        if (!s.adminCreated) {
+          await send('POST', '/api/v1/admin/setup/admin', {
+            body: {
+              name: s.adminName.trim(),
+              email: s.adminEmail.trim(),
+              password: s.adminPassword,
+            },
+          });
+          set('adminCreated', true);
+          set('adminPassword', '');
+          return false; // ở lại bước để bật TOTP
+        }
+        await sendAuth('POST', '/api/v1/auth/mfa/totp:confirm', {
+          body: { code: s.mfaCode, method: 'totp' },
+        });
+        setMfaDone(true);
+        return true;
+      case 'access':
+        await send('PUT', '/api/v1/admin/setup/access', { body: accessBody(s) });
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const next = async () => {
+    setFailure(null);
+    const e = step === 'admin' && mfaDone ? {} : validate(step, s);
+    setErrors(e);
+    if (Object.keys(e).length > 0) return;
+    setBusy(true);
+    try {
+      if (await submit()) setI((x) => Math.min(STEPS.length - 1, x + 1));
+    } catch (err) {
+      onError(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const finish = async () => {
+    setFailure(null);
+    setBusy(true);
+    try {
+      await send('POST', '/api/v1/admin/setup:complete');
+      toast.success(t('install.done'));
+      await refresh();
+      void navigate({ to: home });
+    } catch (err) {
+      onError(err);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const body: Record<Step, ReactNode> = {
@@ -174,7 +326,45 @@ export default function InstallPage() {
         </Field>
       </>
     ),
-    admin: (
+    admin: s.adminCreated ? (
+      <>
+        <Alert tone="success" title={t('install.adminCreated', { email: s.adminEmail || '—' })} />
+        {mfaDone ? (
+          <Alert tone="success" title={t('install.mfaRequired')} />
+        ) : (
+          <>
+            <Alert tone="info" title={t('install.mfaRequired')}>
+              {t('install.mfaScan')}
+            </Alert>
+            {enroll && (
+              <>
+                <CodeBlock code={enroll.secret} label={t('install.mfaSecret')} />
+                <CodeBlock code={enroll.otpauth_uri} label={t('install.mfaUri')} />
+                <Alert tone="warning" title={t('install.recoveryTitle')}>
+                  {t('install.recoveryHint')}
+                </Alert>
+                <CodeBlock
+                  code={enroll.recovery_codes.join('\n')}
+                  label={t('install.recoveryTitle')}
+                />
+              </>
+            )}
+            <Field label={t('install.mfaCode')} error={errors.mfaCode}>
+              {(p) => (
+                <Input
+                  {...p}
+                  value={s.mfaCode}
+                  onChange={(e) => set('mfaCode', e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  className="w-40 font-mono tracking-widest"
+                />
+              )}
+            </Field>
+          </>
+        )}
+      </>
+    ) : (
       <>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={t('install.adminName')} error={errors.adminName}>
@@ -196,19 +386,6 @@ export default function InstallPage() {
         <Alert tone="info" title={t('install.mfaRequired')}>
           {t('install.mfaScan')}
         </Alert>
-        <CodeBlock code="JBSWY3DPEHPK3PXP" label={t('install.mfaSecret')} />
-        <Field label={t('install.mfaCode')} error={errors.mfaCode}>
-          {(p) => (
-            <Input
-              {...p}
-              value={s.mfaCode}
-              onChange={(e) => set('mfaCode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              className="w-40 font-mono tracking-widest"
-            />
-          )}
-        </Field>
       </>
     ),
     access: (
@@ -222,9 +399,30 @@ export default function InstallPage() {
             {(p) => <Input {...p} {...text('panelDomain')} placeholder="panel.example.vn" />}
           </Field>
           <Field label={t('install.panelPort')} error={errors.panelPort}>
-            {(p) => <Input {...p} {...num('panelPort')} />}
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                value={String(s.panelPort)}
+                onChange={(e) => set('panelPort', Number(e.target.value))}
+              />
+            )}
           </Field>
         </div>
+        <Field
+          label={t('install.entrancePath')}
+          error={errors.entrancePath}
+          hint={t('install.entranceHint')}
+        >
+          {(p) => (
+            <Input
+              {...p}
+              {...text('entrancePath')}
+              placeholder="/itso-a7k2"
+              className="font-mono"
+            />
+          )}
+        </Field>
         <Field
           label={t('install.allowlist')}
           error={errors.allowlist}
@@ -240,166 +438,29 @@ export default function InstallPage() {
             />
           )}
         </Field>
+        <p className="text-sm text-muted">{t('install.accessApplyHint')}</p>
       </>
     ),
-    stack: (
-      <>
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-base font-medium">{t('install.php')}</legend>
-          <div className="flex flex-wrap gap-4">
-            {PHP.map((v) => (
-              <label key={v} className="flex items-center gap-2 text-base">
-                <Checkbox
-                  checked={s.php.includes(v)}
-                  onCheckedChange={(c) =>
-                    set('php', c === true ? [...s.php, v].sort() : s.php.filter((x) => x !== v))
-                  }
-                />
-                PHP {v}
-              </label>
-            ))}
-          </div>
-          {errors.php && (
-            <p role="alert" className="text-xs text-danger-text">
-              {t('install.errors.php')}
-            </p>
-          )}
-        </fieldset>
-        <Field label={t('install.database')}>
-          {(p) => (
-            <Select
-              id={p.id}
-              value={s.database}
-              onValueChange={(v) => set('database', v as InstallState['database'])}
-              options={[
-                { value: 'postgresql', label: 'PostgreSQL 16' },
-                { value: 'mysql', label: 'MariaDB 10.11' },
-                { value: 'both', label: t('install.bothDb') },
-              ]}
-            />
-          )}
-        </Field>
-        <Toggle
-          label="Redis"
-          hint={t('install.redisHint')}
-          checked={s.redis}
-          onChange={(v) => set('redis', v)}
-        />
-      </>
-    ),
-    security: (
-      <>
-        <Toggle
-          label={t('install.firewall')}
-          hint={t('install.firewallHint')}
-          checked={s.firewall}
-          onChange={(v) => set('firewall', v)}
-        />
-        <Toggle
-          label="Fail2ban"
-          hint={t('install.fail2banHint')}
-          checked={s.fail2ban}
-          onChange={(v) => set('fail2ban', v)}
-        />
-        <Field label={t('install.sshPort')} error={errors.sshPort}>
-          {(p) => <Input {...p} {...num('sshPort')} className="w-32" />}
-        </Field>
-        <Toggle
-          label={t('install.sshPassword')}
-          hint={t('install.sshPasswordHint')}
-          checked={s.sshPasswordAuth}
-          onChange={(v) => set('sshPasswordAuth', v)}
-        />
-      </>
-    ),
-    quota: (
-      <>
-        <Toggle
-          label={t('install.quota')}
-          hint={t('install.quotaHint')}
-          checked={s.quota}
-          onChange={(v) => set('quota', v)}
-        />
-        <Alert tone="warning" title={t('install.quotaRebootTitle')}>
-          {t('install.quotaReboot')}
-        </Alert>
-      </>
-    ),
-    backup: (
-      <>
-        <Field label={t('install.backupType')}>
-          {(p) => (
-            <Select
-              id={p.id}
-              value={s.backupType}
-              onValueChange={(v) => set('backupType', v as InstallState['backupType'])}
-              options={[
-                { value: 'local', label: t('install.backupLocal') },
-                { value: 's3', label: 'S3 / MinIO' },
-                { value: 'sftp', label: 'SFTP' },
-              ]}
-            />
-          )}
-        </Field>
-        <Field label={t('install.backupTarget')} error={errors.backupTarget}>
-          {(p) => <Input {...p} {...text('backupTarget')} className="font-mono" />}
-        </Field>
-        <Field label={t('install.retention')} error={errors.retentionDays}>
-          {(p) => <Input {...p} {...num('retentionDays')} className="w-32" />}
-        </Field>
-      </>
-    ),
-    smtp: (
-      <>
-        <Toggle
-          label={t('install.smtpSkip')}
-          hint={t('install.smtpSkipHint')}
-          checked={s.smtpSkip}
-          onChange={(v) => set('smtpSkip', v)}
-        />
-        {!s.smtpSkip && (
-          <>
-            <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-              <Field label={t('install.smtpHost')} error={errors.smtpHost}>
-                {(p) => <Input {...p} {...text('smtpHost')} placeholder="smtp.example.vn" />}
-              </Field>
-              <Field label={t('install.smtpPort')} error={errors.smtpPort}>
-                {(p) => <Input {...p} {...num('smtpPort')} />}
-              </Field>
-            </div>
-            <Field label={t('install.smtpFrom')} error={errors.smtpFrom}>
-              {(p) => (
-                <Input {...p} {...text('smtpFrom')} type="email" placeholder="panel@example.vn" />
-              )}
-            </Field>
-          </>
-        )}
-      </>
-    ),
+    stack: <Later />,
+    security: <Later />,
+    quota: <QuotaStep q={quota.data} error={quota.error} />,
+    backup: <Later />,
+    smtp: <Later />,
     summary: (
       <>
         <dl className="grid gap-x-6 gap-y-2 text-base sm:grid-cols-[auto_1fr]">
           {(
             [
-              [t('install.steps.admin'), `${s.adminName} <${s.adminEmail}>`],
-              [t('install.steps.access'), `https://${s.panelDomain}:${s.panelPort}`],
+              [t('install.steps.language'), `${s.locale} · ${s.timezone}`],
+              [t('install.steps.admin'), s.adminEmail || '—'],
+              [
+                t('install.steps.access'),
+                `https://${s.panelDomain || '<IP>'}:${s.panelPort}${s.entrancePath}`,
+              ],
               [t('install.allowlist'), allowlistLines(s.allowlist).join(', ') || '—'],
               [
-                t('install.steps.stack'),
-                `PHP ${s.php.join(', ')} · ${s.database}${s.redis ? ' · Redis' : ''}`,
-              ],
-              [
-                t('install.steps.security'),
-                `${s.firewall ? 'UFW' : '—'} · ${s.fail2ban ? 'Fail2ban' : '—'} · SSH ${s.sshPort}`,
-              ],
-              [t('install.steps.quota'), s.quota ? t('install.on') : t('install.off')],
-              [
-                t('install.steps.backup'),
-                `${s.backupType} · ${s.backupTarget} · ${t('install.days', { count: s.retentionDays })}`,
-              ],
-              [
-                t('install.steps.smtp'),
-                s.smtpSkip ? t('install.off') : `${s.smtpHost}:${s.smtpPort}`,
+                t('install.steps.quota'),
+                quota.data ? t(`install.quotaTitle.${quota.data.mode}`) : '—',
               ],
             ] as const
           ).map(([k, v]) => (
@@ -409,11 +470,11 @@ export default function InstallPage() {
             </div>
           ))}
         </dl>
-        {warnings(s).map((w) => (
+        {warnings(s, quota.data?.mode).map((w) => (
           <Alert
             key={w}
             tone="warning"
-            title={t(`install.warnings.${w}` as 'install.warnings.noSmtp')}
+            title={t(`install.warnings.${w}` as 'install.warnings.noAllowlist')}
           />
         ))}
       </>
@@ -462,6 +523,9 @@ export default function InstallPage() {
                     {k < i ? <Check aria-hidden className="size-3.5" /> : k + 1}
                   </span>
                   {t(`install.steps.${st}`)}
+                  {LATER.includes(st) && (
+                    <span className="sr-only">({t('install.laterTitle')})</span>
+                  )}
                 </button>
               </li>
             ))}
@@ -471,23 +535,24 @@ export default function InstallPage() {
           <h2 id="step-title" className="text-lg font-semibold">
             {t(`install.steps.${step}`)}
           </h2>
+          {failure && <Alert tone="danger" title={failure} />}
           {body[step]}
           <div className="mt-2 flex justify-between gap-2 border-t border-border pt-4">
             <Button
               variant="outline"
               onClick={() => setI((x) => Math.max(0, x - 1))}
-              disabled={i === 0}
+              disabled={i === 0 || busy}
             >
               <ChevronLeft aria-hidden />
               {t('install.back')}
             </Button>
             {step === 'summary' ? (
-              <Button onClick={finish}>
+              <Button onClick={() => void finish()} disabled={busy}>
                 <Rocket aria-hidden />
                 {t('install.finish')}
               </Button>
             ) : (
-              <Button onClick={next}>
+              <Button onClick={() => void next()} disabled={busy}>
                 {t('install.next')}
                 <ChevronRight aria-hidden />
               </Button>
@@ -496,5 +561,33 @@ export default function InstallPage() {
         </section>
       </div>
     </AuthLayout>
+  );
+}
+
+function Later() {
+  const { t } = useTranslation('admin');
+  return (
+    <Alert tone="info" title={t('install.laterTitle')}>
+      {t('install.laterHint')}
+    </Alert>
+  );
+}
+
+function QuotaStep({ q, error }: { q: Quota | undefined; error: Error | null }) {
+  const { t } = useTranslation('admin');
+  if (error) return <Alert tone="danger" title={error.message} />;
+  if (!q) return <p className="text-base text-muted">{t('install.loading')}</p>;
+  return (
+    <>
+      <Alert
+        tone={q.mode === 'kernel' ? 'success' : 'warning'}
+        title={t(`install.quotaTitle.${q.mode}`)}
+      >
+        {t(`install.quotaHint.${q.mode}`)}
+      </Alert>
+      {q.server && (
+        <p className="text-sm text-muted">{t('install.quotaServer', { name: q.server.name })}</p>
+      )}
+    </>
   );
 }

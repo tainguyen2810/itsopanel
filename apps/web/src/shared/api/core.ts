@@ -58,15 +58,20 @@ export async function sendWith<T>(
       headers: { 'Idempotency-Key': crypto.randomUUID(), ...opts.headers },
       parseAs: 'text',
     } as never,
-  )) as { data?: string; error?: string; response: Response };
+  )) as { data?: string; error?: string | Record<string, unknown>; response: Response };
   const res = r.response;
-  const text = r.data ?? r.error ?? '';
   if (res.status === 204) return undefined as T;
+  // openapi-fetch bỏ qua parseAs với phản hồi lỗi: `error` có thể đã là object (JSON) hoặc chuỗi.
+  const raw = r.data ?? r.error ?? '';
   let body: Record<string, unknown> | null = null;
-  try {
-    body = text ? (JSON.parse(text) as Record<string, unknown>) : null;
-  } catch {
-    body = null;
+  if (typeof raw === 'object') {
+    body = raw;
+  } else {
+    try {
+      body = raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+    } catch {
+      body = null;
+    }
   }
   if (!res.ok) {
     throw new ApiError(
