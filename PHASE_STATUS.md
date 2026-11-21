@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 8 — Backup & Restore → v0.1.0-alpha (**✓ hoàn tất, chờ duyệt**; merge `--no-ff` vào `main` + tag local `v0.1.0-alpha`; Phase 7 ✓ APPROVED 2026-11-21 cùng D-76 → D-81, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 8.7 ✓ (8.0 → 8.7 ✓). Prompt chi tiết `docs/planning/seed/PHASE_8_PROMPTS.md`
-- **Task đang làm:** không; DỪNG chờ duyệt Phase 8 (báo cáo `docs/reports/phase-8.md`, release notes `docs/releases/v0.1.0-alpha.md`)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-8`
-- **Bước tiếp theo:** chờ duyệt Phase 8 (D-82 → D-87, `v0.1.0-alpha`) và kế hoạch Phase 9 (`docs/planning/seed/PHASE_9_PROMPTS.md`, 9.0 → 9.8, D-88 → D-93 đề xuất, nhánh `phase-9`); **không** bắt đầu 9.0 khi chưa được duyệt; chạy `tests/vm/phase4–8.sh` (gồm DR 2 VM) khi có VM
+- **Phase:** 9 — Multi-server & chuyển tài khoản (kế hoạch ✓ duyệt 2026-11-21 cùng D-88 → D-93, **chưa bắt đầu 9.0**). Phase 8 ✓ APPROVED 2026-11-21 cùng D-82 → D-87 và mốc `v0.1.0-alpha` (kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 9.0 ○ (chờ người dùng bảo bắt đầu). Prompt chi tiết `docs/planning/seed/PHASE_9_PROMPTS.md`
+- **Task đang làm:** không
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-9`
+- **Bước tiếp theo:** chờ người dùng bảo bắt đầu Phase 9 (9.0 mockup → 9.8, nhánh `phase-9`); chạy `tests/vm/phase4–8.sh` (gồm DR 2 VM) khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -23,15 +23,27 @@
 | 5 | Website / Nginx / PHP / SSL / DNS | ✓ APPROVED (báo cáo `docs/reports/phase-5.md`; tiêu chí cần VM: chờ VM) |
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
 | 7 | Security Center | ✓ APPROVED (báo cáo `docs/reports/phase-7.md`; tiêu chí cần VM: chờ VM) |
-| 8 | Backup & Restore → v0.1.0-alpha | ✓ chờ duyệt (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
-| 9 | Multi-server & chuyển tài khoản | ○ |
+| 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
+| 9 | Multi-server & chuyển tài khoản | ○ kế hoạch ✓ duyệt (`PHASE_9_PROMPTS.md`) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ○ |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
 
-Phase 8 (✓ hoàn tất, chờ duyệt) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.md`
+Phase 9 (kế hoạch ✓ duyệt 2026-11-21, chưa bắt đầu) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
+
+- ○ 9.0 Mockup Multi-server & chuyển tài khoản trên bản demo
+- ○ 9.1 ADR 0034–0038 (D-88…D-93), contracts, migration Phase 9
+- ○ 9.2 CA nội bộ, `itso-relay` mTLS, agent node kết nối ra
+- ○ 9.3 Installer `--role`, `itso node`
+- ○ 9.4 Panel API nhiều server: enroll, năng lực, job theo server, gợi ý
+- ○ 9.5 Agent: `migrate.*`, `http.check`, `account.remove`, khôi phục chéo server
+- ○ 9.6 Panel: điều phối chuyển account, cutover, rollback
+- ○ 9.7 UI nối API thật
+- ○ 9.8 e2e, VM Phase 9 (3 VM), review bảo mật, báo cáo, merge
+
+Phase 8: ✓ APPROVED 2026-11-21 (merge `7ec1afb`, tag `v0.1.0-alpha`) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.md`
 
 - ✓ 8.0 Mockup Backup & Restore trên bản demo (`docs/screenshots/phase-8/`, 84 ảnh)
 - ✓ 8.1 ADR backup/restore (D-82…D-87), contracts, migration Phase 8
@@ -159,3 +171,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 8 / 8.6 | UI Backup & Restore khớp hành vi API thật: wizard khôi phục chọn DB theo `snapshot.databases` (agent lưu dump `db/<tên>.sql\|.dump`), ghi đè đúng một website/DB, bỏ chọn server khác (Phase 9) và mục cấu hình; bộ khôi phục có `destination_uuid` (CLI `itso backup panel-restore` cần); purge chỉ xác nhận được sau hạn giữ, xác nhận = xóa ngay; wizard DR thêm đường dẫn repo server, SFTP hướng dẫn CLI; MSW purge/khôi phục/DR như API thật; dữ liệu demo oldshop đã hết hạn giữ; ảnh phase-8 chụp lại (purge, DR) | a8ce9bc |
 | 2026-11-21 | 8 / 8.7 | E2E stack thật Phase 8 (`e2e-real/phase8.spec.ts`: đích local → bộ khôi phục một lần → policy → chạy ngay → duyệt → khôi phục file/website/DB đúng nội dung; Portal khôi phục sau MFA + step-up), toàn bộ 19/19; sửa theo API thật: đích local cố định `/var/backups/itso`, khóa retention `last/hourly/daily/weekly/monthly` (contract trước → API → UI → DBML); `tests/vm/phase8.sh` B0–B6 (DR 2 VM `--dr-source/--dr-target`); review `docs/security/backup-review.md`; phiên bản mặc định `0.1.0-alpha`; release notes + hướng dẫn cài `docs/releases/`; báo cáo `docs/reports/phase-8.md`; merge phase-8 → main (local), tag `v0.1.0-alpha` | 78927fb |
 | 2026-11-21 | 9 / kế hoạch | Kế hoạch Phase 9 Multi-server & chuyển tài khoản theo yêu cầu người dùng: `PHASE_9_PROMPTS.md` (9.0 mockup → 9.8 tích hợp), đề xuất D-88 (vai trò cài đặt), D-89 (`itso-relay` mTLS, node chỉ kết nối ra), D-90 (CA nội bộ, chứng chỉ 30 ngày), D-91 (job khi node offline), D-92 (gợi ý server), D-93 (chuyển account qua repo restic, cutover + rollback); nhánh `phase-9` từ `main` | 628a6a6 |
+| 2026-11-21 | 8 / duyệt | Người dùng duyệt những gì đã làm: Phase 8 + D-82 → D-87 (ADR 0029–0033 Accepted) + mốc `v0.1.0-alpha`; kế hoạch Phase 9 + D-88 → D-93; ROADMAP Phase 1 ghi APPROVED | (commit 9.ok) |

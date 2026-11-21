@@ -1,6 +1,6 @@
 # ADR 0033: Lịch, quota backup, kiểm chứng 3-2-1-1-0 và khôi phục thảm họa
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 8)
+- **Trạng thái:** Accepted (2026-11-21, duyệt cùng Phase 8)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-86, D-87, D-46, D-15
 

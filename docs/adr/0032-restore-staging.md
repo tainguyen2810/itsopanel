@@ -1,6 +1,6 @@
 # ADR 0032: Khôi phục qua staging root rồi helper uid account
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 8)
+- **Trạng thái:** Accepted (2026-11-21, duyệt cùng Phase 8)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-85, D-72, D-71
 
