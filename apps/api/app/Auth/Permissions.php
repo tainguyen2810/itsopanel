@@ -31,7 +31,8 @@ final class Permissions
         ],
         'infrastructure' => [
             'servers.read' => 'Xem máy chủ',
-            'servers.write' => 'Thêm/sửa máy chủ',
+            'servers.write' => 'Thêm/sửa máy chủ, điều khiển dịch vụ, khởi động lại',
+            'software.write' => 'Cài/gỡ phần mềm trên máy chủ (recipe)',
         ],
         'hosting' => [
             'packages.read' => 'Xem gói hosting',

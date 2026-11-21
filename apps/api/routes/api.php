@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
+use App\Http\Controllers\Api\V1\Admin\ServerOpsController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController;
+use App\Http\Controllers\Api\V1\Admin\SetupController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\MfaController;
@@ -57,11 +59,27 @@ Route::prefix('v1')->group(function (): void {
             });
         });
 
+        // ---- /admin/setup: wizard cài đặt lần đầu (4.5). Bước 0–2 công khai (cần phiên đã xác minh mã),
+        // bước 3+ cần SA do wizard tạo đã bật TOTP. Sau khi khóa: 410.
+        Route::prefix('admin/setup')->group(function (): void {
+            Route::get('status', [SetupController::class, 'status']);
+            Route::post('code:verify', [SetupController::class, 'verifyCode']);
+            Route::put('preferences', [SetupController::class, 'preferences']);
+            Route::post('admin', [SetupController::class, 'createAdmin']);
+            Route::middleware(['itso.auth:admin', 'itso.mfa'])->group(function (): void {
+                Route::put('access', [SetupController::class, 'access']);
+                Route::get('quota', [SetupController::class, 'quota']);
+            });
+        });
+        Route::post('admin/setup:complete', [SetupController::class, 'complete'])
+            ->middleware(['itso.auth:admin', 'itso.mfa']);
+
         // ---- /admin: realm admin (phiên cookie hoặc API token)
         Route::prefix('admin')->middleware(['itso.auth:admin', 'itso.mfa'])->group(function (): void {
             Route::prefix('system')->middleware('itso.scope:system:read')->group(function (): void {
                 Route::get('version', [SystemController::class, 'version']);
                 Route::get('status', [SystemController::class, 'status']);
+                Route::get('updates', [SystemController::class, 'updates'])->middleware('itso.perm:settings.read');
             });
 
             // Người dùng, vai trò, giả danh (3.3)
@@ -103,6 +121,19 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers', [ServerController::class, 'index'])->middleware('itso.perm:servers.read');
             Route::get('servers/{id}', [ServerController::class, 'show'])->middleware('itso.perm:servers.read');
             Route::patch('servers/{id}', [ServerController::class, 'update'])->middleware('itso.perm:servers.write');
+
+            // Dịch vụ, phần mềm, reboot, dung lượng, số liệu (4.5) — thao tác chạm Linux đi qua Job
+            Route::get('servers/{id}/capacity', [ServerOpsController::class, 'capacity'])->middleware('itso.perm:servers.read');
+            Route::get('servers/{id}/services', [ServerOpsController::class, 'services'])->middleware('itso.perm:servers.read');
+            Route::post('servers/{id}/services/{service}:{action}', [ServerOpsController::class, 'controlService'])
+                ->middleware(['itso.perm:servers.write', 'itso.idempotent']);
+            Route::post('servers/{id}:reboot', [ServerOpsController::class, 'reboot'])
+                ->middleware(['itso.perm:servers.write', 'itso.step-up', 'itso.idempotent']);
+            Route::get('servers/{id}/software', [ServerOpsController::class, 'software'])->middleware('itso.perm:servers.read');
+            Route::post('servers/{id}/software/{key}:{action}', [ServerOpsController::class, 'manageSoftware'])
+                ->middleware(['itso.perm:software.write', 'itso.idempotent']);
+            Route::get('metrics/servers/{id}', [ServerOpsController::class, 'serverMetrics'])->middleware('itso.perm:servers.read');
+            Route::get('metrics/hosting-accounts/{id}', [ServerOpsController::class, 'accountMetrics'])->middleware('itso.perm:accounts.read');
 
             // Gói, account hosting (3.5)
             Route::get('hosting-packages', [HostingPackageController::class, 'index'])->middleware('itso.perm:packages.read');

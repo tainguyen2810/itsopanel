@@ -8,6 +8,7 @@ use App\Domain\Hosting\PackageLimits;
 use App\Domain\Hosting\ProvisioningService;
 use App\Domain\Hosting\UidAllocator;
 use App\Domain\Servers\ServerFacts;
+use App\Domain\Setup\SetupWizard;
 use App\Models\HostingAccount;
 use App\Models\HostingPackage;
 use App\Models\HostingPackageVersion;
@@ -57,7 +58,9 @@ class DemoSeeder extends Seeder
         if (app()->environment('production')) {
             throw new \RuntimeException('DemoSeeder không chạy ở production.');
         }
-        $this->call([RoleSeeder::class, PermissionSeeder::class]);
+        $this->call([RoleSeeder::class, PermissionSeeder::class, SoftwareCatalogSeeder::class]);
+        // Dữ liệu demo coi như đã qua wizard cài đặt (wizard khóa, /admin/setup/* trả 410).
+        app(SetupWizard::class)->put('installed_at', now()->toIso8601String());
         config(['itso.local_server.enabled' => true]);
         $server = $servers->ensureLocal();
 

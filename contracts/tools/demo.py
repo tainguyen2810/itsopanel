@@ -66,21 +66,21 @@ SERVERS = [
      "agent_connected": True, "accepting_new_accounts": True,
      "resources": {"cpu_cores": 16, "ram_mb": 65536, "disk_mb": 1907729, "cpu_pct": 37.5,
                    "ram_used_mb": 28100, "disk_used_mb": 812400, "load_1m": 2.31, "uptime_sec": 3888000},
-     "account_count": 2, **do(), **ts()},
+     "account_count": 2, "platform": {"quota_mode": "kernel", "cgroup_v2": True, "systemd": True, "arch": "amd64", "agent_mode": "real", "facts_at": T2}, **do(), **ts()},
     {"uuid": u("server", 2), "name": "srv-hn-02", "hostname": "srv-hn-02.itso.local",
      "ip_addresses": ["10.10.1.12"], "role_tags": ["web"],
      "os": "Ubuntu 24.04.1 LTS", "kernel": "6.8.0-48-generic", "agent_version": "0.1.0",
      "agent_connected": True, "accepting_new_accounts": True,
      "resources": {"cpu_cores": 8, "ram_mb": 32768, "disk_mb": 953674, "cpu_pct": 12.0,
                    "ram_used_mb": 6200, "disk_used_mb": 120300, "load_1m": 0.42, "uptime_sec": 864000},
-     "account_count": 0, **do(spec=1, obs=1), **ts()},
+     "account_count": 0, "platform": {"quota_mode": "soft", "cgroup_v2": True, "systemd": True, "arch": "amd64", "agent_mode": "real", "facts_at": T2}, **do(spec=1, obs=1), **ts()},
     {"uuid": u("server", 3), "name": "srv-hcm-01", "hostname": "srv-hcm-01.itso.local",
      "ip_addresses": ["10.20.1.21"], "role_tags": ["web", "backup"],
      "os": "Ubuntu 24.04.1 LTS", "kernel": "6.8.0-45-generic", "agent_version": "0.1.0",
      "agent_connected": True, "accepting_new_accounts": False,
      "resources": {"cpu_cores": 8, "ram_mb": 16384, "disk_mb": 476837, "cpu_pct": 81.2,
                    "ram_used_mb": 14900, "disk_used_mb": 431000, "load_1m": 6.8, "uptime_sec": 1728000},
-     "account_count": 2,
+     "account_count": 2, "platform": None,
      **do(status="degraded", spec=5, obs=4, drift={"nginx.global": "observed khác desired (worker_connections)"}),
      **ts()},
 ]
@@ -567,6 +567,16 @@ SCOPES = [{"scope_type": "server", "uuid": SERVERS[0]["uuid"], "name": "srv-hn-0
 CAPACITY = {"server": server_ref(0), "cpu_cores": 16, "ram_mb": 65536, "disk_mb": 1907729,
             "allocated_cpu_pct": 300, "allocated_ram_mb": 5120, "allocated_disk_mb": 25600, "account_count": 2,
             "max_accounts": 200, "accepting_new": True, "updated_at": T2}
+
+SYSTEM_UPDATES = {"current_version": "0.4.0", "commit": "28bb3fc", "channel": "stable", "latest_version": None,
+                  "update_available": False, "checked_at": None, "update_command": "sudo itso update --release-dir <thư mục>",
+                  "releases": [{"version": "0.4.0", "active": True}, {"version": "0.3.0", "active": False}]}
+
+SETUP_ACCESS = {"panel_domain": "panel.itso.local", "panel_port": 8443, "entrance_path": "/itso-a7k2",
+                "allowlist": ["10.10.5.0/24", "203.0.113.7"]}
+
+SETUP_STATUS = {"installed": False, "code_verified": False, "admin_created": False, "admin_mfa_enabled": False,
+                "locale": "vi", "timezone": "Asia/Ho_Chi_Minh", "access": None, "steps_done": []}
 
 SERVICES = [
     {"name": "nginx", "active": True, "enabled": True, "version": "1.26.2", "since": T0},

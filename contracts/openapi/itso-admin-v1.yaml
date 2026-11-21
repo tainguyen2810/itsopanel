@@ -61,6 +61,8 @@ tags:
   description: Servers
 - name: Settings
   description: Settings
+- name: Setup
+  description: Setup
 - name: Software
   description: Software
 - name: System
@@ -9260,6 +9262,13 @@ paths:
                     load_1m: 2.31
                     uptime_sec: 3888000
                   account_count: 5
+                  platform:
+                    quota_mode: kernel
+                    cgroup_v2: true
+                    systemd: true
+                    arch: amd64
+                    agent_mode: real
+                    facts_at: '2026-11-20T08:15:00+07:00'
                   status: ready
                   spec_version: 3
                   observed_version: 3
@@ -9289,6 +9298,13 @@ paths:
                     load_1m: 0.42
                     uptime_sec: 864000
                   account_count: 5
+                  platform:
+                    quota_mode: soft
+                    cgroup_v2: true
+                    systemd: true
+                    arch: amd64
+                    agent_mode: real
+                    facts_at: '2026-11-20T08:15:00+07:00'
                   status: ready
                   spec_version: 1
                   observed_version: 1
@@ -9319,6 +9335,7 @@ paths:
                     load_1m: 6.8
                     uptime_sec: 1728000
                   account_count: 1
+                  platform: null
                   status: degraded
                   spec_version: 5
                   observed_version: 4
@@ -9432,6 +9449,13 @@ paths:
                     load_1m: 2.31
                     uptime_sec: 3888000
                   account_count: 5
+                  platform:
+                    quota_mode: kernel
+                    cgroup_v2: true
+                    systemd: true
+                    arch: amd64
+                    agent_mode: real
+                    facts_at: '2026-11-20T08:15:00+07:00'
                   status: ready
                   spec_version: 3
                   observed_version: 3
@@ -9504,6 +9528,13 @@ paths:
                     load_1m: 2.31
                     uptime_sec: 3888000
                   account_count: 5
+                  platform:
+                    quota_mode: kernel
+                    cgroup_v2: true
+                    systemd: true
+                    arch: amd64
+                    agent_mode: real
+                    facts_at: '2026-11-20T08:15:00+07:00'
                   status: ready
                   spec_version: 3
                   observed_version: 3
@@ -10756,6 +10787,348 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
         '412':
           $ref: ./common.yaml#/components/responses/PreconditionFailed
+  /api/v1/admin/setup/access:
+    put:
+      operationId: putSetupAccess
+      summary: 'Bước 3: truy cập panel (domain, port, entrance, allowlist)'
+      tags:
+      - Setup
+      description: Chỉ SUPER_ADMIN do wizard tạo, đã bật TOTP (403 nếu chưa).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetupAccess'
+            example:
+              panel_domain: panel.itso.local
+              panel_port: 8443
+              entrance_path: /itso-a7k2
+              allowlist:
+              - 10.10.5.0/24
+              - 203.0.113.7
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SetupStatus'
+                required:
+                - data
+              example:
+                data:
+                  installed: false
+                  code_verified: true
+                  admin_created: true
+                  admin_mfa_enabled: true
+                  locale: vi
+                  timezone: Asia/Ho_Chi_Minh
+                  access:
+                    panel_domain: panel.itso.local
+                    panel_port: 8443
+                    entrance_path: /itso-a7k2
+                    allowlist:
+                    - 10.10.5.0/24
+                    - 203.0.113.7
+                  steps_done:
+                  - code
+                  - language
+                  - admin
+                  - access
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
+  /api/v1/admin/setup/admin:
+    post:
+      operationId: createSetupAdmin
+      summary: 'Bước 2: tạo SUPER_ADMIN đầu tiên và đăng nhập'
+      tags:
+      - Setup
+      description: Cần phiên đã xác minh mã. Tạo một lần (409 nếu wizard đã tạo SA). TOTP bắt buộc đăng ký ngay sau đó qua
+        `/api/v1/auth/mfa/totp:enroll` và `:confirm`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetupAdmin'
+            example:
+              name: Nguyễn Văn An
+              email: an.nguyen@itso.local
+              password: Mat-khau-du-dai-2026
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/Me
+                required:
+                - data
+              example:
+                data:
+                  user:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    realm: admin
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                    role: SUPER_ADMIN
+                    status: active
+                    mfa_enabled: true
+                    locale: vi
+                    timezone: Asia/Ho_Chi_Minh
+                    last_login_at: '2026-11-20T08:15:00+07:00'
+                    created_at: '2026-11-18T09:30:00+07:00'
+                    updated_at: '2026-11-19T14:05:00+07:00'
+                  permissions:
+                  - '*'
+                  scopes: []
+                  mfa_verified_at: '2026-11-20T08:15:00+07:00'
+                  impersonating: null
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
+      security:
+      - csrfToken: []
+  /api/v1/admin/setup/code:verify:
+    post:
+      operationId: verifySetupCode
+      summary: Xác minh mã thiết lập một lần
+      tags:
+      - Setup
+      description: Mã do `sudo itso setup-code` tạo (agent chỉ lưu sha256, hết hạn sau 60 phút). Mã sai → 422; mã đã dùng
+        hoặc hết hạn → 409 `setup_code_used`/`setup_code_expired`; đã cài xong → 410.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetupCodeVerify'
+            example:
+              code: K7QM-2XPA-9RTD
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SetupStatus'
+                required:
+                - data
+              example:
+                data:
+                  installed: false
+                  code_verified: true
+                  admin_created: false
+                  admin_mfa_enabled: false
+                  locale: vi
+                  timezone: Asia/Ho_Chi_Minh
+                  access: null
+                  steps_done:
+                  - code
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
+      security:
+      - csrfToken: []
+  /api/v1/admin/setup/preferences:
+    put:
+      operationId: putSetupPreferences
+      summary: 'Bước 1: ngôn ngữ, múi giờ'
+      tags:
+      - Setup
+      description: Cần phiên đã xác minh mã (403 nếu chưa).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetupPreferences'
+            example:
+              locale: vi
+              timezone: Asia/Ho_Chi_Minh
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SetupStatus'
+                required:
+                - data
+              example:
+                data:
+                  installed: false
+                  code_verified: true
+                  admin_created: false
+                  admin_mfa_enabled: false
+                  locale: vi
+                  timezone: Asia/Ho_Chi_Minh
+                  access: null
+                  steps_done:
+                  - code
+                  - language
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
+      security:
+      - csrfToken: []
+  /api/v1/admin/setup/quota:
+    get:
+      operationId: getSetupQuota
+      summary: 'Bước 6: trạng thái disk quota của server panel'
+      tags:
+      - Setup
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SetupQuota'
+                required:
+                - data
+              example:
+                data:
+                  mode: kernel
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  facts_at: '2026-11-20T08:15:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
+  /api/v1/admin/setup/status:
+    get:
+      operationId: getSetupStatus
+      summary: Trạng thái wizard cài đặt
+      tags:
+      - Setup
+      description: Công khai để trang /install biết bước hiện tại. Không lộ dữ liệu khi đã cài xong.
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SetupStatus'
+                required:
+                - data
+              example:
+                data:
+                  installed: false
+                  code_verified: false
+                  admin_created: false
+                  admin_mfa_enabled: false
+                  locale: vi
+                  timezone: Asia/Ho_Chi_Minh
+                  access: null
+                  steps_done: []
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+      security: []
+  /api/v1/admin/setup:complete:
+    post:
+      operationId: completeSetup
+      summary: 'Bước 9: tổng kết và khóa wizard'
+      tags:
+      - Setup
+      description: Ghi `installed_at`; sau đó mọi endpoint ghi của wizard trả 410.
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SetupStatus'
+                required:
+                - data
+              example:
+                data:
+                  installed: true
+                  code_verified: true
+                  admin_created: true
+                  admin_mfa_enabled: true
+                  locale: vi
+                  timezone: Asia/Ho_Chi_Minh
+                  access:
+                    panel_domain: panel.itso.local
+                    panel_port: 8443
+                    entrance_path: /itso-a7k2
+                    allowlist:
+                    - 10.10.5.0/24
+                    - 203.0.113.7
+                  steps_done:
+                  - code
+                  - language
+                  - admin
+                  - access
+                  - quota
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
   /api/v1/admin/sftp-accounts:
     get:
       operationId: listSftpAccounts
@@ -11200,6 +11573,45 @@ paths:
                     latency_ms: 2.1
                     error: null
                   checked_at: '2026-11-20T08:15:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+  /api/v1/admin/system/updates:
+    get:
+      operationId: getSystemUpdates
+      summary: Phiên bản hiện tại, kênh và lệnh cập nhật
+      tags:
+      - System
+      description: 'Chỉ đọc. Cập nhật chạy bằng CLI root `itso update` trên server (D-65: release ký Ed25519, tự rollback).'
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SystemUpdates'
+                required:
+                - data
+              example:
+                data:
+                  current_version: 0.4.0
+                  commit: 28bb3fc
+                  channel: stable
+                  latest_version: null
+                  update_available: false
+                  checked_at: null
+                  update_command: sudo itso update --release-dir <thư mục>
+                  releases:
+                  - version: 0.4.0
+                    active: true
+                  - version: 0.3.0
+                    active: false
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -14273,6 +14685,10 @@ components:
         account_count:
           type: integer
           minimum: 0
+        platform:
+          oneOf:
+          - $ref: '#/components/schemas/ServerPlatform'
+          - type: 'null'
         status:
           type: string
           enum:
@@ -14322,6 +14738,7 @@ components:
       - accepting_new_accounts
       - resources
       - account_count
+      - platform
       - status
       - spec_version
       - observed_version
@@ -14330,6 +14747,41 @@ components:
       - created_at
       - updated_at
       additionalProperties: false
+    ServerPlatform:
+      type: object
+      properties:
+        quota_mode:
+          type: string
+          enum:
+          - kernel
+          - soft
+          - unknown
+        cgroup_v2:
+          type: boolean
+        systemd:
+          type: boolean
+        arch:
+          type: string
+        agent_mode:
+          type: string
+          enum:
+          - real
+          - sandbox
+          - mock
+        facts_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - quota_mode
+      - cgroup_v2
+      - systemd
+      - arch
+      - agent_mode
+      - facts_at
+      additionalProperties: false
+      description: Sự thật nền tảng do agent báo (system.info, quota mode). null khi agent chưa từng báo.
     ServerUpdate:
       type: object
       properties:
@@ -16391,6 +16843,195 @@ components:
       - checked_at
       additionalProperties: false
       description: Tình trạng các thành phần. Chỉ Admin API; không lộ chi tiết qua portal.
+    SystemUpdates:
+      type: object
+      properties:
+        current_version:
+          type: string
+        commit:
+          type: string
+        channel:
+          type: string
+          enum:
+          - stable
+          - beta
+        latest_version:
+          type:
+          - string
+          - 'null'
+        update_available:
+          type: boolean
+        checked_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        update_command:
+          type: string
+        releases:
+          type: array
+          items:
+            type: object
+            properties:
+              version:
+                type: string
+              active:
+                type: boolean
+            required:
+            - version
+            - active
+            additionalProperties: false
+      required:
+      - current_version
+      - commit
+      - channel
+      - latest_version
+      - update_available
+      - checked_at
+      - update_command
+      - releases
+      additionalProperties: false
+      description: 'Panel không tự cập nhật: chạy `update_command` bằng root trên server (CLI `itso update`, có rollback).'
+    SetupStatus:
+      type: object
+      properties:
+        installed:
+          type: boolean
+        code_verified:
+          type: boolean
+        admin_created:
+          type: boolean
+        admin_mfa_enabled:
+          type: boolean
+        locale:
+          type: string
+          enum:
+          - vi
+          - en
+        timezone:
+          type: string
+        access:
+          oneOf:
+          - $ref: '#/components/schemas/SetupAccess'
+          - type: 'null'
+        steps_done:
+          type: array
+          items:
+            type: string
+            enum:
+            - code
+            - language
+            - admin
+            - access
+            - quota
+      required:
+      - installed
+      - code_verified
+      - admin_created
+      - admin_mfa_enabled
+      - locale
+      - timezone
+      - access
+      - steps_done
+      additionalProperties: false
+      description: Trạng thái wizard. Khi `installed=true` mọi endpoint ghi của wizard trả 410.
+    SetupCodeVerify:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$
+      required:
+      - code
+      additionalProperties: false
+    SetupPreferences:
+      type: object
+      properties:
+        locale:
+          type: string
+          enum:
+          - vi
+          - en
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - locale
+      - timezone
+      additionalProperties: false
+    SetupAdmin:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 190
+        password:
+          type: string
+          minLength: 12
+          maxLength: 200
+      required:
+      - name
+      - email
+      - password
+      additionalProperties: false
+    SetupAccess:
+      type: object
+      properties:
+        panel_domain:
+          oneOf:
+          - $ref: ./common.yaml#/components/schemas/Domain
+          - type: 'null'
+        panel_port:
+          type: integer
+          minimum: 1024
+          maximum: 65535
+        entrance_path:
+          type:
+          - string
+          - 'null'
+          pattern: ^/[a-z0-9][a-z0-9-]{3,31}$
+        allowlist:
+          type: array
+          items:
+            $ref: ./common.yaml#/components/schemas/Cidr
+          maxItems: 50
+      required:
+      - panel_domain
+      - panel_port
+      - entrance_path
+      - allowlist
+      additionalProperties: false
+      description: Lưu vào settings; áp dụng vào /etc/itso/itso.env bằng lệnh root `itso policy`/`itso repair --fix` trên
+        server.
+    SetupQuota:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum:
+          - kernel
+          - soft
+          - unknown
+        server:
+          oneOf:
+          - $ref: ./common.yaml#/components/schemas/ServerRef
+          - type: 'null'
+        facts_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - mode
+      - server
+      - facts_at
+      additionalProperties: false
     SystemVersion:
       type: object
       properties:

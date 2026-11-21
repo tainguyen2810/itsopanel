@@ -2380,6 +2380,143 @@ export interface paths {
         patch: operations["updateSettings"];
         trace?: never;
     };
+    "/api/v1/admin/setup/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Bước 3: truy cập panel (domain, port, entrance, allowlist)
+         * @description Chỉ SUPER_ADMIN do wizard tạo, đã bật TOTP (403 nếu chưa).
+         */
+        put: operations["putSetupAccess"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/setup/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bước 2: tạo SUPER_ADMIN đầu tiên và đăng nhập
+         * @description Cần phiên đã xác minh mã. Tạo một lần (409 nếu wizard đã tạo SA). TOTP bắt buộc đăng ký ngay sau đó qua `/api/v1/auth/mfa/totp:enroll` và `:confirm`.
+         */
+        post: operations["createSetupAdmin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/setup/code:verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Xác minh mã thiết lập một lần
+         * @description Mã do `sudo itso setup-code` tạo (agent chỉ lưu sha256, hết hạn sau 60 phút). Mã sai → 422; mã đã dùng hoặc hết hạn → 409 `setup_code_used`/`setup_code_expired`; đã cài xong → 410.
+         */
+        post: operations["verifySetupCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/setup/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Bước 1: ngôn ngữ, múi giờ
+         * @description Cần phiên đã xác minh mã (403 nếu chưa).
+         */
+        put: operations["putSetupPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/setup/quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bước 6: trạng thái disk quota của server panel */
+        get: operations["getSetupQuota"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/setup/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trạng thái wizard cài đặt
+         * @description Công khai để trang /install biết bước hiện tại. Không lộ dữ liệu khi đã cài xong.
+         */
+        get: operations["getSetupStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/setup:complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bước 9: tổng kết và khóa wizard
+         * @description Ghi `installed_at`; sau đó mọi endpoint ghi của wizard trả 410.
+         */
+        post: operations["completeSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sftp-accounts": {
         parameters: {
             query?: never;
@@ -2474,6 +2611,26 @@ export interface paths {
          * @description Agent được gọi bằng op `system.ping`. Trước khi có xác thực (Phase 3), route chỉ đăng ký khi APP_ENV=local/testing.
          */
         get: operations["getSystemStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Phiên bản hiện tại, kênh và lệnh cập nhật
+         * @description Chỉ đọc. Cập nhật chạy bằng CLI root `itso update` trên server (D-65: release ký Ed25519, tự rollback).
+         */
+        get: operations["getSystemUpdates"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3329,6 +3486,7 @@ export interface components {
                 uptime_sec: number;
             };
             account_count: number;
+            platform: components["schemas"]["ServerPlatform"] | null;
             /**
              * @description Trạng thái quan sát được (observed).
              * @enum {string}
@@ -3347,6 +3505,18 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        /** @description Sự thật nền tảng do agent báo (system.info, quota mode). null khi agent chưa từng báo. */
+        ServerPlatform: {
+            /** @enum {string} */
+            quota_mode: "kernel" | "soft" | "unknown";
+            cgroup_v2: boolean;
+            systemd: boolean;
+            arch: string;
+            /** @enum {string} */
+            agent_mode: "real" | "sandbox" | "mock";
+            /** Format: date-time */
+            facts_at: string | null;
         };
         ServerUpdate: {
             name?: string;
@@ -4031,6 +4201,62 @@ export interface components {
             /** Format: date-time */
             checked_at: string;
         };
+        /** @description Panel không tự cập nhật: chạy `update_command` bằng root trên server (CLI `itso update`, có rollback). */
+        SystemUpdates: {
+            current_version: string;
+            commit: string;
+            /** @enum {string} */
+            channel: "stable" | "beta";
+            latest_version: string | null;
+            update_available: boolean;
+            /** Format: date-time */
+            checked_at: string | null;
+            update_command: string;
+            releases: {
+                version: string;
+                active: boolean;
+            }[];
+        };
+        /** @description Trạng thái wizard. Khi `installed=true` mọi endpoint ghi của wizard trả 410. */
+        SetupStatus: {
+            installed: boolean;
+            code_verified: boolean;
+            admin_created: boolean;
+            admin_mfa_enabled: boolean;
+            /** @enum {string} */
+            locale: "vi" | "en";
+            timezone: string;
+            access: components["schemas"]["SetupAccess"] | null;
+            steps_done: ("code" | "language" | "admin" | "access" | "quota")[];
+        };
+        SetupCodeVerify: {
+            code: string;
+        };
+        SetupPreferences: {
+            /** @enum {string} */
+            locale: "vi" | "en";
+            timezone: string;
+        };
+        SetupAdmin: {
+            name: string;
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        /** @description Lưu vào settings; áp dụng vào /etc/itso/itso.env bằng lệnh root `itso policy`/`itso repair --fix` trên server. */
+        SetupAccess: {
+            panel_domain: components["schemas"]["Domain"] | null;
+            panel_port: number;
+            entrance_path: string | null;
+            allowlist: components["schemas"]["Cidr"][];
+        };
+        SetupQuota: {
+            /** @enum {string} */
+            mode: "kernel" | "soft" | "unknown";
+            server: components["schemas"]["ServerRef"] | null;
+            /** Format: date-time */
+            facts_at: string | null;
+        };
         SystemVersion: {
             version: string;
             commit: string;
@@ -4155,7 +4381,7 @@ export interface components {
             email: string;
         };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -4748,6 +4974,42 @@ export interface components {
         Cidr: string;
         /** @description Giá trị kích thước Nginx, ví dụ 64m. */
         NginxSize: string;
+        User: {
+            /** Format: uuid */
+            uuid: string;
+            /** @enum {string} */
+            realm: "admin" | "portal";
+            name: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            role: "SUPER_ADMIN" | "ADMIN" | "USER";
+            /** @enum {string} */
+            status: "active" | "locked" | "disabled";
+            mfa_enabled: boolean;
+            /** @enum {string} */
+            locale: "vi" | "en";
+            timezone: string;
+            /** Format: date-time */
+            last_login_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        Me: {
+            user: components["schemas"]["User"];
+            permissions: string[];
+            scopes: {
+                scope_type: string;
+                /** Format: uuid */
+                uuid: string;
+                name: string;
+            }[];
+            /** Format: date-time */
+            mfa_verified_at: string | null;
+            impersonating: components["schemas"]["UserRef"] | null;
+        };
         SftpAccount: {
             /** Format: uuid */
             uuid: string;
@@ -4972,42 +5234,6 @@ export interface components {
             mfa_required: boolean;
             mfa_methods: ("totp" | "recovery")[];
         };
-        User: {
-            /** Format: uuid */
-            uuid: string;
-            /** @enum {string} */
-            realm: "admin" | "portal";
-            name: string;
-            /** Format: email */
-            email: string;
-            /** @enum {string} */
-            role: "SUPER_ADMIN" | "ADMIN" | "USER";
-            /** @enum {string} */
-            status: "active" | "locked" | "disabled";
-            mfa_enabled: boolean;
-            /** @enum {string} */
-            locale: "vi" | "en";
-            timezone: string;
-            /** Format: date-time */
-            last_login_at: string | null;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        Me: {
-            user: components["schemas"]["User"];
-            permissions: string[];
-            scopes: {
-                scope_type: string;
-                /** Format: uuid */
-                uuid: string;
-                name: string;
-            }[];
-            /** Format: date-time */
-            mfa_verified_at: string | null;
-            impersonating: components["schemas"]["UserRef"] | null;
-        };
         MfaVerifyRequest: {
             code: string;
             /** @enum {string} */
@@ -5192,6 +5418,25 @@ export interface components {
                  *       "status": 501,
                  *       "code": "purge_not_available",
                  *       "detail": "Purge hiện thực ở Phase 8.",
+                 *       "request_id": "req_01JD8K2M4N"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Wizard đã khóa */
+        Gone: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "https://docs.itso.local/errors/setup_completed",
+                 *       "title": "Wizard đã khóa",
+                 *       "status": 410,
+                 *       "code": "setup_completed",
+                 *       "detail": "Panel đã cài đặt xong; wizard không dùng lại được.",
                  *       "request_id": "req_01JD8K2M4N"
                  *     }
                  */
@@ -16226,6 +16471,14 @@ export interface operations {
                      *             "uptime_sec": 3888000
                      *           },
                      *           "account_count": 5,
+                     *           "platform": {
+                     *             "quota_mode": "kernel",
+                     *             "cgroup_v2": true,
+                     *             "systemd": true,
+                     *             "arch": "amd64",
+                     *             "agent_mode": "real",
+                     *             "facts_at": "2026-11-20T08:15:00+07:00"
+                     *           },
                      *           "status": "ready",
                      *           "spec_version": 3,
                      *           "observed_version": 3,
@@ -16260,6 +16513,14 @@ export interface operations {
                      *             "uptime_sec": 864000
                      *           },
                      *           "account_count": 5,
+                     *           "platform": {
+                     *             "quota_mode": "soft",
+                     *             "cgroup_v2": true,
+                     *             "systemd": true,
+                     *             "arch": "amd64",
+                     *             "agent_mode": "real",
+                     *             "facts_at": "2026-11-20T08:15:00+07:00"
+                     *           },
                      *           "status": "ready",
                      *           "spec_version": 1,
                      *           "observed_version": 1,
@@ -16295,6 +16556,7 @@ export interface operations {
                      *             "uptime_sec": 1728000
                      *           },
                      *           "account_count": 1,
+                     *           "platform": null,
                      *           "status": "degraded",
                      *           "spec_version": 5,
                      *           "observed_version": 4,
@@ -16423,6 +16685,14 @@ export interface operations {
                      *           "uptime_sec": 3888000
                      *         },
                      *         "account_count": 5,
+                     *         "platform": {
+                     *           "quota_mode": "kernel",
+                     *           "cgroup_v2": true,
+                     *           "systemd": true,
+                     *           "arch": "amd64",
+                     *           "agent_mode": "real",
+                     *           "facts_at": "2026-11-20T08:15:00+07:00"
+                     *         },
                      *         "status": "ready",
                      *         "spec_version": 3,
                      *         "observed_version": 3,
@@ -16504,6 +16774,14 @@ export interface operations {
                      *           "uptime_sec": 3888000
                      *         },
                      *         "account_count": 5,
+                     *         "platform": {
+                     *           "quota_mode": "kernel",
+                     *           "cgroup_v2": true,
+                     *           "systemd": true,
+                     *           "arch": "amd64",
+                     *           "agent_mode": "real",
+                     *           "facts_at": "2026-11-20T08:15:00+07:00"
+                     *         },
                      *         "status": "ready",
                      *         "spec_version": 3,
                      *         "observed_version": 3,
@@ -17978,6 +18256,375 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    putSetupAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "panel_domain": "panel.itso.local",
+                 *       "panel_port": 8443,
+                 *       "entrance_path": "/itso-a7k2",
+                 *       "allowlist": [
+                 *         "10.10.5.0/24",
+                 *         "203.0.113.7"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetupAccess"];
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "installed": false,
+                     *         "code_verified": true,
+                     *         "admin_created": true,
+                     *         "admin_mfa_enabled": true,
+                     *         "locale": "vi",
+                     *         "timezone": "Asia/Ho_Chi_Minh",
+                     *         "access": {
+                     *           "panel_domain": "panel.itso.local",
+                     *           "panel_port": 8443,
+                     *           "entrance_path": "/itso-a7k2",
+                     *           "allowlist": [
+                     *             "10.10.5.0/24",
+                     *             "203.0.113.7"
+                     *           ]
+                     *         },
+                     *         "steps_done": [
+                     *           "code",
+                     *           "language",
+                     *           "admin",
+                     *           "access"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SetupStatus"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            410: components["responses"]["Gone"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    createSetupAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "Nguyễn Văn An",
+                 *       "email": "an.nguyen@itso.local",
+                 *       "password": "Mat-khau-du-dai-2026"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetupAdmin"];
+            };
+        };
+        responses: {
+            /** @description Đã tạo */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "user": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "realm": "admin",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local",
+                     *           "role": "SUPER_ADMIN",
+                     *           "status": "active",
+                     *           "mfa_enabled": true,
+                     *           "locale": "vi",
+                     *           "timezone": "Asia/Ho_Chi_Minh",
+                     *           "last_login_at": "2026-11-20T08:15:00+07:00",
+                     *           "created_at": "2026-11-18T09:30:00+07:00",
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         "permissions": [
+                     *           "*"
+                     *         ],
+                     *         "scopes": [],
+                     *         "mfa_verified_at": "2026-11-20T08:15:00+07:00",
+                     *         "impersonating": null
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["Me"];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            410: components["responses"]["Gone"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    verifySetupCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "code": "K7QM-2XPA-9RTD"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetupCodeVerify"];
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "installed": false,
+                     *         "code_verified": true,
+                     *         "admin_created": false,
+                     *         "admin_mfa_enabled": false,
+                     *         "locale": "vi",
+                     *         "timezone": "Asia/Ho_Chi_Minh",
+                     *         "access": null,
+                     *         "steps_done": [
+                     *           "code"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SetupStatus"];
+                    };
+                };
+            };
+            409: components["responses"]["Conflict"];
+            410: components["responses"]["Gone"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putSetupPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "locale": "vi",
+                 *       "timezone": "Asia/Ho_Chi_Minh"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetupPreferences"];
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "installed": false,
+                     *         "code_verified": true,
+                     *         "admin_created": false,
+                     *         "admin_mfa_enabled": false,
+                     *         "locale": "vi",
+                     *         "timezone": "Asia/Ho_Chi_Minh",
+                     *         "access": null,
+                     *         "steps_done": [
+                     *           "code",
+                     *           "language"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SetupStatus"];
+                    };
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            410: components["responses"]["Gone"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getSetupQuota: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "mode": "kernel",
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "facts_at": "2026-11-20T08:15:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SetupQuota"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            410: components["responses"]["Gone"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getSetupStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "installed": false,
+                     *         "code_verified": false,
+                     *         "admin_created": false,
+                     *         "admin_mfa_enabled": false,
+                     *         "locale": "vi",
+                     *         "timezone": "Asia/Ho_Chi_Minh",
+                     *         "access": null,
+                     *         "steps_done": []
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SetupStatus"];
+                    };
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    completeSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "installed": true,
+                     *         "code_verified": true,
+                     *         "admin_created": true,
+                     *         "admin_mfa_enabled": true,
+                     *         "locale": "vi",
+                     *         "timezone": "Asia/Ho_Chi_Minh",
+                     *         "access": {
+                     *           "panel_domain": "panel.itso.local",
+                     *           "panel_port": 8443,
+                     *           "entrance_path": "/itso-a7k2",
+                     *           "allowlist": [
+                     *             "10.10.5.0/24",
+                     *             "203.0.113.7"
+                     *           ]
+                     *         },
+                     *         "steps_done": [
+                     *           "code",
+                     *           "language",
+                     *           "admin",
+                     *           "access",
+                     *           "quota"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SetupStatus"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            410: components["responses"]["Gone"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     listSftpAccounts: {
         parameters: {
             query?: {
@@ -18515,6 +19162,54 @@ export interface operations {
                      */
                     "application/json": {
                         data: components["schemas"]["SystemStatus"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getSystemUpdates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "current_version": "0.4.0",
+                     *         "commit": "28bb3fc",
+                     *         "channel": "stable",
+                     *         "latest_version": null,
+                     *         "update_available": false,
+                     *         "checked_at": null,
+                     *         "update_command": "sudo itso update --release-dir <thư mục>",
+                     *         "releases": [
+                     *           {
+                     *             "version": "0.4.0",
+                     *             "active": true
+                     *           },
+                     *           {
+                     *             "version": "0.3.0",
+                     *             "active": false
+                     *           }
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SystemUpdates"];
                     };
                 };
             };

@@ -37,6 +37,7 @@ final class ServerPresenter
                 'load_1m' => $num('load_1m'), 'uptime_sec' => $int('uptime_sec'),
             ],
             'account_count' => HostingAccount::query()->where('server_id', $s->id)->count(),
+            'platform' => self::platform($f),
             'status' => $s->status,
             'spec_version' => max(1, $s->spec_version),
             'observed_version' => max(0, $s->observed_version),
@@ -44,6 +45,30 @@ final class ServerPresenter
             'observed_at' => $s->observed_at?->toIso8601String(),
             'created_at' => $s->created_at->toIso8601String(),
             'updated_at' => $s->updated_at->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Sự thật nền tảng (system.info + system.ping) hoặc null khi agent chưa từng báo.
+     *
+     * @param  array<array-key, mixed>  $f
+     * @return array{quota_mode: string, cgroup_v2: bool, systemd: bool, arch: string, agent_mode: string, facts_at: string|null}|null
+     */
+    public static function platform(array $f): ?array
+    {
+        $p = $f['platform'] ?? null;
+        if (! is_array($p)) {
+            return null;
+        }
+        $mode = (string) ($f['agent_mode'] ?? '');
+
+        return [
+            'quota_mode' => in_array($p['quota_mode'] ?? null, ['kernel', 'soft'], true) ? (string) $p['quota_mode'] : 'unknown',
+            'cgroup_v2' => (bool) ($p['cgroup_v2'] ?? false),
+            'systemd' => (bool) ($p['systemd'] ?? false),
+            'arch' => (string) ($p['arch'] ?? ''),
+            'agent_mode' => in_array($mode, ['real', 'sandbox', 'mock'], true) ? $mode : 'real',
+            'facts_at' => is_string($p['facts_at'] ?? null) ? $p['facts_at'] : null,
         ];
     }
 
