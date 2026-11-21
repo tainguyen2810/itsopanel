@@ -64,6 +64,15 @@ const MATRIX = [
     ['GET', '/api/v1/admin/metrics/servers/{server}?metric=cpu_pct&range=1h', null, 200, 200, 404, 401],
     ['GET', '/api/v1/admin/metrics/hosting-accounts/{account}?metric=disk_pct', null, 200, 200, 404, 401],
     ['GET', '/api/v1/admin/system/updates', null, 200, 403, 403, 401],
+    // 6.3: dữ liệu hosting (danh sách lọc theo phạm vi: AD_OUT thấy rỗng; File Manager theo account trên đường dẫn)
+    ['GET', '/api/v1/admin/databases', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/database-users', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/sftp-accounts', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/ssh-keys', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/cron-jobs', null, 200, 200, 200, 401],
+    ['GET', '/api/v1/admin/hosting-accounts/{account}/files?path=.', null, 200, 200, 404, 401],
+    ['GET', '/api/v1/admin/hosting-accounts/{account}/files/download?path=a.txt', null, 200, 200, 404, 401],
+    ['POST', '/api/v1/admin/hosting-accounts/{account}/files/uploads', ['path' => 'a.bin', 'size' => 1], 201, 201, 404, 419],
 ];
 
 /*
@@ -80,6 +89,10 @@ const PORTAL_MATRIX = [
     ['GET', '/api/v1/portal/overview', 200, 200],
     ['GET', '/api/v1/portal/profile', 200, 200],
     ['GET', '/api/v1/portal/notifications', 200, 200],
+    ['GET', '/api/v1/portal/hosting-accounts/{account}/files?path=.', 200, 404],
+    ['GET', '/api/v1/portal/hosting-accounts/{account}/files/download?path=a.txt', 200, 404],
+    ['GET', '/api/v1/portal/databases', 200, 200],
+    ['GET', '/api/v1/portal/cron-jobs', 200, 200],
 ];
 
 dataset('matrix', function () {

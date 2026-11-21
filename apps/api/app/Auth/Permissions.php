@@ -20,6 +20,9 @@ final class Permissions
             'own.*' => 'Mọi thao tác trên tài nguyên của chính mình (Portal)',
             'websites.*' => 'Website (Phase 5)',
             'databases.*' => 'Database (Phase 6)',
+            'files.*' => 'File Manager (Phase 6)',
+            'ftp.*' => 'SFTP/FTPS và khóa SSH (Phase 6)',
+            'cron.*' => 'Cron (Phase 6)',
         ],
         'users' => [
             'users.read' => 'Xem người dùng',
@@ -48,6 +51,16 @@ final class Permissions
             'dns.write' => 'Thêm zone, sửa bản ghi DNS (Cloudflare)',
             'dns.providers' => 'Thêm/xóa nhà cung cấp DNS (token Cloudflare)',
         ],
+        'data' => [
+            'databases.read' => 'Xem database và user database',
+            'databases.write' => 'Tạo/xóa database, user, quyền, export/import',
+            'files.read' => 'Duyệt, đọc, tải file của tài khoản hosting',
+            'files.write' => 'Sửa, tải lên, thao tác file của tài khoản hosting',
+            'ftp.read' => 'Xem tài khoản SFTP/FTPS và khóa SSH',
+            'ftp.write' => 'Tạo/xóa tài khoản SFTP/FTPS, đổi mật khẩu, khóa SSH',
+            'cron.read' => 'Xem cron và lịch sử chạy',
+            'cron.write' => 'Tạo/sửa/xóa/chạy cron',
+        ],
         'operations' => [
             'jobs.read' => 'Xem job',
             'jobs.write' => 'Hủy/thử lại job',
@@ -63,7 +76,8 @@ final class Permissions
     public const ROLE_GRANTS = [
         'SUPER_ADMIN' => ['*'],
         'ADMIN' => ['users.read', 'users.write', 'roles.read', 'servers.read', 'packages.read', 'accounts.read',
-            'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'backups.read'],
+            'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'files.*', 'ftp.*',
+            'cron.*', 'backups.read'],
         'USER' => ['own.*'],
     ];
 

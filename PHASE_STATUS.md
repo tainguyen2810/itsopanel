@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 6 — Database / File Manager / FTP-SFTP / Cron / Terminal USER (đang làm; Phase 5 ✓ APPROVED 2026-11-21 cùng D-67 → D-70, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 6.3 Panel API. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
-- **Task đang làm:** 6.3 — bắt đầu
+- **Prompt hiện tại:** 6.4 Terminal USER. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
+- **Task đang làm:** 6.4 — bắt đầu
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-6`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_6_PROMPTS.md`; cuối 6.6 báo cáo Phase 6 và DỪNG (không bắt đầu Phase 7)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
@@ -35,8 +35,8 @@ Phase 6 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.
 
 - ✓ 6.1 ADR database/file/SFTP/cron/terminal (D-71…D-75), contracts, migration Phase 6
 - ✓ 6.2 Agent: File Manager hạ quyền, database, SFTP/FTPS/SSH key, cron
-- ✱ 6.3 Panel: databases, files, SFTP/FTP, SSH key, cron, suspend
-- ○ 6.4 Terminal USER: pty.open, itso-gateway, phiên terminal
+- ✓ 6.3 Panel: databases, files, SFTP/FTP, SSH key, cron, suspend
+- ✱ 6.4 Terminal USER: pty.open, itso-gateway, phiên terminal
 - ○ 6.5 UI nối API thật
 - ○ 6.6 e2e, VM Phase 6, review bảo mật, báo cáo, merge
 
@@ -113,3 +113,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 6 / kế hoạch | Người dùng duyệt Phase 5 (D-67…D-70 APPROVED, ADR 0014–0017 Accepted); kế hoạch Phase 6 (6 prompt, D-71…D-75 đề xuất), mở nhánh phase-6 | (commit kế hoạch) |
 | 2026-11-21 | 6 / 6.1 | ADR 0018–0022 (D-71…D-75 đề xuất); agent-ops +14 op (fs.stat/rename/upload.commit, db owner/lock/inspect, sshd.match.apply, ftp.user.*, cron.inspect, pty.open), sửa fs/db/sftp/cron theo ADR, recipe mariadb/postgresql/pure-ftpd, 17 vector độc mới; OpenAPI upload GET/DELETE, tải file stream, rotate SFTP, JobAccepted.secret; DBML + migration Phase 6 (10 bảng, thêm file_operations) | fa49a30 |
 | 2026-11-21 | 6 / 6.2 | Agent: internal/fsx (openat2 RESOLVE_BENEATH, helper `itso-agent fs-helper` hạ quyền + no_new_privs, zip/tar.gz an toàn, upload theo fd); 13 op fs.*; db.{mysql,pg}.* 20 op (SQL qua stdin, dump/import dưới uid account); sshd.match.apply, sftp/ftp user, ssh.keys.apply; cron.apply/inspect/run_once (OnCalendar, unit + script root:group 0640); Sim + mock dùng lại handler thật; fuzz cron/SSH key/đường dẫn | 2edbc0c |
+| 2026-11-21 | 6 / 6.3 | Panel API dữ liệu hosting (admin + portal): database/user/quyền/export/import, SFTP/FTPS + khóa SSH, cron (+ `itso:cron-sync` 5 phút), File Manager (đọc/sửa ETag, thao tác qua job, upload tus 8 MiB, link tải HMAC 5 phút); mật khẩu sinh trả một lần, job chỉ giữ tham chiếu; tạm khóa account khóa DB/cron/FTPS; quyền `files.* ftp.* cron.*` | (commit 6.3) |

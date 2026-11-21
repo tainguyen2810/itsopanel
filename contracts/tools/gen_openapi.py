@@ -126,17 +126,24 @@ def files_paths(api: Api, base: str, tag: str, prefix: str, jobs: JobSeq, realm:
     idp = [Api.p("Id")]
     path_q = [Api.p("PathQuery")]
     acc = D.ACCOUNTS[0]
-    api.add("get", f"{base}/{{id}}/files", f"{prefix}ListFiles", "Liệt kê thư mục", tag, params=idp + path_q,
-            list_=True, ok=cref("FileEntry"), ok_example=page(D.FILES))
-    api.add("get", f"{base}/{{id}}/files/content", f"{prefix}ReadFile", "Đọc nội dung file (≤ 2 MB)", tag,
+    sync_ops = []  # gọi agent đồng bộ (không job): agent không kết nối → 503
+    sync_ops.append(api.add("get", f"{base}/{{id}}/files", f"{prefix}ListFiles", "Liệt kê thư mục", tag, params=idp + path_q,
+            list_=True, ok=cref("FileEntry"), ok_example=page(D.FILES)))
+    read_op = api.add("get", f"{base}/{{id}}/files/content", f"{prefix}ReadFile", "Đọc nội dung file (≤ 2 MB)", tag,
             params=idp + path_q, ok=cref("FileContent"),
             ok_example=one({"path": "sites/anphat.vn/public/index.php", "content": "<?php\nrequire __DIR__.'/../bootstrap/app.php';\n",
-                            "encoding": "utf-8", "etag": "\"a1b2c3\""}))
-    api.add("put", f"{base}/{{id}}/files/content", f"{prefix}WriteFile", "Ghi nội dung file", tag, params=idp,
+                            "encoding": "utf-8", "etag": "\"a1b2c3\""}),
+            desc="File lớn hơn 2 MiB hoặc không phải file thường → 422 (dùng tải xuống).")
+    read_op["responses"]["422"] = Api.r("ValidationFailed")
+    sync_ops.append(read_op)
+    write_op = api.add("put", f"{base}/{{id}}/files/content", f"{prefix}WriteFile", "Ghi nội dung file", tag, params=idp,
             body=cref("FileWrite"),
             body_example={"path": "sites/anphat.vn/public/robots.txt", "content": "User-agent: *\nDisallow:\n",
                           "encoding": "utf-8", "if_etag": None},
-            ok=cref("FileEntry"), ok_example=one(D.FILES[1]))
+            ok=cref("FileEntry"), ok_example=one(D.FILES[1]),
+            desc="`if_etag` khác ETag hiện tại của file (đã bị sửa nơi khác) → 412.")
+    write_op["responses"]["412"] = Api.r("PreconditionFailed")
+    sync_ops.append(write_op)
     api.add("post", f"{base}/{{id}}/files:operate", f"{prefix}OperateFiles", "mkdir/move/copy/delete/chmod/nén/giải nén",
             tag, params=idp, body=cref("FileOperation"),
             body_example={"op": "compress", "paths": ["sites/anphat.vn/public"], "target": "backups/public.zip",
@@ -170,6 +177,9 @@ def files_paths(api: Api, base: str, tag: str, prefix: str, jobs: JobSeq, realm:
         "headers": {"Content-Disposition": {"schema": {"type": "string"}, "description": "attachment; filename=…"}},
         "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"},
                                                  "example": "%PDF-1.7 …"}}}
+    sync_ops.append(api.paths[full]["get"])
+    for op in sync_ops:
+        op["responses"]["503"] = Api.r("AgentUnavailable")
 
 
 def resource_paths(api: Api, realm: str, jobs: JobSeq):

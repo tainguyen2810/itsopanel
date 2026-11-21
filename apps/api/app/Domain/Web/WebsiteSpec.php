@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Web;
 
+use App\Domain\Data\DataSpec;
 use App\Domain\Hosting\ProvisioningService;
 use App\Domain\Jobs\JobSpec;
 use App\Exceptions\ApiProblem;
@@ -185,6 +186,7 @@ final class WebsiteSpec
             $spec->step('nginx.vhost.apply', self::vhost($w, $a, $suspended));
         }
 
-        return $spec;
+        // Phase 6: khóa DB, tắt cron, khóa FTP phụ theo trạng thái account.
+        return DataSpec::reapplyAccount($spec, $a, $suspended);
     }
 }

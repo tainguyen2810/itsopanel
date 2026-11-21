@@ -3100,12 +3100,15 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
   /api/v1/portal/hosting-accounts/{id}/files/content:
     get:
       operationId: portalReadFile
       summary: Đọc nội dung file (≤ 2 MB)
       tags:
       - Files
+      description: File lớn hơn 2 MiB hoặc không phải file thường → 422 (dùng tải xuống).
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/PathQuery
@@ -3142,11 +3145,16 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
     put:
       operationId: portalWriteFile
       summary: Ghi nội dung file
       tags:
       - Files
+      description: '`if_etag` khác ETag hiện tại của file (đã bị sửa nơi khác) → 412.'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       requestBody:
@@ -3197,6 +3205,10 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
   /api/v1/portal/hosting-accounts/{id}/files/download:
     get:
       operationId: portalDownloadLink
@@ -3268,6 +3280,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
   /api/v1/portal/hosting-accounts/{id}/files/uploads:
     post:
       operationId: portalCreateUpload

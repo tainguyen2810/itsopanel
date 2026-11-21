@@ -1196,9 +1196,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Đọc nội dung file (≤ 2 MB) */
+        /**
+         * Đọc nội dung file (≤ 2 MB)
+         * @description File lớn hơn 2 MiB hoặc không phải file thường → 422 (dùng tải xuống).
+         */
         get: operations["ReadFile"];
-        /** Ghi nội dung file */
+        /**
+         * Ghi nội dung file
+         * @description `if_etag` khác ETag hiện tại của file (đã bị sửa nơi khác) → 412.
+         */
         put: operations["WriteFile"];
         post?: never;
         delete?: never;
@@ -5708,6 +5714,25 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description Agent không kết nối */
+        AgentUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "https://docs.itso.local/errors/agent_unavailable",
+                 *       "title": "Agent không kết nối",
+                 *       "status": 503,
+                 *       "code": "agent_unavailable",
+                 *       "detail": "Không gọi được agent của server; thử lại sau.",
+                 *       "request_id": "req_01JD8K2M4N"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
         /** @description Chưa có ở phiên bản này */
         NotImplemented: {
             headers: {
@@ -5740,25 +5765,6 @@ export interface components {
                  *       "status": 410,
                  *       "code": "setup_completed",
                  *       "detail": "Panel đã cài đặt xong; wizard không dùng lại được.",
-                 *       "request_id": "req_01JD8K2M4N"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
-        /** @description Agent không kết nối */
-        AgentUnavailable: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://docs.itso.local/errors/agent_unavailable",
-                 *       "title": "Agent không kết nối",
-                 *       "status": 503,
-                 *       "code": "agent_unavailable",
-                 *       "detail": "Không gọi được agent của server; thử lại sau.",
                  *       "request_id": "req_01JD8K2M4N"
                  *     }
                  */
@@ -12783,6 +12789,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     ReadFile: {
@@ -12825,7 +12832,9 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     WriteFile: {
@@ -12880,8 +12889,10 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     DownloadLink: {
@@ -12960,6 +12971,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     CreateUpload: {

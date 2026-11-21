@@ -811,9 +811,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Đọc nội dung file (≤ 2 MB) */
+        /**
+         * Đọc nội dung file (≤ 2 MB)
+         * @description File lớn hơn 2 MiB hoặc không phải file thường → 422 (dùng tải xuống).
+         */
         get: operations["portalReadFile"];
-        /** Ghi nội dung file */
+        /**
+         * Ghi nội dung file
+         * @description `if_etag` khác ETag hiện tại của file (đã bị sửa nơi khác) → 412.
+         */
         put: operations["portalWriteFile"];
         post?: never;
         delete?: never;
@@ -6316,6 +6322,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     portalReadFile: {
@@ -6358,7 +6365,9 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     portalWriteFile: {
@@ -6413,8 +6422,10 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     portalDownloadLink: {
@@ -6493,6 +6504,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     portalCreateUpload: {

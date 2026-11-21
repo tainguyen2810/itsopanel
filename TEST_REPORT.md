@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 6 / Prompt 6.3 — nhánh `phase-6`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ, queue sync; agent giả qua `Tests\Support\FakeAgent` (Http::fake), staging upload `ITSO_UPLOAD_DIR=/tmp/itso-test-uploads` (phpunit.xml).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS (File Manager thêm 503 agent không phản hồi, 422 file > 2 MiB, 412 `if_etag` lệch) |
+| Phân tích tĩnh | `vendor/bin/pint` · `vendor/bin/phpstan analyse` · `make no-exec` | PASS · PASS 0 lỗi · PASS |
+| Phase 6 API | `pest tests/Feature/Phase6` | PASS 7/7: database tạo kèm user (mật khẩu trả một lần, `Cache-Control: no-store`, agent nhận mật khẩu thật, `job_steps/job_logs/audit_logs/jobs` không chứa mật khẩu, chỉ có tham chiếu `$secret`), quyền (diff, quyền ngoài danh sách → 422), đổi mật khẩu, export/import (`../` → 422), xóa cần step-up (portal chưa step-up → 403), ngoài phạm vi → 404; tên không tiền tố/chèn SQL/tên hệ thống/hoa/quá dài → 422, trùng → 409, vượt `database_limit` → 422 `quota_exceeded`, PG host `%` → 422; SFTP (user chính, root `.`, một tài khoản) + FTPS (tiền tố, `root_path` thoát home → 422, `read_only` → 422), đổi mật khẩu 202 + secret; khóa SSH (fingerprint `SHA256:`, trùng → 409, loại lạ/base64 hỏng/nhiều dòng → 422); cron (lịch dày hơn `cron_min_interval_min` → 422, biểu thức sai, lệnh nhiều dòng → 422, If-Match lệch → 412, không thay đổi → 409, chạy ngay ghi `cron_runs` manual, `itso:cron-sync` ghi lần chạy theo lịch không trùng, vượt `cron_limit` → 422); File Manager (liệt kê sắp xếp + phân trang cursor, `../`//etc → 422, đọc có ETag sha256, > 2 MiB → 422, ghi kèm `if_sha256`, agent `precondition_failed` → 412, thao tác nén qua job `file.operate`, op lạ/xóa home/chmod setuid → 422, link tải HMAC 5 phút: tải đúng nội dung, chữ ký sai hoặc người khác dùng link → 403); upload tus (staging 0600, sai offset → 409 kèm `received`, độ dài lệch → 422, đủ byte → job `file.upload` với `fs.upload.commit`, phiên người khác → 404, hủy → 204 xóa staging); tạm khóa account → `db.mysql.lock`, cron tắt, FTPS tắt, mọi tài nguyên `suspended`, không tạo/ghi mới (409); mở khóa → `ready` |
+| Ma trận quyền | `pest tests/Feature/Rbac` | PASS 257/257 (+8 dòng admin, +4 dòng portal cho dữ liệu hosting) |
+| Pest toàn bộ | `scripts/pest-pg.sh` | PASS 417/417 |
+| Web | `npx vitest run` · `tsc -b --noEmit` | PASS 486/486 · tsc sạch |
+
+Ghi chú: `PlatformApiTest` đổi đường dẫn ví dụ "chưa có ở bản này" từ `/admin/databases` (nay đã có) sang `/admin/security/overview` (Phase 7).
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 6 / Prompt 6.2 — nhánh `phase-6`
 
 Môi trường: như 6.1 (container không có systemd, MariaDB, PostgreSQL client thật cho agent, sshd, Pure-FTPd). Agent chạy với runner giả (Sim) trên gốc thư mục tạm; riêng `internal/fsx` chạy trên kernel thật (openat2).
