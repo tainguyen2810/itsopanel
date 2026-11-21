@@ -7,7 +7,7 @@
 - **Phase:** 4 — Go Agent, Installer, CLI, thực thi giới hạn (✓ hoàn tất phần không cần VM, chờ duyệt; Phase 3 ✓ APPROVED 2026-11-21 cùng D-56 → D-62)
 - **Prompt hiện tại:** 4.6 Tích hợp, VM harness, báo cáo. Người dùng yêu cầu (2026-11-21) "tiếp tục với Phase 4"; làm hàng loạt 4.1 → 4.6, tự merge local
 - **Task đang làm:** không (4.6 ✓, Phase 4 merge vào `main` local). Chờ người dùng duyệt Phase 4 + D-63 → D-66 và chạy bộ test VM
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-4`
+- **Commit cuối:** `phase-4` 3d16175, merge vào `main` 806995b (local)
 - **Bước tiếp theo:** DỪNG. Chạy `make test-vm` trên máy có Multipass/Vagrant rồi điền mục "chờ VM" trong `docs/reports/phase-4.md`; không bắt đầu Phase 5 khi chưa được duyệt
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
 
