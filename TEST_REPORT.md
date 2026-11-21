@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.2 (agent firewall, SSH, Fail2ban) — nhánh `phase-7`
+
+Phạm vi: `agent/internal/ops/{safe,firewall,sshd_hardening,fail2ban,sandbox_security}.go`, lệnh `itso-agent safe-rollback <kind> <apply_id>` (timer systemd gọi) + hoàn tác lần chờ quá hạn lúc khởi động, Bins `nft`, `fail2ban-client`, recipe Phase 7 trong `validate.Recipes`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go (toàn bộ) | `go test ./...` (agent) | PASS 17 package. Mới `ops/security_test.go`: safe-apply + xác nhận (token sai/đúng, lặp lại idempotent, busy khi còn chờ, token không lưu thô), hết hạn → hoàn tác (đồng hồ giả), lần đầu bị hoàn tác → xóa bảng, timer chạy muộn không làm gì, agent khởi động lại sau hạn → hoàn tác, không hẹn được timer → hoàn tác ngay, `nft -c` lỗi → không áp dụng, 13 biến thể tự khóa/độc, vector `firewall_rule` + `cidr` từ contracts, SSH hardening (0 khóa → would_lock_out, thứ tự sshd -t → reload → timer, hết hạn → xóa file, `sshd -t` lỗi → khôi phục không reload), fail2ban (golden jail/filter, status/ban list, unban, IP/jail lạ, `-t` lỗi); golden mới `firewall.nft`, `10-itso-hardening.conf`, `fail2ban-itso*.conf`, `fail2ban.apply.argv` |
+| Lần chạy đầu | `go test ./...` | 2 lỗi thật đã sửa: test vector cũ đọc `input` kiểu chuỗi (vector mới là số/đối tượng) → đọc RawMessage; `validate.Recipes` thiếu fail2ban/modsecurity |
+| Fuzz | `go test -run='^$' -fuzz=FuzzFirewallRule -fuzztime=10s ./internal/ops` (thêm vào `make test-fuzz`) | PASS (~100k exec, không lỗi) |
+| Lint agent | `make lint-agent` (gofmt, go vet, không os/exec ngoài platform) | PASS |
+
+**Chờ VM:** nft/sshd/fail2ban thật, mất kết nối → tự hoàn tác (tests/vm/phase7.sh ở 7.7). **Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.1 (ADR + contracts + migration) — nhánh `phase-7`
 
 Phạm vi: ADR 0023–0028; agent-ops Phase 7 (22 op có schema, `would_lock_out`, recipe, ví dụ envelope `firewall.apply` hợp lệ + 1 không hợp lệ); OpenAPI +7 operation; DBML +6 bảng, extras (CHECK, unique một phần "một safe-apply chờ", partition `waf_events`), migration Phase 7. Chưa đổi hành vi Laravel/agent/UI (handler demo cho 7 endpoint mới làm ở 7.6).

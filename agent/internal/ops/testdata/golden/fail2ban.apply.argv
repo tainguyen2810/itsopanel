@@ -1,0 +1,2 @@
+fail2ban-client -t
+systemctl reload-or-restart fail2ban.service

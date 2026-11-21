@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 7 — Security Center (✱ đang làm; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 7.2 Agent firewall/SSH/Fail2ban (7.0 mockup ✓, 7.1 ADR + contracts + migration ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
-- **Task đang làm:** 7.2 agent firewall nftables safe-apply + rollback timer, sshd hardening, fail2ban
+- **Prompt hiện tại:** 7.3 Agent WAF/malware/FIM/audit (7.0 ✓, 7.1 ✓, 7.2 agent firewall/SSH/Fail2ban ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
+- **Task đang làm:** 7.3 agent WAF ModSecurity, quét mã độc + cách ly, FIM, security.audit
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-7`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_7_PROMPTS.md`; cuối 7.7 báo cáo Phase 7 và DỪNG (không bắt đầu Phase 8)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -35,8 +35,8 @@ Phase 7 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.
 
 - ✓ 7.0 Mockup Security Center trên bản demo (`docs/screenshots/phase-7/`, 68 ảnh)
 - ✓ 7.1 ADR firewall/SSH/WAF/malware/FIM/terminal root (D-76…D-81), contracts, migration Phase 7
-- ✱ 7.2 Agent: firewall nftables safe-apply, SSH hardening, Fail2ban
-- ○ 7.3 Agent: WAF, mã độc + cách ly, FIM, security.audit
+- ✓ 7.2 Agent: firewall nftables safe-apply, SSH hardening, Fail2ban
+- ✱ 7.3 Agent: WAF, mã độc + cách ly, FIM, security.audit
 - ○ 7.4 Panel: Security Center API, CAPTCHA, IP allowlist chống tự khóa
 - ○ 7.5 Terminal root theo policy + ghi phiên
 - ○ 7.6 UI nối API thật
@@ -132,3 +132,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 7 | Phase 6 APPROVED (D-71 → D-75, ADR 0018–0022 Accepted); viết `PHASE_7_PROMPTS.md` (7.0 mockup trước khi code), D-76 → D-81 đề xuất | 38950e7 |
 | 2026-11-21 | 7 / 7.0 | Mockup Security Center (68 ảnh `docs/screenshots/phase-7/`): CAPTCHA PoW đăng nhập, SSH safe-apply có xác nhận, chống tự khóa tường lửa, policy root + phiên terminal + phát lại, file nghi nhiễm + cách ly, FIM baseline, Portal › Bảo mật; contract cho màn mới trước | 000014c |
 | 2026-11-21 | 7 / 7.1 | ADR 0023–0028 (Proposed); agent-ops: 22 op Phase 7 declared → specified (firewall.apply/confirm/status, sshd.config.apply/confirm, fail2ban.apply/status/unban, waf.apply/events, malware.scan/quarantine/restore/delete, fim.baseline/check, security.audit, pty.open.root/policy/list/recording.read), lỗi `would_lock_out`, recipe fail2ban/clamav/yara/modsecurity, 31 vector độc mới; OpenAPI +7 (firewall preview/status, fail2ban bans + unban, WAF events, FIM changes, điểm chi tiết); DBML +6 bảng (firewall_applies, security_settings, waf_settings, waf_events partition tháng, fim_changes, terminal_recordings) + migration Phase 7 (12 bảng). Lệch kế hoạch: root terminal là op riêng `pty.open.root` để giữ schema `pty.open` Phase 6; ghi phiên vào bảng mới `terminal_recordings` thay vì thêm cột (migration Phase 6 đã phát hành không sửa) | 11d776e |
+| 2026-11-21 | 7 / 7.2 | Agent: `firewall.apply/confirm/status` (bảng `inet itso`, ruleset từ template, bất biến chống tự khóa bằng net/netip, `nft -c` → lưu ruleset cũ → `nft -f` → timer `itso-fw-rollback` gọi `itso-agent safe-rollback`), `sshd.config.apply/confirm` (10-itso-hardening.conf, sshd -t, chặn tắt mật khẩu khi 0 khóa), `fail2ban.apply/status/unban` (3 jail, banaction nftables, filter itso-panel); safe-apply dùng chung (token chỉ lưu sha256, một lần chờ, hết hạn → hoàn tác cả khi agent khởi động lại); sandbox mô phỏng nft/fail2ban-client; recipe fail2ban/clamav/yara/modsecurity | (commit 7.2) |

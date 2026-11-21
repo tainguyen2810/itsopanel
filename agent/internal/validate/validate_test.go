@@ -11,10 +11,11 @@ import (
 type vectors struct {
 	Categories map[string]struct {
 		Vectors []struct {
-			Input  string `json:"input"`
-			Expect string `json:"expect"`
-			Layer  string `json:"layer"`
-			Note   string `json:"note"`
+			Raw    json.RawMessage `json:"input"`
+			Input  string          `json:"-"`
+			Expect string          `json:"expect"`
+			Layer  string          `json:"layer"`
+			Note   string          `json:"note"`
 		} `json:"vectors"`
 	} `json:"categories"`
 }
@@ -56,6 +57,9 @@ func TestEvilVectors(t *testing.T) {
 			t.Fatalf("thiếu nhóm vector %s", cat)
 		}
 		for _, x := range c.Vectors {
+			if json.Unmarshal(x.Raw, &x.Input) != nil {
+				t.Fatalf("%s: vector không phải chuỗi", cat)
+			}
 			err := fn(x.Input)
 			if x.Expect == "reject" && err == nil {
 				t.Errorf("%s: %q phải bị từ chối (%s)", cat, x.Input, x.Note)

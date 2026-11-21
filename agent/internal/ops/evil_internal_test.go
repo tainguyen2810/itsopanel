@@ -15,8 +15,9 @@ import (
 type vectors struct {
 	Categories map[string]struct {
 		Vectors []struct {
-			Input  string `json:"input"`
-			Expect string `json:"expect"`
+			Raw    json.RawMessage `json:"input"`
+			Input  string          `json:"-"`
+			Expect string          `json:"expect"`
 		} `json:"vectors"`
 	} `json:"categories"`
 }
@@ -115,7 +116,7 @@ func TestEvilInputsRejectedBeforeAnyCommand(t *testing.T) {
 	n := 0
 	for cat, hs := range cases {
 		for _, x := range v.Categories[cat].Vectors {
-			if x.Expect != "reject" {
+			if x.Expect != "reject" || json.Unmarshal(x.Raw, &x.Input) != nil {
 				continue
 			}
 			for _, c := range hs {
