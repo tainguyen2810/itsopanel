@@ -38,7 +38,7 @@ PHASES: dict[int, list[str]] = {
     7: ["security_events", "firewall_rules", "malware_scans", "malware_findings", "quarantine_items",
         "fim_baselines", "firewall_applies", "security_settings", "waf_settings", "waf_events", "fim_changes",
         "terminal_recordings"],
-    8: ["backup_destinations", "backup_policies", "backup_jobs", "backup_snapshots",
+    8: ["backup_destinations", "backup_repositories", "backup_policies", "backup_policy_destinations", "backup_jobs", "backup_snapshots",
         "backup_verifications", "restore_jobs", "purge_records"],
     9: ["agent_enrollment_tokens", "account_migrations"],
     10: ["docker_hosts", "registries", "compose_projects", "compose_revisions", "containers",

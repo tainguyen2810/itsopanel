@@ -503,30 +503,297 @@
         "null"
       ]
     },
+    "ResticSnapshotId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8,64}$",
+      "description": "Id snapshot restic (hex 8–64); không nhận `latest` hay chuỗi tự do."
+    },
+    "BackupRepoPath": {
+      "type": "string",
+      "pattern": "^itso/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(acct-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|server)$",
+      "description": "Đường dẫn repo trong đích, cố định theo server × account (D-82); agent dựng URL repo từ đây."
+    },
+    "BackupTag": {
+      "type": "string",
+      "pattern": "^(itso|type:(files|db|config|panel)|account:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|final)$",
+      "description": "Tag snapshot theo danh sách cố định (D-82)."
+    },
+    "RepoPassword": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 256,
+      "pattern": "^[\\x21-\\x7e]+$",
+      "writeOnly": true,
+      "description": "Mật khẩu repo restic; tới agent qua tham chiếu bí mật `backup_repo_password` (D-69), agent ghi file 0600 rồi dùng RESTIC_PASSWORD_FILE, không qua argv."
+    },
+    "AgeRecipient": {
+      "type": "string",
+      "pattern": "^age1[02-9ac-hj-np-z]{58}$",
+      "description": "Khóa công khai X25519 của panel (age, bech32)."
+    },
+    "BackupExclude": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9._*?/@+-]+$",
+      "not": {
+        "pattern": "(^|/)\\.\\.(/|$)|^/"
+      },
+      "description": "Mẫu loại trừ tương đối với home (restic --exclude), không tuyệt đối, không `..`."
+    },
+    "S3Bucket": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+    },
+    "HttpsUrl": {
+      "type": "string",
+      "maxLength": 500,
+      "pattern": "^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$"
+    },
+    "RemoteUser": {
+      "type": "string",
+      "pattern": "^[a-z_][a-z0-9_-]{0,31}$"
+    },
+    "BackupDestination": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "local"
+            },
+            "destination_uuid": {
+              "$ref": "defs.schema.json#/$defs/Uuid"
+            }
+          },
+          "required": [
+            "type",
+            "destination_uuid"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "sftp"
+            },
+            "destination_uuid": {
+              "$ref": "defs.schema.json#/$defs/Uuid"
+            },
+            "host": {
+              "oneOf": [
+                {
+                  "$ref": "defs.schema.json#/$defs/Hostname"
+                },
+                {
+                  "$ref": "defs.schema.json#/$defs/IpAddress"
+                }
+              ]
+            },
+            "port": {
+              "$ref": "defs.schema.json#/$defs/Port"
+            },
+            "user": {
+              "$ref": "defs.schema.json#/$defs/RemoteUser"
+            },
+            "path": {
+              "$ref": "defs.schema.json#/$defs/AbsPath"
+            },
+            "host_key_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+            }
+          },
+          "required": [
+            "type",
+            "destination_uuid",
+            "host",
+            "port",
+            "user",
+            "path",
+            "host_key_sha256"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "s3"
+            },
+            "destination_uuid": {
+              "$ref": "defs.schema.json#/$defs/Uuid"
+            },
+            "endpoint": {
+              "$ref": "defs.schema.json#/$defs/HttpsUrl"
+            },
+            "bucket": {
+              "$ref": "defs.schema.json#/$defs/S3Bucket"
+            },
+            "region": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-z0-9-]{2,32}$"
+            },
+            "access_key_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9/+=]{8,128}$"
+            },
+            "secret_access_key": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 256,
+              "pattern": "^[\\x21-\\x7e]+$",
+              "writeOnly": true
+            }
+          },
+          "required": [
+            "type",
+            "destination_uuid",
+            "endpoint",
+            "bucket",
+            "region",
+            "access_key_id",
+            "secret_access_key"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "rest"
+            },
+            "destination_uuid": {
+              "$ref": "defs.schema.json#/$defs/Uuid"
+            },
+            "url": {
+              "$ref": "defs.schema.json#/$defs/HttpsUrl"
+            },
+            "user": {
+              "$ref": "defs.schema.json#/$defs/RemoteUser"
+            },
+            "password": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 256,
+              "pattern": "^[\\x21-\\x7e]+$",
+              "writeOnly": true
+            }
+          },
+          "required": [
+            "type",
+            "destination_uuid",
+            "url",
+            "user",
+            "password"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Đích kiểu hóa (D-83): agent dựng URL repo (local:/var/backups/itso/repos/…, sftp:user@host:path/…, s3:endpoint/bucket/…, rest:https://user@host/…); credential chỉ là credential GHI, tới agent qua tham chiếu bí mật."
+    },
     "BackupRepo": {
       "type": "object",
       "properties": {
         "repo_uuid": {
           "$ref": "defs.schema.json#/$defs/Uuid"
         },
-        "destination_type": {
-          "type": "string",
-          "enum": [
-            "local",
-            "sftp",
-            "s3",
-            "rest"
-          ]
+        "path": {
+          "$ref": "defs.schema.json#/$defs/BackupRepoPath"
         },
-        "append_only": {
-          "type": "boolean"
+        "destination": {
+          "$ref": "defs.schema.json#/$defs/BackupDestination"
+        },
+        "password": {
+          "$ref": "defs.schema.json#/$defs/RepoPassword"
         }
       },
       "required": [
         "repo_uuid",
-        "destination_type"
+        "path",
+        "destination",
+        "password"
       ],
       "additionalProperties": false
+    },
+    "BackupDb": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "$ref": "defs.schema.json#/$defs/DbEngine"
+        },
+        "name": {
+          "$ref": "defs.schema.json#/$defs/DbName"
+        }
+      },
+      "required": [
+        "engine",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "BackupRestoreItem": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "files"
+            },
+            "path": {
+              "$ref": "defs.schema.json#/$defs/RelPath"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "website"
+            },
+            "site_dir": {
+              "$ref": "defs.schema.json#/$defs/Domain"
+            }
+          },
+          "required": [
+            "kind",
+            "site_dir"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "database"
+            },
+            "db": {
+              "$ref": "defs.schema.json#/$defs/BackupDb"
+            },
+            "target_name": {
+              "$ref": "defs.schema.json#/$defs/DbName"
+            }
+          },
+          "required": [
+            "kind",
+            "db",
+            "target_name"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

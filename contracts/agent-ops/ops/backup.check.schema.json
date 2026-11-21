@@ -9,14 +9,15 @@
         "repo": {
           "$ref": "../defs.schema.json#/$defs/BackupRepo"
         },
-        "read_data_subset": {
-          "type": "string",
-          "pattern": "^[0-9]{1,2}%$"
+        "read_data_percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
         }
       },
       "required": [
         "repo",
-        "read_data_subset"
+        "read_data_percent"
       ],
       "additionalProperties": false
     },
@@ -29,13 +30,20 @@
         "errors": {
           "type": "array",
           "items": {
-            "type": "string"
-          }
+            "type": "string",
+            "maxLength": 500
+          },
+          "maxItems": 100
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "required": [
         "ok",
-        "errors"
+        "errors",
+        "duration_ms"
       ],
       "additionalProperties": false
     }

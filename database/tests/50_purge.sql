@@ -16,9 +16,12 @@ UPDATE hosting_accounts SET terminated_at = now() - interval '31 days', purge_af
 SELECT itso_test.expect_error('Purge khi chưa có biên bản bị từ chối',
   $$UPDATE hosting_accounts SET lifecycle_state = 'purged' WHERE id = 1$$, '23514');
 
-INSERT INTO backup_destinations (id, name, type, restic_password_encrypted) VALUES (1, 'local', 'local', '\x00');
-INSERT INTO backup_snapshots (id, destination_id, restic_snapshot_id, scope_type, hosting_account_id, taken_at, verified_at)
-  VALUES (1, 1, 'abc123', 'hosting_account', 1, now(), now());
+INSERT INTO backup_destinations (id, name, type) VALUES (1, 'local', 'local');
+INSERT INTO backup_repositories (id, destination_id, server_id, scope_type, hosting_account_id, path, password_encrypted)
+  SELECT 1, 1, server_id, 'hosting_account', id, 'itso/' || gen_random_uuid() || '/acct-' || uuid, '\x00'
+  FROM hosting_accounts WHERE id = 1;
+INSERT INTO backup_snapshots (id, destination_id, repository_id, restic_snapshot_id, scope_type, hosting_account_id, taken_at, verified_at)
+  VALUES (1, 1, 1, 'abc12345', 'hosting_account', 1, now(), now());
 INSERT INTO purge_records (id, hosting_account_id, requested_by_user_id, confirmed_by_user_id,
   final_backup_snapshot_id, backup_verified_at, scheduled_for)
   VALUES (1, 1, 1, 1, 1, now(), now());

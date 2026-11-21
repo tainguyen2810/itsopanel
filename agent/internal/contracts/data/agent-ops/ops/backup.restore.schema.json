@@ -10,8 +10,10 @@
           "$ref": "../defs.schema.json#/$defs/BackupRepo"
         },
         "snapshot_id": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{8,64}$"
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "restore_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
         },
         "account": {
           "$ref": "../defs.schema.json#/$defs/Account"
@@ -26,30 +28,90 @@
         "items": {
           "type": "array",
           "items": {
-            "type": "string",
-            "pattern": "^(files:.+|database:[a-z][a-z0-9_]{0,63}|config)$"
+            "$ref": "../defs.schema.json#/$defs/BackupRestoreItem"
           },
-          "minItems": 1
+          "minItems": 1,
+          "maxItems": 50
+        },
+        "pre_restore_tags": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/BackupTag"
+          },
+          "maxItems": 20,
+          "uniqueItems": true
         }
       },
       "required": [
         "repo",
         "snapshot_id",
+        "restore_uuid",
         "account",
         "mode",
-        "items"
+        "items",
+        "pre_restore_tags"
       ],
       "additionalProperties": false
     },
     "result": {
       "type": "object",
       "properties": {
-        "restored_items": {
-          "type": "integer"
+        "restored_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/RelPath"
+          },
+          "maxItems": 50
+        },
+        "databases": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/DbName"
+          },
+          "maxItems": 50
+        },
+        "pre_restore_snapshot_id": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "$ref": "../defs.schema.json#/$defs/RelPath"
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "symlink",
+                  "device",
+                  "setuid",
+                  "outside_home"
+                ]
+              }
+            },
+            "required": [
+              "path",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 1000
         }
       },
       "required": [
-        "restored_items"
+        "restored_paths",
+        "databases",
+        "pre_restore_snapshot_id",
+        "skipped"
       ],
       "additionalProperties": false
     }

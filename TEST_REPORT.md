@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.1 (ADR, contracts, migration) — nhánh `phase-8`
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` | PASS: 113 op có schema, 466 example, 233 vector độc (207 tầng schema đã kiểm, 26 tầng nghiệp vụ) |
+| Codegen | `make codegen` · `make codegen-check` | OK (`types_gen.go`, schema TS, dữ liệu agent đồng bộ) |
+| DB | `make db-schema` · `python3 database/tools/gen_migrations.py 8` · `make db-verify` | Lần đầu lỗi: `50_purge.sql` còn chèn `restic_password_encrypted` (cột đã bỏ). Sửa seed sang `backup_repositories`; thêm `70_backup.sql` (17 kiểm tra). Chạy lại: 78 test PASS, Phase 3 → 11 áp lần lượt = đặc tả |
+| Agent | `cd agent && go build ./... && go test ./...` | PASS |
+| Pest | `make test-api` | 450/451 lần đầu: `SchemaTest` liệt kê bảng theo Phase chưa có Phase 8. Thêm `PHASE8_TABLES`; `pest tests/Feature/Schema/SchemaTest.php` 12/12 PASS |
+| Docs | `make docs-check` · `make structure` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 8 / Prompt 8.0 (mockup Backup & Restore trên bản demo) — nhánh `phase-8`
 
 | Bộ test | Lệnh | Kết quả |

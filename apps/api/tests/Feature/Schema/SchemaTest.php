@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
-// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql. Prompt 4.5: thêm 6 bảng Phase 4. Prompt 5.1: thêm 9 bảng Phase 5. Prompt 6.1: thêm 10 bảng Phase 6. Prompt 7.1: thêm 12 bảng Phase 7.
+// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql. Prompt 4.5: thêm 6 bảng Phase 4. Prompt 5.1: thêm 9 bảng Phase 5. Prompt 6.1: thêm 10 bảng Phase 6. Prompt 7.1: thêm 12 bảng Phase 7. Prompt 8.1: thêm 9 bảng Phase 8.
 
 const PHASE3_TABLES = [
     'users', 'roles', 'permissions', 'role_permissions', 'user_roles', 'user_scopes', 'mfa_credentials',
@@ -31,6 +31,9 @@ const PHASE7_TABLES = ['security_events', 'firewall_rules', 'malware_scans', 'ma
     'fim_baselines', 'firewall_applies', 'security_settings', 'waf_settings', 'waf_events', 'fim_changes',
     'terminal_recordings'];
 
+const PHASE8_TABLES = ['backup_destinations', 'backup_repositories', 'backup_policies', 'backup_policy_destinations',
+    'backup_jobs', 'backup_snapshots', 'backup_verifications', 'restore_jobs', 'purge_records'];
+
 function rejects(callable $fn, string $pattern): void
 {
     try {
@@ -43,12 +46,12 @@ function rejects(callable $fn, string $pattern): void
     throw new RuntimeException('Mong đợi lỗi DB khớp '.$pattern);
 }
 
-it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 (không hơn), audit_logs, metric_samples và waf_events có partition mặc định', function () {
+it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 + 9 bảng Phase 8 (không hơn), audit_logs, metric_samples và waf_events có partition mặc định', function () {
     $tables = collect(DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         ->pluck('tablename')
         ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default', 'waf_events_default'], true))
         ->sort()->values()->all();
-    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES, ...PHASE7_TABLES])->sort()->values()->all());
+    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES, ...PHASE7_TABLES, ...PHASE8_TABLES])->sort()->values()->all());
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'metric_samples_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'audit_logs_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'waf_events_default'"))->toBe(1);

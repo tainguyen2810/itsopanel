@@ -13,11 +13,16 @@ const (
 	OpAccountSuspend         = "account.suspend"
 	OpAccountUnsuspend       = "account.unsuspend"
 	OpAuditTail              = "audit.tail"
+	OpBackupBrowse           = "backup.browse"
 	OpBackupCheck            = "backup.check"
+	OpBackupDestinationTest  = "backup.destination.test"
 	OpBackupForget           = "backup.forget"
+	OpBackupRepoInit         = "backup.repo.init"
 	OpBackupRestore          = "backup.restore"
 	OpBackupRestoreTest      = "backup.restore_test"
 	OpBackupRun              = "backup.run"
+	OpBackupSnapshots        = "backup.snapshots"
+	OpBackupStats            = "backup.stats"
 	OpCertInspect            = "cert.inspect"
 	OpCertInstall            = "cert.install"
 	OpCertIssue              = "cert.issue"
@@ -287,15 +292,54 @@ type AbsPath string
 // NullableTime — kiểu NullableTime trong contracts/agent-ops.
 type NullableTime *string
 
+// ResticSnapshotID — Id snapshot restic (hex 8–64); không nhận `latest` hay chuỗi tự do.
+type ResticSnapshotID string
+
+// BackupRepoPath — Đường dẫn repo trong đích, cố định theo server × account (D-82); agent dựng URL repo từ đây.
+type BackupRepoPath string
+
+// BackupTag — Tag snapshot theo danh sách cố định (D-82).
+type BackupTag string
+
+// RepoPassword — Mật khẩu repo restic; tới agent qua tham chiếu bí mật `backup_repo_password` (D-69), agent ghi file 0600 rồi dùng RESTIC_PASSWORD_FILE, không qua argv.
+type RepoPassword string
+
+// AgeRecipient — Khóa công khai X25519 của panel (age, bech32).
+type AgeRecipient string
+
+// BackupExclude — Mẫu loại trừ tương đối với home (restic --exclude), không tuyệt đối, không `..`.
+type BackupExclude string
+
+// S3Bucket — kiểu S3Bucket trong contracts/agent-ops.
+type S3Bucket string
+
+// HTTPSURL — kiểu HTTPSURL trong contracts/agent-ops.
+type HTTPSURL string
+
+// RemoteUser — kiểu RemoteUser trong contracts/agent-ops.
+type RemoteUser string
+
+// BackupDestination — Đích kiểu hóa (D-83): agent dựng URL repo (local:/var/backups/itso/repos/…, sftp:user@host:path/…, s3:endpoint/bucket/…, rest:https://user@host/…); credential chỉ là credential GHI, tới agent qua tham chiếu bí mật.
+type BackupDestination json.RawMessage
+
 // BackupRepo — kiểu BackupRepo trong contracts/agent-ops.
 type BackupRepo struct {
-	RepoUUID UUID `json:"repo_uuid"`
-	// Giá trị: "local", "sftp", "s3", "rest".
-	DestinationType string `json:"destination_type"`
-	AppendOnly      *bool  `json:"append_only,omitempty"`
+	RepoUUID    UUID              `json:"repo_uuid"`
+	Path        BackupRepoPath    `json:"path"`
+	Destination BackupDestination `json:"destination"`
+	Password    RepoPassword      `json:"password"`
 }
 
-// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "would_lock_out", "internal".
+// BackupDB — kiểu BackupDB trong contracts/agent-ops.
+type BackupDB struct {
+	Engine DBEngine `json:"engine"`
+	Name   DBName   `json:"name"`
+}
+
+// BackupRestoreItem — kiểu BackupRestoreItem trong contracts/agent-ops.
+type BackupRestoreItem json.RawMessage
+
+// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "would_lock_out", "repo_locked", "repo_not_initialized", "repo_auth_failed", "host_key_mismatch", "internal".
 type ErrorCode string
 
 // EnvelopeRequestedBy được sinh từ schema.
@@ -441,69 +485,198 @@ type AuditTailResult struct {
 	LastSeq int64                        `json:"last_seq"`
 }
 
+// BackupBrowseParams — params của op backup.browse (ops/backup.browse.schema.json).
+type BackupBrowseParams struct {
+	Repo       BackupRepo       `json:"repo"`
+	SnapshotID ResticSnapshotID `json:"snapshot_id"`
+	Path       RelPath          `json:"path"`
+	Limit      int64            `json:"limit"`
+}
+
+// BackupBrowseResultEntriesItem được sinh từ schema.
+type BackupBrowseResultEntriesItem struct {
+	Name  string   `json:"name"`
+	Path  RelPath  `json:"path"`
+	Type  FileType `json:"type"`
+	Size  Bytes    `json:"size"`
+	Mtime string   `json:"mtime"`
+	Mode  Mode     `json:"mode"`
+}
+
+// BackupBrowseResult — result của op backup.browse (ops/backup.browse.schema.json).
+type BackupBrowseResult struct {
+	Entries   []BackupBrowseResultEntriesItem `json:"entries"`
+	Truncated bool                            `json:"truncated"`
+}
+
 // BackupCheckParams — params của op backup.check (ops/backup.check.schema.json).
 type BackupCheckParams struct {
-	Repo           BackupRepo `json:"repo"`
-	ReadDataSubset string     `json:"read_data_subset"`
+	Repo            BackupRepo `json:"repo"`
+	ReadDataPercent int64      `json:"read_data_percent"`
 }
 
 // BackupCheckResult — result của op backup.check (ops/backup.check.schema.json).
 type BackupCheckResult struct {
-	OK     bool     `json:"ok"`
-	Errors []string `json:"errors"`
+	OK         bool     `json:"ok"`
+	Errors     []string `json:"errors"`
+	DurationMs int64    `json:"duration_ms"`
+}
+
+// BackupDestinationTestParams — params của op backup.destination.test (ops/backup.destination.test.schema.json).
+type BackupDestinationTestParams struct {
+	Destination BackupDestination `json:"destination"`
+}
+
+// BackupDestinationTestResult — result của op backup.destination.test (ops/backup.destination.test.schema.json).
+type BackupDestinationTestResult struct {
+	OK             bool    `json:"ok"`
+	Error          *string `json:"error"`
+	LatencyMs      int64   `json:"latency_ms"`
+	AppendOnly     bool    `json:"append_only"`
+	ObjectLockDays *int64  `json:"object_lock_days"`
+	HostKeySHA256  *string `json:"host_key_sha256"`
+	SSHPublicKey   *string `json:"ssh_public_key"`
 }
 
 // BackupForgetParams — params của op backup.forget (ops/backup.forget.schema.json).
 type BackupForgetParams struct {
-	Repo        BackupRepo `json:"repo"`
-	SnapshotIds []string   `json:"snapshot_ids"`
+	Repo        BackupRepo         `json:"repo"`
+	SnapshotIds []ResticSnapshotID `json:"snapshot_ids"`
+	Prune       bool               `json:"prune"`
 }
 
 // BackupForgetResult — result của op backup.forget (ops/backup.forget.schema.json).
 type BackupForgetResult struct {
 	Forgotten int64 `json:"forgotten"`
+	Pruned    bool  `json:"pruned"`
+}
+
+// BackupRepoInitParams — params của op backup.repo.init (ops/backup.repo.init.schema.json).
+type BackupRepoInitParams struct {
+	Repo BackupRepo `json:"repo"`
+}
+
+// BackupRepoInitResult — result của op backup.repo.init (ops/backup.repo.init.schema.json).
+type BackupRepoInitResult struct {
+	Initialized    bool `json:"initialized"`
+	AlreadyExisted bool `json:"already_existed"`
 }
 
 // BackupRestoreParams — params của op backup.restore (ops/backup.restore.schema.json).
 type BackupRestoreParams struct {
-	Repo       BackupRepo `json:"repo"`
-	SnapshotID string     `json:"snapshot_id"`
-	Account    Account    `json:"account"`
+	Repo        BackupRepo       `json:"repo"`
+	SnapshotID  ResticSnapshotID `json:"snapshot_id"`
+	RestoreUUID UUID             `json:"restore_uuid"`
+	Account     Account          `json:"account"`
 	// Giá trị: "new", "overwrite".
-	Mode  string   `json:"mode"`
-	Items []string `json:"items"`
+	Mode           string              `json:"mode"`
+	Items          []BackupRestoreItem `json:"items"`
+	PreRestoreTags []BackupTag         `json:"pre_restore_tags"`
+}
+
+// BackupRestoreResultSkippedItem được sinh từ schema.
+type BackupRestoreResultSkippedItem struct {
+	Path RelPath `json:"path"`
+	// Giá trị: "symlink", "device", "setuid", "outside_home".
+	Reason string `json:"reason"`
 }
 
 // BackupRestoreResult — result của op backup.restore (ops/backup.restore.schema.json).
 type BackupRestoreResult struct {
-	RestoredItems int64 `json:"restored_items"`
+	RestoredPaths        []RelPath                        `json:"restored_paths"`
+	Databases            []DBName                         `json:"databases"`
+	PreRestoreSnapshotID json.RawMessage                  `json:"pre_restore_snapshot_id"`
+	Skipped              []BackupRestoreResultSkippedItem `json:"skipped"`
 }
 
 // BackupRestoreTestParams — params của op backup.restore_test (ops/backup.restore_test.schema.json).
 type BackupRestoreTestParams struct {
-	Repo        BackupRepo `json:"repo"`
-	SnapshotID  string     `json:"snapshot_id"`
-	SampleFiles int64      `json:"sample_files"`
+	Repo        BackupRepo       `json:"repo"`
+	SnapshotID  ResticSnapshotID `json:"snapshot_id"`
+	SampleFiles int64            `json:"sample_files"`
+	Databases   []BackupDB       `json:"databases"`
+}
+
+// BackupRestoreTestResultMismatchesItem được sinh từ schema.
+type BackupRestoreTestResultMismatchesItem struct {
+	Path           RelPath         `json:"path"`
+	ExpectedSHA256 SHA256          `json:"expected_sha256"`
+	ActualSHA256   json.RawMessage `json:"actual_sha256"`
 }
 
 // BackupRestoreTestResult — result của op backup.restore_test (ops/backup.restore_test.schema.json).
 type BackupRestoreTestResult struct {
-	OK            bool  `json:"ok"`
-	VerifiedFiles int64 `json:"verified_files"`
+	OK            bool                                    `json:"ok"`
+	VerifiedFiles int64                                   `json:"verified_files"`
+	Mismatches    []BackupRestoreTestResultMismatchesItem `json:"mismatches"`
+	DatabasesOK   int64                                   `json:"databases_ok"`
+}
+
+// BackupRunParamsMeta được sinh từ schema.
+type BackupRunParamsMeta struct {
+	PanelVersion string          `json:"panel_version"`
+	ServerUUID   UUID            `json:"server_uuid"`
+	AccountUUID  json.RawMessage `json:"account_uuid"`
+	Package      *string         `json:"package"`
 }
 
 // BackupRunParams — params của op backup.run (ops/backup.run.schema.json).
 type BackupRunParams struct {
-	Repo     BackupRepo      `json:"repo"`
-	Account  json.RawMessage `json:"account"`
-	Contents []string        `json:"contents"`
-	Tags     []string        `json:"tags"`
+	Repo BackupRepo `json:"repo"`
+	// Giá trị: "files", "db", "config", "panel".
+	Kind         string              `json:"kind"`
+	Account      json.RawMessage     `json:"account"`
+	WebsiteUUID  json.RawMessage     `json:"website_uuid"`
+	SiteDir      json.RawMessage     `json:"site_dir"`
+	Databases    []BackupDB          `json:"databases"`
+	Excludes     []BackupExclude     `json:"excludes"`
+	Tags         []BackupTag         `json:"tags"`
+	AgeRecipient json.RawMessage     `json:"age_recipient"`
+	Meta         BackupRunParamsMeta `json:"meta"`
 }
 
 // BackupRunResult — result của op backup.run (ops/backup.run.schema.json).
 type BackupRunResult struct {
-	SnapshotID string `json:"snapshot_id"`
-	Size       Bytes  `json:"size"`
+	SnapshotID     ResticSnapshotID `json:"snapshot_id"`
+	SizeBytes      Bytes            `json:"size_bytes"`
+	BytesAdded     Bytes            `json:"bytes_added"`
+	FilesNew       int64            `json:"files_new"`
+	DurationMs     int64            `json:"duration_ms"`
+	ManifestSHA256 SHA256           `json:"manifest_sha256"`
+}
+
+// BackupSnapshotsParams — params của op backup.snapshots (ops/backup.snapshots.schema.json).
+type BackupSnapshotsParams struct {
+	Repo  BackupRepo  `json:"repo"`
+	Tags  []BackupTag `json:"tags"`
+	Limit int64       `json:"limit"`
+}
+
+// BackupSnapshotsResultSnapshotsItem được sinh từ schema.
+type BackupSnapshotsResultSnapshotsItem struct {
+	ID        ResticSnapshotID `json:"id"`
+	Time      string           `json:"time"`
+	Tags      []string         `json:"tags"`
+	Paths     []string         `json:"paths"`
+	Hostname  string           `json:"hostname"`
+	SizeBytes *int64           `json:"size_bytes"`
+}
+
+// BackupSnapshotsResult — result của op backup.snapshots (ops/backup.snapshots.schema.json).
+type BackupSnapshotsResult struct {
+	Snapshots []BackupSnapshotsResultSnapshotsItem `json:"snapshots"`
+}
+
+// BackupStatsParams — params của op backup.stats (ops/backup.stats.schema.json).
+type BackupStatsParams struct {
+	Repo BackupRepo `json:"repo"`
+}
+
+// BackupStatsResult — result của op backup.stats (ops/backup.stats.schema.json).
+type BackupStatsResult struct {
+	RawSizeBytes     Bytes `json:"raw_size_bytes"`
+	RestoreSizeBytes Bytes `json:"restore_size_bytes"`
+	Snapshots        int64 `json:"snapshots"`
 }
 
 // CertInspectParams — params của op cert.inspect (ops/cert.inspect.schema.json).
@@ -2020,16 +2193,26 @@ func NewParams(op string) any {
 		return new(AccountUnsuspendParams)
 	case OpAuditTail:
 		return new(AuditTailParams)
+	case OpBackupBrowse:
+		return new(BackupBrowseParams)
 	case OpBackupCheck:
 		return new(BackupCheckParams)
+	case OpBackupDestinationTest:
+		return new(BackupDestinationTestParams)
 	case OpBackupForget:
 		return new(BackupForgetParams)
+	case OpBackupRepoInit:
+		return new(BackupRepoInitParams)
 	case OpBackupRestore:
 		return new(BackupRestoreParams)
 	case OpBackupRestoreTest:
 		return new(BackupRestoreTestParams)
 	case OpBackupRun:
 		return new(BackupRunParams)
+	case OpBackupSnapshots:
+		return new(BackupSnapshotsParams)
+	case OpBackupStats:
+		return new(BackupStatsParams)
 	case OpCertInspect:
 		return new(CertInspectParams)
 	case OpCertInstall:
@@ -2243,16 +2426,26 @@ func NewResult(op string) any {
 		return new(AccountUnsuspendResult)
 	case OpAuditTail:
 		return new(AuditTailResult)
+	case OpBackupBrowse:
+		return new(BackupBrowseResult)
 	case OpBackupCheck:
 		return new(BackupCheckResult)
+	case OpBackupDestinationTest:
+		return new(BackupDestinationTestResult)
 	case OpBackupForget:
 		return new(BackupForgetResult)
+	case OpBackupRepoInit:
+		return new(BackupRepoInitResult)
 	case OpBackupRestore:
 		return new(BackupRestoreResult)
 	case OpBackupRestoreTest:
 		return new(BackupRestoreTestResult)
 	case OpBackupRun:
 		return new(BackupRunResult)
+	case OpBackupSnapshots:
+		return new(BackupSnapshotsResult)
+	case OpBackupStats:
+		return new(BackupStatsResult)
 	case OpCertInspect:
 		return new(CertInspectResult)
 	case OpCertInstall:

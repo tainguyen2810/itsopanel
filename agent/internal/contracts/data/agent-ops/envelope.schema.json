@@ -119,7 +119,12 @@
         "pty.policy",
         "pty.list",
         "pty.recording.read",
+        "backup.destination.test",
+        "backup.repo.init",
         "backup.run",
+        "backup.snapshots",
+        "backup.browse",
+        "backup.stats",
         "backup.restore",
         "backup.check",
         "backup.restore_test",
@@ -2060,6 +2065,44 @@
       "if": {
         "properties": {
           "op": {
+            "const": "backup.destination.test"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.destination.test.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.repo.init"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.repo.init.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "backup.run"
           }
         },
@@ -2071,6 +2114,63 @@
         "properties": {
           "params": {
             "$ref": "ops/backup.run.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.snapshots"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.snapshots.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.browse"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.browse.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "backup.stats"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/backup.stats.schema.json#/$defs/params"
           }
         }
       }

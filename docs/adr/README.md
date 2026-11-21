@@ -32,5 +32,10 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0026](0026-malware-quarantine.md) | Quét mã độc dưới uid account và khu cách ly | Accepted | D-79 |
 | [0027](0027-fim-security-score.md) | FIM trong agent, điểm bảo mật và sự kiện | Accepted | D-80 |
 | [0028](0028-portal-protection-terminal-root.md) | Bảo vệ đăng nhập, allowlist không tự khóa, Terminal root theo policy | Accepted | D-81 |
+| [0029](0029-backup-repos-restic.md) | Repo restic riêng theo account × đích, bộ khôi phục một lần | Proposed | D-82 |
+| [0030](0030-backup-destinations-immutable.md) | Đích local/SFTP/S3/rest, credential chỉ ghi, forget tắt mặc định | Proposed | D-83 |
+| [0031](0031-backup-content-consistency.md) | Nội dung backup, dump DB nhất quán, backup panel mã hóa age | Proposed | D-84 |
+| [0032](0032-restore-staging.md) | Khôi phục qua staging root rồi helper uid account | Proposed | D-85 |
+| [0033](0033-backup-verify-dr.md) | Lịch, quota, kiểm chứng 3-2-1-1-0, khôi phục thảm họa | Proposed | D-86, D-87 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

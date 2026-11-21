@@ -10,19 +10,26 @@
           "$ref": "../defs.schema.json#/$defs/BackupRepo"
         },
         "snapshot_id": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{8,64}$"
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
         },
         "sample_files": {
           "type": "integer",
           "minimum": 1,
           "maximum": 1000
+        },
+        "databases": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/BackupDb"
+          },
+          "maxItems": 5
         }
       },
       "required": [
         "repo",
         "snapshot_id",
-        "sample_files"
+        "sample_files",
+        "databases"
       ],
       "additionalProperties": false
     },
@@ -33,12 +40,50 @@
           "type": "boolean"
         },
         "verified_files": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
+        },
+        "mismatches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "$ref": "../defs.schema.json#/$defs/RelPath"
+              },
+              "expected_sha256": {
+                "$ref": "../defs.schema.json#/$defs/Sha256"
+              },
+              "actual_sha256": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/Sha256"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "path",
+              "expected_sha256",
+              "actual_sha256"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 1000
+        },
+        "databases_ok": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "required": [
         "ok",
-        "verified_files"
+        "verified_files",
+        "mismatches",
+        "databases_ok"
       ],
       "additionalProperties": false
     }
