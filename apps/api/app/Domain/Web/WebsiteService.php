@@ -312,6 +312,10 @@ final class WebsiteService
             if ($w->type === 'php' || $w->php_version !== null) {
                 $spec->step('php.pool.remove', ['account' => ProvisioningService::ref($a), 'website_uuid' => $w->uuid]);
             }
+            // Chứng chỉ của site (ACME/tải lên) gỡ sau vhost để không để lại /etc/itso/certs/<uuid> (tiêu chí Phase 5).
+            foreach (Certificate::query()->where('website_id', $w->id)->orderBy('id')->get() as $c) {
+                $spec->step('cert.remove', ['account' => ProvisioningService::ref($a), 'cert_uuid' => $c->uuid]);
+            }
 
             return $spec;
         }, force: true);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Web;
 
 use App\Domain\Jobs\JobHandler;
+use App\Models\Certificate;
 use App\Models\HostingAccount;
 use App\Models\Job;
 use App\Models\JobStep;
@@ -29,6 +30,7 @@ final class WebsiteJobHandler implements JobHandler
         if ($job->type === 'website.delete') {
             WebsiteDomain::query()->where('website_id', $w->id)->delete();
             WebsiteSetting::query()->where('website_id', $w->id)->delete();
+            Certificate::query()->where('website_id', $w->id)->delete();
             $w->observed_at = Carbon::now();
             $w->save();
             $w->delete();

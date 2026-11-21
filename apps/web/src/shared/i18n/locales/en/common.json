@@ -224,13 +224,26 @@
       "domain_remove": "Remove website domain",
       "nginx_update": "Update website Nginx settings",
       "php_update": "Update website PHP settings",
-      "waf_update": "Update website WAF"
+      "waf_update": "Update website WAF",
+      "domain": {
+        "add": "Add domain to website",
+        "remove": "Remove domain from website"
+      },
+      "nginx": {
+        "update": "Update website Nginx settings"
+      },
+      "php": {
+        "update": "Update website PHP settings"
+      }
     },
     "job": {
       "cancel": "Job cancelled"
     },
     "nginx": {
-      "update": "Update Nginx configuration"
+      "update": "Update Nginx configuration",
+      "global": {
+        "update": "Update server-wide Nginx settings"
+      }
     },
     "container": {
       "start": "Start container",
@@ -256,7 +269,8 @@
     "certificate": {
       "issue": "Issue SSL certificate",
       "upload": "Install uploaded certificate",
-      "delete": "Remove SSL certificate"
+      "delete": "Remove SSL certificate",
+      "renew": "Renew SSL certificate"
     },
     "database_user": {
       "create": "Create database user",
@@ -348,6 +362,18 @@
     "api_token": {
       "create": "Create API token",
       "revoke": "Revoke API token"
+    },
+    "php": {
+      "extensions": {
+        "install": "Install PHP extensions"
+      },
+      "version": {
+        "install": "Install PHP version",
+        "remove": "Remove PHP version"
+      }
+    },
+    "setup": {
+      "stack": "Install web stack"
     }
   },
   "ops": {
@@ -563,5 +589,12 @@
       "inodes": "inode",
       "other": "resource"
     }
+  },
+  "stepUp": {
+    "title": "Verify again to continue",
+    "hint": "This is a sensitive action, so enter the 6-digit code from your authenticator app. Verification lasts 10 minutes.",
+    "code": "6-digit code",
+    "confirm": "Verify and continue",
+    "invalid": "Enter all 6 digits"
   }
 }

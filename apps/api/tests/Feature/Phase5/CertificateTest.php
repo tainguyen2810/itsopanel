@@ -281,3 +281,19 @@ it('ma trận quyền chứng chỉ: ADMIN ngoài phạm vi / USER khác → 404
     assertMatchesContract(C5P, 'delete', '/api/v1/portal/certificates/{id}', 202, $pd);
     expect(WebsiteDomain::query()->count())->toBe(2);
 });
+
+it('xóa website có chứng chỉ: vhost.remove → pool.remove → cert.remove, không còn bản ghi chứng chỉ (5.6)', function () {
+    $agent = c5agent();
+    $a = new Actors($this);
+    $sa = $a->spa('SA');
+    $w = c5site($a, $sa);
+    c5($sa, 'POST', "/api/v1/admin/websites/{$w->uuid}/certificates", ['source' => 'acme', 'domains' => ['anphat.vn']])->assertStatus(202);
+    $c = Certificate::query()->where('website_id', $w->id)->firstOrFail();
+    $agent->calls = [];
+
+    c5($sa, 'DELETE', "/api/v1/admin/websites/{$w->uuid}")->assertStatus(202);
+    expect($agent->ops())->toBe(['nginx.vhost.remove', 'php.pool.remove', 'cert.remove'])
+        ->and($agent->calls[2]['params']['cert_uuid'])->toBe($c->uuid)
+        ->and(Certificate::query()->where('website_id', $w->id)->exists())->toBeFalse()
+        ->and(Website::query()->whereKey($w->id)->exists())->toBeFalse();
+});

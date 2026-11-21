@@ -1,4 +1,5 @@
 import { ApiError, unwrap } from '@/api/http';
+import { requestStepUp, STEP_UP_PATH } from '@/shared/auth/stepUp';
 import { watchJob } from '@/shared/jobs/jobStore';
 import type { ListQuery } from '@/shared/page/ListPage';
 
@@ -48,6 +49,28 @@ export async function sendWith<T>(
   method: Method,
   path: string,
   opts: { path?: Record<string, string>; body?: unknown; headers?: Record<string, string> } = {},
+): Promise<T> {
+  try {
+    return await sendOnce<T>(client, method, path, opts);
+  } catch (e) {
+    // Thao tác nhạy cảm cần step-up MFA: hỏi mã TOTP rồi gửi lại đúng một lần (API chưa xử lý request bị từ chối).
+    if (
+      e instanceof ApiError &&
+      e.problem.code === 'mfa_step_up_required' &&
+      path !== STEP_UP_PATH &&
+      (await requestStepUp())
+    ) {
+      return sendOnce<T>(client, method, path, opts);
+    }
+    throw e;
+  }
+}
+
+async function sendOnce<T>(
+  client: AnyClient,
+  method: Method,
+  path: string,
+  opts: { path?: Record<string, string>; body?: unknown; headers?: Record<string, string> },
 ): Promise<T> {
   // Qua client openapi-fetch để middleware (header demo, sau này CSRF) luôn được áp dụng.
   const r = (await client[method](
