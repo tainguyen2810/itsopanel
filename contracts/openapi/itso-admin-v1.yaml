@@ -15806,7 +15806,8 @@ paths:
       summary: Gửi email đặt lại mật khẩu
       tags:
       - Auth
-      description: Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản).
+      description: 'Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản). Portal: 422 `captcha_required` khi IP/email
+        đã sai quá ngưỡng như đăng nhập (D-81).'
       requestBody:
         required: true
         content:
@@ -15817,6 +15818,8 @@ paths:
                 email:
                   type: string
                   format: email
+                captcha:
+                  $ref: ./common.yaml#/components/schemas/CaptchaSolution
               required:
               - email
               additionalProperties: false
@@ -17614,8 +17617,11 @@ components:
           - icmp
           - any
         ports:
-          type: string
+          type:
+          - string
+          - 'null'
           pattern: ^([0-9]{1,5}(-[0-9]{1,5})?)(,[0-9]{1,5}(-[0-9]{1,5})?)*$
+          description: null = mọi cổng (vd. icmp).
         source:
           $ref: ./common.yaml#/components/schemas/Cidr
         comment:
@@ -17668,7 +17674,9 @@ components:
           - icmp
           - any
         ports:
-          type: string
+          type:
+          - string
+          - 'null'
           pattern: ^([0-9]{1,5}(-[0-9]{1,5})?)(,[0-9]{1,5}(-[0-9]{1,5})?)*$
         source:
           $ref: ./common.yaml#/components/schemas/Cidr

@@ -71,6 +71,8 @@ it('thiếu trường → 422 validation_failed theo từng trường', function
 });
 
 it('khóa lũy tiến: sai 5 lần → lần 6 bị 429 kể cả đúng mật khẩu; hết hạn khóa đăng nhập được', function () {
+    // Phase 7: CAPTCHA Portal mặc định bật sau 3 lần sai; test này chỉ kiểm khóa lũy tiến (CAPTCHA: Phase7/AuthProtectionTest).
+    config(['itso_settings.security.portal_captcha_after_failures.default' => 10]);
     $u = User::factory()->portalUser()->create();
     $spa = $this->spa();
     for ($i = 0; $i < 5; $i++) {

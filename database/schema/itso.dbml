@@ -1122,13 +1122,16 @@ Table audit_logs {
 
 Table security_events {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   server_id bigint [ref: > servers.id]
   website_id bigint [ref: > websites.id]
   type text [not null]
   severity text [not null, note: 'info|low|medium|high|critical']
   source_ip inet
+  message text [not null, default: '']
   details jsonb
   acknowledged_by_user_id bigint [ref: > users.id]
+  acknowledged_at timestamptz
   at timestamptz [not null, default: `now()`]
   indexes {
     (server_id, at)
@@ -1138,10 +1141,13 @@ Table security_events {
 
 Table firewall_rules {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   server_id bigint [not null, ref: > servers.id]
   priority int [not null, default: 100]
   action text [not null, note: 'accept|drop|reject']
-  protocol text [not null, default: 'tcp']
+  direction text [not null, default: 'in', note: 'in|out']
+  protocol text [not null, default: 'tcp', note: 'tcp|udp|icmp|any']
+  enabled boolean [not null, default: true]
   port_range text
   source_cidr cidr
   comment text
@@ -1155,11 +1161,14 @@ Table firewall_rules {
 
 Table malware_scans {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   server_id bigint [not null, ref: > servers.id]
   hosting_account_id bigint [ref: > hosting_accounts.id]
   website_id bigint [ref: > websites.id]
   job_id bigint [ref: > jobs.id]
-  status text [not null]
+  status text [not null, note: 'JobState']
+  target text [not null, default: '.', note: 'RelPath trong home account']
+  engines text[] [not null, default: `'{clamav,yara}'`]
   files_scanned int
   findings_count int
   started_at timestamptz
@@ -1168,10 +1177,14 @@ Table malware_scans {
 
 Table malware_findings {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   scan_id bigint [not null, ref: > malware_scans.id]
   path text [not null]
   signature text [not null]
   engine text [not null, note: 'clamav|yara']
+  sha256 text [not null]
+  size bigint [not null, default: 0]
+  found_at timestamptz [not null, default: `now()`]
   action text [not null, default: 'none', note: 'none|quarantined|restored|deleted']
   indexes {
     scan_id
@@ -1180,11 +1193,14 @@ Table malware_findings {
 
 Table quarantine_items {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   finding_id bigint [ref: > malware_findings.id]
   hosting_account_id bigint [ref: > hosting_accounts.id]
   original_path text [not null]
-  stored_path text [not null]
+  stored_path text [not null, note: 'id file trên agent: /var/lib/itso/quarantine/<uuid>.bin']
   sha256 text [not null]
+  signature text [not null, default: '']
+  size bigint [not null, default: 0]
   quarantined_at timestamptz [not null, default: `now()`]
   restored_at timestamptz
 }
@@ -1256,6 +1272,7 @@ Table waf_settings {
 
 Table waf_events {
   id bigint [increment]
+  uuid uuid [not null, default: `gen_random_uuid()`, note: 'Không unique toàn cục được trên bảng partition; tra kèm website']
   at timestamptz [not null]
   website_id bigint [not null, ref: > websites.id]
   rule_id int [not null]

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Auth\AuthFailureLog;
+use App\Auth\Captcha;
 use App\Auth\LoginThrottle;
 use App\Auth\MfaService;
 use App\Auth\Realm;
 use App\Auth\SessionKeys;
+use App\Domain\Setup\Settings;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\UserPresenter;
 use App\Models\User;
@@ -25,7 +28,14 @@ final class AuthController
         private readonly LoginThrottle $throttle,
         private readonly MfaService $mfa,
         private readonly UserPresenter $present,
+        private readonly Captcha $captcha,
     ) {}
+
+    /** Thử thách CAPTCHA proof-of-work (ADR 0028): dùng một lần, 5 phút. */
+    public function captcha(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->captcha->issue(Realm::of($request))])->header('Cache-Control', 'no-store');
+    }
 
     /** Cookie XSRF-TOKEN-{REALM} do VerifyCsrf gắn vào mọi response. */
     public function csrf(): Response
@@ -39,6 +49,7 @@ final class AuthController
             'email' => ['required', 'string', 'email', 'max:254'],
             'password' => ['required', 'string', 'min:1', 'max:200'],
             'remember' => ['sometimes', 'boolean'],
+            'captcha' => ['sometimes', 'array:challenge,nonce'],
         ]);
         $realm = Realm::of($request);
         $email = mb_strtolower(trim((string) $in['email']));
@@ -48,12 +59,14 @@ final class AuthController
         if ($wait > 0) {
             throw ApiProblem::rateLimited($wait, 'Đăng nhập sai quá nhiều lần, thử lại sau.');
         }
+        $this->captcha->enforce($realm, $email, $ip, $in['captcha'] ?? null);
 
         /** @var User|null $user */
         $user = User::query()->where('realm', $realm)->where('email', $email)->first();
         $ok = $user !== null && $user->status === 'active' && Hash::check((string) $in['password'], $user->password_hash);
         $this->throttle->record($realm, $email, $ip, $ok);
         if (! $ok) {
+            AuthFailureLog::failed($ip);
             // Sai email, sai mật khẩu, sai realm, tài khoản khóa: cùng một lỗi (không lộ tài khoản).
             throw ApiProblem::field('email', 'Email hoặc mật khẩu không đúng.');
         }
@@ -71,7 +84,8 @@ final class AuthController
         $session->regenerateToken();
 
         $methods = $this->mfa->methods($user);
-        $required = $methods !== [] || $user->roleKey() === 'SUPER_ADMIN';
+        $required = $methods !== [] || $user->roleKey() === 'SUPER_ADMIN'
+            || ($user->realm === Realm::PORTAL && Settings::get('security', 'portal_mfa_required') === true);
 
         return response()->json(['data' => ['mfa_required' => $required, 'mfa_methods' => $methods]]);
     }

@@ -212,6 +212,13 @@ ALTER TABLE waf_settings ADD CONSTRAINT waf_settings_paranoia_chk CHECK (paranoi
 ALTER TABLE waf_events ADD CONSTRAINT waf_events_action_chk CHECK (action IN ('detected', 'blocked'));
 ALTER TABLE fim_changes ADD CONSTRAINT fim_changes_change_chk CHECK (change IN ('added', 'modified', 'removed', 'metadata'));
 ALTER TABLE terminal_recordings ADD CONSTRAINT terminal_recordings_mode_chk CHECK (mode IN ('account', 'root'));
+ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_direction_chk CHECK (direction IN ('in', 'out'));
+ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_protocol_chk CHECK (protocol IN ('tcp', 'udp', 'icmp', 'any'));
+ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_priority_chk CHECK (priority BETWEEN 1 AND 9999);
+ALTER TABLE malware_findings ADD CONSTRAINT malware_findings_engine_chk CHECK (engine IN ('clamav', 'yara'));
+ALTER TABLE malware_findings ADD CONSTRAINT malware_findings_action_chk
+  CHECK (action IN ('none', 'quarantined', 'restored', 'deleted'));
+ALTER TABLE malware_findings ADD CONSTRAINT malware_findings_sha_chk CHECK (sha256 ~ '^[0-9a-f]{64}$');
 CREATE TABLE waf_events_default PARTITION OF waf_events DEFAULT;
 
 CREATE OR REPLACE FUNCTION itso_ensure_waf_partition(p_month date) RETURNS text LANGUAGE plpgsql AS $$

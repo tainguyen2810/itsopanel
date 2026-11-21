@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.4 (Panel API Security Center) — nhánh `phase-7`
+
+Phạm vi: `apps/api/app/Domain/Security/*` (Net, FirewallRuleset, SafeApply + 4 panel step, FirewallService, SshService, Fail2banService, WafService, MalwareService, SecurityAudit, SecurityScore, SecurityEvents, SecurityBaseline, SecurityJobHandler), controller `Security/{Firewall,Security,Protection}Controller`, `Auth/{Captcha,AuthFailureLog}`, 10 model, 3 lệnh lịch; contracts: `FirewallRule.ports` cho phép null (icmp), `password:forgot` nhận `captcha`; DB: thêm cột uuid/direction/enabled/sha256… cho bảng Phase 7 (migration Phase 7 chưa phát hành → sinh lại).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest (toàn bộ, PostgreSQL 16 + Redis) | `scripts/pest-pg` tương đương `make test-api-pg` | 444/444 PASS (56 s). Mới `tests/Feature/Phase7/`: FirewallTest 6 (ruleset PHP == golden `firewall.nft` của agent; vector evil-inputs `firewall_rule`/`cidr` dùng chung với agent; rule nháp → xem trước → apply step-up → pending → confirm; token không có trong job_steps/job_logs/audit_logs/jobs/firewall_applies; một lần chờ → 409; confirm quá hạn → job failed `precondition_failed`, rolled_back + sự kiện high + thông báo; `itso:security-audit --expire-only`; apply tự khóa → 422 would_lock_out, agent would_lock_out → failed; ma trận quyền + step-up), SecurityCenterTest 6 (điểm mặc định 80/100 hạng B với dữ kiện sau cài, tổng trọng số 100, thiếu dữ kiện không 500; SSH safe-apply, admin_keys = 0 chặn tắt mật khẩu, đổi port = job firewall.apply + sshd.config.apply, một confirm cho cả hai; fail2ban ignoreip = allowlist, jail lạ/bantime sai → 422, bans + unban, ADMIN chỉ xem/gỡ cấm; FIM không trùng lặp + baseline step-up; sự kiện lọc/ack, ADMIN ngoài phạm vi 404; allowlist không chứa IP hiện tại → would_lock_out, chuẩn hóa CIDR, chặn IP ngoài danh sách), ProtectionTest 3 (quét website → finding + sự kiện; cách ly/khôi phục; quét dở → 409; Portal: tổng quan, quét, cách ly, xóa cần step-up, USER khác 404; WAF DetectionOnly mặc định, If-Match 412, chặn → mode On, đồng bộ 55 sự kiện theo con trỏ + `waf.burst`), AuthProtectionTest 4 (CAPTCHA sai/sửa/realm khác/dùng lại/hết hạn → 422 captcha_required, ngưỡng 0, quên mật khẩu; auth.log đúng failregex, không chứa email/mật khẩu; portal_mfa_required) |
+| Test cũ phải sửa theo hành vi mới | — | `Auth/LoginTest` khóa lũy tiến: đặt ngưỡng CAPTCHA = 10 trong test (CAPTCHA Portal mặc định bật sau 3 lần sai, kiểm riêng ở Phase7); `Platform/PlatformApiTest` "chưa có route": đổi sang `/admin/backup-snapshots` (Phase 8) vì `/admin/security/overview` nay đã có |
+| PHPStan level 8 + Pint | `make lint-api` | PASS (0 lỗi) |
+| Không lệnh hệ thống | `make no-exec` | OK |
+| Contracts / codegen | `make contracts-check` · `make codegen-check` | PASS · OK |
+| DB | `make db-verify` | 60 SQL test PASS (thêm 7: direction/protocol/priority, sha256/engine của finding); Phase 3 → 11 áp lần lượt == `itso.sql` + `extras.sql` |
+| Web | `pnpm exec tsc --noEmit` · `pnpm vitest run` | PASS · 525/525 (sau khi sinh lại kiểu từ contracts) |
+
+**Chờ VM:** safe-apply thật qua agent (mất kết nối → tự hoàn tác), fail2ban đọc `/var/log/itso/auth.log`, ModSecurity/ClamAV thật. **Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.3 (agent WAF, malware, FIM, audit) — nhánh `phase-7`
 
 Phạm vi: `agent/internal/ops/{waf,malware,fim}.go`, helper `fsx` (op `hash`, `raw`, `delete_if`), `platform.FS.Lstat/ReadChunk`, vhost template thêm `include /etc/itso/waf/<uuid>.nginx*;`, sandbox mô phỏng clamdscan/yara (EICAR, `eval(base64_decode(`), `packaging/share/yara/itso-webshell.yar` (đóng gói trong `scripts/release.sh`).

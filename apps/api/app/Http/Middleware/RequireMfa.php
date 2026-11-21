@@ -6,7 +6,9 @@ namespace App\Http\Middleware;
 
 use App\Auth\ApiTokenAuth;
 use App\Auth\MfaService;
+use App\Auth\Realm;
 use App\Auth\SessionKeys;
+use App\Domain\Setup\Settings;
 use App\Exceptions\ApiProblem;
 use App\Models\User;
 use Closure;
@@ -36,6 +38,9 @@ final class RequireMfa
             }
         } elseif ($user->roleKey() === 'SUPER_ADMIN') {
             throw ApiProblem::mfaRequired('SUPER_ADMIN phải bật MFA trước khi thao tác (POST /auth/mfa/totp:enroll).');
+        } elseif ($user->realm === Realm::PORTAL && Settings::get('security', 'portal_mfa_required') === true) {
+            // ADR 0028 §2: hệ thống bắt buộc USER bật MFA.
+            throw ApiProblem::mfaRequired('Hệ thống yêu cầu bật MFA trước khi thao tác (POST /auth/mfa/totp:enroll).');
         }
 
         return $next($request);

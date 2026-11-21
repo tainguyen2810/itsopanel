@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 7 — Security Center (✱ đang làm; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 7.4 Panel API Security Center (7.0–7.3 ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
-- **Task đang làm:** 7.4 API Laravel: firewall/SSH safe-apply, fail2ban, WAF, malware, FIM, điểm bảo mật, CAPTCHA, allowlist
+- **Prompt hiện tại:** 7.5 Terminal root + ghi phiên (7.0–7.4 ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
+- **Task đang làm:** 7.5 policy terminal root (`/etc/itso/policy.json`, CLI `itso policy`), `pty.open.root`, ghi asciicast, `pty.list`, phát lại
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-7`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_7_PROMPTS.md`; cuối 7.7 báo cáo Phase 7 và DỪNG (không bắt đầu Phase 8)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -37,8 +37,8 @@ Phase 7 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.
 - ✓ 7.1 ADR firewall/SSH/WAF/malware/FIM/terminal root (D-76…D-81), contracts, migration Phase 7
 - ✓ 7.2 Agent: firewall nftables safe-apply, SSH hardening, Fail2ban
 - ✓ 7.3 Agent: WAF, mã độc + cách ly, FIM, security.audit
-- ✱ 7.4 Panel: Security Center API, CAPTCHA, IP allowlist chống tự khóa
-- ○ 7.5 Terminal root theo policy + ghi phiên
+- ✓ 7.4 Panel: Security Center API, CAPTCHA, IP allowlist chống tự khóa
+- ✱ 7.5 Terminal root theo policy + ghi phiên
 - ○ 7.6 UI nối API thật
 - ○ 7.7 e2e, VM Phase 7, review bảo mật, báo cáo, merge
 
@@ -134,3 +134,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 7 / 7.1 | ADR 0023–0028 (Proposed); agent-ops: 22 op Phase 7 declared → specified (firewall.apply/confirm/status, sshd.config.apply/confirm, fail2ban.apply/status/unban, waf.apply/events, malware.scan/quarantine/restore/delete, fim.baseline/check, security.audit, pty.open.root/policy/list/recording.read), lỗi `would_lock_out`, recipe fail2ban/clamav/yara/modsecurity, 31 vector độc mới; OpenAPI +7 (firewall preview/status, fail2ban bans + unban, WAF events, FIM changes, điểm chi tiết); DBML +6 bảng (firewall_applies, security_settings, waf_settings, waf_events partition tháng, fim_changes, terminal_recordings) + migration Phase 7 (12 bảng). Lệch kế hoạch: root terminal là op riêng `pty.open.root` để giữ schema `pty.open` Phase 6; ghi phiên vào bảng mới `terminal_recordings` thay vì thêm cột (migration Phase 6 đã phát hành không sửa) | 11d776e |
 | 2026-11-21 | 7 / 7.2 | Agent: `firewall.apply/confirm/status` (bảng `inet itso`, ruleset từ template, bất biến chống tự khóa bằng net/netip, `nft -c` → lưu ruleset cũ → `nft -f` → timer `itso-fw-rollback` gọi `itso-agent safe-rollback`), `sshd.config.apply/confirm` (10-itso-hardening.conf, sshd -t, chặn tắt mật khẩu khi 0 khóa), `fail2ban.apply/status/unban` (3 jail, banaction nftables, filter itso-panel); safe-apply dùng chung (token chỉ lưu sha256, một lần chờ, hết hạn → hoàn tác cả khi agent khởi động lại); sandbox mô phỏng nft/fail2ban-client; recipe fail2ban/clamav/yara/modsecurity | 76c27f7 |
 | 2026-11-21 | 7 / 7.3 | Agent: `waf.apply` (file rule + include `/etc/itso/waf/<uuid>.nginx*` mà vhost luôn include theo glob, nginx -t + hoàn tác, available=false khi thiếu gói), `waf.events` (audit log JSON theo con trỏ inode:offset, gán website theo Host ↔ server_name, bỏ rule điểm tổng CRS), `malware.scan` (clamdscan --fdpass + yara qua systemd-run dưới uid account trong slice, Nice 19, IO idle, CPUQuota 50%), `malware.quarantine/restore/delete` qua helper (op mới hash/raw/delete_if, không theo symlink, kiểm sha256, khôi phục không ghi đè trừ overwrite), `fim.baseline/check`, `security.audit`; rule YARA kèm bản phát hành; sửa lỗi helper luồng (raw trả lỗi qua stderr như cat) | 5e8565e |
+| 2026-11-21 | 7 / 7.4 | Panel: Domain/Security (FirewallRuleset bản PHP của RenderNft khớp golden agent, safe-apply chung firewall/sshd chỉ lưu sha256 token, token trong cache mã hóa qua panel step; SSH đổi port mở tường lửa trước; fail2ban; WAF + đồng bộ sự kiện theo con trỏ; mã độc quét/cách ly/khôi phục/xóa; FIM; điểm theo `SecurityScore::WEIGHTS`; sự kiện high/critical → thông báo), 36 endpoint admin + 5 portal, quyền `security.read/write` (ADMIN theo phạm vi) và `security.server` (SUPER_ADMIN), lệnh lịch `itso:waf-events-sync`, `itso:fim-check`, `itso:security-audit`, CAPTCHA PoW HMAC dùng một lần (Portal), `auth.log` cho jail itso-panel, `portal_mfa_required`, IP allowlist chống tự khóa, nền bảo mật khi xong wizard; bổ sung cột DB cho API (migration Phase 7 sinh lại) | (commit 7.4) |

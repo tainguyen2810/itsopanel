@@ -19,3 +19,9 @@ Schedule::command('itso:dns-sync')->hourlyAt(23)->withoutOverlapping();
 // Phase 6: ghi lần chạy cron theo lịch (cron.inspect).
 Schedule::command('itso:cron-sync')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('itso:terminal-reap')->hourlyAt(41)->withoutOverlapping();
+
+// Phase 7: Security Center (D-76…D-81).
+Schedule::command('itso:waf-events-sync')->everyMinute()->withoutOverlapping();
+Schedule::command('itso:security-audit --expire-only')->everyMinute()->withoutOverlapping();
+Schedule::command('itso:security-audit')->cron('7 */6 * * *')->withoutOverlapping();
+Schedule::command('itso:fim-check')->hourlyAt(53)->withoutOverlapping();

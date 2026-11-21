@@ -35,4 +35,23 @@ SELECT itso_test.expect_error('Hành động WAF lạ bị từ chối',
 
 SELECT itso_test.expect_error('Loại thay đổi FIM lạ bị từ chối',
   $$INSERT INTO fim_changes (server_id, path, change) VALUES (1, '/etc/passwd', 'renamed')$$, '23514');
+
+SELECT itso_test.expect_ok('Rule tường lửa mặc định: vào, tcp, bật, có uuid',
+  $$INSERT INTO firewall_rules (server_id, action, port_range, source_cidr) VALUES (1, 'accept', '80,443', '0.0.0.0/0')$$);
+SELECT itso_test.assert('Rule mới có direction in, enabled, uuid',
+  (SELECT direction = 'in' AND enabled AND uuid IS NOT NULL FROM firewall_rules WHERE port_range = '80,443'));
+SELECT itso_test.expect_error('Hướng rule lạ bị từ chối',
+  $$INSERT INTO firewall_rules (server_id, action, direction) VALUES (1, 'drop', 'forward')$$, '23514');
+SELECT itso_test.expect_error('Giao thức rule lạ bị từ chối',
+  $$INSERT INTO firewall_rules (server_id, action, protocol) VALUES (1, 'drop', 'sctp')$$, '23514');
+SELECT itso_test.expect_error('Priority ngoài 1–9999 bị từ chối',
+  $$INSERT INTO firewall_rules (server_id, action, priority) VALUES (1, 'drop', 0)$$, '23514');
+SELECT itso_test.expect_error('Finding mã độc với sha256 sai định dạng bị từ chối',
+  $$INSERT INTO malware_scans (server_id, status) VALUES (1, 'queued');
+    INSERT INTO malware_findings (scan_id, path, signature, engine, sha256)
+    VALUES ((SELECT max(id) FROM malware_scans), 'a.php', 'x', 'clamav', 'XYZ')$$, '23514');
+SELECT itso_test.expect_error('Engine quét lạ bị từ chối',
+  $$INSERT INTO malware_scans (server_id, status) VALUES (1, 'queued');
+    INSERT INTO malware_findings (scan_id, path, signature, engine, sha256)
+    VALUES ((SELECT max(id) FROM malware_scans), 'a.php', 'x', 'maldet', repeat('a', 64))$$, '23514');
 ROLLBACK;

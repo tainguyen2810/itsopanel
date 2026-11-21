@@ -8,6 +8,7 @@ use App\Auth\MfaService;
 use App\Auth\Realm;
 use App\Auth\SessionKeys;
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Security\SecurityBaseline;
 use App\Domain\Setup\SetupWizard;
 use App\Domain\Users\UserService;
 use App\Domain\Web\ServerWebService;
@@ -186,6 +187,14 @@ final class SetupController
         }
         $this->wizard->complete();
         $request->session()->forget(SetupWizard::SESSION_VERIFIED);
+        $server = SetupWizard::localServer();
+        if ($server !== null) {
+            // Phase 7: nền bảo mật (fail2ban, FIM, tường lửa safe-apply). Agent chưa sẵn sàng → job tự thử lại/thất bại,
+            // không chặn hoàn tất wizard.
+            $access = (array) $this->wizard->get('access');
+            app(SecurityBaseline::class)->apply($server, $user, (string) $request->ip(),
+                array_values(array_map('strval', (array) ($access['allowlist'] ?? []))));
+        }
         $this->audit->record('setup.completed', null, null, 'success', null, null, $user);
 
         return response()->json(['data' => $this->wizard->status(false, true)]);

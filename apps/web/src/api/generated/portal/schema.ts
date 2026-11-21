@@ -209,7 +209,7 @@ export interface paths {
         put?: never;
         /**
          * Gửi email đặt lại mật khẩu
-         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản).
+         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản). Portal: 422 `captcha_required` khi IP/email đã sai quá ngưỡng như đăng nhập (D-81).
          */
         post: operations["forgotPassword"];
         delete?: never;
@@ -3351,6 +3351,7 @@ export interface operations {
                 "application/json": {
                     /** Format: email */
                     email: string;
+                    captcha?: components["schemas"]["CaptchaSolution"];
                 };
             };
         };

@@ -3753,7 +3753,7 @@ export interface paths {
         put?: never;
         /**
          * Gửi email đặt lại mật khẩu
-         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản).
+         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản). Portal: 422 `captcha_required` khi IP/email đã sai quá ngưỡng như đăng nhập (D-81).
          */
         post: operations["forgotPassword"];
         delete?: never;
@@ -4380,7 +4380,8 @@ export interface components {
             direction: "in" | "out";
             /** @enum {string} */
             protocol: "tcp" | "udp" | "icmp" | "any";
-            ports: string;
+            /** @description null = mọi cổng (vd. icmp). */
+            ports: string | null;
             source: components["schemas"]["Cidr"];
             comment: string;
             enabled: boolean;
@@ -4397,7 +4398,7 @@ export interface components {
             direction: "in" | "out";
             /** @enum {string} */
             protocol: "tcp" | "udp" | "icmp" | "any";
-            ports?: string;
+            ports?: string | null;
             source: components["schemas"]["Cidr"];
             comment?: string;
             enabled?: boolean;
@@ -24907,6 +24908,7 @@ export interface operations {
                 "application/json": {
                     /** Format: email */
                     email: string;
+                    captcha?: components["schemas"]["CaptchaSolution"];
                 };
             };
         };

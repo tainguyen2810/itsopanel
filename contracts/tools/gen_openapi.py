@@ -97,8 +97,10 @@ def auth_paths(api: Api, realm: str):
             body=cref("PasswordChange"),
             body_example={"current_password": "********", "new_password": "************"}, no_content=True)
     api.add("post", "/api/v1/auth/password:forgot", "forgotPassword", "Gửi email đặt lại mật khẩu", "Auth", public=True,
-            security=csrf_only, body=obj({"email": s("email")}), body_example={"email": me["user"]["email"]}, no_content=True,
-            desc="Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản).")
+            security=csrf_only, body=obj({"email": s("email"), "captcha": cref("CaptchaSolution")}, required=["email"]),
+            body_example={"email": me["user"]["email"]}, no_content=True,
+            desc="Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản). Portal: 422 `captcha_required` "
+                 "khi IP/email đã sai quá ngưỡng như đăng nhập (D-81).")
     api.add("post", "/api/v1/auth/password:reset", "resetPassword", "Đặt lại mật khẩu bằng token", "Auth", public=True,
             security=csrf_only, body=obj({"token": s(minLength=32, maxLength=200), "email": s("email"),
                                           "password": s(minLength=12, maxLength=200, writeOnly=True)}),

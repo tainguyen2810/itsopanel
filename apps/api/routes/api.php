@@ -21,6 +21,9 @@ use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
+use App\Http\Controllers\Api\V1\Security\FirewallController;
+use App\Http\Controllers\Api\V1\Security\ProtectionController;
+use App\Http\Controllers\Api\V1\Security\SecurityController;
 use App\Http\Controllers\Api\V1\Shared\AccessController;
 use App\Http\Controllers\Api\V1\Shared\CertificateController;
 use App\Http\Controllers\Api\V1\Shared\CronController;
@@ -42,6 +45,7 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('auth')->group(function (): void {
             Route::get('csrf', [AuthController::class, 'csrf']);
             Route::post('login', [AuthController::class, 'login']);
+            Route::get('captcha', [AuthController::class, 'captcha']);
             Route::post('mfa/verify', [MfaController::class, 'verify']);
             Route::post('password:forgot', [PasswordController::class, 'forgot']);
             Route::post('password:reset', [PasswordController::class, 'reset']);
@@ -185,7 +189,7 @@ Route::prefix('v1')->group(function (): void {
                     ->middleware(['itso.perm:accounts.terminate', 'itso.step-up']);
             }
 
-            // ---- Website (Prompt 5.3); quét mã độc/WAF thuộc Phase 7, chưa có route.
+            // ---- Website (Prompt 5.3); quét mã độc/WAF: khối Security Center (Phase 7) bên dưới.
             Route::get('websites', [WebsiteController::class, 'index'])->middleware('itso.perm:websites.read');
             Route::post('websites', [WebsiteController::class, 'store'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
             Route::get('websites/{id}', [WebsiteController::class, 'show'])->middleware('itso.perm:websites.read');
@@ -254,6 +258,41 @@ Route::prefix('v1')->group(function (): void {
             Route::post('hosting-accounts/{id}/files:operate', [FileController::class, 'operate'])->middleware(['itso.perm:files.write', 'itso.idempotent']);
             // ---- Terminal USER (Prompt 6.4, D-75)
             Route::post('terminal/sessions', [TerminalController::class, 'store'])->middleware(['itso.perm:terminal.account', 'itso.step-up']);
+
+            // ---- Security Center (Phase 7, D-76…D-81). security.read/write: ADMIN theo phạm vi; security.server: SUPER_ADMIN.
+            Route::get('security/overview', [SecurityController::class, 'overview'])->middleware('itso.perm:security.read');
+            Route::get('security/score', [SecurityController::class, 'score'])->middleware('itso.perm:security.read');
+            Route::get('security/events', [SecurityController::class, 'events'])->middleware('itso.perm:security.read');
+            Route::post('security/events/{id}:acknowledge', [SecurityController::class, 'acknowledge'])->middleware('itso.perm:security.write');
+            Route::get('security/fim/changes', [SecurityController::class, 'fimChanges'])->middleware('itso.perm:security.read');
+            Route::get('security/fail2ban/bans', [SecurityController::class, 'bans'])->middleware('itso.perm:security.read');
+            Route::post('security/fail2ban/bans:unban', [SecurityController::class, 'unban'])->middleware(['itso.perm:security.write', 'itso.idempotent']);
+            Route::get('security/malware/findings', [ProtectionController::class, 'findings'])->middleware('itso.perm:security.read');
+            Route::post('security/malware/findings/{id}:quarantine', [ProtectionController::class, 'quarantine'])->middleware(['itso.perm:security.write', 'itso.idempotent']);
+            Route::get('security/malware/scans', [ProtectionController::class, 'scans'])->middleware('itso.perm:security.read');
+            Route::get('security/quarantine', [ProtectionController::class, 'quarantineList'])->middleware('itso.perm:security.read');
+            Route::post('security/quarantine/{id}:restore', [ProtectionController::class, 'restore'])->middleware(['itso.perm:security.write', 'itso.step-up', 'itso.idempotent']);
+            Route::post('websites/{id}/scans', [ProtectionController::class, 'scanWebsite'])->middleware(['itso.perm:security.write', 'itso.idempotent']);
+            Route::get('websites/{id}/waf', [ProtectionController::class, 'waf'])->middleware('itso.perm:security.read');
+            Route::patch('websites/{id}/waf', [ProtectionController::class, 'updateWaf'])->middleware(['itso.perm:security.write', 'itso.idempotent']);
+            Route::get('websites/{id}/waf/events', [ProtectionController::class, 'wafEvents'])->middleware('itso.perm:security.read');
+            Route::middleware('itso.perm:security.server')->group(function (): void {
+                Route::get('security/ssh', [SecurityController::class, 'ssh']);
+                Route::patch('security/ssh', [SecurityController::class, 'updateSsh'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::post('security/ssh:confirm', [SecurityController::class, 'confirmSsh'])->middleware('itso.idempotent');
+                Route::get('security/fail2ban', [SecurityController::class, 'fail2ban']);
+                Route::patch('security/fail2ban', [SecurityController::class, 'updateFail2ban'])->middleware('itso.idempotent');
+                Route::get('security/ip-allowlist', [SecurityController::class, 'allowlist']);
+                Route::put('security/ip-allowlist', [SecurityController::class, 'setAllowlist'])->middleware('itso.step-up');
+                Route::post('servers/{id}/fim:baseline', [SecurityController::class, 'rebaselineFim'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::get('servers/{id}/firewall/rules', [FirewallController::class, 'rules']);
+                Route::post('servers/{id}/firewall/rules', [FirewallController::class, 'store']);
+                Route::delete('servers/{id}/firewall/rules/{rule}', [FirewallController::class, 'destroy']);
+                Route::get('servers/{id}/firewall/preview', [FirewallController::class, 'preview']);
+                Route::get('servers/{id}/firewall/status', [FirewallController::class, 'status']);
+                Route::post('servers/{id}/firewall:apply', [FirewallController::class, 'apply'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::post('servers/{id}/firewall:confirm', [FirewallController::class, 'confirm'])->middleware('itso.idempotent');
+            });
         });
 
         // ---- /portal: realm portal (chỉ phiên cookie)
@@ -275,7 +314,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('hosting-accounts/{id}/features', [PortalController::class, 'features']);
             Route::get('hosting-accounts/{id}/usage', [PortalController::class, 'usage']);
 
-            // ---- Website (Prompt 5.3); quét mã độc/WAF thuộc Phase 7, chưa có route.
+            // ---- Website (Prompt 5.3); quét mã độc/WAF: khối Security Center (Phase 7) bên dưới.
             Route::get('websites', [WebsiteController::class, 'index']);
             Route::post('websites', [WebsiteController::class, 'store'])->middleware(['itso.idempotent']);
             Route::get('websites/{id}', [WebsiteController::class, 'show']);
@@ -330,6 +369,13 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('hosting-accounts/{id}/files/uploads/{upload}', [FileController::class, 'cancelUpload']);
             Route::post('hosting-accounts/{id}/files:operate', [FileController::class, 'operate'])->middleware('itso.idempotent');
             Route::post('terminal/sessions', [TerminalController::class, 'store'])->middleware('itso.step-up');
+
+            // ---- Bảo vệ (Phase 7): WAF + mã độc của account mình.
+            Route::get('protection', [ProtectionController::class, 'portal']);
+            Route::get('protection/findings', [ProtectionController::class, 'findings']);
+            Route::post('protection/findings/{id}:quarantine', [ProtectionController::class, 'quarantine'])->middleware('itso.idempotent');
+            Route::delete('protection/findings/{id}', [ProtectionController::class, 'deleteFinding'])->middleware(['itso.step-up', 'itso.idempotent']);
+            Route::post('hosting-accounts/{id}/scans', [ProtectionController::class, 'scanAccount'])->middleware('itso.idempotent');
         });
     });
 });

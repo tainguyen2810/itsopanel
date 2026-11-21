@@ -17,6 +17,8 @@ Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations có t�
 | 11 — Giám sát, cảnh báo | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `notification_channels`, `notification_preferences` | 6 |
 | **Tổng** | | **81** |
 
+Prompt 7.4 bổ sung cột mà API Security Center cần (migration Phase 7 chưa phát hành nên sinh lại, không viết migration mới): `uuid` cho `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `waf_events` (không unique vì là bảng partition); `security_events.message`, `acknowledged_at`; `firewall_rules.direction`, `enabled`; `malware_scans.target`, `engines`; `malware_findings.sha256`, `size`, `found_at`; `quarantine_items.signature`, `size`; CHECK direction/protocol/priority, engine/action/sha256.
+
 Phần trong `extras.sql` đi cùng bảng của nó: trigger realm (Phase 3), audit append-only + hash chain + partition (Phase 3), package version bất biến (Phase 3), purge guard (Phase 8, khi có `purge_records`), partition `metric_samples` (Phase 4).
 
 FK tới bảng của Phase sau (ví dụ `hosting_accounts.last_job_id → jobs` cùng Phase 3 thì tạo luôn; `audit_logs.server_id` cũng vậy). FK tới bảng chưa tồn tại được thêm bằng migration riêng ở Phase tạo bảng đích.

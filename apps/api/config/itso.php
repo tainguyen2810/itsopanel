@@ -3,6 +3,11 @@
 use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
 use App\Domain\Hosting\AccountJobHandler;
+use App\Domain\Security\FirewallApplyStep;
+use App\Domain\Security\FirewallConfirmStep;
+use App\Domain\Security\SecurityJobHandler;
+use App\Domain\Security\SshdApplyStep;
+use App\Domain\Security\SshdConfirmStep;
 use App\Domain\Servers\SoftwareJobHandler;
 use App\Domain\Web\CertificateJobHandler;
 use App\Domain\Web\ServerWebJobHandler;
@@ -46,17 +51,33 @@ return [
           ServerWebJobHandler::class)
       + array_fill_keys(['certificate.issue', 'certificate.upload', 'certificate.renew', 'certificate.delete'],
           CertificateJobHandler::class)
-      + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class),
+      + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class)
+      + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class),
 
     // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
     'panel_steps' => [
         'dns.records.apply' => DnsRecordsStep::class,
+        // Safe-apply (D-76/D-77): token xác nhận không đi qua job_steps.
+        'firewall.apply' => FirewallApplyStep::class,
+        'firewall.confirm' => FirewallConfirmStep::class,
+        'sshd.config.apply' => SshdApplyStep::class,
+        'sshd.config.confirm' => SshdConfirmStep::class,
     ],
 
     // File Manager (D-72): thư mục staging upload (panel ghi chunk, agent đọc khi commit), giới hạn giải nén.
     // Terminal USER (D-75): URL WebSocket của itso-gateway; rỗng = suy từ host của request (/gateway/terminal).
     'gateway' => [
         'ws_url' => env('ITSO_GATEWAY_WS_URL'),
+    ],
+
+    // Security Center (Phase 7, D-76…D-81). Cổng panel dùng cho bất biến chống tự khóa nếu wizard chưa lưu;
+    // auth_log: Laravel ghi một dòng cho mỗi lần đăng nhập sai (chỉ IP) để jail fail2ban `itso-panel` đọc.
+    'security' => [
+        'panel_port' => (int) env('ITSO_PANEL_PORT', 8443),
+        'ssh_admin_user' => env('ITSO_SSH_ADMIN_USER', 'root'),
+        'auth_log' => env('ITSO_AUTH_LOG', '/var/log/itso/auth.log'),
+        'scan_max_file_mb' => (int) env('ITSO_SCAN_MAX_FILE_MB', 64),
+        'captcha_difficulty' => (int) env('ITSO_CAPTCHA_DIFFICULTY', 16),
     ],
 
     'files' => [
