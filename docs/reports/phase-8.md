@@ -17,7 +17,7 @@
 | 8.4 Panel API | Đích, repo, bộ khôi phục, policy + `itso:backup-due`, snapshot/duyệt/tải file, kiểm chứng, khôi phục new/overwrite, quota, retention, 3-2-1-1-0, Portal, quyền `backups.*`, cổng purge D-46 | ba32a6d |
 | 8.5 DR | `install.sh --restore`, `/setup/restore:inspect` + `/setup/restore` (op `panel.restore`), `itso panel-restore-apply`, `itso:dr-restore`, runbook DR | 4050012 |
 | 8.6 UI | UI khớp hành vi API thật (DB theo `snapshot.databases`, ghi đè một mục, kit có `destination_uuid`, purge, DR); MSW theo API; ảnh chụp lại | a8ce9bc |
-| 8.7 Tích hợp | e2e stack thật Phase 8 (2 luồng), sửa đích local + retention theo contract (§4), `tests/vm/phase8.sh` B0–B6, review bảo mật, release notes + hướng dẫn cài, tag `v0.1.0-alpha` | (commit 8.7) |
+| 8.7 Tích hợp | e2e stack thật Phase 8 (2 luồng), sửa đích local + retention theo contract (§4), `tests/vm/phase8.sh` B0–B6, review bảo mật, release notes + hướng dẫn cài, tag `v0.1.0-alpha` | 78927fb |
 
 ## 2. File chính
 
