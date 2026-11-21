@@ -9,6 +9,7 @@ use App\Domain\Notifications\Notifier;
 use App\Infrastructure\Agent\AgentClient;
 use App\Infrastructure\Agent\AgentResult;
 use App\Infrastructure\Agent\AgentUnavailable;
+use App\Infrastructure\Agent\AgentUnreachable;
 use App\Jobs\RunJob;
 use App\Models\Job;
 use App\Models\JobLog;
@@ -90,8 +91,13 @@ final class JobRunner
                 } else {
                     // Bí mật chỉ được thay vào bản gửi đi; params_redacted giữ nguyên tham chiếu.
                     $params = $this->secrets->resolve($step->params_redacted);
-                    $res = $this->agent->call($step->op, $params, $step->op_id, $requestedBy, (float) min($remaining, 300));
+                    $res = $this->agent->forServer($job->server_id)
+                        ->call($step->op, $params, $step->op_id, $requestedBy, (float) min($remaining, 300));
                 }
+            } catch (AgentUnreachable $e) {
+                $this->stepFailed($job, $step, 'agent_unreachable', mb_substr($e->getMessage(), 0, 300), true);
+
+                return;
             } catch (AgentUnavailable $e) {
                 $this->stepFailed($job, $step, 'agent_unavailable', mb_substr($e->getMessage(), 0, 300), true);
 

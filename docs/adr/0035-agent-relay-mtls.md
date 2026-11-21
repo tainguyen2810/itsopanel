@@ -7,7 +7,7 @@
 ## Quyết định
 
 1. **itso-relay** (Go, user `itso-relay` không root, systemd hardening) chạy trên control plane:
-   - Nghe `:28444` TLS 1.3, yêu cầu chứng chỉ client do CA nội bộ cấp (`tls.RequireAndVerifyClientCert`). CN chứng chỉ = `server_uuid`; fingerprint nằm trong danh sách thu hồi → từ chối bắt tay. Một kết nối mỗi `server_uuid` (kết nối mới thay kết nối cũ).
+   - Nghe `:28444` TLS 1.3, kiểm chứng chỉ client theo CA nội bộ (`tls.VerifyClientCertIfGiven`; `/v1/agent` bắt buộc có chứng chỉ hợp lệ, thiếu → 401). CN chứng chỉ = `server_uuid`; fingerprint nằm trong danh sách thu hồi → từ chối bắt tay. Một kết nối mỗi `server_uuid` (kết nối mới thay kết nối cũ).
    - Endpoint không mTLS duy nhất: `GET /v1/ca` (trả CA PEM để installer ghim sha256) và `POST /v1/enroll` (chuyển tiếp tới Laravel `POST /api/v1/internal/nodes:enroll` qua 127.0.0.1, ký `X-Itso-Relay-Signature`; giới hạn 10 lần/10 phút/IP).
    - Phía panel: unix socket `/run/itso/relay.sock` (0660, nhóm `itso`), Laravel gửi `{server_uuid, envelope}` và nhận kết quả; `GET /status` trả trạng thái từng node (connected, last_seen, fingerprint).
    - Giới hạn: envelope ≤ 1 MiB, kết quả ≤ 8 MiB, tối đa 32 op đồng thời mỗi node, timeout theo deadline của envelope.

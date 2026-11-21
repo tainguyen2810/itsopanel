@@ -32,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
                 is_string($url) && $url !== '' ? $url : null,
                 is_numeric($timeout) ? (float) $timeout : 5.0,
                 is_string($keyFile) && $keyFile !== '' ? $keyFile : null,
+                is_string($relay = config('itso.relay.socket')) && $relay !== '' ? $relay : null,
             );
         });
     }

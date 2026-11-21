@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -26,12 +27,14 @@ import (
 	"itso.local/agent/internal/platform"
 	"itso.local/agent/internal/policy"
 	"itso.local/agent/internal/registry"
+	"itso.local/agent/internal/relay"
 	"itso.local/agent/internal/server"
 )
 
 type options struct {
 	listen, keyFile, policyFile, auditLog, root, allowUID, socketGroup string
 	streamListen, streamAllow                                          string
+	mode, relayURL, nodeCert, nodeKey, nodeCA                          string
 	sandbox                                                            bool
 }
 
@@ -54,6 +57,11 @@ func main() {
 	flag.StringVar(&o.socketGroup, "socket-group", "itso-agent-clients", "group sở hữu socket (máy thật)")
 	flag.StringVar(&o.streamListen, "stream-listen", "unix:/run/itso/agent-stream.sock", "socket stream terminal (rỗng = tắt terminal)")
 	flag.StringVar(&o.streamAllow, "stream-allow-uid", "itso-gw", "uid hoặc tên user được ATTACH phiên terminal (SO_PEERCRED)")
+	flag.StringVar(&o.mode, "mode", "local", "local (cùng máy panel) | node (quay số ra itso-relay bằng mTLS, D-89)")
+	flag.StringVar(&o.relayURL, "relay-url", "", "chế độ node: https://control-plane:28444 (rỗng = đọc /etc/itso/node.json)")
+	flag.StringVar(&o.nodeCert, "node-cert", ops.NodeCertPath, "chế độ node: chứng chỉ node")
+	flag.StringVar(&o.nodeKey, "node-key", ops.NodeKeyPath, "chế độ node: khóa riêng node (0600)")
+	flag.StringVar(&o.nodeCA, "node-ca", ops.NodeCAPath, "chế độ node: CA nội bộ đã ghim")
 	flag.BoolVar(&o.sandbox, "sandbox", false, "runner giả + gốc riêng, không chạy lệnh hệ thống (dev/e2e)")
 	showVersion := flag.Bool("version", false, "in phiên bản")
 	flag.Parse()
@@ -82,6 +90,9 @@ func run(o options, log *slog.Logger) error {
 	} else if o.root == "/" {
 		return errors.New("--sandbox cần --root là thư mục riêng (không phải /): sandbox ghi /etc, /home giả vào đó")
 	}
+	if o.mode != "local" && o.mode != "node" {
+		return fmt.Errorf("--mode %q: chỉ nhận local | node", o.mode)
+	}
 	key, err := auth.LoadKey(o.keyFile)
 	if err != nil {
 		return fmt.Errorf("khóa HMAC: %w", err)
@@ -103,7 +114,7 @@ func run(o options, log *slog.Logger) error {
 	// Host: chỉ đọc /proc, /sys của máy (kể cả sandbox, để số liệu là thật).
 	deps := &ops.Deps{Run: platform.ExecRunner{}, FS: platform.NewFS(o.root, false), Host: platform.NewFS("/", true),
 		AuditPath: o.auditLog, Sandbox: o.sandbox, CPUSample: 250 * time.Millisecond, AcmePebble: pol.File.AcmePebble,
-		RootTerminal: pol.RootTerminal(), RecordUser: pol.File.RecordUser}
+		RootTerminal: pol.RootTerminal(), RecordUser: pol.File.RecordUser, NodeMode: o.mode == "node"}
 	if o.sandbox {
 		deps.FS = platform.NewFS(o.root, os.Geteuid() != 0)
 		deps.Run = ops.SandboxRunner(deps)
@@ -167,7 +178,33 @@ func run(o options, log *slog.Logger) error {
 			}
 		}()
 	}
-	log.Info("itso-agent đang chạy", "listen", o.listen, "version", ops.Version, "sandbox", o.sandbox, "ops", len(reg.Ops()))
+	if o.mode == "node" {
+		relayURL := o.relayURL
+		if relayURL == "" {
+			ni, err := ops.ReadNodeInfo(deps.FS)
+			if err != nil {
+				return fmt.Errorf("chế độ node cần --relay-url hoặc %s: %w", ops.NodeIdentity, err)
+			}
+			relayURL = ni.RelayURL
+		}
+		if !strings.HasPrefix(relayURL, "https://") {
+			return errors.New("relay-url phải là https://")
+		}
+		// Qua relay không có SO_PEERCRED: bảo vệ là mTLS (kênh) + HMAC khóa riêng của server này (envelope).
+		nodeHandler := server.Secure(server.Config{Registry: reg, Verifier: auth.NewVerifier(key), Audit: alog,
+			Log: log, Version: ops.Version})
+		if o.sandbox { // sandbox: chứng chỉ node nằm trong gốc riêng (agent.cert.rotate ghi vào đó)
+			for _, f := range []*string{&o.nodeCert, &o.nodeKey, &o.nodeCA} {
+				if !strings.HasPrefix(*f, o.root) {
+					*f = filepath.Join(o.root, *f)
+				}
+			}
+		}
+		n := &relay.Node{RelayURL: relayURL, CertFile: o.nodeCert, KeyFile: o.nodeKey, CAFile: o.nodeCA,
+			Handler: nodeHandler, Log: log}
+		go func() { _ = n.Run(ctx) }()
+	}
+	log.Info("itso-agent đang chạy", "mode", o.mode, "listen", o.listen, "version", ops.Version, "sandbox", o.sandbox, "ops", len(reg.Ops()))
 	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}

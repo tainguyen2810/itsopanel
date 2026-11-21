@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Agent;
 
+use App\Models\Agent;
+use App\Models\Server;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory as Http;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 /**
@@ -14,6 +17,10 @@ use Illuminate\Support\Str;
  *
  * Phase 1 chỉ dùng system.ping cho trang trạng thái. Từ Phase 3 worker gọi qua đây
  * với op_id = job_uuid:seq:attempt.
+ *
+ * Phase 9 (D-89, ADR 0035): `forServer()` chọn kênh theo agents.transport. `local` giữ socket agent cục bộ;
+ * `mtls` gửi envelope (ký bằng khóa HMAC riêng của node) tới unix socket của itso-relay, đường
+ * /v1/nodes/{server_uuid}/ops. Relay chỉ chuyển nguyên byte; chữ ký vẫn tính trên đường /v1/ops mà agent kiểm.
  */
 final class AgentClient
 {
@@ -23,7 +30,57 @@ final class AgentClient
         private readonly ?string $url,
         private readonly float $timeout = 5.0,
         private readonly ?string $keyFile = null,
+        private readonly ?string $relaySocket = null,
+        private readonly ?string $nodeUuid = null,
+        private readonly ?string $nodeKey = null,
     ) {}
+
+    /**
+     * Client cho server cụ thể. null hoặc server có agent local → chính client này (socket agent cục bộ).
+     */
+    public function forServer(?int $serverId): self
+    {
+        if ($serverId === null) {
+            return $this;
+        }
+        /** @var Agent|null $agent */
+        $agent = Agent::query()->where('server_id', $serverId)->first();
+        if ($agent === null || $agent->transport !== 'mtls') {
+            return $this;
+        }
+        if ($agent->connection === 'revoked' || $agent->revoked_at !== null) {
+            throw new AgentUnavailable('Node đã bị thu hồi.');
+        }
+        /** @var Server $server */
+        $server = Server::query()->findOrFail($serverId);
+
+        return new self($this->http, $this->socket, $this->url, $this->timeout, $this->keyFile, $this->relaySocket,
+            $server->uuid, self::decryptKey($agent));
+    }
+
+    /** Khóa HMAC riêng của node: cột bytea chứa chuỗi Crypt (APP_KEY). */
+    public static function decryptKey(Agent $agent): string
+    {
+        $raw = $agent->getRawOriginal('hmac_key_encrypted');
+        if (is_resource($raw)) {
+            $raw = stream_get_contents($raw);
+        }
+        if (! is_string($raw) || $raw === '') {
+            throw new AgentUnavailable('Node chưa có khóa HMAC (chưa enroll xong).');
+        }
+        $key = Crypt::decryptString($raw);
+        if (strlen($key) < 32) {
+            throw new AgentUnavailable('Khóa HMAC của node quá ngắn.');
+        }
+
+        return $key;
+    }
+
+    /** Mã hóa khóa HMAC để lưu vào agents.hmac_key_encrypted. */
+    public static function encryptKey(string $key): string
+    {
+        return Crypt::encryptString($key);
+    }
 
     /** Header chữ ký HMAC-SHA256 (D-66) trên v1\n{method}\n{path}\n{ts}\n{nonce}\n{sha256(body)}. */
     public static function signature(string $key, string $method, string $path, int $ts, string $nonce, string $body): string
@@ -68,7 +125,15 @@ final class AgentClient
         ];
 
         $options = ['timeout' => $timeout, 'connect_timeout' => min(2.0, $timeout)];
-        if ($this->socket !== null && $this->socket !== '') {
+        $path = '/v1/ops';
+        if ($this->nodeUuid !== null) {
+            if ($this->relaySocket === null || $this->relaySocket === '') {
+                throw new AgentUnavailable('Chưa cấu hình ITSO_RELAY_SOCKET cho node từ xa.');
+            }
+            $options['curl'] = [CURLOPT_UNIX_SOCKET_PATH => $this->relaySocket];
+            $base = 'http://relay';
+            $path = '/v1/nodes/'.$this->nodeUuid.'/ops';
+        } elseif ($this->socket !== null && $this->socket !== '') {
             $options['curl'] = [CURLOPT_UNIX_SOCKET_PATH => $this->socket];
             $base = 'http://agent';
         } elseif ($this->url !== null && $this->url !== '') {
@@ -79,7 +144,7 @@ final class AgentClient
 
         $body = json_encode($envelope, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $headers = [];
-        $key = $this->key();
+        $key = $this->nodeKey ?? $this->key();
         if ($key !== null) {
             $headers = [
                 'X-ITSO-Timestamp' => (string) $now,
@@ -90,11 +155,17 @@ final class AgentClient
 
         try {
             $response = $this->http->withOptions($options)->acceptJson()->withHeaders($headers)
-                ->withBody($body, 'application/json')->post($base.'/v1/ops');
+                ->withBody($body, 'application/json')->post($base.$path);
         } catch (ConnectionException $e) {
+            if ($this->nodeUuid !== null) {
+                throw new AgentUnreachable('Không kết nối được itso-relay: '.$e->getMessage(), 0, $e);
+            }
             throw new AgentUnavailable('Không kết nối được agent: '.$e->getMessage(), 0, $e);
         }
         $res = $response->json();
+        if ($this->nodeUuid !== null && in_array($response->status(), [503, 504], true)) {
+            throw new AgentUnreachable('Node không kết nối với relay ('.(is_array($res) ? (string) ($res['code'] ?? '') : '').').');
+        }
         if (! $response->successful() || ! is_array($res) || ! isset($res['ok'], $res['op_id'])) {
             throw new AgentUnavailable('Agent trả về dữ liệu không hợp lệ (HTTP '.$response->status().').');
         }

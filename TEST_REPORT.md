@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.2 (CA nội bộ, itso-relay, agent node) — nhánh `phase-9`
+
+Phạm vi: `agent/internal/pki`, `agent/internal/ops/pki.go` (+ `pki_test.go`), `agent/internal/relay/{frame,hub,node,server}.go` (+ `relay_test.go`), `agent/cmd/itso-relay`, `agent/cmd/itso-agent` (`--mode node`); Laravel `AgentClient::forServer`, `AgentUnreachable`, `JobRunner`, `config/itso.php` (`relay.socket`, `relay.enroll_key_file`); `scripts/dev.sh` (relay + node sandbox).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go relay + PKI | `go test -race -count=5 ./internal/relay/` · `go test -race ./internal/pki/` | **PASS** (5 lần liền, không flaky). Kiểm: khứ hồi qua relay + `/v1/status`; envelope ký sai khóa server bị agent trả `unauthorized_caller` dù qua relay (handler không chạy); node chưa kết nối → 503; chứng chỉ CA khác / hết hạn / CN không phải uuid bị từ chối, thiếu chứng chỉ client → 401, `/v1/ca` trả đúng CA; thu hồi cắt kết nối ngay, chặn quay lại, lưu xuống đĩa; mất kết nối → node tự nối lại, gửi lại cùng op_id → kết quả cache, handler chạy đúng 1 lần; enroll chuyển tiếp có chữ ký relay đúng + IP client, lần 11 trong 10 phút → 429 |
+| Go op PKI | `go test ./internal/ops/ -run 'Pki\|CertRotate'` | PASS: chưa có CA → `precondition_failed`; ký đúng (CN, hạn ≤ 30 ngày, fingerprint khớp); CSR server khác → `enrollment_invalid`; chế độ node → `op_disabled`; xoay hai pha: chứng chỉ không khớp khóa chờ / CA khác → từ chối, đúng → thay `node.pem` + `node.key` nguyên tử |
+| Go toàn bộ | `go test -race ./...` · `make lint-agent` · `make no-exec` | PASS · gofmt + vet sạch · OK |
+| Smoke dev | `itso-relay dev-init/dev-issue` → relay `127.0.0.1:28455` + `itso-agent --sandbox --mode node` → `curl --unix-socket relay.sock /v1/status` + `system.ping` ký HMAC qua `/v1/nodes/{uuid}/ops` | node `connected:true`, ping `ok:true` |
+| Pest | `bash scripts/pest-pg.sh tests/Feature/Phase9 tests/Unit/AgentClientTest.php` rồi `--parallel` toàn bộ (467/467 PASS) | Lần đầu 1 lỗi (test tự tạo `job_steps` thiếu `op_id`) → dùng `JobDispatcher` → **10/10 PASS**. Mới: local/không agent → socket cục bộ; mtls → `http://relay/v1/nodes/{uuid}/ops`, chữ ký bằng khóa riêng node trên `/v1/ops`, khóa lưu mã hóa; 503 → `AgentUnreachable`; node bị thu hồi / chưa có khóa → `AgentUnavailable`; `JobRunner` gửi tới relay theo `server_id`, lỗi `agent_unreachable` |
+| Lint API | `make lint-api` | Lần đầu Pint báo import thừa → sửa → Pint PASS · PHPStan 0 lỗi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** relay + node trên 2 máy thật (9.8, `tests/vm/phase9.sh`).
+
 ## 2026-11-21 — Phase 9 / Prompt 9.1 (ADR, contracts, migration) — nhánh `phase-9`
 
 Phạm vi: `docs/adr/0034–0038`; `contracts/tools/{gen_agent_ops,gen_vectors,schemas,gen_openapi,demo,check_contracts}.py`; `database/tools/{gen_dbml,gen_migrations}.py` (hỗ trợ đánh dấu `/* phase:N */` cho ALTER bảng Phase trước), `database/schema/extras.sql`, migration `2026_11_20_000009_phase_9_schema.php` (sinh), `database/tests/80_multiserver.sql`; Laravel: `PurgeService`/`BackupJobHandler` theo tham số `account.remove` mới, `ServerPresenter` (`node_role`, `transport`, `connection`, `last_seen_at`, `cert`), gợi ý server (`eligible`, `excluded_reasons`, `commit_pct`), `config/itso.php` (`relay.*`); mock agent theo `account.remove` mới.

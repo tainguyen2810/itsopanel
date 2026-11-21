@@ -62,6 +62,29 @@ if [[ "$ITSO_DEV_AGENT" == sandbox ]]; then
     --key-file "$ITSO_AGENT_KEY_FILE" --policy "$SBX/policy.yaml" --audit-log "$SBX/audit.jsonl" \
     --allow-uid "$(id -u)" --stream-listen "unix:$SBX/agent-stream.sock" --stream-allow-uid "$(id -u)" > >(prefix agent) 2>&1 &
   pids+=($!)
+  # Phase 9 (D-89): itso-relay + một agent "node" (gốc sandbox riêng) quay số ra relay qua mTLS loopback.
+  # PKI dev nằm trong .dev/relay (không bao giờ /etc). Panel đăng ký node qua enroll (Prompt 9.4).
+  if [[ "${ITSO_DEV_NODE:-1}" == 1 ]]; then
+    ( cd agent && go build -o bin/itso-relay ./cmd/itso-relay )
+    RLY="$ROOT/.dev/relay" NODE="$ROOT/.dev/node-sandbox"
+    agent/bin/itso-relay dev-init --dir "$RLY" --hosts 127.0.0.1,localhost
+    mkdir -p "$NODE/root/etc/itso/node"
+    [[ -s "$NODE/uuid" ]] || python3 -c 'import uuid;print(uuid.uuid4())' > "$NODE/uuid"
+    NODE_UUID="$(cat "$NODE/uuid")"
+    [[ -s "$NODE/root/etc/itso/node/node.pem" ]] || agent/bin/itso-relay dev-issue --dir "$RLY" --uuid "$NODE_UUID" --out "$NODE/root/etc/itso/node" >/dev/null
+    printf '{"role":"node","server_uuid":"%s","relay_url":"https://127.0.0.1:%s"}\n' "$NODE_UUID" "${RELAY_PORT:-28444}" > "$NODE/root/etc/itso/node.json"
+    ( umask 077; [[ -s "$NODE/agent.key" ]] || od -An -N32 -tx1 /dev/urandom | tr -d ' \n' > "$NODE/agent.key"
+      [[ -s "$NODE/policy.yaml" ]] || printf 'version: 1\n' > "$NODE/policy.yaml" )
+    export ITSO_RELAY_SOCKET="${ITSO_RELAY_SOCKET:-$RLY/relay.sock}" ITSO_RELAY_ENROLL_KEY_FILE="$RLY/enroll.key"
+    agent/bin/itso-relay --sandbox --listen "127.0.0.1:${RELAY_PORT:-28444}" --socket "unix:$ITSO_RELAY_SOCKET" \
+      --ca "$RLY/ca.pem" --cert "$RLY/relay.pem" --key "$RLY/relay.key" --state "$RLY/state.json" \
+      --enroll-url "${ITSO_API_URL}/api/v1/internal/nodes:enroll" --relay-key-file "$RLY/enroll.key" > >(prefix relay) 2>&1 &
+    pids+=($!)
+    agent/bin/itso-agent --sandbox --mode node --root "$NODE/root" --listen "unix:$NODE/agent.sock" \
+      --key-file "$NODE/agent.key" --policy "$NODE/policy.yaml" --audit-log "$NODE/audit.jsonl" \
+      --allow-uid "$(id -u)" --stream-listen "" > >(prefix node) 2>&1 &
+    pids+=($!)
+  fi
   # Terminal USER (D-75): gateway WebSocket ↔ socket stream (shell giả trong sandbox); Vite proxy /gateway.
   agent/bin/itso-gateway --listen "127.0.0.1:${GATEWAY_PORT}" --agent-stream "unix:$SBX/agent-stream.sock" > >(prefix gateway) 2>&1 &
 else
@@ -93,6 +116,7 @@ cat <<MSG
   Portal: http://127.0.0.1:5173/portal/
   API   : ${ITSO_API_URL}/api/v1/system/health
   Agent : unix:${ITSO_AGENT_SOCKET} (${ITSO_DEV_AGENT}; ITSO_DEV_AGENT=mock để dùng mock agent)
+  Relay : https://127.0.0.1:${RELAY_PORT:-28444} + node sandbox .dev/node-sandbox (ITSO_DEV_NODE=0 để tắt)
   Gateway terminal: 127.0.0.1:${GATEWAY_PORT} (/gateway qua Vite; chỉ với agent sandbox)
   Queue : php artisan queue:work (job nghiệp vụ)
   Dữ liệu demo: cd apps/api && php artisan db:seed --class=DemoSeeder (docs/runbooks/phase-3-demo.md)
