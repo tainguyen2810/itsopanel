@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\Shared\CertificateController;
 use App\Http\Controllers\Api\V1\Shared\CronController;
 use App\Http\Controllers\Api\V1\Shared\DatabaseController;
 use App\Http\Controllers\Api\V1\Shared\FileController;
+use App\Http\Controllers\Api\V1\Shared\TerminalController;
 use App\Http\Controllers\Api\V1\Shared\WebsiteController;
 use App\Http\Controllers\Api\V1\SystemController;
 use Illuminate\Support\Facades\Route;
@@ -251,6 +252,8 @@ Route::prefix('v1')->group(function (): void {
             Route::get('hosting-accounts/{id}/files/uploads/{upload}', [FileController::class, 'showUpload'])->middleware('itso.perm:files.write');
             Route::delete('hosting-accounts/{id}/files/uploads/{upload}', [FileController::class, 'cancelUpload'])->middleware('itso.perm:files.write');
             Route::post('hosting-accounts/{id}/files:operate', [FileController::class, 'operate'])->middleware(['itso.perm:files.write', 'itso.idempotent']);
+            // ---- Terminal USER (Prompt 6.4, D-75)
+            Route::post('terminal/sessions', [TerminalController::class, 'store'])->middleware(['itso.perm:terminal.account', 'itso.step-up']);
         });
 
         // ---- /portal: realm portal (chỉ phiên cookie)
@@ -326,6 +329,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('hosting-accounts/{id}/files/uploads/{upload}', [FileController::class, 'showUpload']);
             Route::delete('hosting-accounts/{id}/files/uploads/{upload}', [FileController::class, 'cancelUpload']);
             Route::post('hosting-accounts/{id}/files:operate', [FileController::class, 'operate'])->middleware('itso.idempotent');
+            Route::post('terminal/sessions', [TerminalController::class, 'store'])->middleware('itso.step-up');
         });
     });
 });

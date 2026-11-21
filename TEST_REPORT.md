@@ -2,6 +2,26 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 6 / Prompt 6.4 — nhánh `phase-6`
+
+Môi trường: như 6.3. Agent: shell giả (sandbox) và socket unix thật trong thư mục tạm; không có systemd nên `systemd-run --pty` thật là **chờ VM**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS (`createTerminalSession` thêm 503 agent không kết nối) |
+| Lint agent · no-exec | `make lint-agent` · `make no-exec` | PASS · PASS (cấp pty + `exec` chỉ trong `internal/platform`, bin `systemd-run` trong bảng) |
+| Ticket + phiên | `go test -race ./internal/term` | PASS: ticket 32 byte base64url, dùng lại → từ chối, quá 30 giây → `ticket_expired`, tối đa 2 phiên mỗi account (tính theo account), ticket sai định dạng; shell giả hai chiều (echo ký tự, `whoami`, resize, `exit` → khung exit), nhàn rỗi → `idle`, gõ liên tục vẫn đóng khi quá thời gian sống → `expired`, phiên đóng giải phóng chỗ; khung quá 64 KiB / loại lạ bị từ chối |
+| pty.open | `go test ./internal/ops -run 'TestPtyOpen\|TestTermArgv'` | PASS: chưa bật socket → `dependency_unavailable`; shell nologin (gói không SSH) → `precondition_failed`; user không có → `not_found`; sai uid → `precondition_failed`; uid 0 và 1000 bị chặn trước khi tra passwd; phiên thứ 3 → `quota_exceeded`; golden argv `systemd-run --pty` (uid/gid/slice account, ProtectSystem=strict, ProtectHome=tmpfs + BindPaths home, PrivateTmp/Devices, NoNewPrivileges, ProtectProc=invisible); TermArgv từ chối root/uid hệ thống/uuid hoặc username độc |
+| Gateway | `go test -race ./internal/gateway` | PASS: nối hai chiều qua socket unix thật (resize JSON, dữ liệu nhị phân, exit → đóng 1000 "exited"); ticket dùng lại → 4403, hết hạn → 4410, ticket sai định dạng → HTTP 400, Origin lạ → HTTP 403; caller ngoài allowlist peercred bị agent đóng kết nối → 1011 |
+| Go toàn bộ | `go test -count=1 ./...` | PASS |
+| Laravel | `pint` · `phpstan` · `pest tests/Feature/Phase6/TerminalTest.php` | PASS · 0 lỗi · PASS 3/3: admin + chủ account nhận ticket (201 khớp hợp đồng, `no-store`), ticket không có trong `audit_logs/terminal_sessions/job_*`; chưa bật MFA → 403, quá hạn step-up → 403 `mfa_step_up_required`; gói không SSH → 409 `package_limit_reached` (không gọi agent); account khóa → 409; `mode=root` → 409; account ngoài phạm vi → 422; agent hết chỗ → 409 `resource_locked` + phiên đóng `error`; agent chưa bật terminal → 503; `itso:terminal-reap` đóng phiên quá 12 giờ |
+| Ma trận quyền | `pest tests/Feature/Rbac` | PASS (+1 dòng `POST /admin/terminal/sessions`) |
+| Pest toàn bộ | `scripts/pest-pg.sh` | PASS 424/424 |
+| Unit systemd · installer | `make units-check` · `make test-installer` | PASS 14 unit (thêm `itso-gateway.service`: user `itso-gw`, chỉ loopback, không capability, `IPAddressDeny=any`) · PASS 8/8 |
+| Web | `eslint vite.config.ts` · `tsc -b --noEmit` | PASS (Vite proxy `/gateway` có `ws: true`) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 6 / Prompt 6.3 — nhánh `phase-6`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ, queue sync; agent giả qua `Tests\Support\FakeAgent` (Http::fake), staging upload `ITSO_UPLOAD_DIR=/tmp/itso-test-uploads` (phpunit.xml).

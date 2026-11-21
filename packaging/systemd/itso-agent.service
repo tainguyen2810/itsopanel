@@ -6,7 +6,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/opt/itso/current/bin/itso-agent --listen unix:/run/itso/agent.sock --key-file /etc/itso/agent.key --policy /etc/itso/agent-policy.yaml --audit-log /var/log/itso/agent-audit.jsonl
+ExecStart=/opt/itso/current/bin/itso-agent --listen unix:/run/itso/agent.sock --key-file /etc/itso/agent.key --policy /etc/itso/agent-policy.yaml --audit-log /var/log/itso/agent-audit.jsonl --stream-listen unix:/run/itso/agent-stream.sock --stream-allow-uid itso-gw
 Restart=on-failure
 RestartSec=2s
 User=root

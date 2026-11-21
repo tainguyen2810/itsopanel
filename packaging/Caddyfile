@@ -19,6 +19,11 @@
 		output file /var/log/itso/web-access.log
 	}
 
+	# Terminal USER (D-75): WebSocket tới itso-gateway (loopback); gateway không quyết quyền.
+	handle /gateway/* {
+		reverse_proxy 127.0.0.1:{$ITSO_GATEWAY_PORT:7811}
+	}
+
 	@api path /api/* /sanctum/* /up
 	handle @api {
 		root * /opt/itso/current/api/public

@@ -12458,6 +12458,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
   /api/v1/admin/uptime-checks:
     get:
       operationId: listUptimeChecks

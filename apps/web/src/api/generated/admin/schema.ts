@@ -20501,6 +20501,7 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     listUptimeChecks: {

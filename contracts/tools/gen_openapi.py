@@ -479,12 +479,13 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             ok=cref("NotificationPreferences"), ok_example=one(D.NOTIFICATION_PREFS))
     # -- terminal
     term_ex = D.TERMINAL if realm == "portal" else D.TERMINAL | {"ws_url": "wss://admin.itso.local/gateway/terminal"}
-    api.add("post", "/terminal/sessions", oid("createTerminalSession"), "Mở terminal (ticket 30 giây, dùng một lần)",
+    term_op = api.add("post", "/terminal/sessions", oid("createTerminalSession"), "Mở terminal (ticket 30 giây, dùng một lần)",
             "Terminal", body=cref("TerminalRequest"),
             body_example={"hosting_account_uuid": acc["uuid"], "server_uuid": None, "mode": "account"},
             ok=cref("TerminalTicket"), ok_example=one(term_ex), status="201", step_up=True,
             desc=("`mode=root` chỉ chạy khi policy cục bộ của agent cho phép (mặc định tắt)." if realm == "admin"
                   else "Chỉ khi gói cho phép SSH; shell chạy trong jail của account. `mode=root` luôn bị từ chối."))
+    term_op["responses"]["503"] = Api.r("AgentUnavailable")  # pty.open gọi agent đồng bộ
     return pre
 
 

@@ -73,6 +73,8 @@ const MATRIX = [
     ['GET', '/api/v1/admin/hosting-accounts/{account}/files?path=.', null, 200, 200, 404, 401],
     ['GET', '/api/v1/admin/hosting-accounts/{account}/files/download?path=a.txt', null, 200, 200, 404, 401],
     ['POST', '/api/v1/admin/hosting-accounts/{account}/files/uploads', ['path' => 'a.bin', 'size' => 1], 201, 201, 404, 419],
+    // 6.4: terminal (gói mặc định không SSH → 409 sau khi qua quyền + step-up; AD_OUT: account ngoài phạm vi → 422)
+    ['POST', '/api/v1/admin/terminal/sessions', ['mode' => 'account', 'hosting_account_uuid' => '{account}'], 409, 409, 422, 419],
 ];
 
 /*
@@ -111,6 +113,9 @@ it('ma trận quyền', function (string $method, string $path, ?array $body, st
         '{account}' => $a->account->uuid]);
     if (($body['limits'] ?? null) === 'LIMITS') {
         $body['limits'] = limits();
+    }
+    if (($body['hosting_account_uuid'] ?? null) === '{account}') {
+        $body['hosting_account_uuid'] = $a->account->uuid;
     }
     if (($body['confirm_username'] ?? null) === '{username}') {
         $body['confirm_username'] = $a->account->username;

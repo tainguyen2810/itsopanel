@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,6 +31,7 @@ import (
 
 type options struct {
 	listen, keyFile, policyFile, auditLog, root, allowUID, socketGroup string
+	streamListen, streamAllow                                          string
 	sandbox                                                            bool
 }
 
@@ -46,6 +48,8 @@ func main() {
 	flag.StringVar(&o.root, "root", "/", "gốc hệ thống file (sandbox/test)")
 	flag.StringVar(&o.allowUID, "allow-uid", "itso,itso-gw,root", "uid hoặc tên user được gọi agent (SO_PEERCRED)")
 	flag.StringVar(&o.socketGroup, "socket-group", "itso-agent-clients", "group sở hữu socket (máy thật)")
+	flag.StringVar(&o.streamListen, "stream-listen", "unix:/run/itso/agent-stream.sock", "socket stream terminal (rỗng = tắt terminal)")
+	flag.StringVar(&o.streamAllow, "stream-allow-uid", "itso-gw", "uid hoặc tên user được ATTACH phiên terminal (SO_PEERCRED)")
 	flag.BoolVar(&o.sandbox, "sandbox", false, "runner giả + gốc riêng, không chạy lệnh hệ thống (dev/e2e)")
 	showVersion := flag.Bool("version", false, "in phiên bản")
 	flag.Parse()
@@ -99,6 +103,26 @@ func run(o options, log *slog.Logger) error {
 		deps.FS = platform.NewFS(o.root, os.Geteuid() != 0)
 		deps.Run = ops.SandboxRunner(deps)
 	}
+	var streamLn net.Listener
+	var streamAllow auth.UIDAllow
+	if o.streamListen != "" {
+		streamAllow, err = parseAllow(o.streamAllow, o.sandbox)
+		if err != nil {
+			return fmt.Errorf("stream-allow-uid: %w", err)
+		}
+		ln, cleanup, err := server.Listen(o.streamListen)
+		if err != nil {
+			return fmt.Errorf("socket stream: %w", err)
+		}
+		defer cleanup()
+		if !o.sandbox {
+			if err := chgrpSocket(strings.TrimPrefix(o.streamListen, "unix:"), o.socketGroup); err != nil {
+				return err
+			}
+		}
+		streamLn = ln
+		deps.Term = ops.NewTermManager(deps, log)
+	}
 	reg := registry.New(ops.Version)
 	reg.SetAllow(pol.Enabled)
 	if err := ops.Register(reg, deps); err != nil {
@@ -127,6 +151,13 @@ func run(o options, log *slog.Logger) error {
 		defer cancel()
 		_ = srv.Shutdown(sctx)
 	}()
+	if streamLn != nil {
+		go func() {
+			if err := server.ServeStream(ctx, streamLn, streamAllow, log, deps.Term.Serve); err != nil {
+				log.Error("socket stream dừng", "err", err)
+			}
+		}()
+	}
 	log.Info("itso-agent đang chạy", "listen", o.listen, "version", ops.Version, "sandbox", o.sandbox, "ops", len(reg.Ops()))
 	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err

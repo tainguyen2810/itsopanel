@@ -289,7 +289,7 @@ func (e *Env) prune(st *State) {
 	}
 }
 
-var panelUnits = []string{"itso-agent.service", "itso-web.service", "itso-worker@1.service", "itso-scheduler.timer"}
+var panelUnits = []string{"itso-agent.service", "itso-gateway.service", "itso-web.service", "itso-worker@1.service", "itso-scheduler.timer"}
 
 // healthy kiểm các unit chính đang chạy (lặp HealthTries lần).
 func (e *Env) healthy(ctx context.Context) error {

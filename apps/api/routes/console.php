@@ -18,3 +18,4 @@ Schedule::command('itso:dns-sync')->hourlyAt(23)->withoutOverlapping();
 
 // Phase 6: ghi lần chạy cron theo lịch (cron.inspect).
 Schedule::command('itso:cron-sync')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('itso:terminal-reap')->hourlyAt(41)->withoutOverlapping();

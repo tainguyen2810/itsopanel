@@ -60,6 +60,7 @@ final class Permissions
             'ftp.write' => 'Tạo/xóa tài khoản SFTP/FTPS, đổi mật khẩu, khóa SSH',
             'cron.read' => 'Xem cron và lịch sử chạy',
             'cron.write' => 'Tạo/sửa/xóa/chạy cron',
+            'terminal.account' => 'Mở terminal của tài khoản hosting (jail, cần step-up)',
         ],
         'operations' => [
             'jobs.read' => 'Xem job',
@@ -77,7 +78,7 @@ final class Permissions
         'SUPER_ADMIN' => ['*'],
         'ADMIN' => ['users.read', 'users.write', 'roles.read', 'servers.read', 'packages.read', 'accounts.read',
             'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'files.*', 'ftp.*',
-            'cron.*', 'backups.read'],
+            'cron.*', 'terminal.account', 'backups.read'],
         'USER' => ['own.*'],
     ];
 
