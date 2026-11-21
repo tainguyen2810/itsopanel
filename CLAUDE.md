@@ -50,6 +50,6 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 ## 5. Tài liệu
 
 - Gốc repo: `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `DECISIONS.md`, `DATABASE.md`, `API.md`, `PHASE_STATUS.md`, `TEST_REPORT.md`.
-- Prompt Phase 1: `docs/planning/seed/PHASE_1_PROMPTS.md`. Prompt Phase 2: `docs/planning/seed/PHASE_2_PROMPTS.md`. Prompt Phase 3: `docs/planning/seed/PHASE_3_PROMPTS.md`. Prompt Phase 4: `docs/planning/seed/PHASE_4_PROMPTS.md`. Prompt Phase 5: `docs/planning/seed/PHASE_5_PROMPTS.md`.
+- Prompt Phase 1: `docs/planning/seed/PHASE_1_PROMPTS.md`. Prompt Phase 2: `docs/planning/seed/PHASE_2_PROMPTS.md`. Prompt Phase 3: `docs/planning/seed/PHASE_3_PROMPTS.md`. Prompt Phase 4: `docs/planning/seed/PHASE_4_PROMPTS.md`. Prompt Phase 5: `docs/planning/seed/PHASE_5_PROMPTS.md`. Prompt Phase 6: `docs/planning/seed/PHASE_6_PROMPTS.md`.
 - Chi tiết kỹ thuật: `docs/planning/01–13`. Lịch sử định hướng đã hoãn: `docs/planning/14`, `15`.
 - Khi tài liệu mâu thuẫn: file ở gốc repo > `docs/planning/seed/` > `docs/planning/01–13`.

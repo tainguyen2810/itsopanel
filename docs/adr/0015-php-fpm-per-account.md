@@ -1,6 +1,6 @@
 # ADR 0015: PHP-FPM master riêng cho từng account, pool theo website
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 5)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 5)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-68, D-12, D-64
 

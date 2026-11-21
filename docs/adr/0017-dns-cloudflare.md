@@ -1,6 +1,6 @@
 # ADR 0017: DNS qua Cloudflare API từ Laravel
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 5)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 5)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-70
 
