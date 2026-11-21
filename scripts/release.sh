@@ -50,6 +50,7 @@ LDF="-s -w -X main.version=$VER -X main.releasePubKey=$PUB_B64"
 
 cp -r packaging/systemd "$STAGE/packaging/systemd"
 cp packaging/Caddyfile "$STAGE/packaging/Caddyfile"
+mkdir -p "$STAGE/share" && cp -r packaging/share/yara "$STAGE/share/yara"
 echo "$VER" > "$STAGE/VERSION"
 MISSING=()
 [ -x "$STAGE/bin/frankenphp" ] || MISSING+=("frankenphp")

@@ -1,0 +1,3 @@
+# Sinh bởi itso-agent (waf.apply). Không sửa tay.
+modsecurity on;
+modsecurity_rules_file /etc/itso/waf/01938a06-0002-7000-8000-000006000002.conf;

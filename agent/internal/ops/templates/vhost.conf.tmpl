@@ -66,6 +66,7 @@ server {
     error_log {{.LogDir}}/error.log warn;
     client_max_body_size {{.BodySize}};
     disable_symlinks if_not_owner from=$document_root;
+    include /etc/itso/waf/{{.WebsiteUUID}}.nginx*;
 {{- range .Headers}}
     add_header {{.Name}} "{{.Value}}" always;
 {{- end}}

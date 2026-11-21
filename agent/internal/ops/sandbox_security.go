@@ -1,7 +1,9 @@
 package ops
 
 import (
+	"io/fs"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,6 +28,16 @@ func (s *secSim) handle(c platform.Cmd) (platform.Result, bool) {
 		return s.nft(c.Args), true
 	case "fail2ban-client":
 		return s.fail2ban(c.Args), true
+	case "clamdscan":
+		return ok("ClamAV 1.0.7/27470/Sun Nov 20 08:00:00 2026 (sandbox)\n"), true
+	case "yara":
+		return ok("4.5.0 (sandbox)\n"), true
+	case "systemd-run":
+		for i, a := range c.Args {
+			if (a == ClamdscanBin || a == YaraBin) && i < len(c.Args)-1 {
+				return s.scan(a, c.Args[len(c.Args)-1]), true
+			}
+		}
 	}
 	return platform.Result{}, false
 }
@@ -112,4 +124,47 @@ func (s *Sim) NftTable() string {
 	s.sec.mu.Lock()
 	defer s.sec.mu.Unlock()
 	return s.sec.table
+}
+
+// Mẫu engine giả: EICAR (clamav) và eval(base64_decode( trong file PHP (yara).
+const (
+	EicarSignature  = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+	sandboxWebshell = "eval(base64_decode("
+)
+
+// scan mô phỏng clamdscan/yara trên gốc FS giả: không theo symlink, chỉ file thường.
+func (s *secSim) scan(engine, abs string) platform.Result {
+	root, err := s.fs.Path(abs)
+	if err != nil {
+		return fail(2, err.Error())
+	}
+	var out strings.Builder
+	n, found := 0, 0
+	_ = filepath.WalkDir(root, func(p string, de fs.DirEntry, err error) error {
+		if err != nil || !de.Type().IsRegular() {
+			return nil
+		}
+		n++
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return nil
+		}
+		sys := abs + strings.TrimPrefix(p, root)
+		switch {
+		case engine == ClamdscanBin && strings.Contains(string(b), EicarSignature):
+			out.WriteString(sys + ": Eicar-Test-Signature FOUND\n")
+			found++
+		case engine == YaraBin && strings.Contains(string(b), "<?php") && strings.Contains(string(b), sandboxWebshell):
+			out.WriteString("ITSO_PHP_Eval_Base64 " + sys + "\n")
+			found++
+		}
+		return nil
+	})
+	if engine == ClamdscanBin {
+		out.WriteString("\n----------- SCAN SUMMARY -----------\nInfected files: " + itoa(found) + "\nScanned files: " + itoa(n) + "\n")
+		if found > 0 {
+			return platform.Result{ExitCode: 1, Stdout: []byte(out.String())}
+		}
+	}
+	return ok(out.String())
 }

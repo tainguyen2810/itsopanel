@@ -2,13 +2,26 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.3 (agent WAF, malware, FIM, audit) — nhánh `phase-7`
+
+Phạm vi: `agent/internal/ops/{waf,malware,fim}.go`, helper `fsx` (op `hash`, `raw`, `delete_if`), `platform.FS.Lstat/ReadChunk`, vhost template thêm `include /etc/itso/waf/<uuid>.nginx*;`, sandbox mô phỏng clamdscan/yara (EICAR, `eval(base64_decode(`), `packaging/share/yara/itso-webshell.yar` (đóng gói trong `scripts/release.sh`).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go (toàn bộ) | `go test -count=1 ./...` (agent) | PASS (15 package có test). Mới `ops/security2_test.go`: WAF (thiếu gói → available=false; golden rule/include/argv; đổi rule vẫn nginx -t + reload; nginx -t lỗi → khôi phục; Off gỡ; rule id trùng/chuỗi, paranoia 5 bị từ chối), sự kiện WAF (Host ↔ server_name, chọn rule cụ thể thay vì 949110, dòng hỏng/dòng chưa ghi xong, limit, xoay vòng log), quét (EICAR + webshell, symlink tới file hệ thống không bị theo, argv systemd-run có slice/Nice/IO idle, traversal bị từ chối), cách ly (sha256 lệch, symlink → path_outside_home, 0600, idempotent), khôi phục (không ghi đè, account khác bị từ chối, overwrite), xóa theo sha256, FIM (thêm/sửa/xóa/chmod setuid, bỏ qua thư mục chứng chỉ, chỉ itso* trong systemd), security.audit (sshd -T, unattended, reboot-required, gói -security, firewall policy drop, baseline) |
+| Golden vhost | `go test ./internal/ops -run Vhost -update` | 5 file golden vhost chỉ thêm đúng 1 dòng include WAF (đã xem diff) |
+| Lỗi thật phát hiện khi test | — | helper op `raw` (mới) ghi JSON lỗi vào stdout như op thường → agent coi là nội dung file; sửa: `fsx.StreamsStdout` dùng chung cho cat/raw (lỗi qua stderr, mã 3) |
+| Lint agent | `make lint-agent` | PASS |
+
+**Chờ VM:** ModSecurity/CRS thật (payload SQLi/XSS bị chặn ở On, chỉ ghi nhận ở DetectionOnly), clamd thật với EICAR, yara 4.5 (`-N`, `-z`). **Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.2 (agent firewall, SSH, Fail2ban) — nhánh `phase-7`
 
 Phạm vi: `agent/internal/ops/{safe,firewall,sshd_hardening,fail2ban,sandbox_security}.go`, lệnh `itso-agent safe-rollback <kind> <apply_id>` (timer systemd gọi) + hoàn tác lần chờ quá hạn lúc khởi động, Bins `nft`, `fail2ban-client`, recipe Phase 7 trong `validate.Recipes`.
 
 | Bộ test | Lệnh | Kết quả |
 |---|---|---|
-| Go (toàn bộ) | `go test ./...` (agent) | PASS 17 package. Mới `ops/security_test.go`: safe-apply + xác nhận (token sai/đúng, lặp lại idempotent, busy khi còn chờ, token không lưu thô), hết hạn → hoàn tác (đồng hồ giả), lần đầu bị hoàn tác → xóa bảng, timer chạy muộn không làm gì, agent khởi động lại sau hạn → hoàn tác, không hẹn được timer → hoàn tác ngay, `nft -c` lỗi → không áp dụng, 13 biến thể tự khóa/độc, vector `firewall_rule` + `cidr` từ contracts, SSH hardening (0 khóa → would_lock_out, thứ tự sshd -t → reload → timer, hết hạn → xóa file, `sshd -t` lỗi → khôi phục không reload), fail2ban (golden jail/filter, status/ban list, unban, IP/jail lạ, `-t` lỗi); golden mới `firewall.nft`, `10-itso-hardening.conf`, `fail2ban-itso*.conf`, `fail2ban.apply.argv` |
+| Go (toàn bộ) | `go test ./...` (agent) | PASS (15 package có test). Mới `ops/security_test.go`: safe-apply + xác nhận (token sai/đúng, lặp lại idempotent, busy khi còn chờ, token không lưu thô), hết hạn → hoàn tác (đồng hồ giả), lần đầu bị hoàn tác → xóa bảng, timer chạy muộn không làm gì, agent khởi động lại sau hạn → hoàn tác, không hẹn được timer → hoàn tác ngay, `nft -c` lỗi → không áp dụng, 13 biến thể tự khóa/độc, vector `firewall_rule` + `cidr` từ contracts, SSH hardening (0 khóa → would_lock_out, thứ tự sshd -t → reload → timer, hết hạn → xóa file, `sshd -t` lỗi → khôi phục không reload), fail2ban (golden jail/filter, status/ban list, unban, IP/jail lạ, `-t` lỗi); golden mới `firewall.nft`, `10-itso-hardening.conf`, `fail2ban-itso*.conf`, `fail2ban.apply.argv` |
 | Lần chạy đầu | `go test ./...` | 2 lỗi thật đã sửa: test vector cũ đọc `input` kiểu chuỗi (vector mới là số/đối tượng) → đọc RawMessage; `validate.Recipes` thiếu fail2ban/modsecurity |
 | Fuzz | `go test -run='^$' -fuzz=FuzzFirewallRule -fuzztime=10s ./internal/ops` (thêm vào `make test-fuzz`) | PASS (~100k exec, không lỗi) |
 | Lint agent | `make lint-agent` (gofmt, go vet, không os/exec ngoài platform) | PASS |

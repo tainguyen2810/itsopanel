@@ -49,10 +49,10 @@ func fail(code int, msg string) platform.Result {
 
 // Handle mô phỏng một lệnh. Luôn trả handled=true.
 func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
-	if r, handled := s.data.handle(c); handled {
+	if r, handled := s.sec.handle(c); handled {
 		return r, true
 	}
-	if r, handled := s.sec.handle(c); handled {
+	if r, handled := s.data.handle(c); handled {
 		return r, true
 	}
 	s.mu.Lock()

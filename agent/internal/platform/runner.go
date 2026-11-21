@@ -57,6 +57,9 @@ var Bins = map[string]string{
 	// Phase 7 (D-76, D-77): tường lửa và fail2ban.
 	"nft":             "/usr/sbin/nft",
 	"fail2ban-client": "/usr/bin/fail2ban-client",
+	// Chỉ chạy bằng root với --version; quét thật chạy qua systemd-run dưới uid account (ADR 0026).
+	"clamdscan": "/usr/bin/clamdscan",
+	"yara":      "/usr/bin/yara",
 }
 
 // allowedEnv là biến môi trường được phép đặt thêm cho một lệnh (ngoài env tối giản cố định).
