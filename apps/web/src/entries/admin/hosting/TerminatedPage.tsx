@@ -155,6 +155,25 @@ export default function TerminatedPage() {
             </Button>
           );
         }
+        if (st === 'backup') {
+          // D-87: chưa có snapshot cuối đã kiểm chứng khôi phục được → chưa xác nhận purge được.
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+                aria-describedby={`purge-block-${i.a.uuid}`}
+              >
+                <ShieldCheck aria-hidden />
+                {t('terminated.confirm')}
+              </Button>
+              <span id={`purge-block-${i.a.uuid}`} className="max-w-48 text-xs text-muted">
+                {t('terminated.needVerified')}
+              </span>
+            </div>
+          );
+        }
         if (st === 'confirm') {
           return (
             <Button

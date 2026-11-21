@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.0 (mockup Backup & Restore trên bản demo) — nhánh `phase-8`
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Ảnh mockup | `SCREENSHOT_DIR_P8=docs/screenshots/phase-8 npx playwright test e2e/screenshots-phase8.spec.ts --trace off --workers=4` | PASS 84/84 (21 màn × 1440/390 × sáng/tối); `make screenshots` thêm `SCREENSHOT_DIR_P8` |
+| E2E demo Phase 8 | `npx playwright test e2e/demo-backup8.spec.ts --trace off` | Lần đầu 6/8: axe `label-content-name-mismatch` ở nút kiểm chứng (nhãn không chứa chữ hiển thị) và hộp thoại bộ khôi phục đóng được bằng Esc lúc đang tải. Sửa nhãn `bk.verifyFor` + chặn Esc/bấm ngoài khi chưa xác nhận. Chạy lại 8/8 PASS |
+| Unit/demo | `pnpm vitest run` | 37 file, 559 test PASS (mới `backup8.test.ts` 14) |
+| Lint + i18n | `pnpm lint` | PASS; i18n 2895 key, vi = en |
+| Contracts | `make contracts-check` · `make codegen` → `make codegen-check` · `python3 contracts/tools/check_demo.py` | PASS · OK · OK (466 example, độ phủ 100%) |
+| Agent contracts | `cd agent && go test ./internal/contracts/...` | PASS |
+
+**Test bị bỏ qua:** không. Ảnh Phase 2–7 có thể đổi ở lần `make screenshots` sau vì dữ liệu demo thêm account đã chấm dứt, quota và đích SFTP.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.7 (e2e, VM, review, báo cáo) — nhánh `phase-7`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.

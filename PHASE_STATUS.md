@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 8 — Backup & Restore → v0.1.0-alpha (đang làm; Phase 7 ✓ APPROVED 2026-11-21 cùng D-76 → D-81, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 8.0 ✱ (mockup trước khi code). Prompt chi tiết `docs/planning/seed/PHASE_8_PROMPTS.md`
-- **Task đang làm:** 8.0 Mockup Backup & Restore trên bản demo
+- **Prompt hiện tại:** 8.1 ✱ (8.0 mockup ✓). Prompt chi tiết `docs/planning/seed/PHASE_8_PROMPTS.md`
+- **Task đang làm:** 8.1 ADR backup/restore, contracts, migration Phase 8
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-8`
 - **Bước tiếp theo:** 8.0 → 8.7 theo `PHASE_8_PROMPTS.md`; xong 8.7 thì DỪNG chờ duyệt Phase 8 và D-82 → D-87; chạy `tests/vm/phase4–7.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -33,8 +33,8 @@
 
 Phase 8 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.md`
 
-- ✱ 8.0 Mockup Backup & Restore trên bản demo (`docs/screenshots/phase-8/`)
-- ○ 8.1 ADR backup/restore (D-82…D-87), contracts, migration Phase 8
+- ✓ 8.0 Mockup Backup & Restore trên bản demo (`docs/screenshots/phase-8/`, 84 ảnh)
+- ✱ 8.1 ADR backup/restore (D-82…D-87), contracts, migration Phase 8
 - ○ 8.2 Agent: runner restic, đích, backup file/DB/cấu hình, snapshot, duyệt
 - ○ 8.3 Agent: khôi phục staging, check, restore test, forget, backup panel, CLI
 - ○ 8.4 Panel: đích, repo, policy, lịch, job, snapshot, khôi phục, quota, Portal
@@ -150,3 +150,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 7 / 7.6 | Web nối API thật: tham số `?server=` cho SSH/fail2ban/điểm (bộ chọn máy chủ `useSecurityServer`, nhớ trong sessionStorage, chỉ hiện khi ≥ 2 máy), `send` nhận `query`, `getWith` đọc lại một lần sau step-up; fail2ban danh sách IP bị chặn + gỡ chặn; FIM theo `/security/fim/changes`; tường lửa: xem trước ruleset + chặn áp dụng khi `lockout_risk`, đếm ngược khôi phục từ `firewall/status`; sự kiện WAF trong tab website; terminal root chỉ hiện cho SUPER_ADMIN, phát lại bản ghi phân trang (tối đa 40 trang, cảnh báo cắt/không đủ); wizard xong → trang tường lửa xác nhận; ngưỡng CAPTCHA 0–10 (chỉ Portal); MSW theo hành vi mới | cd3b467 |
 | 2026-11-21 | 7 / 7.7 | e2e stack thật Phase 7 (tường lửa xem trước → giữ / không xác nhận → rolled_back, SSH hardening, WAF chặn + sự kiện, EICAR → cách ly → khôi phục, FIM, CAPTCHA Portal, root bị từ chối khi policy tắt), 17/17; sửa gốc sandbox thiếu user root (SSH luôn lỗi ở dev/e2e); `tests/vm/phase7.sh` S0–S7; review bảo mật `docs/security/security-center-review.md`; runbook Phase 7; bỏ mockup CAPTCHA Admin; `make check`; báo cáo `docs/reports/phase-7.md`; merge `--no-ff` vào `main` | 8821cae, 1c6ce68 |
 | 2026-11-21 | 8 | Phase 7 APPROVED (D-76 → D-81, ADR 0023–0028 Accepted); viết `PHASE_8_PROMPTS.md`, D-82 → D-87 đề xuất; nhánh `phase-8` | 97ce654 |
+| 2026-11-21 | 8 / 8.0 | Mockup Backup & Restore trên bản demo (trước khi code): contracts mở rộng (snapshot repo/website/DB/bất biến, đích SFTP/REST + phát hiện append-only/Object Lock, bộ khôi phục + xác nhận, repo, lịch sử kiểm chứng, tổng quan 3-2-1-1-0, policy website/database + loại trừ + retention_mode, khôi phục DR từ wizard `/setup/restore`); MSW demo cho mọi endpoint mới (quota 120% → 409, đích bất biến không xóa snapshot, khôi phục tạo bản mới, purge chờ kiểm chứng); UI Backup Center 5 tab, bộ khôi phục bắt buộc xác nhận, xem/tải một file, quota, wizard nhánh khôi phục; 84 ảnh `docs/screenshots/phase-8/` | (commit 8.0) |

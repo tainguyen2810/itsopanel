@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, File, Folder, HardDriveUpload } from 'lucide-react';
+import { ChevronRight, Download, File, Folder, HardDriveUpload, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import { CheckboxField, SelectField, TextField } from '@/shared/page/fields';
@@ -12,6 +12,8 @@ import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { CodeBlock } from '@/ui/CodeBlock';
 import { DataTable, type ColumnDef } from '@/ui/DataTable';
+import { InfoList } from '@/shared/page/InfoList';
+import type { ListFilter } from '@/shared/page/ListPage';
 import { Dialog, DialogContent } from '@/ui/Dialog';
 import { get, list, send, type Row } from '@/shared/api/realm';
 import { useAction } from '@/shared/api/useAction';
@@ -25,26 +27,36 @@ type Entry = Row<'/backup-snapshots/{id}/browse'>;
  * Lịch sử snapshot (Admin và Portal): backup ngay, duyệt, tạo link tải, khôi phục. Thao tác chỉ
  * Admin có (kiểm chứng, xóa) truyền qua `extraActions`.
  */
+const SCOPE_TYPES = ['hosting_account', 'website', 'database', 'server_config', 'panel'] as const;
+
 export function SnapshotsTab({
   onRestore,
   extraActions,
+  extraFilters = [],
+  account,
 }: {
   onRestore: (s: Snapshot) => void;
   extraActions?: (s: Snapshot) => RowAction[];
+  /** Bộ lọc thêm (Admin: theo đích). */
+  extraFilters?: ListFilter[];
+  /** Chỉ snapshot của một account (tab Backup trong trang account). */
+  account?: string;
 }) {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const accountFilter = useAccountFilter();
+  const typeFilter: ListFilter = {
+    key: 'scope_type',
+    label: t('bk.scopeType'),
+    options: SCOPE_TYPES.map((k) => ({ value: k, label: t(`bk.snapScope.${k}`) })),
+  };
   const [backingUp, setBackingUp] = useState(false);
   const [browsing, setBrowsing] = useState<Snapshot | null>(null);
+  const [detail, setDetail] = useState<Snapshot | null>(null);
   const [link, setLink] = useState<{ url: string; expires_at: string } | null>(null);
-  const download = useAction(
-    (s: Snapshot) =>
-      send<{ url: string; expires_at: string }>('POST', '/backup-snapshots/{id}:download-link', {
-        path: { id: s.uuid },
-      }),
-    { onSuccess: (r) => setLink(r) },
-  );
+  const download = useAction((s: Snapshot) => downloadLink(s, null), {
+    onSuccess: (r) => setLink(r),
+  });
   const columns: ColumnDef<Snapshot, unknown>[] = [
     {
       id: 'account',
@@ -54,6 +66,8 @@ export function SnapshotsTab({
         <div className="min-w-0">
           <p className="font-medium">{row.original.hosting_account?.username ?? t('bk.panel')}</p>
           <p className="text-sm text-muted">
+            {t(`bk.snapScope.${row.original.scope_type}`)}
+            {row.original.website && ` · ${row.original.website.primary_domain}`} ·{' '}
             <Mono>{row.original.restic_snapshot_id}</Mono>
           </p>
         </div>
@@ -90,6 +104,12 @@ export function SnapshotsTab({
               {g}
             </Badge>
           ))}
+          {row.original.locked_until && (
+            <Badge tone="success">
+              <Lock aria-hidden className="size-3.5" />
+              <span className="sr-only">{t('bk.lockedUntil', { at: '' })}</span>
+            </Badge>
+          )}
         </span>
       ),
     },
@@ -112,6 +132,7 @@ export function SnapshotsTab({
               onSelect: () => onRestore(row.original),
               hidden: row.original.hosting_account === null,
             },
+            { label: t('bk.detail'), onSelect: () => setDetail(row.original) },
             { label: t('bk.browse'), onSelect: () => setBrowsing(row.original) },
             { label: t('bk.download'), onSelect: () => download.mutate(row.original) },
             ...(extraActions?.(row.original) ?? []),
@@ -132,15 +153,21 @@ export function SnapshotsTab({
             {t('bk.backupNow')}
           </Button>
         }
-        queryKey={['admin', 'backups', 'snapshots']}
-        fetch={(q) => list('/backup-snapshots', q)}
-        filters={[accountFilter]}
+        queryKey={['admin', 'backups', 'snapshots', account ?? 'all']}
+        fetch={(q) =>
+          list(
+            '/backup-snapshots',
+            account ? { ...q, filters: { ...q.filters, hosting_account: account } } : q,
+          )
+        }
+        filters={[...(account ? [] : [accountFilter]), typeFilter, ...extraFilters]}
         columns={columns}
         getRowId={(s) => s.uuid}
         primaryColumnId="account"
       />
-      <BackupNowDialog open={backingUp} onOpenChange={setBackingUp} />
+      <BackupNowDialog open={backingUp} onOpenChange={setBackingUp} account={account} />
       {browsing && <BrowseDialog snapshot={browsing} onClose={() => setBrowsing(null)} />}
+      {detail && <DetailDialog snapshot={detail} onClose={() => setDetail(null)} />}
       <Dialog open={link !== null} onOpenChange={(o) => !o && setLink(null)}>
         <DialogContent
           title={t('bk.linkTitle')}
@@ -153,17 +180,89 @@ export function SnapshotsTab({
   );
 }
 
+/** Link tải ký (15 phút): cả snapshot hoặc một file/thư mục trong snapshot. */
+function downloadLink(s: Snapshot, path: string | null) {
+  return send<{ url: string; expires_at: string }>('POST', '/backup-snapshots/{id}:download-link', {
+    path: { id: s.uuid },
+    body: { path },
+  });
+}
+
+/** Chi tiết snapshot: phạm vi, tag, kích thước, kiểm chứng, bất biến, DB, phiên bản panel. */
+function DetailDialog({ snapshot: s, onClose }: { snapshot: Snapshot; onClose: () => void }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        title={t('bk.detailTitle', { id: s.restic_snapshot_id })}
+        description={fmt.dateTime(s.taken_at)}
+        className="max-w-xl"
+      >
+        <InfoList
+          items={[
+            [t('bk.scopeType'), t(`bk.snapScope.${s.scope_type}`)],
+            [t('sites.account'), s.hosting_account?.username ?? t('bk.panel')],
+            ...(s.website
+              ? [[t('sites.title'), s.website.primary_domain] as [string, string]]
+              : []),
+            [t('bk.destination'), s.destination.name],
+            [t('bk.size'), fmt.mb(s.size_mb)],
+            [
+              t('bk.contents'),
+              <span key="c" className="flex flex-wrap gap-1">
+                {s.contents.map((c) => (
+                  <Badge key={c} tone="neutral">
+                    {t(`bk.content.${c}`)}
+                  </Badge>
+                ))}
+              </span>,
+            ],
+            ...(s.databases.length
+              ? [
+                  [t('rs.databases'), <Mono key="d">{s.databases.join(', ')}</Mono>] as [
+                    string,
+                    React.ReactNode,
+                  ],
+                ]
+              : []),
+            [
+              t('bk.tags'),
+              <span key="t" className="flex flex-wrap gap-1">
+                {['itso', ...s.tags].map((g) => (
+                  <Badge key={g} tone="info">
+                    {g}
+                  </Badge>
+                ))}
+              </span>,
+            ],
+            [t('bk.verified'), <VerifyBadge key="v" s={s} />],
+            [
+              t('bk.immutable'),
+              s.locked_until ? t('bk.lockedUntil', { at: fmt.dateTime(s.locked_until) }) : '—',
+            ],
+            ['restic', <Mono key="r">{s.restic_snapshot_id}</Mono>],
+            [t('bk.panelVersion'), s.panel_version ?? '—'],
+          ]}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function BackupNowDialog({
   open,
   onOpenChange,
+  account,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  account?: string | undefined;
 }) {
   const { t } = useTranslation('admin');
   const { options } = useActiveAccounts(open);
   const empty: BackupNowForm = {
-    hosting_account_uuid: '',
+    hosting_account_uuid: account ?? '',
     files: true,
     databases: true,
     config: true,
@@ -236,6 +335,13 @@ export function BrowseDialog({ snapshot, onClose }: { snapshot: Snapshot; onClos
       }),
   });
   const parts = path === '.' ? [] : path.split('/');
+  const [link, setLink] = useState<{ url: string; expires_at: string; name: string } | null>(null);
+  const dl = useAction(
+    (e: Entry) => downloadLink(snapshot, e.path).then((r) => ({ ...r, name: e.name })),
+    {
+      onSuccess: (r) => setLink(r),
+    },
+  );
   const columns: ColumnDef<Entry, unknown>[] = [
     {
       id: 'name',
@@ -263,6 +369,21 @@ export function BrowseDialog({ snapshot, onClose }: { snapshot: Snapshot; onClos
       header: t('bk.size'),
       accessorKey: 'size',
       cell: ({ row }) => (row.original.type === 'dir' ? '—' : fmt.bytes(row.original.size)),
+    },
+    {
+      id: 'dl',
+      header: t('sites.actions'),
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label={t('bk.downloadFile', { name: row.original.name })}
+          onClick={() => dl.mutate(row.original)}
+        >
+          <Download aria-hidden />
+        </Button>
+      ),
     },
   ];
   return (
@@ -299,6 +420,14 @@ export function BrowseDialog({ snapshot, onClose }: { snapshot: Snapshot; onClos
           primaryColumnId="name"
           caption={t('bk.browseTitle', { id: snapshot.restic_snapshot_id })}
         />
+        {link && (
+          <div className="mt-3 flex flex-col gap-1">
+            <p className="text-sm text-muted">
+              {t('bk.fileLinkHint', { name: link.name, at: fmt.dateTime(link.expires_at) })}
+            </p>
+            <CodeBlock code={link.url} label={t('bk.link')} wrap />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

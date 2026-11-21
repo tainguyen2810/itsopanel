@@ -10,6 +10,7 @@ import { sendAuth } from '@/shared/api/realm';
 import { JobView } from '@/shared/jobs/JobDrawer';
 import { cn } from '@/shared/lib/utils';
 import { AuthLayout } from '@/shared/page/AuthLayout';
+import { ChoiceCard } from '@/shared/page/ChoiceCard';
 import { useHomePath } from '@/shared/routing/RoutesContext';
 import { useSession } from '@/shared/session/SessionContext';
 import { Alert } from '@/ui/Alert';
@@ -22,6 +23,7 @@ import { Label } from '@/ui/Label';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Select } from '@/ui/Select';
 import { get, list, send, type Data } from '../api';
+import { DrRestore } from './DrRestore';
 import {
   accessBody,
   allowlistLines,
@@ -160,6 +162,9 @@ function Wizard({ initial }: { initial: Status }) {
   const [busy, setBusy] = useState(false);
   const [enroll, setEnroll] = useState<Enroll | null>(null);
   const [mfaDone, setMfaDone] = useState(initial.admin_mfa_enabled);
+  /** Bước 0: cài mới hay khôi phục thảm họa từ backup (D-87); chỉ chọn được trước khi tạo SA. */
+  const [path, setPath] = useState<'install' | 'restore'>('install');
+  const [dr, setDr] = useState(false);
   const step = STEPS[i] as Step;
   const quota = useQuery({
     queryKey: ['setup', 'quota'],
@@ -215,10 +220,14 @@ function Wizard({ initial }: { initial: Status }) {
   const submit = async (): Promise<boolean> => {
     switch (step) {
       case 'code':
-        if (initial.steps_done.includes('code') && s.setupCode === '') return true;
-        await send('POST', '/api/v1/admin/setup/code:verify', {
-          body: { code: s.setupCode.trim().toUpperCase() },
-        });
+        if (!(initial.steps_done.includes('code') && s.setupCode === ''))
+          await send('POST', '/api/v1/admin/setup/code:verify', {
+            body: { code: s.setupCode.trim().toUpperCase() },
+          });
+        if (path === 'restore') {
+          setDr(true);
+          return false;
+        }
         return true;
       case 'language':
         await send('PUT', '/api/v1/admin/setup/preferences', {
@@ -307,6 +316,23 @@ function Wizard({ initial }: { initial: Status }) {
             />
           )}
         </Field>
+        {!s.adminCreated && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-base font-medium">{t('install.dr.pathLegend')}</legend>
+            {(['install', 'restore'] as const).map((k) => (
+              <ChoiceCard
+                key={k}
+                name="install-path"
+                value={k}
+                checked={path === k}
+                onChange={(v) => setPath(v as typeof path)}
+              >
+                <span className="font-medium">{t(`install.dr.path.${k}.title`)}</span>
+                <span className="block text-sm text-muted">{t(`install.dr.path.${k}.hint`)}</span>
+              </ChoiceCard>
+            ))}
+          </fieldset>
+        )}
       </>
     ),
     language: (
@@ -494,6 +520,7 @@ function Wizard({ initial }: { initial: Status }) {
     ),
   };
 
+  if (dr) return <DrRestore onBack={() => setDr(false)} />;
   return (
     <AuthLayout
       title={t('install.title')}

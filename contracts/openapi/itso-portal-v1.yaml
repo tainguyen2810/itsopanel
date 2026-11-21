@@ -675,6 +675,7 @@ paths:
       - $ref: ./common.yaml#/components/parameters/Sort
       - $ref: ./common.yaml#/components/parameters/Q
       - $ref: ./common.yaml#/components/parameters/FilterHostingAccount
+      - $ref: ./common.yaml#/components/parameters/FilterScopeType
       responses:
         '200':
           description: Thành công
@@ -711,6 +712,13 @@ paths:
                   - config
                   tags:
                   - daily
+                  website: null
+                  panel_version: 0.1.0-alpha
+                  repository_uuid: 01938a35-0001-7000-8000-000035000001
+                  databases:
+                  - anphat_web
+                  - anphat_shop
+                  locked_until: '2026-12-20T01:12:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -786,8 +794,17 @@ paths:
       summary: Link tải bản backup
       tags:
       - Backups
+      description: Link ký, dùng một lần, hết hạn 15 phút; file lẻ được agent đọc từ snapshot (`restic dump`) khi tải.
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/BackupDownloadRequest
+            example:
+              path: sites/anphat.vn/public/wp-config.php
       responses:
         '200':
           description: Thành công
@@ -4838,6 +4855,12 @@ paths:
                     email: it@anphat.vn
                   created_at: '2026-11-19T14:05:00+07:00'
                   finished_at: '2026-11-19T14:05:00+07:00'
+                  result:
+                    restored_paths:
+                    - backups/restore-20261119-1405/sites/anphat.vn
+                    databases: []
+                    pre_restore_snapshot_uuid: null
+                  error: null
                 - uuid: 01938a10-0002-7000-8000-000010000002
                   snapshot_uuid: 01938a0e-0001-7000-8000-00000e000001
                   hosting_account:
@@ -4857,6 +4880,34 @@ paths:
                     email: superadmin@itso.local
                   created_at: '2026-11-18T16:20:00+07:00'
                   finished_at: '2026-11-18T16:21:10+07:00'
+                  result: null
+                  error: 'Dump trước khi ghi đè anphat_shop thất bại: vượt quota đĩa của account. DB hiện tại không bị thay
+                    đổi.'
+                - uuid: 01938a10-0003-7000-8000-000010000003
+                  snapshot_uuid: 01938a0e-0001-7000-8000-00000e000001
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  target_server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  mode: new
+                  items:
+                  - database:anphat_shop
+                  state: succeeded
+                  job_uuid: null
+                  requested_by:
+                    uuid: 01938a01-0002-7000-8000-000001000002
+                    name: Trần Minh
+                    email: minh.tran@itso.local
+                  created_at: '2026-11-19T10:02:00+07:00'
+                  finished_at: '2026-11-19T10:04:30+07:00'
+                  result:
+                    restored_paths: []
+                    databases:
+                    - anphat_shop_r20261119
+                    pre_restore_snapshot_uuid: null
+                  error: null
                 meta:
                   next_cursor: null
                   limit: 50
@@ -4989,6 +5040,12 @@ paths:
                     email: it@anphat.vn
                   created_at: '2026-11-19T14:05:00+07:00'
                   finished_at: '2026-11-19T14:05:00+07:00'
+                  result:
+                    restored_paths:
+                    - backups/restore-20261119-1405/sites/anphat.vn
+                    databases: []
+                    pre_restore_snapshot_uuid: null
+                  error: null
           headers:
             ETag:
               $ref: ./common.yaml#/components/headers/ETag

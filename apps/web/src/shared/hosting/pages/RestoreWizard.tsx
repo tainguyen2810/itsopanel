@@ -89,6 +89,19 @@ export function RestoreWizard({
     { onSuccess: onDone },
   );
 
+  /** Kết quả dự kiến của từng mục (D-85): bản mới cạnh dữ liệu đang chạy, ghi đè có snapshot trước. */
+  const outcome = (it: string): string => {
+    const [kind, ref = ''] = it.split(/:(.*)/s);
+    if (kind === 'database')
+      return mode === 'new'
+        ? t('rs.outcome.dbNew', { name: `${ref}_r<${t('rs.outcome.date')}>` })
+        : t('rs.outcome.dbOverwrite', { name: ref });
+    if (kind === 'config') return t('rs.outcome.config');
+    return mode === 'new'
+      ? t('rs.outcome.filesNew', { path: `backups/restore-<${t('rs.outcome.time')}>/${ref}` })
+      : t('rs.outcome.filesOverwrite', { path: ref });
+  };
+
   const check = (): string | null => {
     if (step === 0) return snapshot ? null : t('rs.errors.snapshot');
     if (step === 1) return items.length > 0 ? null : t('rs.errors.items');
@@ -231,6 +244,9 @@ export function RestoreWizard({
           <Alert tone="danger" title={t('rs.overwriteWarn')}>
             {t('rs.overwriteHint')}
           </Alert>
+          <Alert tone="info" title={t('rs.stepUpTitle')}>
+            {t('rs.stepUpHint')}
+          </Alert>
           <div className="flex max-w-sm flex-col gap-1.5">
             <Label htmlFor="rs-confirm">
               {t('rs.confirmLabel', { name: acc?.username ?? '' })}
@@ -274,6 +290,13 @@ export function RestoreWizard({
       <Alert tone="info" title={t('rs.reviewTitle')}>
         {mode === 'overwrite' ? t('rs.reviewOverwrite') : t('rs.reviewNew')}
       </Alert>
+      <ul className="flex flex-col gap-1 text-sm text-muted">
+        {items.map((it) => (
+          <li key={it}>
+            <Mono>{it}</Mono> → {outcome(it)}
+          </li>
+        ))}
+      </ul>
     </div>,
   ];
   const last = step === STEPS.length - 1;

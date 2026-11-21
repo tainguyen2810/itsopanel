@@ -26,6 +26,10 @@ export interface DemoData {
   backup_policies: S['BackupPolicy'][];
   snapshots: S['BackupSnapshot'][];
   restores: S['Restore'][];
+  backup_repos: S['BackupRepository'][];
+  backup_verifications: S['BackupVerification'][];
+  recovery_kit: S['RecoveryKit'];
+  setup_restore_candidates: S['SetupRestoreCandidate'][];
   migrations: S['AccountMigration'][];
   purges: S['PurgeRecord'][];
   jobs: S['Job'][];

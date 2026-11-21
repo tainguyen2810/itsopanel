@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { destBody, destSchema, normalizeItems, policySchema, restoreItem } from '../forms';
+import {
+  destBody,
+  destSchema,
+  excludeLines,
+  normalizeItems,
+  policySchema,
+  restoreItem,
+} from '../forms';
 import { latestPerAccount, rule32110, verifyState, type DestLike } from '../rules';
 
 const now = Date.parse('2026-11-20T00:00:00+07:00');
@@ -105,6 +112,8 @@ describe('Form đích và chính sách sao lưu', () => {
     type: 's3' as const,
     path: '',
     host: '',
+    port: '22',
+    user: '',
     endpoint: 'https://s3.example.vn',
     bucket: 'itso',
     region: '',
@@ -140,11 +149,40 @@ describe('Form đích và chính sách sao lưu', () => {
     expect(destSchema.safeParse(local).success).toBe(false);
     expect(destBody({ ...local, path: '/srv/backup' })).not.toHaveProperty('credentials');
   });
+  it('SFTP: không nhập mật khẩu (agent sinh khóa), cổng 1–65535, host hợp lệ', () => {
+    const sftp = {
+      ...base,
+      type: 'sftp' as const,
+      host: 'backup.hcm.itso.local',
+      user: 'itso-backup',
+      path: '/srv/backup',
+      access_key: '',
+      secret_key: '',
+    };
+    expect(destSchema.safeParse(sftp).success).toBe(true);
+    expect(destSchema.safeParse({ ...sftp, port: '70000' }).success).toBe(false);
+    expect(destSchema.safeParse({ ...sftp, host: 'bad host;' }).success).toBe(false);
+    expect(destSchema.safeParse({ ...sftp, user: '' }).success).toBe(false);
+    expect(destBody(sftp)).toEqual({
+      name: 'S3',
+      type: 'sftp',
+      config: {
+        host: 'backup.hcm.itso.local',
+        port: '22',
+        user: 'itso-backup',
+        path: '/srv/backup',
+      },
+      append_only: false,
+      immutable_days: null,
+    });
+  });
   it('chính sách: cron hợp lệ, có đích, giữ ít nhất một bản', () => {
     const p = {
       name: 'Hằng ngày',
       scope_type: 'all_accounts' as const,
       scope_uuid: '',
+      contents: ['files', 'databases'] as ('files' | 'databases' | 'config')[],
+      excludes: 'tmp/**\n**/cache/**',
       schedule: '0 2 * * *',
       destination_uuids: ['d'],
       daily: 7,
@@ -157,5 +195,13 @@ describe('Form đích và chính sách sao lưu', () => {
     expect(policySchema.safeParse({ ...p, destination_uuids: [] }).success).toBe(false);
     expect(policySchema.safeParse({ ...p, daily: 0, weekly: 0, monthly: 0 }).success).toBe(false);
     expect(policySchema.safeParse({ ...p, scope_type: 'server' }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, scope_type: 'website' }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, scope_type: 'website', scope_uuid: 'w' }).success).toBe(
+      true,
+    );
+    expect(policySchema.safeParse({ ...p, contents: [] }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, excludes: '/etc/passwd' }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, excludes: 'sites/../..' }).success).toBe(false);
+    expect(excludeLines(' a/**\n\n b ')).toEqual(['a/**', 'b']);
   });
 });

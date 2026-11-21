@@ -67,6 +67,33 @@ export function RestoresList({
         </ul>
       ),
     },
+    {
+      id: 'result',
+      header: t('rs.result'),
+      accessorFn: (r) => r.error ?? r.result?.restored_paths.join(' ') ?? '',
+      cell: ({ row }) => {
+        const r = row.original;
+        if (r.error) return <p className="max-w-xs text-sm text-danger-text">{r.error}</p>;
+        if (!r.result) return <span className="text-muted">—</span>;
+        return (
+          <ul className="flex max-w-xs flex-col gap-0.5 text-sm">
+            {r.result.restored_paths.map((p) => (
+              <li key={p}>
+                {r.mode === 'new' ? t('rs.resultPath') : t('rs.resultReplaced')} <Mono>{p}</Mono>
+              </li>
+            ))}
+            {r.result.databases.map((d) => (
+              <li key={d}>
+                {r.mode === 'new' ? t('rs.resultDb') : t('rs.resultDbReplaced')} <Mono>{d}</Mono>
+              </li>
+            ))}
+            {r.result.pre_restore_snapshot_uuid && (
+              <li className="text-muted">{t('rs.resultPre')}</li>
+            )}
+          </ul>
+        );
+      },
+    },
     { id: 'by', header: t('rs.requestedBy'), accessorFn: (r) => r.requested_by.name },
     {
       id: 'created',

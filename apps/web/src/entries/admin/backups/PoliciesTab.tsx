@@ -2,14 +2,21 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Lock, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import { useSession } from '@/shared/session/SessionContext';
 import { parseCron } from '@/shared/hosting/cron';
-import { CheckGroupField, SelectField, SwitchField, TextField } from '@/shared/page/fields';
+import {
+  CheckGroupField,
+  SelectField,
+  SwitchField,
+  TextareaField,
+  TextField,
+} from '@/shared/page/fields';
 import { FormDialog } from '@/shared/page/FormDialog';
 import { ListPage } from '@/shared/page/ListPage';
+import { Alert } from '@/ui/Alert';
 import { Badge, StatusBadge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
@@ -17,11 +24,19 @@ import type { ColumnDef } from '@/ui/DataTable';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
 import { useCronText } from '@/shared/hosting/pages/CronPage';
-import { Mono, RowMenu, useActiveAccounts } from '@/shared/hosting/pages/common';
-import { policySchema, type PolicyForm } from './forms';
+import { Mono, RowMenu, useActiveAccounts, useWebsites } from '@/shared/hosting/pages/common';
+import { CONTENT_SCOPES, excludeLines, policySchema, SCOPE_TARGET, type PolicyForm } from './forms';
 
 type Policy = Row<'/api/v1/admin/backup-policies'>;
-const SCOPES = ['all_accounts', 'hosting_account', 'server', 'panel'] as const;
+const SCOPES = [
+  'all_accounts',
+  'hosting_account',
+  'website',
+  'database',
+  'server',
+  'panel',
+] as const;
+const CONTENTS = ['files', 'databases', 'config'] as const;
 
 export function PoliciesTab() {
   const { t } = useTranslation('admin');
@@ -56,6 +71,15 @@ export function PoliciesTab() {
         <div className="min-w-0">
           <p className="font-medium">{row.original.name}</p>
           <p className="text-sm text-muted">{t(`bk.scope.${row.original.scope_type}`)}</p>
+          {row.original.contents.length > 0 && (
+            <span className="mt-1 flex flex-wrap gap-1">
+              {row.original.contents.map((c) => (
+                <Badge key={c} tone="neutral">
+                  {t(`bk.content.${c}`)}
+                </Badge>
+              ))}
+            </span>
+          )}
         </div>
       ),
     },
@@ -89,11 +113,19 @@ export function PoliciesTab() {
       header: t('bk.retention'),
       accessorFn: (p) => JSON.stringify(p.retention),
       cell: ({ row }) => (
-        <span className="text-sm">
-          {Object.entries(row.original.retention)
-            .map(([k, n]) => t(`bk.keep.${k}` as never, { count: n }))
-            .join(' · ')}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <span className="text-sm">
+            {Object.entries(row.original.retention)
+              .map(([k, n]) => t(`bk.keep.${k}` as never, { count: n }))
+              .join(' · ')}
+          </span>
+          {row.original.retention_mode === 'cli' && (
+            <Badge tone="info">
+              <Lock aria-hidden className="size-3.5" />
+              {t('bk.retentionCli')}
+            </Badge>
+          )}
+        </div>
       ),
     },
     {
@@ -105,6 +137,11 @@ export function PoliciesTab() {
           <span className="flex flex-col items-start gap-1">
             {row.original.last_status && <StatusBadge status={row.original.last_status} />}
             <span className="text-sm text-muted">{fmt.rel(row.original.last_run_at)}</span>
+            {row.original.next_run_at && (
+              <span className="text-xs text-muted">
+                {t('bk.nextRun', { at: fmt.dateTime(row.original.next_run_at) })}
+              </span>
+            )}
           </span>
         ) : (
           '—'
@@ -161,7 +198,11 @@ export function PoliciesTab() {
       {editing && (
         <PolicyDialog
           policy={editing === 'new' ? null : editing}
-          dests={(dests.data ?? []).map((d) => ({ value: d.uuid, label: d.name }))}
+          dests={(dests.data ?? []).map((d) => ({
+            value: d.uuid,
+            label: d.name,
+            immutable: d.prune === 'cli',
+          }))}
           onClose={() => setEditing(null)}
         />
       )}
@@ -185,12 +226,17 @@ function PolicyDialog({
   onClose,
 }: {
   policy: Policy | null;
-  dests: { value: string; label: string }[];
+  dests: { value: string; label: string; immutable: boolean }[];
   onClose: () => void;
 }) {
   const { t } = useTranslation('admin');
   const cron = useCronText();
   const { options: accounts } = useActiveAccounts();
+  const websites = useWebsites();
+  const databases = useQuery({
+    queryKey: ['admin', 'databases', 'options'],
+    queryFn: () => list('/api/v1/admin/databases'),
+  });
   const servers = useQuery({
     queryKey: ['admin', 'servers', 'options'],
     queryFn: () => list('/api/v1/admin/servers'),
@@ -201,6 +247,8 @@ function PolicyDialog({
       name: policy?.name ?? '',
       scope_type: policy?.scope_type ?? 'all_accounts',
       scope_uuid: policy?.scope_uuid ?? '',
+      contents: policy?.contents ?? ['files', 'databases', 'config'],
+      excludes: (policy?.excludes ?? ['tmp/**', '**/cache/**']).join('\n'),
       schedule: policy?.schedule ?? '0 1 * * *',
       destination_uuids: policy?.destination_uuids ?? [],
       daily: policy?.retention.daily ?? 7,
@@ -211,13 +259,22 @@ function PolicyDialog({
   });
   const scope = useWatch({ control, name: 'scope_type' });
   const schedule = useWatch({ control, name: 'schedule' });
+  const chosen = useWatch({ control, name: 'destination_uuids' });
+  const lockedDest = dests.filter((d) => d.immutable && (chosen ?? []).includes(d.value));
   const save = useAction(
     (v: PolicyForm) => {
       const body = {
         name: v.name,
         scope_type: v.scope_type,
-        scope_uuid:
-          v.scope_type === 'server' || v.scope_type === 'hosting_account' ? v.scope_uuid : null,
+        scope_uuid: SCOPE_TARGET.includes(v.scope_type) ? v.scope_uuid : null,
+        contents: CONTENT_SCOPES.includes(v.scope_type)
+          ? v.contents
+          : v.scope_type === 'website'
+            ? (['files'] as const)
+            : v.scope_type === 'database'
+              ? (['databases'] as const)
+              : (['config'] as const),
+        excludes: v.scope_type === 'database' ? [] : excludeLines(v.excludes),
         schedule: v.schedule,
         destination_uuids: v.destination_uuids,
         retention: Object.fromEntries(
@@ -271,7 +328,46 @@ function PolicyDialog({
             placeholder={t('sites.pickAccount')}
           />
         )}
+        {scope === 'website' && (
+          <SelectField
+            control={control}
+            name="scope_uuid"
+            label={t('sites.title')}
+            options={websites.options}
+            placeholder={t('bk.pickWebsite')}
+          />
+        )}
+        {scope === 'database' && (
+          <SelectField
+            control={control}
+            name="scope_uuid"
+            label={t('bk.database')}
+            options={(databases.data ?? []).map((d) => ({
+              value: d.uuid,
+              label: `${d.name} · ${d.hosting_account.username}`,
+            }))}
+            placeholder={t('bk.pickDatabase')}
+          />
+        )}
       </div>
+      {CONTENT_SCOPES.includes(scope) && (
+        <CheckGroupField
+          control={control}
+          name="contents"
+          label={t('bk.contents')}
+          options={CONTENTS.map((c) => ({ value: c, label: t(`bk.content.${c}`) }))}
+        />
+      )}
+      {scope !== 'database' && scope !== 'panel' && (
+        <TextareaField
+          control={control}
+          name="excludes"
+          label={t('bk.excludes')}
+          description={t('bk.excludesHint')}
+          optional
+          rows={3}
+        />
+      )}
       <TextField
         control={control}
         name="schedule"
@@ -310,6 +406,11 @@ function PolicyDialog({
           />
         </div>
       </fieldset>
+      {lockedDest.length > 0 && (
+        <Alert tone="info" title={t('bk.retentionCliTitle')}>
+          {t('bk.retentionCliHint', { names: lockedDest.map((d) => d.label).join(', ') })}
+        </Alert>
+      )}
       <SwitchField control={control} name="enabled" label={t('bk.enabled')} />
     </FormDialog>
   );

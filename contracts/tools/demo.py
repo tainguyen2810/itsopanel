@@ -10,7 +10,8 @@ user server package package_version account website domain certificate database 
 sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_record migration purge
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
-uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal malware_finding waf_event fim_change""".split())}
+uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal malware_finding waf_event fim_change
+backup_repository backup_verification""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -329,6 +330,32 @@ RESTORES = [
     {"uuid": u("restore", 1), "snapshot_uuid": SNAPSHOTS[0]["uuid"], "hosting_account": acc_ref(0),
      "target_server": server_ref(0), "mode": "new", "items": ["files:sites/anphat.vn"], "state": "succeeded",
      "job_uuid": u("job", 4), "requested_by": user_ref(2), "created_at": T1, "finished_at": T1},
+]
+
+BACKUP_REPOS: list = []
+BACKUP_VERIFICATIONS: list = []
+BACKUP_OVERVIEW: dict = {}
+# Bộ khôi phục (demo): giá trị giả, chỉ để minh họa định dạng.
+RECOVERY_KIT = {
+    "destination": {"uuid": BACKUP_DESTS[1]["uuid"], "name": BACKUP_DESTS[1]["name"], "type": "s3",
+                    "config": BACKUP_DESTS[1]["config"]},
+    "repositories": [
+        {"label": "panel + cấu hình srv-hn-01", "path": "s3:https://s3.ap-southeast-1.example.com/itso-backup/itso/01938a02-0001-7000-8000-000002000001/server",
+         "password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw"},
+        {"label": "anphat", "path": "s3:https://s3.ap-southeast-1.example.com/itso-backup/itso/01938a02-0001-7000-8000-000002000001/acct-anphat",
+         "password": "demo-Hp3-acct-2mZ8-qW6r-K1vD-7cYe"},
+    ],
+    "panel_public_key": "age1demo0itso0panel0public0key0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "panel_private_key": "AGE-SECRET-KEY-1DEMO0ITSO0PANEL0PRIVATE0KEY0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "first_view": True, "generated_at": T2,
+}
+SETUP_RESTORE_CANDIDATES = [
+    {"snapshot_id": "6b3e91f0", "taken_at": "2026-11-15T02:31:00+07:00", "panel_version": "0.1.0-alpha",
+     "hostname": "srv-hn-01", "accounts": 11, "size_mb": 92.6},
+    {"snapshot_id": "61f0a2c4", "taken_at": "2026-11-08T02:31:00+07:00", "panel_version": "0.1.0-alpha",
+     "hostname": "srv-hn-01", "accounts": 10, "size_mb": 88.1},
+    {"snapshot_id": "5e77d013", "taken_at": "2026-11-01T02:30:00+07:00", "panel_version": "0.0.9",
+     "hostname": "srv-hn-01", "accounts": 10, "size_mb": 85.9},
 ]
 
 # ---------------------------------------------------------------- migration & purge
@@ -1044,7 +1071,197 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
                      "state": "failed", "job_uuid": None, "requested_by": user_ref(0),
                      "created_at": "2026-11-18T16:20:00+07:00", "finished_at": "2026-11-18T16:21:10+07:00"})
 
+    _phase8()
     _recompute()
+
+
+def _iso_plus_days(at: str, days: int) -> str:
+    from datetime import datetime, timedelta
+    return (datetime.fromisoformat(at) + timedelta(days=days)).isoformat()
+
+
+def _phase8() -> None:  # noqa: C901
+    """Phase 8 (mockup 8.0): repo theo đích × account/server, kiểm chứng, đích SFTP, bộ khôi phục, DR (D-82…D-87)."""
+    by_name = {a["username"]: a for a in ACCOUNTS}
+    # Quota backup: mktitso vượt quota (cảnh báo), gionui vượt 120 % (tạm dừng backup lịch, không xóa).
+    by_name["mktitso"]["usage"]["backup_mb"]["used"] = 10900
+    by_name["gionui"]["usage"]["backup_mb"]["used"] = 12700
+
+    local, s3 = BACKUP_DESTS[0], BACKUP_DESTS[1]
+    local.update({"last_check_error": None, "detected": {"append_only": False, "object_lock_days": None},
+                  "ssh_public_key": None, "host_key_sha256": None, "prune": "panel",
+                  "recovery_kit_acknowledged_at": "2026-11-10T09:00:00+07:00"})
+    s3.update({"last_check_error": None, "detected": {"append_only": True, "object_lock_days": 30},
+               "ssh_public_key": None, "host_key_sha256": None, "prune": "cli",
+               "recovery_kit_acknowledged_at": "2026-11-10T09:05:00+07:00"})
+    BACKUP_DESTS.append({
+        "uuid": u("backup_destination", 3), "name": "SFTP văn phòng HCM", "type": "sftp", "hosting_account": None,
+        "append_only": False, "immutable_days": None,
+        "config": {"host": "backup.hcm.itso.local", "port": "22", "user": "itso-backup", "path": "/srv/backup/itso"},
+        "used_mb": 286000, "last_check_at": "2026-11-20T04:00:00+07:00", "last_check_ok": False,
+        "last_check_error": "Host key của backup.hcm.itso.local khác bản đã ghim (SHA256:Qm4x…). Kiểm tra máy đích trước khi ghim lại.",
+        "detected": {"append_only": False, "object_lock_days": None},
+        "ssh_public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDemoKeyItsoBackupSftpHcm0000000000000 itso-backup@srv-hn-01",
+        "host_key_sha256": "SHA256:Zk2pV7wq0YH3dJ8bT5nR1cL9mF4sA6eX2uG0iK7oP3Q", "prune": "panel",
+        "recovery_kit_acknowledged_at": None, "repositories": 0, **ts("2026-11-14T10:00:00+07:00", T2)})
+
+    # Chính sách: phạm vi + nội dung + loại trừ; đích bất biến → panel không xóa snapshot (retention_mode=cli).
+    imm = {d["uuid"] for d in BACKUP_DESTS if d["append_only"] or d["immutable_days"]}
+    BACKUP_POLICIES[0].update({"contents": ["files", "databases", "config"],
+                               "excludes": ["tmp/**", "**/cache/**", "**/*.log"],
+                               "next_run_at": "2026-11-21T01:00:00+07:00"})
+    BACKUP_POLICIES[1].update({"contents": ["config"], "excludes": [], "next_run_at": "2026-11-22T02:30:00+07:00"})
+    BACKUP_POLICIES.append({"uuid": u("backup_policy", 3), "name": "Database mỗi 6 giờ", "scope_type": "all_accounts",
+                            "scope_uuid": None, "contents": ["databases"], "excludes": [], "schedule": "0 */6 * * *",
+                            "destination_uuids": [local["uuid"]], "retention": {"hourly": 8, "daily": 7},
+                            "enabled": True, "last_run_at": "2026-11-20T06:00:00+07:00",
+                            "next_run_at": "2026-11-20T12:00:00+07:00", "last_status": "succeeded", **ts()})
+    BACKUP_POLICIES.append({"uuid": u("backup_policy", 4), "name": "Cấu hình srv-hn-01 hằng ngày", "scope_type": "server",
+                            "scope_uuid": SERVERS[0]["uuid"], "contents": ["config"], "excludes": [],
+                            "schedule": "15 2 * * *", "destination_uuids": [local["uuid"], BACKUP_DESTS[2]["uuid"]],
+                            "retention": {"daily": 14}, "enabled": True, "last_run_at": "2026-11-20T02:15:00+07:00",
+                            "next_run_at": "2026-11-21T02:15:00+07:00", "last_status": "failed", **ts()})
+    for pol in BACKUP_POLICIES:
+        pol["retention_mode"] = "cli" if imm & set(pol["destination_uuids"]) else "panel"
+
+    # Snapshot: repo, website, DB, phiên bản panel, hạn bất biến.
+    dbs_of = {}
+    for d in DATABASES:
+        dbs_of.setdefault(d["hosting_account"]["uuid"], []).append(d["name"])
+    for sn in SNAPSHOTS:
+        acc = sn["hosting_account"]
+        dest = next(d for d in BACKUP_DESTS if d["uuid"] == sn["destination"]["uuid"])
+        sn.update({"website": None, "panel_version": "0.1.0-alpha", "repository_uuid": None,
+                   "databases": dbs_of.get(acc["uuid"], []) if acc and "databases" in sn["contents"] else [],
+                   "locked_until": _iso_plus_days(sn["taken_at"], dest["immutable_days"]) if dest["immutable_days"] else None})
+    anphat = ACCOUNTS[0]
+    extra = [
+        # (account idx | None, dest, scope, contents, id, size, taken, verified, tags, website idx)
+        (0, local, "database", ["databases"], "6c1d22a0", 410.0, "2026-11-20T06:02:00+07:00", None, ["6h"], None),
+        (0, local, "website", ["files"], "6c0f5b19", 2100.5, "2026-11-19T22:40:00+07:00", "2026-11-20T03:00:00+07:00",
+         ["manual", "trước khi nâng cấp"], 0),
+        (None, local, "server_config", ["config"], "6b9e0c77", 38.2, "2026-11-20T02:15:00+07:00", None, ["daily"], None),
+        (None, s3, "panel", ["config", "databases"], "6b3e91f0", 92.6, "2026-11-15T02:31:00+07:00",
+         "2026-11-15T04:00:00+07:00", ["weekly"], None),
+    ]
+    for k, (ai, dest, scope, contents, rid, size, taken, verified, tags, wi) in enumerate(extra):
+        acc = acc_ref(ai) if ai is not None else None
+        SNAPSHOTS.append({
+            "uuid": u("snapshot", 100 + k), "hosting_account": acc,
+            "destination": {"uuid": dest["uuid"], "name": dest["name"]}, "repository_uuid": None,
+            "scope_type": scope, "website": site_ref(wi) if wi is not None else None,
+            "databases": dbs_of.get(anphat["uuid"], []) if scope == "database" else [],
+            "restic_snapshot_id": rid, "size_mb": size, "taken_at": taken, "verified_at": verified,
+            "contents": contents, "tags": tags, "panel_version": "0.1.0-alpha",
+            "locked_until": _iso_plus_days(taken, dest["immutable_days"]) if dest["immutable_days"] else None})
+
+    # Repo = đích × account (hoặc × server cho cấu hình/panel); mật khẩu riêng mỗi repo (không bao giờ ra API trừ bộ khôi phục).
+    def quota_state(a):
+        used, lim = a["usage"]["backup_mb"]["used"], a["usage"]["backup_mb"]["limit"]
+        return "paused" if lim and used > lim * 1.2 else "warn" if lim and used > lim else "ok"
+
+    n = 1
+    live = [a for a in ACCOUNTS if a["lifecycle_state"] in ("active", "suspended")]
+    for d, share, count in ((s3, 1.0, 14), (local, 0.55, 7)):
+        for a in live:
+            snaps = [x for x in SNAPSHOTS if x["hosting_account"] and x["hosting_account"]["uuid"] == a["uuid"]
+                     and x["destination"]["uuid"] == d["uuid"]]
+            last = max((x["taken_at"] for x in snaps), default="2026-11-20T01:10:00+07:00")
+            BACKUP_REPOS.append({
+                "uuid": u("backup_repository", n), "destination": {"uuid": d["uuid"], "name": d["name"], "type": d["type"]},
+                "scope_type": "hosting_account", "hosting_account": {"uuid": a["uuid"], "username": a["username"]},
+                "server": a["server"], "path": f"itso/{a['server']['uuid']}/acct-{a['uuid']}",
+                "size_mb": round(a["usage"]["backup_mb"]["used"] * share, 1), "snapshots": count,
+                "last_snapshot_at": last, "last_check_at": "2026-11-16T03:00:00+07:00", "last_check_ok": True,
+                "quota_state": quota_state(a)})
+            for x in snaps:
+                x["repository_uuid"] = u("backup_repository", n)
+            n += 1
+        BACKUP_REPOS.append({
+            "uuid": u("backup_repository", n), "destination": {"uuid": d["uuid"], "name": d["name"], "type": d["type"]},
+            "scope_type": "server", "hosting_account": None, "server": server_ref(0),
+            "path": f"itso/{SERVERS[0]['uuid']}/server", "size_mb": 131.0 if d is s3 else 76.4,
+            "snapshots": 8 if d is s3 else 14, "last_snapshot_at": "2026-11-20T02:15:00+07:00",
+            "last_check_at": "2026-11-16T03:00:00+07:00", "last_check_ok": True, "quota_state": "ok"})
+        for x in SNAPSHOTS:
+            if x["hosting_account"] is None and x["destination"]["uuid"] == d["uuid"]:
+                x["repository_uuid"] = u("backup_repository", n)
+        n += 1
+    for d in BACKUP_DESTS:
+        d["repositories"] = sum(1 for r in BACKUP_REPOS if r["destination"]["uuid"] == d["uuid"])
+
+    # Kiểm chứng: check hằng tuần (đọc 5 % dữ liệu) + restore test hằng tháng (so sha256 với manifest).
+    sftp = BACKUP_DESTS[2]
+    ver = [
+        ("check", s3, None, None, "succeeded", 5, None, 0, None, "2026-11-16T03:00:00+07:00", "2026-11-16T03:41:00+07:00"),
+        ("check", local, None, None, "succeeded", 5, None, 0, None, "2026-11-16T03:00:00+07:00", "2026-11-16T03:12:00+07:00"),
+        ("check", sftp, None, None, "failed", None, None, 0, sftp["last_check_error"], "2026-11-20T04:00:00+07:00",
+         "2026-11-20T04:00:09+07:00"),
+        ("restore_test", s3, 0, SNAPSHOTS[0]["uuid"], "succeeded", None, 9120, 0, None, "2026-11-20T03:00:00+07:00",
+         "2026-11-20T03:18:00+07:00"),
+        ("restore_test", s3, 7, None, "failed", None, 14388, 1,
+         "1 file khác sha256 so với manifest: sites/thientam.vn/public/index.php (đã ghi sau khi chụp snapshot)",
+         "2026-11-01T03:00:00+07:00", "2026-11-01T03:22:00+07:00"),
+        ("restore_test", s3, 7, None, "succeeded", None, 14402, 0, None, "2026-11-20T03:00:00+07:00",
+         "2026-11-20T03:25:00+07:00"),
+    ]
+    for k, (kind, d, ai, snap, state, pct, files, mism, err, st, fin) in enumerate(ver):
+        if ai is not None and snap is None:
+            snap = next((x["uuid"] for x in SNAPSHOTS if x["hosting_account"]
+                         and x["hosting_account"]["uuid"] == ACCOUNTS[ai]["uuid"]), None)
+        BACKUP_VERIFICATIONS.append({
+            "uuid": u("backup_verification", k + 1), "kind": kind, "destination": {"uuid": d["uuid"], "name": d["name"]},
+            "hosting_account": acc_ref(ai) if ai is not None else None, "snapshot_uuid": snap, "state": state,
+            "read_data_percent": pct, "files_checked": files, "mismatches": mism, "error": err,
+            "started_at": st, "finished_at": fin})
+
+    # Khôi phục: kết quả (thư mục bản mới, DB mới), lỗi.
+    RESTORES[0].update({"result": {"restored_paths": ["backups/restore-20261119-1405/sites/anphat.vn"], "databases": [],
+                                   "pre_restore_snapshot_uuid": None}, "error": None})
+    RESTORES[1].update({"result": None,
+                        "error": "Dump trước khi ghi đè anphat_shop thất bại: vượt quota đĩa của account. DB hiện tại không bị thay đổi."})
+    RESTORES.append({"uuid": u("restore", 3), "snapshot_uuid": SNAPSHOTS[0]["uuid"], "hosting_account": acc_ref(0),
+                     "target_server": server_ref(0), "mode": "new", "items": ["database:anphat_shop"],
+                     "state": "succeeded", "job_uuid": None, "requested_by": user_ref(1),
+                     "created_at": "2026-11-19T10:02:00+07:00", "finished_at": "2026-11-19T10:04:30+07:00",
+                     "result": {"restored_paths": [], "databases": ["anphat_shop_r20261119"],
+                                "pre_restore_snapshot_uuid": None}, "error": None})
+
+    # Account đã chấm dứt chờ purge nhưng snapshot cuối chưa kiểm chứng → chưa xác nhận purge được (D-87).
+    import copy
+    old = copy.deepcopy(ACCOUNTS[3])
+    old.update({"uuid": u("account", 40), "username": "hoidong", "uid": 20020, "home_path": "/home/hoidong",
+                "owner": user_ref(2), "terminated_at": "2026-11-12T09:00:00+07:00",
+                "purge_after": "2026-12-12T09:00:00+07:00", **ts("2026-10-02T09:00:00+07:00", "2026-11-12T09:00:00+07:00")})
+    old["usage"]["backup_mb"]["used"] = 820
+    ACCOUNTS.append(old)
+    final = {"uuid": u("snapshot", 120), "hosting_account": {"uuid": old["uuid"], "username": "hoidong"},
+             "destination": {"uuid": s3["uuid"], "name": s3["name"]}, "repository_uuid": None,
+             "scope_type": "hosting_account", "website": None, "databases": [], "restic_snapshot_id": "6d02b7e3",
+             "size_mb": 820.0, "taken_at": "2026-11-20T07:40:00+07:00", "verified_at": None,
+             "contents": ["files", "databases", "config"], "tags": ["final", "pre-purge"], "panel_version": "0.1.0-alpha",
+             "locked_until": _iso_plus_days("2026-11-20T07:40:00+07:00", 30)}
+    SNAPSHOTS.append(final)
+    PURGES.append({"uuid": u("purge", 2), "hosting_account": {"uuid": old["uuid"], "username": "hoidong"},
+                   "requested_by": user_ref(0), "confirmed_by": None, "final_backup_snapshot_uuid": final["uuid"],
+                   "backup_verified_at": None, "scheduled_for": "2026-12-12T09:00:00+07:00", "completed_at": None,
+                   "objects": [], **ts("2026-11-20T07:35:00+07:00", "2026-11-20T07:40:00+07:00")})
+
+    BACKUP_OVERVIEW.update({
+        "rules": [{"key": "copies", "ok": True, "value": 3, "reason": None},
+                  {"key": "media", "ok": True, "value": 2, "reason": None},
+                  {"key": "offsite", "ok": True, "value": 1, "reason": None},
+                  {"key": "immutable", "ok": True, "value": 1, "reason": None},
+                  {"key": "errors", "ok": False, "value": 2, "reason": "SFTP văn phòng HCM kiểm tra lỗi; Cấu hình srv-hn-01 hằng ngày thất bại"}],
+        "last_backup_at": "2026-11-20T06:02:00+07:00", "last_verified_at": "2026-11-20T03:25:00+07:00", "failed_24h": 1,
+        "destinations": [{"uuid": d["uuid"], "name": d["name"], "type": d["type"], "used_mb": d["used_mb"],
+                          "immutable": bool(d["append_only"] or d["immutable_days"]), "last_check_ok": d["last_check_ok"]}
+                         for d in BACKUP_DESTS],
+        "running": [],
+        "quota": [{"hosting_account": {"uuid": a["uuid"], "username": a["username"]},
+                   "used_mb": a["usage"]["backup_mb"]["used"], "limit_mb": a["usage"]["backup_mb"]["limit"],
+                   "state": quota_state(a)} for a in live if quota_state(a) != "ok"],
+    })
 
 
 def _recompute() -> None:
