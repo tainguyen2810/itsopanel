@@ -3,12 +3,14 @@ package gateway_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -47,9 +49,12 @@ func newRig(t *testing.T, allow auth.UIDAllow) *rig {
 	return r
 }
 
+var ticketSeq atomic.Int64
+
 func (r *rig) ticket(t *testing.T) string {
 	t.Helper()
-	tk, _, err := r.m.Issue(term.Session{UUID: "01938a25-0001-7000-8000-0000000000aa", User: "anphat", UID: 20001, GID: 20001,
+	// session_uuid mới mỗi lần: agent từ chối uuid trùng phiên còn sống (7.5).
+	tk, _, err := r.m.Issue(term.Session{UUID: fmt.Sprintf("01938a25-0001-7000-8000-%012x", ticketSeq.Add(1)), User: "anphat", UID: 20001, GID: 20001,
 		Cols: 80, Rows: 24, Idle: time.Minute})
 	if err != nil {
 		t.Fatal(err)

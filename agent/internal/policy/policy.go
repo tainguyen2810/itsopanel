@@ -26,6 +26,8 @@ const DefaultPath = "/etc/itso/agent-policy.yaml"
 type File struct {
 	Version      int  `yaml:"version"`
 	RootTerminal bool `yaml:"root_terminal"`
+	// RecordUser ghi cả phiên terminal của account (phiên root luôn được ghi, ADR 0028).
+	RecordUser   bool `yaml:"record_user"`
 	Docker       bool `yaml:"docker"`
 	BackupForget bool `yaml:"backup_forget"`
 	// AcmePebble cho phép cert.issue dùng directory "pebble" (chỉ VM/CI, D-69).
@@ -124,11 +126,13 @@ func (p *Policy) gate(op string) (bool, bool) {
 	return false, false
 }
 
-// Set đổi một khóa: root_terminal | docker | backup_forget | ops.<op>.
+// Set đổi một khóa: root_terminal (= terminal.root) | record_user (= terminal.record_user) | docker | backup_forget | ops.<op>.
 func (p *Policy) Set(key string, value bool) error {
 	switch key {
-	case "root_terminal":
+	case "root_terminal", "terminal.root":
 		p.File.RootTerminal = value
+	case "record_user", "terminal.record_user":
+		p.File.RecordUser = value
 	case "docker":
 		p.File.Docker = value
 	case "backup_forget":
@@ -146,10 +150,25 @@ func (p *Policy) Set(key string, value bool) error {
 	return nil
 }
 
+// Canon đổi bí danh khóa sang tên trong file (terminal.root → root_terminal) để `policy get` lọc được.
+func Canon(key string) string {
+	switch key {
+	case "terminal.root":
+		return "root_terminal"
+	case "terminal.record_user":
+		return "record_user"
+	}
+	return key
+}
+
+// RootTerminal cho biết terminal root có được mở không (cờ root_terminal và ops.pty.open.root nếu có).
+func (p *Policy) RootTerminal() bool { return p.Enabled(contracts.OpPtyOpenRoot) }
+
 // Keys liệt kê các khóa và giá trị hiệu lực (cho `itso policy get`).
 func (p *Policy) Keys() []string {
 	out := []string{
 		fmt.Sprintf("root_terminal=%t", p.File.RootTerminal),
+		fmt.Sprintf("record_user=%t", p.File.RecordUser),
 		fmt.Sprintf("docker=%t", p.File.Docker),
 		fmt.Sprintf("backup_forget=%t", p.File.BackupForget),
 	}

@@ -6,11 +6,13 @@ namespace App\Models;
 
 use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
- * Phiên terminal USER (D-75): ghi khi panel cấp ticket; ended_at/ended_reason do itso:terminal-reap đặt
- * (agent đóng phiên sau 15 phút nhàn rỗi hoặc 12 giờ).
+ * Phiên terminal (D-75, ADR 0028): mode account (USER/ADMIN) hoặc root (SUPER_ADMIN, Phase 7); ghi khi panel cấp
+ * ticket; ended_at/ended_reason do itso:terminal-reap đặt theo pty.list (phiên không còn ở agent).
  *
  * @property int $id
  * @property string $uuid
@@ -35,6 +37,30 @@ class TerminalSession extends Model
     protected $hidden = ['id'];
 
     public $timestamps = false;
+
+    /** @return HasOne<TerminalRecording, $this> */
+    public function recording(): HasOne
+    {
+        return $this->hasOne(TerminalRecording::class, 'terminal_session_id');
+    }
+
+    /** @return BelongsTo<Server, $this> */
+    public function server(): BelongsTo
+    {
+        return $this->belongsTo(Server::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /** @return BelongsTo<HostingAccount, $this> */
+    public function hostingAccount(): BelongsTo
+    {
+        return $this->belongsTo(HostingAccount::class)->withTrashed();
+    }
 
     protected function casts(): array
     {

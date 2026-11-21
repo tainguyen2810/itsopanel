@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +33,8 @@ var (
 	ErrExpired = errors.New("term: ticket đã hết hạn")
 	// ErrLimit: account đã có đủ phiên.
 	ErrLimit = errors.New("term: account đã mở tối đa 2 phiên terminal")
+	// ErrDuplicate: session_uuid đang có phiên sống.
+	ErrDuplicate = errors.New("term: session_uuid đã có phiên đang mở")
 )
 
 var ticketRe = regexp.MustCompile(`^[A-Za-z0-9_-]{43}$`)
@@ -48,7 +51,37 @@ type Session struct {
 	Cols     int
 	Rows     int
 	Idle     time.Duration
-	expires  time.Time
+	// Mode: "account" (mặc định) hoặc "root" (Phase 7, ADR 0028).
+	Mode string
+	// Record: ghi asciicast vào Manager.RecDir (root luôn true; account theo policy record_user).
+	Record  bool
+	expires time.Time
+}
+
+// ModeOf trả mode của phiên ("account" khi để trống).
+func (s *Session) ModeOf() string {
+	if s.Mode == "" {
+		return "account"
+	}
+	return s.Mode
+}
+
+// Live là phiên còn sống (đã cấp ticket chưa ATTACH, hoặc đang mở) cho pty.list.
+type Live struct {
+	UUID, Mode, User string
+	Started          time.Time
+	LastInput        time.Time
+	Recording        bool
+	RecordingBytes   int64
+	Attached         bool
+}
+
+type live struct {
+	s         *Session
+	started   time.Time
+	lastInput time.Time
+	attached  bool
+	rec       *Recorder
 }
 
 // Proc là tiến trình shell gắn với phiên: đọc = output, ghi = input.
@@ -70,10 +103,15 @@ type Manager struct {
 	Log  *slog.Logger
 	// Life (tùy chọn, test) thay MaxLife.
 	Life time.Duration
+	// RecDir là thư mục bản ghi (/var/lib/itso/recordings); rỗng = không ghi được (phiên Record bị từ chối).
+	RecDir string
+	// RecLimit (tùy chọn, test) thay RecordLimit.
+	RecLimit int64
 
 	mu      sync.Mutex
 	tickets map[string]*Session
 	open    map[string]int
+	lives   map[string]*live
 }
 
 func (m *Manager) now() time.Time {
@@ -87,10 +125,11 @@ func (m *Manager) now() time.Time {
 func (m *Manager) Issue(s Session) (string, time.Time, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.tickets == nil {
-		m.tickets, m.open = map[string]*Session{}, map[string]int{}
-	}
+	m.initLocked()
 	m.purgeLocked()
+	if _, dup := m.lives[s.UUID]; dup {
+		return "", time.Time{}, ErrDuplicate
+	}
 	if m.open[s.User] >= MaxPerAccount {
 		return "", time.Time{}, ErrLimit
 	}
@@ -99,10 +138,61 @@ func (m *Manager) Issue(s Session) (string, time.Time, error) {
 		return "", time.Time{}, err
 	}
 	t := base64.RawURLEncoding.EncodeToString(b[:])
-	s.expires = m.now().Add(TicketTTL)
+	now := m.now()
+	s.expires = now.Add(TicketTTL)
 	m.tickets[t] = &s
 	m.open[s.User]++
+	m.lives[s.UUID] = &live{s: &s, started: now, lastInput: now}
 	return t, s.expires, nil
+}
+
+func (m *Manager) initLocked() {
+	if m.tickets == nil {
+		m.tickets, m.open, m.lives = map[string]*Session{}, map[string]int{}, map[string]*live{}
+	}
+}
+
+// Lives liệt kê phiên còn sống (chờ ATTACH hoặc đang mở), sắp theo thời điểm bắt đầu.
+func (m *Manager) Lives() []Live {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.initLocked()
+	m.purgeLocked()
+	out := make([]Live, 0, len(m.lives))
+	for _, l := range m.lives {
+		v := Live{UUID: l.s.UUID, Mode: l.s.ModeOf(), User: l.s.User, Started: l.started, LastInput: l.lastInput,
+			Recording: l.s.Record, Attached: l.attached}
+		if l.rec != nil {
+			v.RecordingBytes = l.rec.Bytes()
+		}
+		out = append(out, v)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Started.Before(out[j].Started) })
+	return out
+}
+
+// Recording cho biết phiên uuid còn đang ghi (bản ghi chưa xong).
+func (m *Manager) Recording(uuid string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	l, ok := m.lives[uuid]
+	return ok && l.s.Record
+}
+
+func (m *Manager) touch(uuid string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if l, ok := m.lives[uuid]; ok {
+		l.lastInput = m.now()
+	}
+}
+
+func (m *Manager) attach(s *Session, rec *Recorder) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if l, ok := m.lives[s.UUID]; ok {
+		l.attached, l.rec = true, rec
+	}
 }
 
 // Claim đổi ticket lấy phiên và xóa ticket ngay (dùng một lần).
@@ -119,6 +209,7 @@ func (m *Manager) Claim(ticket string) (*Session, error) {
 	delete(m.tickets, ticket)
 	if m.now().After(s.expires) {
 		m.releaseLocked(s.User)
+		delete(m.lives, s.UUID)
 		return nil, ErrExpired
 	}
 	return s, nil
@@ -132,10 +223,11 @@ func (m *Manager) Open(user string) int {
 	return m.open[user]
 }
 
-func (m *Manager) release(user string) {
+func (m *Manager) release(s *Session) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.releaseLocked(user)
+	m.releaseLocked(s.User)
+	delete(m.lives, s.UUID)
 }
 
 func (m *Manager) releaseLocked(user string) {
@@ -152,6 +244,7 @@ func (m *Manager) purgeLocked() {
 		if now.After(s.expires) {
 			delete(m.tickets, t)
 			m.releaseLocked(s.User)
+			delete(m.lives, s.UUID)
 		}
 	}
 }
@@ -185,7 +278,23 @@ func (m *Manager) Serve(ctx context.Context, conn net.Conn) {
 		_, _ = io.WriteString(conn, "ERR ticket_invalid\n")
 		return
 	}
-	defer m.release(s.User)
+	defer m.release(s)
+	var rec *Recorder
+	if s.Record {
+		if m.RecDir == "" {
+			_, _ = io.WriteString(conn, "ERR record_failed\n")
+			return
+		}
+		r, err := NewRecorder(m.RecDir, s, m.RecLimit, m.Now)
+		if err != nil { // phiên phải ghi mà không ghi được → không mở (ADR 0028)
+			_, _ = io.WriteString(conn, "ERR record_failed\n")
+			m.logf("terminal: không tạo được bản ghi", "session", s.UUID, "err", err)
+			return
+		}
+		rec = r
+		defer func() { _ = rec.Close() }()
+	}
+	m.attach(s, rec)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	p, err := m.Spawn(ctx, s)
@@ -204,7 +313,7 @@ func (m *Manager) Serve(ctx context.Context, conn net.Conn) {
 	if _, err := io.WriteString(conn, "OK\n"); err != nil {
 		return
 	}
-	m.logf("terminal: phiên mở", "session", s.UUID, "user", s.User)
+	m.logf("terminal: phiên mở", "session", s.UUID, "user", s.User, "mode", s.ModeOf(), "record", s.Record)
 	var wmu sync.Mutex
 	send := func(typ byte, b []byte) error {
 		wmu.Lock()
@@ -217,6 +326,12 @@ func (m *Manager) Serve(ctx context.Context, conn net.Conn) {
 		buf := make([]byte, 16<<10)
 		for {
 			n, err := p.Read(buf)
+			if n > 0 && rec != nil {
+				if rerr := rec.Output(buf[:n]); rerr != nil { // vượt giới hạn hoặc lỗi ghi → đóng phiên
+					reason <- "limit"
+					return
+				}
+			}
 			if n > 0 && send(FrameData, buf[:n]) != nil {
 				reason <- "closed"
 				return
@@ -271,6 +386,7 @@ func (m *Manager) Serve(ctx context.Context, conn net.Conn) {
 	for why == "" {
 		select {
 		case <-activity:
+			m.touch(s.UUID)
 			if !timer.Stop() {
 				<-timer.C
 			}

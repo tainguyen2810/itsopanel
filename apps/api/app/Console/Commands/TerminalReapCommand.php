@@ -7,7 +7,7 @@ namespace App\Console\Commands;
 use App\Domain\Terminal\TerminalService;
 use Illuminate\Console\Command;
 
-/** Đóng bản ghi phiên terminal quá 12 giờ (agent đã đóng phiên theo term.MaxLife). Lịch: mỗi giờ. */
+/** Đóng bản ghi phiên terminal agent không còn giữ (pty.list, Prompt 7.5); agent không trả lời → luật 12 giờ. Lịch: 5 phút. */
 final class TerminalReapCommand extends Command
 {
     protected $signature = 'itso:terminal-reap';

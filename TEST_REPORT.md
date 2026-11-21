@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.5 (Terminal root + ghi phiên) — nhánh `phase-7`
+
+Phạm vi: agent `internal/policy` (record_user, bí danh khóa, `RootTerminal()`), `internal/term/record.go` (Recorder asciicast v2, ReadPage), `term.Manager` (phiên sống, ghi phiên, `ErrDuplicate`), `ops/pty.go` (`pty.open.root`, `pty.policy`, `pty.list`, `pty.recording.read`, argv root), CLI `itso allowlist reset`, `itso policy set … on|off`; Panel `TerminalService` (openRoot, policy, recording, reap theo pty.list), `TerminalController` mode=root, `Security/TerminalSessionController`, model `TerminalRecording`, lệnh `itso:allowlist-reset`. Contracts không đổi (đã đặc tả ở 7.1).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go (toàn bộ, race) | `cd agent && go test -race ./...` | PASS. Mới: `term/record_test.go` 4 (ghi + đọc theo trang 1 KB ghép bằng bản đọc một lần, offset giữa dòng/vượt kích thước bị từ chối, file 0600; vượt giới hạn → marker truncated + đóng phiên `limit`; không ghi được / thiếu RecDir → `record_failed`, uuid trùng → ErrDuplicate; rune UTF-8 cắt đôi), `ops/pty_test.go` +3 (pty.open.root khi policy tắt → `op_disabled` ở handler và ở registry dùng policy thật dù Deps cấu hình sai, `ops.pty.open.root=false` thắng cờ; pty.list/pty.recording.read qua harness hợp đồng, đọc theo trang ≥ 3 trang ghép lại khớp; golden argv root), `install_test` (bí danh terminal.root/record_user, on/off, `allowlist reset` → artisan). Test cũ sửa: `term_test`, `pty_test`, `gateway_test` cấp session_uuid mới mỗi lần (uuid trùng phiên sống nay bị từ chối) |
+| Go vet + gofmt | `make lint-agent` | PASS |
+| Pest (toàn bộ, PostgreSQL 16 + Redis) | `scripts/pest-pg.sh --parallel` tương đương `make test-api-pg` | 451/451 PASS (32 s). Mới `Phase7/TerminalRootTest` 7: SUPER_ADMIN mở root khớp hợp đồng, ticket không vào DB/audit; policy tắt → 409 kèm hướng dẫn CLI, audit failure; ADMIN trong phạm vi / USER Portal → 403 không gọi agent; thiếu/sai server 422; step_up_seconds = 3600 nhưng root đòi ≤ 10 phút; mỗi lần mở một session_uuid mới, agent hết chỗ → 409; policy + danh sách phiên theo phạm vi (ADMIN không thấy root, ngoài phạm vi 404); bản ghi theo offset, next_offset null khi hết, metadata bytes/truncated cập nhật, offset sai 422, ADMIN 403, step-up quá hạn, phiên không ghi 404; reap theo pty.list + dự phòng 12 giờ; `itso:allowlist-reset`. Test cũ sửa: `Phase6/TerminalTest` mode=root không còn 409 (nay 422 thiếu server_uuid) |
+| PHPStan level 8 + Pint | `make lint-api` | PASS (0 lỗi) |
+| Không lệnh hệ thống | `make no-exec` | OK (lần đầu bắt được backtick trong chuỗi thông báo → đổi sang ngoặc kép) |
+| Codegen | `make codegen-check` | OK |
+
+**Chờ VM:** root terminal thật qua systemd-run + itso-gateway, bật bằng `itso policy set terminal.root on` rồi có bản ghi, policy tắt → bị từ chối (`tests/vm/phase7.sh` ở 7.7). **Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.4 (Panel API Security Center) — nhánh `phase-7`
 
 Phạm vi: `apps/api/app/Domain/Security/*` (Net, FirewallRuleset, SafeApply + 4 panel step, FirewallService, SshService, Fail2banService, WafService, MalwareService, SecurityAudit, SecurityScore, SecurityEvents, SecurityBaseline, SecurityJobHandler), controller `Security/{Firewall,Security,Protection}Controller`, `Auth/{Captcha,AuthFailureLog}`, 10 model, 3 lệnh lịch; contracts: `FirewallRule.ports` cho phép null (icmp), `password:forgot` nhận `captcha`; DB: thêm cột uuid/direction/enabled/sha256… cho bảng Phase 7 (migration Phase 7 chưa phát hành → sinh lại).

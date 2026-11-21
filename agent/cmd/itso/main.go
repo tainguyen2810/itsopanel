@@ -37,7 +37,8 @@ Dùng: itso [--root DIR --sandbox] <lệnh> [tùy chọn]
   preflight [--release-dir D] [--port N]
   status | doctor | url | setup-code | version
   admin reset-password|reset-mfa <email>
-  policy get [khóa] | policy set <khóa> <true|false>
+  policy get [khóa] | policy set <khóa> <on|off>   (khóa: terminal.root, terminal.record_user, docker, backup_forget, ops.<op>)
+  allowlist reset                                  (xóa IP allowlist Admin khi tự khóa mình)
   update --release-dir D | rollback
   repair [--fix]
   uninstall [--purge-panel-data --confirm-hostname <hostname>]
@@ -182,6 +183,11 @@ func dispatch(ctx context.Context, e *install.Env, cmd string, args []string) er
 			return errUsage
 		}
 		return e.AdminReset(ctx, args[0], args[1])
+	case "allowlist":
+		if len(args) != 1 || args[0] != "reset" {
+			return errUsage
+		}
+		return e.AllowlistReset(ctx)
 	case "policy":
 		switch {
 		case len(args) >= 1 && args[0] == "get" && len(args) <= 2:

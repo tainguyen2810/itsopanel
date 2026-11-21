@@ -294,7 +294,7 @@ func (e *Env) PolicyGet(key string) error {
 		return err
 	}
 	for _, kv := range p.Keys() {
-		if key == "" || strings.HasPrefix(kv, key+"=") {
+		if key == "" || strings.HasPrefix(kv, policy.Canon(key)+"=") {
 			e.printf("%s\n", kv)
 		}
 	}
@@ -304,8 +304,14 @@ func (e *Env) PolicyGet(key string) error {
 // PolicySet đổi một khóa policy rồi khởi động lại agent (agent đọc policy lúc khởi động).
 func (e *Env) PolicySet(ctx context.Context, key, value string) error {
 	v, err := strconv.ParseBool(value)
+	switch value {
+	case "on":
+		v, err = true, nil
+	case "off":
+		v, err = false, nil
+	}
 	if err != nil {
-		return fmt.Errorf("giá trị phải là true/false: %q", value)
+		return fmt.Errorf("giá trị phải là on/off hoặc true/false: %q", value)
 	}
 	rp, err := e.FS.Path(PolicyFile)
 	if err != nil {
@@ -352,6 +358,13 @@ func (e *Env) Logs(ctx context.Context, svc string, lines int) error {
 var reEmail = regexp.MustCompile(`^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}$`)
 
 // AdminReset gọi artisan itso:admin-reset-password|mfa với email đã kiểm (argv cố định).
+// AllowlistReset xóa IP allowlist Admin (cứu hộ khi tự khóa mình, ADR 0028); chỉ chạy được trên máy chủ (root).
+func (e *Env) AllowlistReset(ctx context.Context) error {
+	r, err := e.artisan(ctx, "itso:allowlist-reset", "--no-interaction")
+	e.printf("%s", r.Stdout)
+	return err
+}
+
 func (e *Env) AdminReset(ctx context.Context, what, email string) error {
 	if !reEmail.MatchString(email) {
 		return fmt.Errorf("email không hợp lệ: %q", email)

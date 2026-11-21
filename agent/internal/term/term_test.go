@@ -6,9 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -27,8 +29,11 @@ func manager(c *clock) *term.Manager {
 	return &term.Manager{Now: c.now, Spawn: func(_ context.Context, s *term.Session) (term.Proc, error) { return term.NewFakeShell(s), nil }}
 }
 
+var seq atomic.Int64
+
+// session cấp session_uuid mới mỗi lần (uuid trùng với phiên còn sống bị từ chối).
 func session(user string) term.Session {
-	return term.Session{UUID: "01938a25-0001-7000-8000-0000000000aa", User: user, UID: 20001, GID: 20001, Cols: 80, Rows: 24, Idle: time.Minute}
+	return term.Session{UUID: fmt.Sprintf("01938a25-0001-7000-8000-%012x", seq.Add(1)), User: user, UID: 20001, GID: 20001, Cols: 80, Rows: 24, Idle: time.Minute}
 }
 
 func TestTicketOnceExpiryLimit(t *testing.T) {

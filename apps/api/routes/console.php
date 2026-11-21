@@ -18,7 +18,7 @@ Schedule::command('itso:dns-sync')->hourlyAt(23)->withoutOverlapping();
 
 // Phase 6: ghi lần chạy cron theo lịch (cron.inspect).
 Schedule::command('itso:cron-sync')->everyFiveMinutes()->withoutOverlapping();
-Schedule::command('itso:terminal-reap')->hourlyAt(41)->withoutOverlapping();
+Schedule::command('itso:terminal-reap')->everyFiveMinutes()->withoutOverlapping(); // 7.5: theo pty.list
 
 // Phase 7: Security Center (D-76…D-81).
 Schedule::command('itso:waf-events-sync')->everyMinute()->withoutOverlapping();

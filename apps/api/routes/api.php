@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\Portal\PortalController;
 use App\Http\Controllers\Api\V1\Security\FirewallController;
 use App\Http\Controllers\Api\V1\Security\ProtectionController;
 use App\Http\Controllers\Api\V1\Security\SecurityController;
+use App\Http\Controllers\Api\V1\Security\TerminalSessionController;
 use App\Http\Controllers\Api\V1\Shared\AccessController;
 use App\Http\Controllers\Api\V1\Shared\CertificateController;
 use App\Http\Controllers\Api\V1\Shared\CronController;
@@ -258,6 +259,11 @@ Route::prefix('v1')->group(function (): void {
             Route::post('hosting-accounts/{id}/files:operate', [FileController::class, 'operate'])->middleware(['itso.perm:files.write', 'itso.idempotent']);
             // ---- Terminal USER (Prompt 6.4, D-75)
             Route::post('terminal/sessions', [TerminalController::class, 'store'])->middleware(['itso.perm:terminal.account', 'itso.step-up']);
+            // ---- Terminal root + ghi phiên (Prompt 7.5, ADR 0028): mode=root kiểm SUPER_ADMIN + step-up ≤ 10 phút trong controller.
+            Route::get('terminal/sessions', [TerminalSessionController::class, 'index'])->middleware('itso.perm:security.read');
+            Route::get('servers/{id}/terminal/policy', [TerminalSessionController::class, 'policy'])->middleware('itso.perm:security.read');
+            Route::get('terminal/sessions/{id}/recording', [TerminalSessionController::class, 'recording'])
+                ->middleware(['itso.perm:security.server', 'itso.step-up']);
 
             // ---- Security Center (Phase 7, D-76…D-81). security.read/write: ADMIN theo phạm vi; security.server: SUPER_ADMIN.
             Route::get('security/overview', [SecurityController::class, 'overview'])->middleware('itso.perm:security.read');
