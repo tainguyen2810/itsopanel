@@ -104,7 +104,7 @@ test('sửa giới hạn gói tạo phiên bản mới (D-43) và so sánh đư�
   expect(errors).toEqual([]);
 });
 
-test('chuyển máy chủ: kiểm tra xong → cutover → tài khoản ở máy đích', async ({ page }) => {
+test('chuyển máy chủ: kiểm tra xong → cutover → giữ nguồn → dọn nguồn', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`/admin/hosting-accounts/${LEHOA}/migrate`);
   await expect(page.getByRole('heading', { name: 'Kiểm tra dữ liệu' })).toBeVisible();
@@ -113,6 +113,17 @@ test('chuyển máy chủ: kiểm tra xong → cutover → tài khoản ở máy
   await dlg.getByRole('textbox').fill('lehoa');
   await dlg.getByRole('button', { name: 'Cutover' }).click();
   await expect(page.getByText('Đã xong: Cutover chuyển máy chủ')).toBeVisible({ timeout: 15_000 });
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading', { name: 'Giữ nguồn' })).toBeVisible();
+  await expect(page.getByText('Account đang chạy ở srv-hn-02')).toBeVisible();
+  await expect(page.getByText('lehoa.vn A 10.10.1.12', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Dọn nguồn ngay' }).click();
+  const clean = page.getByRole('alertdialog', { name: /Xóa bản cũ trên srv-hcm-01/ });
+  await clean.getByRole('textbox').fill('lehoa');
+  await clean.getByRole('button', { name: 'Dọn nguồn ngay' }).click();
+  await expect(page.getByText('Đã xong: Dọn máy nguồn sau khi chuyển')).toBeVisible({
+    timeout: 15_000,
+  });
   await page.keyboard.press('Escape');
   await expect(page.getByText('Đã chuyển sang srv-hn-02')).toBeVisible();
   await page.getByRole('link', { name: 'Về tài khoản' }).click();

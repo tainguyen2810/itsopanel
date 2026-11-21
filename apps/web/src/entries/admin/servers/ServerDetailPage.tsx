@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Pencil, Power } from 'lucide-react';
+import { Pencil, Power, ShieldOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import { DetailPage } from '@/shared/page/DetailPage';
@@ -31,7 +31,8 @@ import { Select } from '@/ui/Select';
 import { get, list, send, type Data, type Row } from '../api';
 import { useAction } from '../useAction';
 import { ServerNav, useServer } from './common';
-import { pct } from './ServersPage';
+import { certDays, pct } from './ServersPage';
+import { Alert } from '@/ui/Alert';
 
 type Server = Data<'/api/v1/admin/servers/{id}'>;
 type Service = Row<'/api/v1/admin/servers/{id}/services'>;
@@ -44,9 +45,18 @@ export default function ServerDetailPage() {
   const server = useServer();
   const [editing, setEditing] = useState(false);
   const [rebooting, setRebooting] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const reboot = useAction(
     () => send('POST', '/api/v1/admin/servers/{id}:reboot', { path: { id: server.id } }),
     {},
+  );
+  const revoke = useAction(
+    () =>
+      send('POST', '/api/v1/admin/servers/{id}:revoke', {
+        path: { id: server.id },
+        body: { confirm_name: server.data?.name ?? '' },
+      }),
+    { invalidate: [['admin', 'servers']] },
   );
 
   if (server.isPending) return <PageSkeleton />;
@@ -65,7 +75,7 @@ export default function ServerDetailPage() {
       <DetailPage
         nav={<ServerNav current="overview" />}
         title={s.name}
-        meta={<StatusBadge status={s.agent_connected ? s.status : 'offline'} />}
+        meta={<StatusBadge status={s.connection === 'online' ? s.status : s.connection} />}
         description={`${s.hostname} · ${s.os}`}
         actions={
           sa ? (
@@ -78,11 +88,26 @@ export default function ServerDetailPage() {
                 <Power aria-hidden />
                 {t('servers.reboot')}
               </Button>
+              {s.node_role === 'node' && s.connection !== 'revoked' && (
+                <Button variant="outline" onClick={() => setRevoking(true)}>
+                  <ShieldOff aria-hidden />
+                  {t('servers.revoke')}
+                </Button>
+              )}
             </>
           ) : undefined
         }
         tabs={[
-          { value: 'overview', label: t('servers.tabs.overview'), content: <Overview s={s} /> },
+          {
+            value: 'overview',
+            label: t('servers.tabs.overview'),
+            content: (
+              <div className="flex flex-col gap-4">
+                <Offline s={s} />
+                <Overview s={s} />
+              </div>
+            ),
+          },
           {
             value: 'services',
             label: t('servers.tabs.services'),
@@ -95,6 +120,7 @@ export default function ServerDetailPage() {
             content: (
               <div className="grid gap-4 lg:grid-cols-2">
                 <Agent s={s} />
+                <Channel s={s} />
                 <Platform s={s} />
               </div>
             ),
@@ -115,6 +141,20 @@ export default function ServerDetailPage() {
         confirmName={s.name}
         confirmLabel={t('servers.reboot')}
         onConfirm={() => reboot.mutateAsync().then(() => setRebooting(false))}
+      />
+      <ConfirmDialog
+        open={revoking}
+        onOpenChange={setRevoking}
+        title={t('servers.revokeTitle', { name: s.name })}
+        description={
+          s.account_count > 0
+            ? t('servers.revokeBlocked', { count: s.account_count })
+            : t('servers.revokeHint')
+        }
+        {...(s.account_count > 0 ? {} : { confirmName: s.name })}
+        confirmLabel={t('servers.revoke')}
+        disabled={s.account_count > 0}
+        onConfirm={() => revoke.mutateAsync().then(() => setRevoking(false))}
       />
     </>
   );
@@ -385,6 +425,78 @@ function Resources({ s }: { s: Server }) {
   );
 }
 
+/** Banner khi node mất kết nối: job tới server này chờ tới hạn rồi lỗi `agent_unreachable` (D-91). */
+function Offline({ s }: { s: Server }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  if (s.connection === 'online' || s.connection === 'pending') return null;
+  return (
+    <Alert
+      tone={s.connection === 'degraded' ? 'warning' : 'danger'}
+      title={t(`servers.offline.${s.connection}`, { name: s.name })}
+      action={
+        s.connection === 'revoked' ? undefined : (
+          <AppLink href="/admin/jobs?state=waiting_agent" className="text-sm font-medium underline">
+            {t('servers.offline.jobs')}
+          </AppLink>
+        )
+      }
+    >
+      {s.connection === 'revoked'
+        ? t('servers.offline.revokedHint')
+        : t('servers.offline.hint', { time: fmt.opt(s.last_seen_at) })}
+    </Alert>
+  );
+}
+
+/** Kênh agent: local (unix socket) hoặc mTLS ra relay, chứng chỉ do CA nội bộ cấp (D-89, D-90). */
+function Channel({ s }: { s: Server }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  const days = s.cert ? certDays(s.cert.not_after) : null;
+  return (
+    <Card>
+      <CardHeader
+        title={t('servers.channel.title')}
+        description={t(`servers.channel.hint.${s.transport}`)}
+      />
+      <CardContent>
+        <InfoList
+          items={[
+            [t('servers.nodeRole'), t(`servers.nodeRoles.${s.node_role}`)],
+            [t('servers.channel.transport'), t(`servers.transports.${s.transport}`)],
+            [t('servers.channel.lastSeen'), fmt.opt(s.last_seen_at)],
+            ...(s.cert
+              ? ([
+                  [
+                    t('servers.channel.fingerprint'),
+                    <code key="f" className="font-mono text-xs break-all">
+                      {s.cert.fingerprint_sha256}
+                    </code>,
+                  ],
+                  [
+                    t('servers.channel.validity'),
+                    `${fmt.date(s.cert.not_before)} → ${fmt.date(s.cert.not_after)}`,
+                  ],
+                  [
+                    t('servers.channel.expires'),
+                    <span key="e" className="flex items-center gap-2">
+                      {days !== null && days <= 0
+                        ? t('servers.certExpired')
+                        : t('servers.certDays', { count: days ?? 0 })}
+                    </span>,
+                  ],
+                  [t('servers.channel.rotated'), fmt.opt(s.cert.rotated_at)],
+                ] as [string, ReactNode][])
+              : []),
+          ]}
+        />
+        {s.cert && <p className="mt-3 text-sm text-muted">{t('servers.channel.rotateHint')}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
 function Agent({ s }: { s: Server }) {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
@@ -396,7 +508,10 @@ function Agent({ s }: { s: Server }) {
           items={[
             [
               t('servers.connection'),
-              <StatusBadge key="c" status={s.agent_connected ? 'connected' : 'disconnected'} />,
+              <StatusBadge
+                key="c"
+                status={s.connection === 'online' ? 'connected' : s.connection}
+              />,
             ],
             [t('servers.agentVersion'), s.agent_version ?? '—'],
             [t('servers.specVersion'), String(s.spec_version)],

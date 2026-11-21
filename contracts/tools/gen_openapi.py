@@ -624,6 +624,10 @@ def admin_paths(api: Api):
     api.add("post", "/servers/enrollment-tokens", "createEnrollmentToken", "Tạo token thêm server (một lần)", "Servers",
             body=ref("EnrollmentRequest"), body_example={"name": "srv-hn-03", "role_tags": ["web"], "ttl_min": 60},
             ok=ref("EnrollmentToken"), ok_example=one(D.ENROLLMENT), status="201", step_up=True)
+    api.add("post", "/servers/{id}:revoke", "revokeServer",
+            "Thu hồi node: chặn chứng chỉ ngay, agent không kết nối lại được (chỉ khi không còn account)", "Servers",
+            params=idp, body=obj({"confirm_name": s(pattern="^[a-z0-9][a-z0-9-]{1,62}$")}),
+            body_example={"confirm_name": "srv-hcm-01"}, ok=ref("Server"), ok_example=one(D.SERVERS[2]), step_up=True)
     api.add("get", "/servers/{id}/capacity", "getServerCapacity", "Dung lượng đã cấp", "Servers", params=idp,
             ok=ref("ServerCapacity"), ok_example=one(D.CAPACITY))
     api.add("get", "/servers/{id}/services", "listServerServices", "Dịch vụ hệ thống", "Servers", params=idp,
@@ -689,8 +693,8 @@ def admin_paths(api: Api):
          {"package_uuid": D.PACKAGES[2]["uuid"], "version": None, "reason": "Nâng cấp theo yêu cầu phòng IT"},
          ["quota.apply", "php.pool.apply"], False),
         ("migrate", "Chuyển sang server khác (D-48)", ref("MigrateRequest"),
-         {"target_server_uuid": D.SERVERS[1]["uuid"], "strategy": "live_sync", "keep_source_days": 7, "dry_run": False},
-         ["migrate.preflight", "migrate.sync", "migrate.verify"], True),
+         {"target_server_uuid": D.SERVERS[1]["uuid"], "keep_source_days": 7},
+         ["migrate.preflight", "account.ensure", "backup.run", "backup.restore", "migrate.verify"], True),
         ("terminate", "Chấm dứt account (giữ dữ liệu ≥ 30 ngày)", ref("TerminateRequest"),
          {"reason": "Dự án kết thúc", "confirm_username": "anphat"}, ["account.suspend", "backup.run"], True),
         ("schedule-purge", "Tạo yêu cầu purge (backup cuối + kiểm chứng)", ref("SchedulePurgeRequest"),
@@ -712,6 +716,10 @@ def admin_paths(api: Api):
             code, phase = later[action]
             op["responses"]["501"] = {"$ref": "./common.yaml#/components/responses/NotImplemented"}
             op["description"] += f"\n\nPhase 3: trả `501` mã `{code}` (hiện thực ở {phase})."
+    api.add("post", "/hosting-accounts/{id}:migrate-preflight", "preflightHostingAccountMigration",
+            "Kiểm tra trước khi chuyển server (đồng bộ, không đổi gì)", "Accounts", params=idp,
+            body=obj({"target_server_uuid": s("uuid")}), body_example={"target_server_uuid": D.SERVERS[1]["uuid"]},
+            ok=ref("MigrationPreflight"), ok_example=one(D.MIGRATION_PREFLIGHT))
     api.add("get", "/hosting-accounts/{id}/usage", "getHostingAccountUsage", "Usage so với quota", "Accounts",
             params=idp, ok=cref("Usage"), ok_example=one(acc["usage"]))
     api.add("get", "/hosting-accounts/{id}/features", "getHostingAccountFeatures", "Tính năng theo gói (PHP, SSH, cron, backup)",
@@ -732,6 +740,10 @@ def admin_paths(api: Api):
     api.add("post", "/account-migrations/{id}:rollback", "rollbackAccountMigration", "Hoàn tác về server nguồn",
             "Migrations", params=idp, job=True,
             job_example=jobs("migration.rollback", "account_migration", mig["uuid"], ["migrate.rollback"], server=2))
+    api.add("post", "/account-migrations/{id}:cleanup", "cleanupAccountMigration",
+            "Dọn dẹp server nguồn (sau hạn giữ, hoặc sớm khi xác nhận)", "Migrations", params=idp, job=True, step_up=True,
+            body=obj({"confirm_username": cref("Username")}), body_example={"confirm_username": "lehoa"},
+            job_example=jobs("migration.cleanup", "account_migration", mig["uuid"], ["account.remove"], server=2))
     # -- users
     api.crud("/users", "user", ref("AdminUser"), "Users", D.USERS, ops="lcru", create_body=ref("UserCreate"),
              create_example={"realm": "portal", "name": "Công ty An Phát", "email": "it@anphat.vn", "role": "USER",

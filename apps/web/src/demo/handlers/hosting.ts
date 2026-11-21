@@ -649,88 +649,178 @@ export function registerHosting() {
     });
   });
 
-  // ---------------------------------------------------------------- chuyển server
+  // ---------------------------------------------------------------- chuyển server (D-93)
+  const OPEN_MIG = ['preflight', 'syncing', 'verifying', 'cutover', 'holding'];
+  /** Kiểm tra trước (không đổi gì): đích kết nối được, nhận account, đủ đĩa, PHP/DB tương thích. */
+  const preflightOf = (ctx: Ctx, a: Account, targetUuid: string | undefined) => {
+    const target = ctx.db.data.servers.find((s) => s.uuid === targetUuid);
+    if (!target) return invalid('Chọn máy chủ đích.');
+    if (target.uuid === a.server.uuid) return invalid('Máy chủ đích phải khác máy chủ hiện tại.');
+    const bytes = a.usage.disk_mb.used * 1_048_576;
+    const dbs = ctx.db.data.databases.filter((d) => d.hosting_account.uuid === a.uuid);
+    const sites = ctx.db.data.websites.filter((w) => w.hosting_account.uuid === a.uuid);
+    const php = [...new Set(sites.map((w) => w.php_version).filter(Boolean))].join(', ') || '8.3';
+    const online = target.connection === 'online';
+    type Check = S['MigrationPreflight']['checks'][number];
+    const checks: Check[] = [
+      online
+        ? { key: 'agent', level: 'ok', message: `Agent ${target.name} trực tuyến` }
+        : {
+            key: 'agent',
+            level: 'block',
+            message: `Agent ${target.name} không kết nối (${target.connection}); thử lại khi node trực tuyến`,
+          },
+      target.accepting_new_accounts
+        ? { key: 'accepting', level: 'ok', message: 'Đích đang nhận account mới' }
+        : { key: 'accepting', level: 'block', message: 'Đích đang không nhận account mới' },
+      {
+        key: 'disk',
+        level: 'ok',
+        message: `Cần ${(bytes / 1_073_741_824).toFixed(1).replace('.', ',')} GB; đích còn đủ chỗ sau khi trừ dự phòng 10 %`,
+      },
+      {
+        key: 'uid',
+        level: 'ok',
+        message: `UID ${a.uid} và username ${a.username} chưa dùng ở đích`,
+      },
+      { key: 'php', level: 'ok', message: `PHP ${php} có sẵn ở đích` },
+      dbs.length
+        ? {
+            key: 'database',
+            level: 'warn',
+            message: `${dbs.length} database: đích chạy MariaDB 10.11.8, nguồn 10.11.6 (cùng nhánh, nạp được)`,
+          }
+        : { key: 'database', level: 'ok', message: 'Không có database' },
+      { key: 'repo', level: 'ok', message: 'Repo backup của account đọc được từ đích' },
+    ];
+    return {
+      target,
+      body: {
+        ok: !checks.some((c) => c.level === 'block'),
+        target_server: { uuid: target.uuid, name: target.name },
+        checks,
+        estimate: { bytes, downtime_sec: 30 + Math.round(bytes / 40e6) + dbs.length * 10 },
+      } satisfies S['MigrationPreflight'],
+    };
+  };
+  on('post', '/api/v1/admin/hosting-accounts/{id}:migrate-preflight', (ctx) => {
+    const deny = SA_ONLY(ctx);
+    if (deny) return deny;
+    const a = accountOf(ctx);
+    if (isReply(a)) return a;
+    const r = preflightOf(
+      ctx,
+      a,
+      (ctx.body as { target_server_uuid?: string })?.target_server_uuid,
+    );
+    if (isReply(r)) return r;
+    return ok(r.body);
+  });
   on('post', '/api/v1/admin/hosting-accounts/{id}:migrate', (ctx) => {
     const deny = SA_ONLY(ctx);
     if (deny) return deny;
     const a = accountOf(ctx);
     if (isReply(a)) return a;
-    const b = (ctx.body ?? {}) as {
-      target_server_uuid?: string;
-      strategy?: 'live_sync' | 'offline';
-      keep_source_days?: number;
-      dry_run?: boolean;
-    };
-    const target = ctx.db.data.servers.find((s) => s.uuid === b.target_server_uuid);
-    if (!target) return invalid('Chọn máy chủ đích.');
-    if (target.uuid === a.server.uuid) return invalid('Máy chủ đích phải khác máy chủ hiện tại.');
-    if (!target.accepting_new_accounts)
-      return problem(409, 'conflict', 'Máy chủ đích đang không nhận tài khoản mới');
+    const b = (ctx.body ?? {}) as { target_server_uuid?: string; keep_source_days?: number };
+    const pre = preflightOf(ctx, a, b.target_server_uuid);
+    if (isReply(pre)) return pre;
+    const { target } = pre;
+    if (!pre.body.ok)
+      return problem(
+        409,
+        'precondition_failed',
+        'Kiểm tra trước chưa đạt',
+        pre.body.checks
+          .filter((c) => c.level === 'block')
+          .map((c) => c.message)
+          .join('; '),
+      );
     const keep = b.keep_source_days ?? 7;
     if (keep < 1 || keep > 30) return invalid('Giữ dữ liệu nguồn từ 1 đến 30 ngày.');
     if (a.lifecycle_state !== 'active' && a.lifecycle_state !== 'suspended') {
       return problem(409, 'conflict', 'Không chuyển được tài khoản ở trạng thái hiện tại');
     }
     const migs = ctx.db.data.migrations;
-    if (
-      migs.some(
-        (m) =>
-          m.hosting_account.uuid === a.uuid &&
-          ['preflight', 'syncing', 'verifying', 'cutover'].includes(m.state),
-      )
-    ) {
+    if (migs.some((m) => m.hosting_account.uuid === a.uuid && OPEN_MIG.includes(m.state))) {
       return problem(409, 'conflict', 'Tài khoản đang có lần chuyển server chưa xong');
     }
-    if (b.dry_run) {
-      return startJob(ctx, {
-        type: 'hosting_account.migrate_preflight',
-        resource: resource(a),
-        ops: ['migrate.preflight'],
-        server: a.server,
-        changes: { target: target.name, dry_run: true },
-      });
-    }
+    const ip = target.ip_addresses[0] ?? '';
+    const sites = ctx.db.data.websites.filter((w) => w.hosting_account.uuid === a.uuid);
+    const zone = ctx.db.data.dns_zones.find((z) => z.hosting_account?.uuid === a.uuid);
+    const records = sites.flatMap((w) => [
+      { type: 'A', name: w.primary_domain, value: ip },
+      { type: 'A', name: `www.${w.primary_domain}`, value: ip },
+    ]);
     const m = {
       uuid: ctx.db.newUuid(),
       hosting_account: accRef(a),
       source_server: a.server,
       target_server: { uuid: target.uuid, name: target.name },
-      state: 'preflight',
+      state: 'syncing',
       bytes_synced: 0,
       downtime_sec: null,
-      verification: {},
+      downtime_estimate_sec: pre.body.estimate.downtime_sec,
+      verification: [],
+      dns: { mode: zone ? 'auto' : 'manual', zone: zone?.name ?? null, records },
       job_uuid: null,
       requested_by: actorRef(ctx),
+      cutover_at: null,
       cleanup_after: null,
+      error: null,
       created_at: ctx.db.now(),
       updated_at: ctx.db.now(),
     } as S['AccountMigration'];
     migs.unshift(m);
     const prev = a.lifecycle_state;
     lifecycle(ctx.db, a, 'migrating', `Chuyển sang ${target.name}`, ctx);
+    const dbs = ctx.db.data.databases.filter((d) => d.hosting_account.uuid === a.uuid);
     const r = startJob(ctx, {
       type: 'hosting_account.migrate',
       resource: resource(a),
-      ops: ['migrate.preflight', 'migrate.sync', 'migrate.verify'],
+      ops: [
+        'migrate.preflight',
+        'account.ensure',
+        'backup.run',
+        'backup.restore',
+        'migrate.verify',
+      ],
       server: a.server,
-      changes: {
-        target: target.name,
-        strategy: b.strategy ?? 'live_sync',
-        keep_source_days: keep,
-        migration: m.uuid,
-      },
+      changes: { target: target.name, keep_source_days: keep, migration: m.uuid },
       onDone: (db) => {
         m.state = 'verifying';
         m.bytes_synced = a.usage.disk_mb.used * 1_048_576;
-        m.verification = {
-          files: { checked: a.usage.inodes.used, mismatched: 0 },
-          databases: 'checksum khớp',
-          ssl: 'đã sao chép',
-          cron: `${a.usage.cron_jobs.used} job`,
-          ownership: `đã chown theo UID ${a.uid}`,
-        };
+        m.verification = [
+          {
+            kind: 'files',
+            name: 'home',
+            ok: true,
+            detail: `${a.usage.inodes.used.toLocaleString('vi-VN')} file, sha256 khớp manifest`,
+          },
+          ...dbs.map((d) => ({
+            kind: 'database' as const,
+            name: d.name,
+            ok: true,
+            detail: 'Số bảng, số dòng và checksum khớp',
+          })),
+          ...sites.map((w) => ({
+            kind: 'http' as const,
+            name: w.primary_domain,
+            ok: true,
+            detail: `HTTP 200 ở ${target.name} (Host: ${w.primary_domain})`,
+          })),
+          ...sites
+            .filter((w) => w.ssl_mode !== 'none')
+            .map((w) => ({
+              kind: 'ssl' as const,
+              name: w.primary_domain,
+              ok: true,
+              detail: 'Chứng chỉ đã sao chép',
+            })),
+          { kind: 'cron', name: 'cron', ok: true, detail: `${a.usage.cron_jobs.used} job` },
+          { kind: 'ownership', name: 'UID', ok: true, detail: `Giữ UID ${a.uid}` },
+        ];
         m.updated_at = db.now();
-        (m as unknown as { keep: number; prev: string }).keep = keep;
+        (m as unknown as { keep: number }).keep = keep;
       },
     });
     m.job_uuid = (r.body as { job: { uuid: string } }).job.uuid;
@@ -744,6 +834,11 @@ export function registerHosting() {
     return m && canSeeAccount(v, m.hosting_account.uuid)
       ? m
       : problem(404, 'not_found', 'Không tìm thấy lần chuyển server');
+  };
+  const moveTo = (db: Ctx['db'], a: Account, srv: Account['server']) => {
+    a.server = srv;
+    for (const w of db.data.websites) if (w.hosting_account.uuid === a.uuid) w.server = srv;
+    for (const d of db.data.databases) if (d.hosting_account.uuid === a.uuid) d.server = srv;
   };
   on('post', '/api/v1/admin/account-migrations/{id}:cutover', (ctx) => {
     const deny = SA_ONLY(ctx);
@@ -759,18 +854,16 @@ export function registerHosting() {
     const r = startJob(ctx, {
       type: 'hosting_account.migrate_cutover',
       resource: resource(a),
-      ops: ['migrate.sync', 'migrate.cutover', 'migrate.verify'],
+      ops: ['migrate.cutover', 'backup.run', 'backup.restore', 'http.check'],
       server: m.target_server,
       onDone: (db) => {
-        m.state = 'completed';
-        m.downtime_sec = 42;
+        // Đích chạy, nguồn bị khóa và giữ nguyên tới cleanup_after (còn hoàn tác được).
+        m.state = 'holding';
+        m.downtime_sec = Math.max(20, (m.downtime_estimate_sec ?? 60) - 12);
+        m.cutover_at = db.now();
         m.cleanup_after = iso(Date.now() + keep * DAY);
         m.updated_at = db.now();
-        a.server = m.target_server;
-        for (const w of db.data.websites)
-          if (w.hosting_account.uuid === a.uuid) w.server = m.target_server;
-        for (const d of db.data.databases)
-          if (d.hosting_account.uuid === a.uuid) d.server = m.target_server;
+        moveTo(db, a, m.target_server);
         lifecycle(
           db,
           a,
@@ -789,20 +882,25 @@ export function registerHosting() {
     if (deny) return deny;
     const m = migrationOf(ctx);
     if (isReply(m)) return m;
-    if (!['preflight', 'syncing', 'verifying', 'cutover', 'failed'].includes(m.state)) {
+    if (!['preflight', 'syncing', 'verifying', 'cutover', 'holding', 'failed'].includes(m.state)) {
       return problem(409, 'conflict', 'Lần chuyển đã kết thúc, không hoàn tác được');
     }
     const a = ctx.db.data.accounts.find((x) => x.uuid === m.hosting_account.uuid);
     if (!a) return problem(404, 'not_found', 'Không tìm thấy tài khoản hosting');
+    const wasHolding = m.state === 'holding';
     return startJob(ctx, {
       type: 'hosting_account.migrate_rollback',
       resource: resource(a),
-      ops: ['migrate.rollback'],
+      ops: wasHolding ? ['migrate.rollback', 'http.check'] : ['migrate.rollback'],
       server: m.source_server,
       onDone: (db) => {
         m.state = 'rolled_back';
         m.updated_at = db.now();
-        if (a.lifecycle_state === 'migrating') {
+        if (wasHolding) {
+          moveTo(db, a, m.source_server);
+          recount(db);
+        }
+        if (a.lifecycle_state === 'migrating' || wasHolding) {
           lifecycle(
             db,
             a,
@@ -811,6 +909,29 @@ export function registerHosting() {
             ctx,
           );
         }
+      },
+    });
+  });
+  on('post', '/api/v1/admin/account-migrations/{id}:cleanup', (ctx) => {
+    const deny = SA_ONLY(ctx);
+    if (deny) return deny;
+    const m = migrationOf(ctx);
+    if (isReply(m)) return m;
+    if (m.state !== 'holding')
+      return problem(409, 'conflict', 'Chỉ dọn máy nguồn khi lần chuyển đang giữ nguồn');
+    const confirm = (ctx.body as { confirm_username?: string })?.confirm_username;
+    if (confirm !== m.hosting_account.username) return invalid('Gõ đúng username để xác nhận.');
+    const a = ctx.db.data.accounts.find((x) => x.uuid === m.hosting_account.uuid);
+    if (!a) return problem(404, 'not_found', 'Không tìm thấy tài khoản hosting');
+    return startJob(ctx, {
+      type: 'hosting_account.migrate_cleanup',
+      resource: resource(a),
+      ops: ['account.remove'],
+      server: m.source_server,
+      changes: { migration: m.uuid, username: a.username },
+      onDone: (db) => {
+        m.state = 'completed';
+        m.updated_at = db.now();
       },
     });
   });

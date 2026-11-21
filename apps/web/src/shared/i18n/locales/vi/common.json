@@ -81,7 +81,11 @@
     "rolled_back": "Đã hoàn tác",
     "deleting": "Đang xóa",
     "denied": "Bị từ chối",
-    "acknowledged": "Đã xác nhận"
+    "acknowledged": "Đã xác nhận",
+    "unreachable": "Mất kết nối",
+    "waiting_agent": "Chờ node kết nối",
+    "holding": "Đang giữ nguồn",
+    "revoked": "Đã thu hồi"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",
@@ -173,9 +177,10 @@
       "update": "Cập nhật tài khoản hosting",
       "schedule_purge": "Lên lịch purge tài khoản",
       "confirm_purge": "Xác nhận purge tài khoản",
-      "migrate_preflight": "Chạy thử chuyển máy chủ",
+      "migrate_preflight": "Kiểm tra trước khi chuyển máy chủ",
       "migrate_cutover": "Cutover chuyển máy chủ",
-      "migrate_rollback": "Hoàn tác chuyển máy chủ"
+      "migrate_rollback": "Hoàn tác chuyển máy chủ",
+      "migrate_cleanup": "Dọn máy nguồn sau khi chuyển"
     },
     "hosting_package": {
       "update": "Cập nhật gói hosting",
@@ -189,7 +194,8 @@
     "server": {
       "update": "Cập nhật máy chủ",
       "reboot": "Khởi động lại máy chủ",
-      "enroll": "Tạo token thêm máy chủ"
+      "enroll": "Tạo token thêm máy chủ",
+      "revoke": "Thu hồi node"
     },
     "service": {
       "restart": "Khởi động lại dịch vụ",

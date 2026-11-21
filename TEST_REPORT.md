@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.0 (mockup multi-server & chuyển tài khoản) — nhánh `phase-9`
+
+Phạm vi: chỉ bản demo. Contracts (`schemas.py`, `gen_openapi.py`, `demo.py`): `JobState` thêm `waiting_agent`; `Server` thêm `node_role`, `transport`, `connection` (`online/degraded/unreachable/pending/revoked`), `last_seen_at`, `cert`; `EnrollmentToken.ca_sha256`; `PlacementSuggestion` thêm `eligible`, `excluded_reasons`, `commit_pct`; `MigrateRequest` bỏ `strategy`/`dry_run`; mới `MigrationPreflight`, `POST /hosting-accounts/{id}:migrate-preflight`, `POST /account-migrations/{id}:cleanup`, `POST /servers/{id}:revoke`; `AccountMigration` thêm `holding`, `verification` dạng danh sách, `dns`, `downtime_estimate_sec`, `cutover_at`, `error`; demo có 2 job trên node mất kết nối. UI: `servers/*` (vai trò/kênh/kết nối/chứng chỉ, banner offline, thẻ Kênh, thu hồi), `hosting/Placement` (dùng ở tạo account và chuyển account), `AccountMigratePage` (6 bước, giữ nguồn + dọn nguồn), `backups/RestoreNewPage` (chọn server đích), `pages/JobsPage` (lọc `waiting_agent`); MSW `admin.ts` (gợi ý D-92), `hosting.ts` (preflight/migrate/cutover → holding/rollback/cleanup), `infra.ts` (node join mTLS, revoke), `governance.ts` (khôi phục sang server khác: chỉ ra bản mới, đích phải online, `account.ensure` + `backup.restore`).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (admin 269 operation, portal 114) · OK |
+| Dữ liệu demo | `python3 contracts/tools/check_demo.py` | OK — 13 account, 21 website, 10 database, 12 job |
+| Type + lint + i18n | `pnpm tsc -b --noEmit` · `pnpm lint` | PASS · PASS; `check-i18n: OK — 6 namespace, 2962 key, 0 thiếu (vi = en)` |
+| Vitest | `pnpm exec vitest run` | Lần đầu 3 lỗi (schema gợi ý server thiếu trường mới; preflight trả body thiếu `data`; test khôi phục còn chờ 422 khi sang server khác). Sửa MSW + test → **561/561 PASS** (37 file). Mới: preflight đích mất kết nối → chặn + migrate 409; migrate → verifying → cutover → holding → cleanup (sai username 422) → completed; rollback khi đang giữ nguồn đưa account về máy cũ; khôi phục sang server khác (ghi đè 422, node mất kết nối 409, đúng → `account.ensure`, `backup.restore`) |
+| Playwright demo | `pnpm exec playwright test --trace off e2e/demo-audit.spec.ts e2e/demo-backup8.spec.ts e2e/demo-hosting.spec.ts e2e/demo-infra.spec.ts` | Lần đầu 2 lỗi (lệnh join đổi sang `--token … --ca-sha256`; luồng chuyển có thêm bước giữ nguồn), sửa test → **92/92 PASS** (gồm axe) |
+| Ảnh mockup | `SCREENSHOT_DIR_P9=docs/screenshots/phase-9 pnpm exec playwright test --trace off e2e/screenshots-phase9.spec.ts` | 48/48 → 48 ảnh (12 màn × 1440/390 × light/dark); `make screenshots` có `SCREENSHOT_DIR_P9` |
+
+**Test bị bỏ qua:** không. **Chờ VM:** không áp dụng (chỉ demo).
+
 ## 2026-11-21 — Phase 8 / Prompt 8.7 (e2e, VM, review, release v0.1.0-alpha) — nhánh `phase-8`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` dùng **restic 0.16.4 thật** + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.

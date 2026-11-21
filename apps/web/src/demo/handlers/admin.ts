@@ -326,7 +326,8 @@ export function registerAdminLists() {
       account_count: s?.account_count ?? 0,
     });
   });
-  // Gợi ý đặt account: chấm điểm theo RAM/disk còn trống và số account trên từng server trong phạm vi.
+  // Gợi ý đặt account (D-92): lọc (kết nối, nhận account, sẵn sàng, đĩa ≥ 15 %), rồi chấm điểm theo
+  // tài nguyên còn trống và % cam kết (tổng hạn mức đĩa các account / dung lượng đĩa). Chỉ gợi ý.
   on('get', '/api/v1/admin/placement/suggestions', (ctx) => {
     const v = visibility(ctx.db, ctx.actor);
     const rows = ctx.db.data.servers
@@ -334,18 +335,35 @@ export function registerAdminLists() {
       .map((s) => {
         const r = s.resources;
         const ram = 100 - Math.round((r.ram_used_mb * 100) / Math.max(r.ram_mb, 1));
-        const disk = Math.round((r.disk_used_mb * 100) / Math.max(r.disk_mb, 1));
-        const ok = s.accepting_new_accounts && s.agent_connected && s.status === 'ready';
-        const score = ok
-          ? Math.max(1, Math.min(99, Math.round(ram * 0.6 + (100 - disk) * 0.4 - s.account_count)))
+        const freeDisk = 100 - Math.round((r.disk_used_mb * 100) / Math.max(r.disk_mb, 1));
+        const quota = ctx.db.data.accounts
+          .filter((a) => a.server.uuid === s.uuid)
+          .reduce((n, a) => n + (a.usage.disk_mb.limit ?? 0), 0);
+        const commit = Math.round((quota * 100) / Math.max(r.disk_mb, 1));
+        const out: string[] = [];
+        if (s.connection !== 'online')
+          out.push(
+            s.last_seen_at
+              ? `Mất kết nối từ ${s.last_seen_at.slice(11, 16)}`
+              : 'Agent chưa kết nối',
+          );
+        if (!s.accepting_new_accounts) out.push('Đang tắt nhận account mới');
+        if (s.status !== 'ready' && s.connection === 'online') out.push('Máy chưa sẵn sàng');
+        if (freeDisk < 15) out.push(`Đĩa còn ${freeDisk}% (cần ≥ 15%)`);
+        const eligible = out.length === 0;
+        const score = eligible
+          ? Math.max(1, Math.min(99, Math.round(ram * 0.4 + freeDisk * 0.3 + (100 - commit) * 0.3)))
           : 0;
         return {
           server: { uuid: s.uuid, name: s.name },
           score,
-          reasons: ok
-            ? [`Còn ${ram}% RAM chưa dùng`, `Disk đã dùng ${disk}%`, `${s.account_count} account`]
-            : ['Không nhận account mới'],
-          accepting_new: ok,
+          reasons: eligible
+            ? [`Còn ${ram}% RAM chưa dùng`, `Đĩa còn ${freeDisk}%`, `${s.account_count} account`]
+            : [],
+          accepting_new: s.accepting_new_accounts,
+          eligible,
+          excluded_reasons: out,
+          commit_pct: commit,
         };
       })
       .sort((a, b) => b.score - a.score);

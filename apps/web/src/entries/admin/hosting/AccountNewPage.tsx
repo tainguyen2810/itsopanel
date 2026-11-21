@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/ui/Card';
 import { FormField } from '@/ui/FormField';
 import { list, send, type JobAccepted } from '../api';
 import { useAction } from '../useAction';
+import { Placement } from './Placement';
 import { ACCOUNT_STEPS, accountSchema, suggestUsername, type AccountForm } from './accounts';
 
 export default function AccountNewPage() {
@@ -138,29 +139,13 @@ export default function AccountNewPage() {
         ) : placement.isPending ? (
           <TableSkeleton rows={2} />
         ) : (
-          <div id={f.id} role="radiogroup" className="flex flex-col gap-2">
-            {placement.data.map((s, i) => (
-              <ChoiceCard
-                key={s.server.uuid}
-                name="server"
-                value={s.server.uuid}
-                checked={f.value === s.server.uuid}
-                disabled={!s.accepting_new}
-                onChange={f.onChange}
-              >
-                <span className="flex flex-wrap items-center gap-2 font-medium">
-                  {s.server.name}
-                  {i === 0 && s.accepting_new && (
-                    <Badge tone="success">{t('accounts.recommended')}</Badge>
-                  )}
-                  <span className="text-sm font-normal text-muted">
-                    {t('accounts.score', { score: s.score })}
-                  </span>
-                </span>
-                <span className="block text-sm text-muted">{s.reasons.join(' · ')}</span>
-              </ChoiceCard>
-            ))}
-          </div>
+          <Placement
+            id={f.id}
+            name="server"
+            items={placement.data}
+            value={f.value as string}
+            onChange={f.onChange}
+          />
         )
       }
     />,

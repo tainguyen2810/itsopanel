@@ -961,10 +961,18 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
       if (kind === 'config' && !s.contents.includes('config'))
         return invalid('Snapshot không chứa cấu hình.');
     }
-    // Như API thật (RestoreService): khôi phục trên server hiện tại của account; sang server khác là Phase 9.
-    const target = a.server;
-    if (b.target_server_uuid && b.target_server_uuid !== a.server.uuid)
-      return invalid('Khôi phục sang máy chủ khác: Phase 9 (chuyển account).');
+    // Khôi phục sang server khác (D-93, chỉ Admin, chỉ ra bản mới): đích phải trực tuyến; account được
+    // tạo ở đích nếu chưa có (account.ensure) rồi restic restore từ cùng repo.
+    let target = a.server;
+    if (b.target_server_uuid && b.target_server_uuid !== a.server.uuid) {
+      if (realm !== 'admin') return invalid('Portal chỉ khôi phục trên server hiện tại.');
+      if (b.mode !== 'new') return invalid('Sang server khác: chỉ khôi phục ra bản mới.');
+      const srv = ctx.db.data.servers.find((x) => x.uuid === b.target_server_uuid);
+      if (!srv || !canSeeServer(v, srv.uuid)) return invalid('Chọn server đích trong phạm vi.');
+      if (srv.connection !== 'online' || srv.status !== 'ready')
+        return conflict(`Server ${srv.name} không kết nối; chọn server khác.`, 'agent_unreachable');
+      target = { uuid: srv.uuid, name: srv.name };
+    }
     if (a.lifecycle_state !== 'active')
       return conflict(
         `Account đang ${a.lifecycle_state}: kích hoạt lại trước khi khôi phục.`,
@@ -997,9 +1005,10 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
     const reply = startJob(ctx, {
       type: 'backup.restore',
       resource: { type: 'restore', uuid: r.uuid },
-      ops: ['backup.restore'],
+      ops:
+        target.uuid === a.server.uuid ? ['backup.restore'] : ['account.ensure', 'backup.restore'],
       server: target,
-      changes: { snapshot: s.restic_snapshot_id, mode: b.mode, items },
+      changes: { snapshot: s.restic_snapshot_id, mode: b.mode, items, target: target.name },
       onDone: (db) => {
         r.state = 'succeeded';
         r.finished_at = db.now();

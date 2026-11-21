@@ -317,11 +317,36 @@ describe('backup & restore', () => {
         })
       ).status,
     ).toBe(422);
-    // Khôi phục sang server khác: Phase 9.
+    // Sang server khác (Phase 9): chỉ ra bản mới, đích phải trực tuyến; node mất kết nối → 409.
     expect(
-      (await call('POST', A('/restores'), { ...base, mode: 'new', target_server_uuid: SRV_HN2 }))
-        .status,
+      (
+        await call('POST', A('/restores'), {
+          ...base,
+          mode: 'overwrite',
+          confirm: 'anphat',
+          items: ['database:anphat_shop'],
+          target_server_uuid: SRV_HN2,
+        })
+      ).status,
     ).toBe(422);
+    expect(
+      (
+        await call('POST', A('/restores'), {
+          ...base,
+          mode: 'new',
+          target_server_uuid: '01938a02-0003-7000-8000-000002000003',
+        })
+      ).status,
+    ).toBe(409);
+    const cross = await call('POST', A('/restores'), {
+      ...base,
+      mode: 'new',
+      target_server_uuid: SRV_HN2,
+    });
+    expect(cross.status).toBe(202);
+    expect((cross.body as { job: { steps: { op: string }[] } }).job.steps.map((x) => x.op)).toEqual(
+      ['account.ensure', 'backup.restore'],
+    );
     expect(
       (
         await call('POST', A('/restores'), {

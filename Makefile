@@ -87,8 +87,8 @@ test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự b�
 test-e2e-real: ## Playwright trên stack thật + agent sandbox (cần `make dev` đang chạy + DemoSeeder, xem docs/runbooks/phase-3-demo.md)
 	@cd apps/web && $(PNPM) exec playwright test -c playwright.real.config.ts --trace off
 
-screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/), trang chính Phase 2 (docs/screenshots/phase-2/) , mockup Phase 6, 7 và 8 (docs/screenshots/phase-6/, phase-7/, phase-8/)
-	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system SCREENSHOT_DIR_P2=$(CURDIR)/docs/screenshots/phase-2 SCREENSHOT_DIR_P6=$(CURDIR)/docs/screenshots/phase-6 SCREENSHOT_DIR_P7=$(CURDIR)/docs/screenshots/phase-7 SCREENSHOT_DIR_P8=$(CURDIR)/docs/screenshots/phase-8 $(PNPM) e2e
+screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/), trang chính Phase 2 (docs/screenshots/phase-2/) , mockup Phase 6–9 (docs/screenshots/phase-6/ … phase-9/)
+	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system SCREENSHOT_DIR_P2=$(CURDIR)/docs/screenshots/phase-2 SCREENSHOT_DIR_P6=$(CURDIR)/docs/screenshots/phase-6 SCREENSHOT_DIR_P7=$(CURDIR)/docs/screenshots/phase-7 SCREENSHOT_DIR_P8=$(CURDIR)/docs/screenshots/phase-8 SCREENSHOT_DIR_P9=$(CURDIR)/docs/screenshots/phase-9 $(PNPM) e2e
 
 tokens: ## Sinh tokens.css từ design/tokens/tokens.json
 	@node design/tools/gen-tokens.mjs

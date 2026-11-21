@@ -438,7 +438,51 @@
         "mock": "Mock (dữ liệu giả)"
       },
       "factsAt": "Cập nhật lúc"
-    }
+    },
+    "caPin": "Mã ghim CA (sha256)",
+    "certDays_one": "Chứng chỉ còn {{count}} ngày",
+    "certDays_other": "Chứng chỉ còn {{count}} ngày",
+    "certExpired": "Chứng chỉ đã hết hạn",
+    "lastSeen": "Thấy lần cuối {{time}}",
+    "nodeRole": "Kiểu máy",
+    "nodeRoles": {
+      "all_in_one": "Tất cả trong một",
+      "control_plane": "Máy điều khiển",
+      "node": "Node"
+    },
+    "transports": {
+      "local": "Cục bộ (unix socket)",
+      "mtls": "mTLS qua relay"
+    },
+    "offline": {
+      "degraded": "{{name}} phản hồi chập chờn",
+      "unreachable": "{{name}} mất kết nối",
+      "hint": "Lần cuối thấy agent: {{time}}. Thao tác mới tới máy này sẽ chờ node kết nối lại, quá hạn thì báo lỗi. Website trên máy vẫn chạy bình thường nếu máy còn bật.",
+      "jobs": "Xem job đang chờ",
+      "revoked": "{{name}} đã bị thu hồi",
+      "revokedHint": "Chứng chỉ của node đã bị chặn, relay từ chối kết nối. Muốn dùng lại máy, cài lại với token mới."
+    },
+    "channel": {
+      "title": "Kênh kết nối agent",
+      "hint": {
+        "local": "Agent chạy cùng máy panel, nói chuyện qua unix socket.",
+        "mtls": "Node mở kết nối ra relay của panel (cổng 28444, TLS 1.3, xác thực hai chiều bằng chứng chỉ CA nội bộ)."
+      },
+      "transport": "Kênh",
+      "lastSeen": "Heartbeat cuối",
+      "fingerprint": "Dấu vân tay chứng chỉ",
+      "validity": "Hiệu lực",
+      "expires": "Hết hạn",
+      "rotated": "Xoay lần cuối",
+      "rotateHint": "Chứng chỉ 30 ngày, agent tự xin cấp lại khi qua 2/3 thời hạn. Thu hồi node sẽ chặn chứng chỉ ngay."
+    },
+    "revoke": "Thu hồi node",
+    "revokeTitle": "Thu hồi {{name}}?",
+    "revokeBlocked_one": "Máy còn {{count}} account. Chuyển hết account sang máy khác trước khi thu hồi.",
+    "revokeBlocked_other": "Máy còn {{count}} account. Chuyển hết account sang máy khác trước khi thu hồi.",
+    "revokeHint": "Chứng chỉ của node bị thu hồi, relay ngắt kết nối và từ chối kết nối lại. Muốn dùng lại máy phải cài lại với token mới. Gõ tên máy để xác nhận.",
+    "tokenExpiresLabel": "Token hết hạn",
+    "tokenOnce": "Token chỉ dùng được một lần và chỉ hiện lúc này. Lệnh kiểm tra CA theo mã ghim trước khi gửi token."
   },
   "nginx": {
     "title": "Nginx",
@@ -934,34 +978,29 @@
       "username": "3–16 ký tự, bắt đầu bằng chữ, chỉ chữ thường và số",
       "reserved": "Tên này dành cho hệ thống",
       "domain": "Domain không hợp lệ"
-    }
+    },
+    "commit": "Cam kết {{pct}} %",
+    "excluded": "Không đủ điều kiện",
+    "noEligible": "Không có máy chủ nào đủ điều kiện cho gói này.",
+    "notAccepting": "Đang không nhận account mới"
   },
   "migrate": {
     "title": "Chuyển máy chủ",
     "titleFor": "Chuyển {{name}} sang máy chủ khác",
-    "description": "Sao chép dữ liệu khi tài khoản vẫn chạy, kiểm tra, rồi cutover. Có thể hoàn tác trước khi xong; máy nguồn giữ dữ liệu theo số ngày đã chọn.",
+    "description": "Kiểm tra trước, sao chép qua repo backup khi account vẫn chạy, kiểm tra ở đích, rồi cutover. Máy nguồn được giữ nguyên để hoàn tác cho tới khi dọn dẹp.",
     "wizard": "Các bước chuyển máy chủ",
     "steps": {
       "preflight": "Kiểm tra trước",
       "sync": "Đồng bộ",
       "verify": "Kiểm tra dữ liệu",
       "cutover": "Cutover",
-      "done": "Hoàn tất"
+      "done": "Hoàn tất",
+      "holding": "Giữ nguồn"
     },
-    "preflightHint": "Đang ở {{server}}. Chọn máy chủ đích; \"Chạy thử\" chỉ kiểm tra dung lượng, phiên bản PHP, xung đột UID mà không thay đổi gì.",
+    "preflightHint": "Đang ở {{server}}. Chọn máy chủ đích rồi bấm \"Kiểm tra trước\": kết nối agent, dung lượng, UID, PHP, phiên bản DB. Không thay đổi gì.",
     "target": "Máy chủ đích",
-    "strategy": "Cách chuyển",
-    "strategies": {
-      "live_sync": "Đồng bộ trực tiếp",
-      "offline": "Tạm dừng rồi chuyển"
-    },
-    "strategyHints": {
-      "live_sync": "Sao chép nhiều lượt khi website vẫn chạy; chỉ gián đoạn vài chục giây lúc cutover.",
-      "offline": "Khóa tài khoản trong lúc sao chép; đơn giản hơn, gián đoạn lâu hơn."
-    },
     "keepDays": "Giữ dữ liệu ở máy nguồn (ngày)",
     "keepDaysHint": "Từ 1 đến 30 ngày, để hoàn tác nếu cần.",
-    "dryRun": "Chạy thử",
     "start": "Bắt đầu chuyển",
     "from": "Từ",
     "to": "Đến",
@@ -973,26 +1012,51 @@
     "checks": "Kết quả kiểm tra",
     "check": {
       "files": "File",
-      "databases": "Database",
       "ssl": "SSL",
       "cron": "Cron",
-      "ownership": "Quyền sở hữu"
+      "ownership": "Quyền sở hữu",
+      "database": "Database",
+      "http": "HTTP"
     },
-    "filesChecked": "{{checked}} file, {{mismatched}} lệch",
     "cutover": "Cutover",
     "cutoverTitle": "Cutover sang {{server}}?",
-    "cutoverHint": "Website gián đoạn vài chục giây trong lúc đồng bộ lượt cuối và đổi cấu hình. Gõ username để xác nhận.",
+    "cutoverHint": "Account bị khóa ở nguồn, đồng bộ lượt cuối rồi chạy ở đích. Gián đoạn dự kiến khoảng {{seconds}} giây. Gõ username để xác nhận.",
     "rollback": "Hoàn tác",
     "rollbackTitle": "Hoàn tác lần chuyển?",
     "rollbackHint": "Tài khoản tiếp tục chạy ở {{server}}; dữ liệu đã chép sang máy đích bị xóa.",
     "completed": "Đã chuyển sang {{server}}",
-    "completedHint": "Gián đoạn {{seconds}} giây. Máy nguồn giữ dữ liệu tới {{date}} rồi tự dọn.",
+    "completedHint": "Gián đoạn {{seconds}} giây. Máy nguồn đã được dọn.",
     "ended": "Lần chuyển đã kết thúc ({{state}})",
     "rolledBackHint": "Tài khoản vẫn ở {{server}}.",
     "requestedBy": "Người yêu cầu",
     "updatedAt": "Cập nhật",
     "again": "Chuyển lần mới",
-    "backToAccount": "Về tài khoản"
+    "backToAccount": "Về tài khoản",
+    "runPreflight": "Kiểm tra trước",
+    "preflightResult": "Kết quả kiểm tra với {{server}}",
+    "estimate": "Dữ liệu khoảng {{size}}; gián đoạn dự kiến lúc cutover khoảng {{seconds}} giây.",
+    "levels": {
+      "ok": "Đạt",
+      "warn": "Lưu ý",
+      "block": "Chặn"
+    },
+    "blocked": "Chưa chuyển được sang máy này",
+    "blockedHint": "Sửa các mục bị chặn rồi kiểm tra lại, hoặc chọn máy khác.",
+    "dns": "DNS",
+    "dnsAuto": "Panel tự đổi bản ghi trong zone {{zone}}:",
+    "dnsManual": "DNS không do panel quản lý. Đổi các bản ghi sau ở nhà cung cấp DNS:",
+    "running": "Account đang chạy ở {{server}}",
+    "holdingHint_one": "{{server}} vẫn giữ bản cũ (đã khóa) thêm {{count}} ngày, tới {{date}}. Có thể hoàn tác trong thời gian này; sau đó panel dọn máy nguồn.",
+    "holdingHint_other": "{{server}} vẫn giữ bản cũ (đã khóa) thêm {{count}} ngày, tới {{date}}. Có thể hoàn tác trong thời gian này; sau đó panel dọn máy nguồn.",
+    "cutoverAt": "Cutover lúc",
+    "downtime": "Gián đoạn thực tế",
+    "seconds_one": "{{count}} giây",
+    "seconds_other": "{{count}} giây",
+    "cleanupAt": "Dọn nguồn lúc",
+    "cleanupNow": "Dọn nguồn ngay",
+    "cleanupTitle": "Xóa bản cũ trên {{server}}?",
+    "cleanupHint": "Xóa user, home, database và vhost của account trên {{server}}. Sau bước này không hoàn tác được nữa. Gõ username để xác nhận.",
+    "rollbackHoldingHint": "Account chạy lại ở {{server}}; DNS đổi về như cũ. Thay đổi phát sinh ở đích sau cutover sẽ mất. Gõ username để xác nhận."
   },
   "terminated": {
     "title": "Tài khoản đã chấm dứt",

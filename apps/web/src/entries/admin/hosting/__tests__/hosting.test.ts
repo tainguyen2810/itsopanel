@@ -127,6 +127,8 @@ describe('vòng đời và purge', () => {
     expect(migrationStep({ state: 'preflight' })).toBe('sync');
     expect(migrationStep({ state: 'verifying' })).toBe('verify');
     expect(migrationStep({ state: 'cutover' })).toBe('cutover');
+    expect(migrationStep({ state: 'holding' })).toBe('holding');
+    expect(migrationStep({ state: 'completed' })).toBe('done');
     expect(migrationStep({ state: 'rolled_back' })).toBe('done');
   });
 

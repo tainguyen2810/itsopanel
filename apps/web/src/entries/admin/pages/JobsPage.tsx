@@ -9,7 +9,15 @@ import { list, type Row } from '../api';
 import { auditLabel } from '../labels';
 
 type Job = Row<'/api/v1/admin/jobs'>;
-const STATES = ['queued', 'running', 'succeeded', 'failed', 'cancelled', 'timed_out'] as const;
+const STATES = [
+  'queued',
+  'waiting_agent',
+  'running',
+  'succeeded',
+  'failed',
+  'cancelled',
+  'timed_out',
+] as const;
 
 export default function JobsPage() {
   const { t } = useTranslation('admin');

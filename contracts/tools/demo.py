@@ -65,6 +65,7 @@ SERVERS = [
      "ip_addresses": ["10.10.1.11", "203.0.113.11"], "role_tags": ["web", "db"],
      "os": "Ubuntu 24.04.1 LTS", "kernel": "6.8.0-48-generic", "agent_version": "0.1.0",
      "agent_connected": True, "accepting_new_accounts": True,
+     "node_role": "all_in_one", "transport": "local", "connection": "online", "last_seen_at": T2, "cert": None,
      "resources": {"cpu_cores": 16, "ram_mb": 65536, "disk_mb": 1907729, "cpu_pct": 37.5,
                    "ram_used_mb": 28100, "disk_used_mb": 812400, "load_1m": 2.31, "uptime_sec": 3888000},
      "account_count": 2, "platform": {"quota_mode": "kernel", "cgroup_v2": True, "systemd": True, "arch": "amd64", "agent_mode": "real", "facts_at": T2}, **do(), **ts()},
@@ -72,13 +73,21 @@ SERVERS = [
      "ip_addresses": ["10.10.1.12"], "role_tags": ["web"],
      "os": "Ubuntu 24.04.1 LTS", "kernel": "6.8.0-48-generic", "agent_version": "0.1.0",
      "agent_connected": True, "accepting_new_accounts": True,
+     "node_role": "node", "transport": "mtls", "connection": "online", "last_seen_at": T2,
+     "cert": {"fingerprint_sha256": "4be1c09f2d7a5e3816c0b9a4f27d8e15c6a3b0f94d21e78a5c36b9d0e1f2a473",
+              "not_before": "2026-11-10T08:00:00+07:00", "not_after": "2026-12-10T08:00:00+07:00",
+              "rotated_at": "2026-11-10T08:00:00+07:00"},
      "resources": {"cpu_cores": 8, "ram_mb": 32768, "disk_mb": 953674, "cpu_pct": 12.0,
                    "ram_used_mb": 6200, "disk_used_mb": 120300, "load_1m": 0.42, "uptime_sec": 864000},
      "account_count": 0, "platform": {"quota_mode": "soft", "cgroup_v2": True, "systemd": True, "arch": "amd64", "agent_mode": "real", "facts_at": T2}, **do(spec=1, obs=1), **ts()},
     {"uuid": u("server", 3), "name": "srv-hcm-01", "hostname": "srv-hcm-01.itso.local",
      "ip_addresses": ["10.20.1.21"], "role_tags": ["web", "backup"],
      "os": "Ubuntu 24.04.1 LTS", "kernel": "6.8.0-45-generic", "agent_version": "0.1.0",
-     "agent_connected": True, "accepting_new_accounts": False,
+     "agent_connected": False, "accepting_new_accounts": False,
+     "node_role": "node", "transport": "mtls", "connection": "unreachable", "last_seen_at": "2026-11-20T06:41:00+07:00",
+     "cert": {"fingerprint_sha256": "9d3f7a21c84b0e65f1a2d9c7b36e40f8a5d12c9e7b04f6a3d81e2c5b9f07a614",
+              "not_before": "2026-10-28T09:00:00+07:00", "not_after": "2026-11-27T09:00:00+07:00",
+              "rotated_at": "2026-10-28T09:00:00+07:00"},
      "resources": {"cpu_cores": 8, "ram_mb": 16384, "disk_mb": 476837, "cpu_pct": 81.2,
                    "ram_used_mb": 14900, "disk_used_mb": 431000, "load_1m": 6.8, "uptime_sec": 1728000},
      "account_count": 2, "platform": None,
@@ -362,9 +371,19 @@ SETUP_RESTORE_CANDIDATES = [
 MIGRATIONS = [
     {"uuid": u("migration", 1), "hosting_account": acc_ref(2), "source_server": server_ref(2),
      "target_server": server_ref(1), "state": "verifying", "bytes_synced": 2201000000, "downtime_sec": None,
-     "verification": {"files": {"checked": 50300, "mismatched": 0}, "databases": {"lehoa_wp": "checksum khớp"},
-                      "ssl": "đã sao chép", "cron": "0 job", "ownership": "đã chown theo UID 20004"},
-     "job_uuid": u("job", 3), "requested_by": user_ref(0), "cleanup_after": None, **ts()},
+     "downtime_estimate_sec": 95,
+     "verification": [
+         {"kind": "files", "name": "sites/", "ok": True, "detail": "50.300 file, sha256 khớp"},
+         {"kind": "database", "name": "lehoa_wp", "ok": True, "detail": "12 bảng, 48.211 dòng, checksum khớp"},
+         {"kind": "http", "name": "lehoa.vn", "ok": True, "detail": "HTTP 200 ở server đích (Host: lehoa.vn)"},
+         {"kind": "ssl", "name": "lehoa.vn", "ok": True, "detail": "Chứng chỉ đã sao chép, hết hạn 2027-01-18"},
+         {"kind": "cron", "name": "cron", "ok": True, "detail": "2 job"},
+         {"kind": "ownership", "name": "UID", "ok": True, "detail": "Giữ UID 20004"}],
+     "dns": {"mode": "auto", "zone": "lehoa.vn",
+             "records": [{"type": "A", "name": "lehoa.vn", "value": "10.10.1.12"},
+                         {"type": "A", "name": "www.lehoa.vn", "value": "10.10.1.12"}]},
+     "job_uuid": u("job", 3), "requested_by": user_ref(0), "cutover_at": None, "cleanup_after": None, "error": None,
+     **ts()},
 ]
 
 PURGES = [
@@ -712,16 +731,33 @@ PHP_VERSIONS = [
 NGINX_GLOBAL = {"worker_processes": "auto", "worker_connections": 4096, "client_max_body_size": "64m",
                 "gzip": True, "http2": True, "server_tokens": False, "updated_at": T0}
 
-ENROLLMENT = {"uuid": u("enrollment", 1), "token": "itso_enr_7Hk2pQ9xVb3mN6tR",
-              "command": "curl -fsSL https://admin.itso.local/install.sh | sudo bash -s -- --role node --join itso_enr_7Hk2pQ9xVb3mN6tR",
+CA_SHA256 = "e3b7c1d04f9a26b85c71e0d3a4f6b29c8d15e7a03b6c94f21d8e5a7c0b3f9e61"
+ENROLLMENT = {"uuid": u("enrollment", 1), "token": "itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga",
+              "command": ("curl -fsSLO https://admin.itso.local/install.sh && sudo bash install.sh --role node "
+                          "--join https://admin.itso.local:28444 --token itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga "
+                          f"--ca-sha256 {CA_SHA256}"),
+              "ca_sha256": CA_SHA256,
               "expires_at": "2026-11-20T09:15:00+07:00", "created_at": T2}
 
 PLACEMENT = [
-    {"server": server_ref(1), "score": 92, "reasons": ["Còn 89% RAM chưa cấp", "0 account", "Cùng vùng HN"],
-     "accepting_new": True},
-    {"server": server_ref(0), "score": 71, "reasons": ["Còn 92% RAM chưa cấp", "Disk đã dùng 43%"],
-     "accepting_new": True},
+    {"server": server_ref(1), "score": 92, "reasons": ["Đủ PHP 8.3, MariaDB 11.4", "Đĩa còn 87% sau khi cấp", "Cam kết thấp nhất: 12%"],
+     "accepting_new": True, "eligible": True, "excluded_reasons": [], "commit_pct": 12},
+    {"server": server_ref(0), "score": 71, "reasons": ["Đủ PHP 8.3, MariaDB 11.4", "Đĩa còn 56% sau khi cấp", "Cam kết 38%"],
+     "accepting_new": True, "eligible": True, "excluded_reasons": [], "commit_pct": 38},
+    {"server": server_ref(2), "score": 0, "reasons": [],
+     "accepting_new": False, "eligible": False,
+     "excluded_reasons": ["Mất kết nối từ 06:41", "Đang tắt nhận account mới", "Đĩa còn 9% (cần ≥ 15%)"], "commit_pct": 104},
 ]
+
+MIGRATION_PREFLIGHT = {"ok": True, "target_server": server_ref(1), "checks": [
+    {"key": "connection", "level": "ok", "message": "srv-hn-02 đang kết nối (mTLS)"},
+    {"key": "php", "level": "ok", "message": "PHP 8.2 có trên server đích"},
+    {"key": "database", "level": "warn", "message": "MariaDB 11.4 ở đích, 10.11 ở nguồn: dump tương thích, nên kiểm tra site sau khi chuyển"},
+    {"key": "disk", "level": "ok", "message": "Cần 2,2 GB, đích còn 811 GB"},
+    {"key": "username", "level": "ok", "message": "Username lehoa và UID 20004 còn trống ở đích"},
+    {"key": "domain", "level": "ok", "message": "Không trùng domain trên server đích"},
+    {"key": "dns", "level": "ok", "message": "Zone lehoa.vn do panel quản lý: tự đổi bản ghi khi cutover"}],
+    "estimate": {"bytes": 2201000000, "downtime_sec": 95}}
 
 DASHBOARD = {
     "counts": {"servers": 3, "hosting_accounts": 4, "websites": 4, "databases": 3, "users": 5, "packages": 3},
@@ -980,6 +1016,13 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
           ("cert.issue", "succeeded")], None),
         ("hosting_account.suspend", "succeeded", 100, "hosting_account", ACCOUNTS[2]["uuid"], 2,
          [("account.suspend", "succeeded")], None),
+        # Node srv-hcm-01 mất kết nối (D-91): job mới chờ node tới hạn, job quá hạn lỗi agent_unreachable.
+        ("service.restart", "waiting_agent", 0, "server", SERVERS[2]["uuid"], 2,
+         [("service.control", "pending")], None),
+        ("software.install", "failed", 0, "server", SERVERS[2]["uuid"], 2,
+         [("software.install", "failed")],
+         {"code": "agent_unreachable", "message": "Node srv-hcm-01 không kết nối lại trong 15 phút; job bị hủy, chưa thay đổi gì.",
+          "step": 1}),
     ]
     for k, (jtype, state, prog, rtype, ruuid, srv, steps, err) in enumerate(job_specs):
         n = 5 + k
@@ -994,7 +1037,7 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
                       for s, (op, st) in enumerate(steps)],
             "attempts": 1, "max_attempts": 3, "timeout_sec": 600, "error": err, "server": server_ref(srv),
             "requested_by": user_ref(0 if k % 2 == 0 else 1), "created_at": at,
-            "started_at": None if state == "queued" else at, "finished_at": at if done else None,
+            "started_at": None if state in ("queued", "waiting_agent") else at, "finished_at": at if done else None,
             "links": {"self": f"/api/v1/admin/jobs/{u('job', n)}", "events": f"/api/v1/admin/jobs/{u('job', n)}/events"}})
 
     actions = [("hosting_account.create", "hosting_account", ACCOUNTS[4]), ("website.create", "website", WEBSITES[6]),

@@ -1920,8 +1920,11 @@ export interface components {
             contents: ("files" | "databases" | "config")[];
             note?: string | null;
         };
-        /** @enum {string} */
-        JobState: "queued" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled" | "timed_out";
+        /**
+         * @description `waiting_agent`: server của job đang mất kết nối, job chờ tới hạn rồi `failed` mã `agent_unreachable` (D-91).
+         * @enum {string}
+         */
+        JobState: "queued" | "waiting_agent" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled" | "timed_out";
         ResourceRef: {
             type: string;
             /** Format: uuid */
