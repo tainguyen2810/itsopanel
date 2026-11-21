@@ -66,6 +66,8 @@ func run(o options, log *slog.Logger) error {
 		if o.root != "/" {
 			return errors.New("--root chỉ dùng với --sandbox")
 		}
+	} else if o.root == "/" {
+		return errors.New("--sandbox cần --root là thư mục riêng (không phải /): sandbox ghi /etc, /home giả vào đó")
 	}
 	key, err := auth.LoadKey(o.keyFile)
 	if err != nil {
@@ -85,10 +87,12 @@ func run(o options, log *slog.Logger) error {
 	}
 	defer alog.Close()
 
-	deps := &ops.Deps{Run: platform.ExecRunner{}, FS: platform.NewFS(o.root, false), AuditPath: o.auditLog, Sandbox: o.sandbox}
+	// Host: chỉ đọc /proc, /sys của máy (kể cả sandbox, để số liệu là thật).
+	deps := &ops.Deps{Run: platform.ExecRunner{}, FS: platform.NewFS(o.root, false), Host: platform.NewFS("/", true),
+		AuditPath: o.auditLog, Sandbox: o.sandbox, CPUSample: 250 * time.Millisecond}
 	if o.sandbox {
-		deps.Run = ops.SandboxRunner(deps)
 		deps.FS = platform.NewFS(o.root, os.Geteuid() != 0)
+		deps.Run = ops.SandboxRunner(deps)
 	}
 	reg := registry.New(ops.Version)
 	reg.SetAllow(pol.Enabled)

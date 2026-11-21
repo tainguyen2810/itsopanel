@@ -4,7 +4,7 @@
 | Ưu | Nhược / cách xử lý |
 |---|---|
 | Mã hóa mặc định (AES-256 + Poly1305), dedupe, incremental, nhiều backend (local, SFTP, S3, rest-server), binary Go đơn | Không có immutability nội tại → dùng rest-server `--append-only` hoặc S3 Object Lock |
-| `--stdin` cho DB dump không cần file tạm | `prune` tốn RAM/IO với repo lớn → chạy trong `itso-maintenance.slice`, lịch thưa |
+| `--stdin` cho DB dump không cần file tạm | `prune` tốn RAM/IO với repo lớn → chạy trong `itso-maint.slice`, lịch thưa |
 | Restore chọn lọc theo path | Mỗi repo một mật khẩu → quản lý khóa cẩn thận |
 
 Agent gọi binary `restic` (version pin, kèm trong release) với biến môi trường truyền qua file tạm 0600, không qua argv.
@@ -52,7 +52,7 @@ Security Center hiển thị trạng thái 3-2-1-1-0 như một checklist.
 
 ## 7. Lịch & tài nguyên
 - Mặc định: file hằng ngày, DB mỗi 6 giờ (tùy gói), config hằng ngày, check hàng tuần, restore test hàng tháng.
-- Chạy trong `itso-maintenance.slice` (CPUQuota 50%, IOWeight 10) + jitter để không đồng loạt.
+- Chạy trong `itso-maint.slice` (CPUQuota 50%, IOWeight 10) + jitter để không đồng loạt.
 - Khóa: một backup/repo tại một thời điểm (restic lock + Redis lock).
 
 ## 8. Kiểm thử

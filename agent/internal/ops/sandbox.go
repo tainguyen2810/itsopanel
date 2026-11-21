@@ -1,28 +1,285 @@
 package ops
 
-import "itso.local/agent/internal/platform"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"sync"
 
-// SandboxRunner trả runner giả cho --sandbox: không chạy lệnh nào, trả kết quả hợp lý để
-// luồng op chạy trọn (dev/e2e). Trạng thái giả (user, quota) suy ra từ gốc FS của sandbox.
-func SandboxRunner(d *Deps) platform.Runner {
+	"itso.local/agent/internal/platform"
+)
+
+// Sim mô phỏng tác dụng phụ của các lệnh trong bảng Bins lên gốc FS giả (sandbox và test):
+// /etc/passwd, /etc/group, /etc/shadow, /etc/hostname, ACL, trạng thái unit, gói apt, quota.
+// Không chạy lệnh nào. Lệnh lạ coi như thành công.
+type Sim struct {
+	FS *platform.FS
+	// MountOptions: dòng findmnt trả về cho /home (mặc định có usrjquota → quota_mode "kernel").
+	Mount string
+
+	mu        sync.Mutex
+	acl       map[string][]string
+	active    map[string]bool
+	installed map[string]string
+	quota     map[string][4]string // uid → block soft/hard, inode soft/hard
+}
+
+// NewSim tạo trình mô phỏng trên fs. Dịch vụ (.service) mặc định đang chạy; slice chưa chạy.
+func NewSim(fs *platform.FS) *Sim {
+	return &Sim{FS: fs, Mount: "/ ext4 rw,relatime,usrjquota=aquota.user,jqfmt=vfsv1",
+		acl: map[string][]string{}, active: map[string]bool{}, installed: map[string]string{}, quota: map[string][4]string{}}
+}
+
+// SandboxRunner trả runner giả cho --sandbox: lệnh được kiểm như runner thật, ghi lại, và mô phỏng bằng Sim.
+func SandboxRunner(d *Deps) *platform.FakeRunner {
+	sim := NewSim(d.FS)
 	f := platform.NewFake()
-	f.Hook = func(c platform.Cmd) (platform.Result, bool) {
-		return sandboxResponse(d, c)
-	}
+	f.Hook = sim.Handle
 	return f
 }
 
-// sandboxResponse mô phỏng tối thiểu: lệnh ghi coi như thành công; lệnh đọc trả rỗng.
-func sandboxResponse(_ *Deps, c platform.Cmd) (platform.Result, bool) {
+func ok(out string) platform.Result { return platform.Result{Stdout: []byte(out)} }
+
+func fail(code int, msg string) platform.Result {
+	return platform.Result{ExitCode: code, Stderr: []byte(msg)}
+}
+
+// Handle mô phỏng một lệnh. Luôn trả handled=true.
+func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	a := c.Args
+	last := ""
+	if len(a) > 0 {
+		last = a[len(a)-1]
+	}
 	switch c.Bin {
+	case "groupadd":
+		gid := flag(a, "-g")
+		if gid == "" {
+			gid = s.freeSystemGID()
+		}
+		return s.appendLine("/etc/group", fmt.Sprintf("%s:x:%s:", last, gid)), true
+	case "useradd":
+		r := s.appendLine("/etc/passwd", fmt.Sprintf("%s:x:%s:%s:%s:%s:%s", last, flag(a, "-u"), flag(a, "-g"), flag(a, "-c"), flag(a, "-d"), flag(a, "-s")))
+		if r.ExitCode == 0 {
+			r = s.appendLine("/etc/shadow", last+":!:20000:0:99999:7:::")
+		}
+		return r, true
+	case "usermod":
+		return s.usermod(a), true
+	case "gpasswd":
+		if len(a) == 3 {
+			return s.editGroup(a[2], a[1], a[0] == "-a"), true
+		}
+	case "getfacl":
+		var b strings.Builder
+		b.WriteString("user::rwx\n")
+		for _, e := range s.acl[last] {
+			b.WriteString("user:" + strings.TrimPrefix(e, "u:") + "\n")
+		}
+		b.WriteString("group::r-x\nmask::r-x\nother::---\n")
+		return ok(b.String()), true
+	case "setfacl":
+		if len(a) == 3 && a[0] == "-m" {
+			s.acl[last] = append(s.acl[last], a[1])
+		}
 	case "systemctl":
-		if len(c.Args) > 0 && (c.Args[0] == "is-active" || c.Args[0] == "is-enabled") {
-			return platform.Result{Stdout: []byte("active\n")}, true
+		return s.systemctl(a), true
+	case "hostnamectl":
+		if len(a) == 2 && a[0] == "set-hostname" {
+			if _, err := s.FS.WriteAtomic("/etc/hostname", []byte(a[1]+"\n"), 0o644, platform.Owner{}); err != nil {
+				return fail(1, err.Error()), true
+			}
 		}
 	case "dpkg-query":
-		return platform.Result{ExitCode: 1, Stderr: []byte("no packages found")}, true
+		if v, has := s.installed[last]; has {
+			return ok("install ok installed\t" + v), true
+		}
+		return fail(1, "dpkg-query: no packages found matching "+last), true
+	case "apt-get":
+		if len(a) > 0 && (a[0] == "install" || a[0] == "remove") {
+			for _, p := range a[1:] {
+				if !strings.HasPrefix(p, "-") && !strings.HasPrefix(p, "Dpkg::") {
+					if a[0] == "install" {
+						s.installed[p] = "1.0-sandbox"
+					} else {
+						delete(s.installed, p)
+					}
+				}
+			}
+		}
 	case "findmnt":
-		return platform.Result{Stdout: []byte("/ ext4 rw,relatime\n")}, true
+		return ok(s.Mount + "\n"), true
+	case "setquota":
+		if len(a) == 7 {
+			s.quota[a[1]] = [4]string{a[2], a[3], a[4], a[5]}
+		}
+	case "repquota":
+		var b strings.Builder
+		b.WriteString("User,BlockStatus,FileStatus,BlockUsed,BlockSoftLimit,BlockHardLimit,BlockGrace,FileUsed,FileSoftLimit,FileHardLimit,FileGrace\n")
+		for _, uid := range sortedKeys(s.quota) {
+			q := s.quota[uid]
+			fmt.Fprintf(&b, "#%s,ok,ok,0,%s,%s,,1,%s,%s,\n", uid, q[0], q[1], q[2], q[3])
+		}
+		return ok(b.String()), true
 	}
 	return platform.Result{}, true
+}
+
+func (s *Sim) systemctl(a []string) platform.Result {
+	if len(a) < 1 {
+		return platform.Result{}
+	}
+	unit := ""
+	if len(a) > 1 {
+		unit = a[1]
+	}
+	isActive := s.active[unit]
+	if _, set := s.active[unit]; !set && strings.HasSuffix(unit, ".service") {
+		isActive = true
+	}
+	switch a[0] {
+	case "is-active":
+		if isActive {
+			return ok("active\n")
+		}
+		return platform.Result{ExitCode: 3, Stdout: []byte("inactive\n")}
+	case "is-enabled":
+		return ok("enabled\n")
+	case "start", "restart", "reload":
+		s.active[unit] = true
+	case "stop":
+		s.active[unit] = false
+	}
+	return platform.Result{}
+}
+
+func flag(a []string, name string) string {
+	for i := 0; i+1 < len(a); i++ {
+		if a[i] == name {
+			return a[i+1]
+		}
+	}
+	return ""
+}
+
+func (s *Sim) lines(p string) []string {
+	b, err := s.FS.ReadFile(p)
+	if err != nil || len(b) == 0 {
+		return nil
+	}
+	return strings.Split(strings.TrimRight(string(b), "\n"), "\n")
+}
+
+func (s *Sim) write(p string, lines []string) platform.Result {
+	mode := uint32(0o644)
+	if p == "/etc/shadow" {
+		mode = 0o640
+	}
+	if _, err := s.FS.WriteAtomic(p, []byte(strings.Join(lines, "\n")+"\n"), modeOf(mode), platform.Owner{}); err != nil {
+		return fail(10, err.Error())
+	}
+	return platform.Result{}
+}
+
+func (s *Sim) appendLine(p, line string) platform.Result {
+	name, _, _ := strings.Cut(line, ":")
+	ls := s.lines(p)
+	for _, l := range ls {
+		if strings.HasPrefix(l, name+":") {
+			return fail(9, fmt.Sprintf("%s: '%s' already exists", p, name))
+		}
+	}
+	return s.write(p, append(ls, line))
+}
+
+func (s *Sim) freeSystemGID() string {
+	used := map[string]bool{}
+	for _, l := range s.lines("/etc/group") {
+		if f := strings.Split(l, ":"); len(f) > 2 {
+			used[f[2]] = true
+		}
+	}
+	for g := 999; g > 100; g-- {
+		if !used[strconv.Itoa(g)] {
+			return strconv.Itoa(g)
+		}
+	}
+	return "100"
+}
+
+func (s *Sim) editGroup(group, user string, add bool) platform.Result {
+	ls := s.lines("/etc/group")
+	for i, l := range ls {
+		f := strings.Split(l, ":")
+		if len(f) != 4 || f[0] != group {
+			continue
+		}
+		var m []string
+		if f[3] != "" {
+			m = strings.Split(f[3], ",")
+		}
+		out := []string{}
+		for _, x := range m {
+			if x != user {
+				out = append(out, x)
+			}
+		}
+		if add {
+			out = append(out, user)
+		}
+		f[3] = strings.Join(out, ",")
+		ls[i] = strings.Join(f, ":")
+		return s.write("/etc/group", ls)
+	}
+	return fail(3, "gpasswd: group '"+group+"' does not exist")
+}
+
+func (s *Sim) usermod(a []string) platform.Result {
+	if len(a) == 0 {
+		return fail(2, "usermod: thiếu tham số")
+	}
+	name := a[len(a)-1]
+	pw := s.lines("/etc/passwd")
+	found := false
+	for i, l := range pw {
+		f := strings.Split(l, ":")
+		if len(f) == 7 && f[0] == name {
+			found = true
+			if sh := flag(a, "-s"); sh != "" {
+				f[6] = sh
+			}
+			pw[i] = strings.Join(f, ":")
+		}
+	}
+	if !found {
+		return fail(6, "usermod: user '"+name+"' does not exist")
+	}
+	if r := s.write("/etc/passwd", pw); r.ExitCode != 0 {
+		return r
+	}
+	sh := s.lines("/etc/shadow")
+	for i, l := range sh {
+		f := strings.Split(l, ":")
+		if len(f) != 9 || f[0] != name {
+			continue
+		}
+		for j, x := range a {
+			switch x {
+			case "-L":
+				if !strings.HasPrefix(f[1], "!") {
+					f[1] = "!" + f[1]
+				}
+			case "-U":
+				f[1] = strings.TrimPrefix(f[1], "!")
+			case "-e":
+				if j+1 < len(a) {
+					f[7] = a[j+1]
+				}
+			}
+		}
+		sh[i] = strings.Join(f, ":")
+	}
+	return s.write("/etc/shadow", sh)
 }

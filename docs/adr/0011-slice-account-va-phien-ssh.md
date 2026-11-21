@@ -15,9 +15,14 @@ Kiểm trên container cloud của Phase 4: không có cgroup v2 (`/sys/fs/cgrou
 1. Cây slice cố định do installer tạo:
 
    ```text
-   itso-hosting.slice        (giới hạn tổng cho hosting, chừa tài nguyên cho hệ thống)
-   └── itso-acct-<uid>.slice (một slice cho mỗi account, đặt tên theo UID 20000–59999)
+   itso.slice                (gốc ITSO, không giới hạn riêng)
+   ├── itso-panel.slice      (panel: itso-web, worker)
+   ├── itso-maint.slice      (quét malware, backup)
+   └── itso-acct.slice       (giới hạn tổng cho hosting, chừa tài nguyên cho hệ thống)
+       └── itso-acct-<uid>.slice (một slice cho mỗi account, đặt tên theo UID 20000–59999)
    ```
+
+   systemd suy ra slice cha từ tên (tách theo `-`): `itso-acct-20001.slice` → `itso-acct.slice` → `itso.slice`. Không dùng được `Slice=` trong unit `.slice` (`systemd-analyze verify`: "Failed to assign slice … Invalid argument"), nên cây trên là hệ quả của cách đặt tên, không phải cấu hình.
 
    Tên theo UID (không theo username) để tên slice không đổi khi đổi username và luôn khớp `^itso-acct-[0-9]{5}\.slice$`.
 
@@ -28,7 +33,7 @@ Kiểm trên container cloud của Phase 4: không có cgroup v2 (`/sys/fs/cgrou
    [Unit]
    Description=ITSO hosting account anphat (uid 20001)
    [Slice]
-   Slice=itso-hosting.slice
+   CPUAccounting=yes        # + MemoryAccounting, TasksAccounting, IOAccounting
    CPUQuota=200%
    MemoryMax=1024M
    MemoryHigh=921M          # 90% MemoryMax: throttle trước khi OOM
@@ -38,7 +43,7 @@ Kiểm trên container cloud của Phase 4: không có cgroup v2 (`/sys/fs/cgrou
    # IOReadBandwidthMax/IOWriteBandwidthMax chỉ ghi khi gói đặt io_read_bps/io_write_bps (theo thiết bị của /home)
    ```
 
-   rồi chạy `systemctl daemon-reload` và `systemctl set-property --runtime` không cần (drop-in + daemon-reload đủ cho slice đang chạy). Nội dung giống hệt lần trước → không ghi, không reload (idempotent).
+   rồi chạy `systemctl daemon-reload` (drop-in + daemon-reload đủ cho slice đang chạy, không cần `set-property`). Mẫu chuẩn: `agent/internal/ops/testdata/golden/*.slice*.conf`, đã qua `systemd-analyze verify`. Nội dung giống hệt lần trước → không ghi, không reload (idempotent).
 
 3. Phiên SSH/SFTP: phương án (a) của `07-HOSTING-ISOLATION.md` §3. Ghi drop-in tương tự cho `user-<uid>.slice` (`/etc/systemd/system/user-<uid>.slice.d/50-itso.conf`) với **50%** CPUQuota, MemoryMax, TasksMax của gói. Hai "xô" riêng, tổng tối đa 1,5 lần gói; chấp nhận cho v0.1 vì đơn giản và không phụ thuộc linger.
 

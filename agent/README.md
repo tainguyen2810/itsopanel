@@ -1,6 +1,6 @@
 # agent
 
-Go module `itso.local/agent`. Prompt 1.5 có **mock agent** cho dev; agent thật (`itso-agent`), CLI `itso` và `itso-gateway` ở Phase 4.
+Go module `itso.local/agent`. Prompt 1.5 có **mock agent** cho dev; Phase 4 có agent thật (`itso-agent`); CLI `itso` ở Prompt 4.4; `itso-gateway` ở Phase 6.
 
 ## itso-mock-agent
 
@@ -12,6 +12,21 @@ Go module `itso.local/agent`. Prompt 1.5 có **mock agent** cho dev; agent thậ
 
 ```bash
 go run ./cmd/itso-mock-agent -listen unix:/tmp/itso-mock-agent.sock
+```
+
+## itso-agent (Phase 4)
+
+- Chạy root, nghe `unix:/run/itso/agent.sock` (group `itso-agent-clients`). Mỗi request: SO_PEERCRED (uid trong allowlist) → HMAC-SHA256 (D-66, khóa `/etc/itso/agent.key`) → schema + chính sách cục bộ `/etc/itso/agent-policy.yaml` → handler → audit cục bộ có chuỗi băm (`/var/log/itso/agent-audit.jsonl`).
+- **Lớp nền tảng** (`internal/platform`, D-63): lệnh hệ thống chỉ qua `Runner` với argv và bảng binary đường dẫn tuyệt đối (`Bins`); không shell. File hệ thống qua `FS` (ghi atomic, `O_NOFOLLOW`, gốc cấu hình được). Chỉ package này được import `os/exec` (`make no-exec`).
+- **Op thật** (`internal/ops`, Prompt 4.3): `system.ping/info/hostname.set/reboot`, `service.status/control` (allowlist tên), `account.ensure/limits.apply/suspend/unsuspend`, `quota.apply/report` (kernel hoặc soft), `metrics.snapshot/cgroup`, `software.install/remove` (recipe allowlist, apt từ kho Ubuntu, không URL), `audit.tail`, `op.cancel`. `account.remove` ở Phase 8 (cần snapshot backup cuối, D-46).
+  - Mọi tham số kiểm lại bằng `internal/validate` trước khi chạy lệnh.
+  - Idempotent: đọc trạng thái trước (`/etc/passwd`, `/etc/group`, `/etc/shadow`, `getfacl`, `systemctl is-active`, `dpkg-query`, `repquota`), chỉ ghi khi khác.
+  - Slice account `itso-acct-<uid>.slice` (cha `itso-acct.slice` → `itso.slice`, suy ra từ tên) và phiên SSH `user-<uid>.slice` (50%): drop-in `50-itso.conf`, xem ADR 0011.
+- `--sandbox --root <thư mục>`: runner giả `ops.Sim` mô phỏng useradd/groupadd/usermod/gpasswd/ACL/systemctl/apt/quota lên `/etc`, `/home` giả trong thư mục đó; `/proc`, `/sys` đọc từ máy thật. Không chạy lệnh nào. Dùng cho dev/e2e.
+
+```bash
+go run ./cmd/itso-agent --sandbox --root /tmp/itso-sandbox --listen unix:/tmp/itso-agent.sock \
+  --key-file /tmp/agent.key --audit-log /tmp/itso-sandbox/audit.jsonl --policy /tmp/itso-sandbox/policy.yaml
 ```
 
 ## Schema nhúng
@@ -29,5 +44,7 @@ Test `TestEmbeddedCopyMatchesContracts` báo lỗi nếu bản sao lệch.
 | Việc | Lệnh |
 |---|---|
 | Unit + race | `go test -race ./...` (`make test-agent`) |
+| Golden argv + file của op thật (ghi lại khi đổi có chủ đích) | `go test ./internal/ops -update` rồi xem `git diff internal/ops/testdata` |
+| Bộ test contract dùng chung mock + agent thật | `internal/contracttest` (gọi từ `internal/mock` và `internal/ops`) |
 | Fuzz parser envelope 30 giây | `make test-fuzz` |
 | Lint | `make lint-agent` (gofmt, go vet) |

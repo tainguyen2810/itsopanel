@@ -1,0 +1,1 @@
+findmnt -n -o TARGET,FSTYPE,OPTIONS --target /home

@@ -3,6 +3,7 @@ package mock
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"hash/fnv"
 	"sync"
 
@@ -139,7 +140,7 @@ func (s *accountStore) remove(_ context.Context, env *envelope.Envelope) (map[st
 	return toData(contracts.AccountRemoveResult{RemovedObjects: []contracts.AccountRemoveResultRemovedObjectsItem{
 		{Kind: "linux_user", Name: string(p.Account.Username)},
 		{Kind: "home", Name: acc.Home},
-		{Kind: "systemd_slice", Name: "itso-" + string(p.Account.Username) + ".slice"},
+		{Kind: "systemd_slice", Name: fmt.Sprintf("itso-acct-%d.slice", p.Account.UID)},
 	}})
 }
 

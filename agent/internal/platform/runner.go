@@ -20,6 +20,7 @@ var Bins = map[string]string{
 	"groupadd":    "/usr/sbin/groupadd",
 	"gpasswd":     "/usr/bin/gpasswd",
 	"setfacl":     "/usr/bin/setfacl",
+	"getfacl":     "/usr/bin/getfacl",
 	"setquota":    "/usr/sbin/setquota",
 	"repquota":    "/usr/sbin/repquota",
 	"quotaon":     "/usr/sbin/quotaon",

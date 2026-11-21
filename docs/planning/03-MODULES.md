@@ -166,7 +166,7 @@
 - **Giao diện:** `/security/malware`, tab trong site.
 - **API:** `POST /websites/{id}/scans` (job), `GET /scans/{id}`, `GET /quarantine`, `POST /quarantine/{id}:restore|delete`.
 - **Database:** `malware_scans`, `malware_findings`, `quarantine_items`.
-- **Agent ops:** `malware.scan` (chạy dưới slice `itso-maintenance.slice` có giới hạn CPU/IO), `malware.quarantine`, `malware.restore`, `malware.signatures.update`.
+- **Agent ops:** `malware.scan` (chạy dưới slice `itso-maint.slice` có giới hạn CPU/IO), `malware.quarantine`, `malware.restore`, `malware.signatures.update`.
 - **Phân quyền:** SA/AD; US xem kết quả site mình và yêu cầu quét (giới hạn tần suất).
 - **Kiểm thử:** EICAR, mẫu webshell YARA test, quét không làm nghẽn server.
 - **Phụ thuộc:** 17, 10.

@@ -1,0 +1,6 @@
+groupadd -r itso-suspended
+gpasswd -a lehoa itso-suspended
+usermod -e 1 lehoa
+systemctl is-active itso-acct-20001.slice
+systemctl stop itso-acct-20001.slice
+systemctl is-active user-20001.slice
