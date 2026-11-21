@@ -310,6 +310,11 @@ func (d *Deps) KitPanelRestore(ctx context.Context, k backup.Kit, c KitCreds, sn
 		return nil, err
 	}
 	defer done()
+	return d.extractPanel(ctx, r, snapshot, k.PrivateKey, dst)
+}
+
+// extractPanel giải "panel/itso-panel.tar.age" của snapshot (restic dump → age → tar) vào dst (tạo mới, 0700).
+func (d *Deps) extractPanel(ctx context.Context, r *resticRun, snapshot, identity, dst string) ([]string, error) {
 	if err := os.Mkdir(dst, 0o700); err != nil {
 		return nil, opErr(err)
 	}
@@ -320,7 +325,7 @@ func (d *Deps) KitPanelRestore(ctx context.Context, k backup.Kit, c KitCreds, sn
 	}
 	ch := make(chan res, 1)
 	go func() {
-		n, err := backup.ExtractPanelArchive(pr, k.PrivateKey, dst, PanelArchiveMax)
+		n, err := backup.ExtractPanelArchive(pr, identity, dst, PanelArchiveMax)
 		_, _ = io.Copy(io.Discard, pr)
 		ch <- res{n, err}
 	}()
@@ -334,7 +339,7 @@ func (d *Deps) KitPanelRestore(ctx context.Context, k backup.Kit, c KitCreds, sn
 		return nil, r.fail(code, stderr)
 	}
 	if x.err != nil {
-		return nil, x.err
+		return nil, bkErr(x.err)
 	}
 	return x.names, nil
 }

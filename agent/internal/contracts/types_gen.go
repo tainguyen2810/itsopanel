@@ -100,6 +100,7 @@ const (
 	OpNginxVhostInspect      = "nginx.vhost.inspect"
 	OpNginxVhostRemove       = "nginx.vhost.remove"
 	OpOpCancel               = "op.cancel"
+	OpPanelRestore           = "panel.restore"
 	OpPHPExtInstall          = "php.ext.install"
 	OpPHPPoolApply           = "php.pool.apply"
 	OpPHPPoolRemove          = "php.pool.remove"
@@ -1713,6 +1714,21 @@ type OpCancelResult struct {
 	Cancelled bool `json:"cancelled"`
 }
 
+// PanelRestoreParams — params của op panel.restore (ops/panel.restore.schema.json).
+type PanelRestoreParams struct {
+	Repo          BackupRepo       `json:"repo"`
+	SnapshotID    ResticSnapshotID `json:"snapshot_id"`
+	AgeIdentity   string           `json:"age_identity"`
+	ApplyDelaySec int64            `json:"apply_delay_sec"`
+}
+
+// PanelRestoreResult — result của op panel.restore (ops/panel.restore.schema.json).
+type PanelRestoreResult struct {
+	StagedDir string   `json:"staged_dir"`
+	Files     []string `json:"files"`
+	ApplyUnit *string  `json:"apply_unit"`
+}
+
 // PHPExtInstallParams — params của op php.ext.install (ops/php.ext.install.schema.json).
 type PHPExtInstallParams struct {
 	Version    PHPVersion     `json:"version"`
@@ -2368,6 +2384,8 @@ func NewParams(op string) any {
 		return new(NginxVhostRemoveParams)
 	case OpOpCancel:
 		return new(OpCancelParams)
+	case OpPanelRestore:
+		return new(PanelRestoreParams)
 	case OpPHPExtInstall:
 		return new(PHPExtInstallParams)
 	case OpPHPPoolApply:
@@ -2603,6 +2621,8 @@ func NewResult(op string) any {
 		return new(NginxVhostRemoveResult)
 	case OpOpCancel:
 		return new(OpCancelResult)
+	case OpPanelRestore:
+		return new(PanelRestoreResult)
 	case OpPHPExtInstall:
 		return new(PHPExtInstallResult)
 	case OpPHPPoolApply:

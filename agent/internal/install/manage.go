@@ -22,12 +22,16 @@ type SetupCode struct {
 	SHA256    string `json:"sha256"`
 	ExpiresAt string `json:"expires_at"`
 	CreatedAt string `json:"created_at"`
+	// Mode "restore" (itso install --restore): wizard mở thẳng nhánh "Khôi phục từ backup" (DR, Prompt 8.5).
+	Mode string `json:"mode,omitempty"`
 }
 
 const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // bỏ I, O, 0, 1 dễ nhầm
 
 // NewSetupCode sinh mã thiết lập một lần (60 phút), ghi băm SHA-256; trả mã dạng XXXX-XXXX-XXXX.
-func (e *Env) NewSetupCode() (string, error) {
+func (e *Env) NewSetupCode() (string, error) { return e.newSetupCode("") }
+
+func (e *Env) newSetupCode(mode string) (string, error) {
 	raw, err := e.randomString(12, codeAlphabet)
 	if err != nil {
 		return "", err
@@ -35,7 +39,7 @@ func (e *Env) NewSetupCode() (string, error) {
 	code := raw[0:4] + "-" + raw[4:8] + "-" + raw[8:12]
 	sum := sha256.Sum256([]byte(raw))
 	now := e.now().UTC()
-	sc := SetupCode{SHA256: hex.EncodeToString(sum[:]), CreatedAt: now.Format(time.RFC3339), ExpiresAt: now.Add(time.Hour).Format(time.RFC3339)}
+	sc := SetupCode{SHA256: hex.EncodeToString(sum[:]), CreatedAt: now.Format(time.RFC3339), ExpiresAt: now.Add(time.Hour).Format(time.RFC3339), Mode: mode}
 	return code, e.writeJSON(SetupFile, sc, 0o640, e.rootGroup("itso"))
 }
 

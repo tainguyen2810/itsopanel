@@ -2,6 +2,26 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.5 (khôi phục thảm họa) — nhánh `phase-8`
+
+Môi trường: PostgreSQL 16 + Redis trong container; agent giả kiểm params/result theo `contracts/agent-ops`; agent thật chạy với restic thật trong test Go. Diễn tập DR trên 2 VM: **chờ VM** (`tests/vm/phase8.sh`, Prompt 8.7).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Phase 8 API | `bash scripts/pest-pg.sh tests/Feature/Phase8` | PASS 11/11. Mới `DisasterRecoveryTest` 4 test (89 assertion): `restore_mode` theo mã thiết lập (mã thường → false); inspect chưa xác minh mã 403, sai trường 422, đích SFTP 422 kèm hướng dẫn CLI, liệt kê bản panel mới nhất trước (`accounts` null), agent báo sai mật khẩu → 422 trên `repository_password`, không tạo job, không lưu bí mật; start → job `setup.restore`/`panel.restore`, agent nhận giá trị thật, `job_steps` chỉ có tham chiếu `$secret`, khóa Cache bị xóa khi job xong, bí mật không có trong job/log/audit/bảng backup; đã tạo SA → 409, đã cài → 410; `itso:dr-restore` chưa bật không làm gì, `--dry-run` không bật, `--start --parallel=1` → một job 2 bước ghi đè (website + DB), restore job gộp kết quả + snapshot pre-restore, lượt sau báo xong (`dr.finished`), lượt nữa không xếp thêm; một bước lỗi → restore job `failed`, giữ kết quả bước đã xong, báo "1 account lỗi" |
+| Pest toàn bộ | `make test-api` | PASS 462/462 (5161 assertion) |
+| Agent | `go test ./internal/install/ ./internal/platform/ ./internal/ops/ ./cmd/...` | PASS. `TestPanelRestoreStagesAndSchedulesApply` (restic thật: backup panel mã hóa age → giải vào staging 0700, hẹn `systemd-run … itso panel-restore-apply`, thiếu `itso.dump` → `precondition_failed` và dọn staging, repo không phải `/server` → từ chối); `TestPanelRestoreApply` (đường dẫn ngoài staging/`..` bị từ chối; `pg_restore` lỗi → dịch vụ bật lại, DB không đổi, kết quả ghi `ok:false`; đúng thứ tự pre-restore → down → stop → pg_restore → migrate → start → reconcile → dr-restore → up; `itso.env` chỉ thay APP_KEY; `agent.key`/TLS giữ bản máy mới; bản rõ trong staging bị xóa); `TestInstallRestoreMode` (mã thiết lập `mode: restore`, gợi ý DR) |
+| Trình cài đặt | `make test-installer` | PASS 9/9 (mới: `--restore` được chuyển nguyên cho `itso install`) |
+| Tĩnh | `vendor/bin/phpstan analyse` · `make lint-api` · `make no-exec` · `make lint-agent` | 0 lỗi · PASS · OK · OK |
+| Contracts/DB | `make contracts && make codegen && make contracts-check && make codegen-check && make db-verify` | PASS (op mới `panel.restore`; `SetupRestoreSource.repository_path`; `SetupStatus.restore_mode`; inspect khai báo 409) |
+| Web | `pnpm lint` · `pnpm tsc --noEmit` · `pnpm vitest run` | OK · OK · PASS 559/559 (37 file). Lần đầu 2 test `portal.test.ts` fail (đã fail từ trước, không do 8.5: account `hoidong` thêm ở mockup 8.0 cùng chủ anphat) → cập nhật danh sách account kỳ vọng |
+
+Lỗi tìm ra nhờ test và đã sửa: test agent gọi `panel.restore` hai lần cùng giây đụng thư mục staging (đổi đồng hồ test); test wizard demo timeout khi demo bật `restore_mode` (demo giữ false, cài mới là luồng mặc định); kết quả gộp nhiều bước trùng đường dẫn (khử trùng).
+
+Giới hạn còn lại: danh sách bản backup panel chưa hiện phiên bản panel/số account (nằm trong bản mã hóa age); đích SFTP không khôi phục qua wizard (cần khóa SSH + host key theo `destination_uuid`), đi đường CLI `itso backup panel-restore` → `itso panel-restore-apply` (runbook).
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 8 / Prompt 8.4 (Panel API Backup & Restore) — nhánh `phase-8`
 
 Môi trường: PostgreSQL 16 + Redis trong container; agent giả (`FakeAgent`) kiểm mọi params/result op backup theo `contracts/agent-ops` (helper `p8schema`, Opis JSON Schema), nên tham số panel gửi đi khớp schema agent thật.

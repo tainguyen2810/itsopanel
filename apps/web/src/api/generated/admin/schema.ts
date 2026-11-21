@@ -2966,7 +2966,7 @@ export interface paths {
         put?: never;
         /**
          * Khôi phục thảm họa: khôi phục DB panel + cấu hình rồi `itso repair`
-         * @description Chỉ khi wizard chưa tạo SUPER_ADMIN. Xong job: wizard khóa (installed), đăng nhập bằng tài khoản cũ; account khôi phục tiếp ở Backup Center (D-87).
+         * @description Chỉ khi wizard chưa tạo SUPER_ADMIN. Job giải mã backup panel vào staging; vài giây sau `itso panel-restore-apply` thay DB panel + /etc/itso (giữ mật khẩu DB/Redis, TLS của máy mới), migrate, `itso:reconcile` rồi khôi phục dữ liệu account song song có giới hạn (`itso:dr-restore`). Sau đó đăng nhập bằng tài khoản cũ (D-87, docs/runbooks/disaster-recovery.md).
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
@@ -2988,7 +2988,7 @@ export interface paths {
         put?: never;
         /**
          * Khôi phục thảm họa: mở repo panel, liệt kê bản backup panel
-         * @description Cần phiên đã xác minh mã thiết lập (403 nếu chưa). Không lưu credential/mật khẩu/khóa riêng; sai mật khẩu → 422.
+         * @description Cần phiên đã xác minh mã thiết lập (403 nếu chưa). Không lưu credential/mật khẩu/khóa riêng; sai mật khẩu → 422; đích SFTP → 422 (dùng CLI `itso backup panel-restore`, cần khóa SSH + host key của đích); wizard đã tạo SUPER_ADMIN → 409.
          */
         post: operations["inspectSetupRestore"];
         delete?: never;
@@ -4645,6 +4645,7 @@ export interface components {
                 state: "warn" | "paused";
             }[];
         };
+        /** @description Lấy từ bộ khôi phục: đích, đường dẫn + mật khẩu repo server (dòng `repo server …`), khóa riêng age. */
         SetupRestoreSource: {
             /** @enum {string} */
             type: "local" | "sftp" | "s3" | "rest";
@@ -4655,15 +4656,17 @@ export interface components {
                 [key: string]: string;
             };
             repository_password: string;
+            repository_path: string;
             panel_private_key: string;
         };
+        /** @description `accounts` null: chỉ biết sau khi giải mã (bản backup panel mã hóa age). */
         SetupRestoreCandidate: {
             snapshot_id: string;
             /** Format: date-time */
             taken_at: string;
             panel_version: string;
             hostname: string;
-            accounts: number;
+            accounts: number | null;
             size_mb: number;
         };
         SetupRestoreRequest: {
@@ -5208,6 +5211,7 @@ export interface components {
             timezone: string;
             access: components["schemas"]["SetupAccess"] | null;
             steps_done: ("code" | "language" | "admin" | "access" | "stack" | "quota")[];
+            restore_mode: boolean;
         };
         SetupCodeVerify: {
             code: string;
@@ -21589,7 +21593,8 @@ export interface operations {
                      *           "language",
                      *           "admin",
                      *           "access"
-                     *         ]
+                     *         ],
+                     *         "restore_mode": false
                      *       }
                      *     }
                      */
@@ -21706,7 +21711,8 @@ export interface operations {
                      *         "access": null,
                      *         "steps_done": [
                      *           "code"
-                     *         ]
+                     *         ],
+                     *         "restore_mode": false
                      *       }
                      *     }
                      */
@@ -21759,7 +21765,8 @@ export interface operations {
                      *         "steps_done": [
                      *           "code",
                      *           "language"
-                     *         ]
+                     *         ],
+                     *         "restore_mode": false
                      *       }
                      *     }
                      */
@@ -21836,6 +21843,7 @@ export interface operations {
                  *           "access_key": "AKIA…",
                  *           "secret_key": "********"
                  *         },
+                 *         "repository_path": "itso/01938a02-0001-7000-8000-000002000001/server",
                  *         "repository_password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw",
                  *         "panel_private_key": "AGE-SECRET-KEY-1DEMO0ITSO0PANEL0PRIVATE0KEY0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
                  *       },
@@ -21866,7 +21874,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "backup.restore",
+                     *             "op": "panel.restore",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -21929,6 +21937,7 @@ export interface operations {
                  *         "access_key": "AKIA…",
                  *         "secret_key": "********"
                  *       },
+                 *       "repository_path": "itso/01938a02-0001-7000-8000-000002000001/server",
                  *       "repository_password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw",
                  *       "panel_private_key": "AGE-SECRET-KEY-1DEMO0ITSO0PANEL0PRIVATE0KEY0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
                  *     }
@@ -21951,7 +21960,7 @@ export interface operations {
                      *           "taken_at": "2026-11-15T02:31:00+07:00",
                      *           "panel_version": "0.1.0-alpha",
                      *           "hostname": "srv-hn-01",
-                     *           "accounts": 11,
+                     *           "accounts": null,
                      *           "size_mb": 92.6
                      *         },
                      *         {
@@ -21979,6 +21988,7 @@ export interface operations {
                 };
             };
             403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
             410: components["responses"]["Gone"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
@@ -22157,7 +22167,8 @@ export interface operations {
                      *         "locale": "vi",
                      *         "timezone": "Asia/Ho_Chi_Minh",
                      *         "access": null,
-                     *         "steps_done": []
+                     *         "steps_done": [],
+                     *         "restore_mode": false
                      *       }
                      *     }
                      */
@@ -22209,7 +22220,8 @@ export interface operations {
                      *           "access",
                      *           "stack",
                      *           "quota"
-                     *         ]
+                     *         ],
+                     *         "restore_mode": false
                      *       }
                      *     }
                      */

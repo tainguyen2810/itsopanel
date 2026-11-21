@@ -29,7 +29,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class BackupJobHandler implements JobHandler
 {
-    public const TYPES = ['backup.run', 'backup.verify', 'backup.forget', 'backup.destination_test', 'backup.restore', 'hosting_account.purge'];
+    public const TYPES = ['backup.run', 'backup.verify', 'backup.forget', 'backup.destination_test', 'backup.restore', 'hosting_account.purge',
+        DisasterRecovery::JOB_TYPE];
 
     public function __construct(private readonly BackupService $backups) {}
 
@@ -49,6 +50,7 @@ final class BackupJobHandler implements JobHandler
         $steps = JobStep::query()->where('job_id', $job->id)->orderBy('seq')->get();
         $snaps = [];
         $runRepos = [];
+        $restores = [];
         foreach ($steps as $st) {
             $p = $st->params_redacted;
             $res = $st->result ?? [];
@@ -94,7 +96,7 @@ final class BackupJobHandler implements JobHandler
                     }
                     break;
                 case 'backup.restore':
-                    $this->restored($job, $p, $done ? $res : null, $err, $now);
+                    $restores[] = [$p, $done ? $res : null, $err];
                     break;
                 case 'account.remove':
                     if ($done) {
@@ -102,6 +104,12 @@ final class BackupJobHandler implements JobHandler
                     }
                     break;
             }
+        }
+        if ($restores !== []) {
+            $this->restored($job, $restores, $now);
+        }
+        if ($job->type === DisasterRecovery::JOB_TYPE) {
+            DisasterRecovery::forget($job);
         }
         // Bước chưa chạy (job dừng sớm): verification còn running → failed.
         BackupVerification::query()->where('job_id', $job->id)->where('state', 'running')
@@ -256,28 +264,43 @@ final class BackupJobHandler implements JobHandler
     }
 
     /**
-     * @param  array<string, mixed>  $p
-     * @param  array<string, mixed>|null  $res
+     * Một job khôi phục có thể nhiều bước backup.restore (DR: mỗi website/database một bước ghi đè): gộp kết quả.
+     *
+     * @param  list<array{0: array<string, mixed>, 1: array<string, mixed>|null, 2: string|null}>  $steps
      */
-    private function restored(Job $job, array $p, ?array $res, ?string $err, Carbon $now): void
+    private function restored(Job $job, array $steps, Carbon $now): void
     {
         $rj = RestoreJob::query()->where('job_id', $job->id)->first();
         if (! $rj instanceof RestoreJob) {
             return;
         }
         $acc = HostingAccount::withTrashed()->find($rj->hosting_account_id);
-        $newDbs = collect((array) ($p['items'] ?? []))->filter(fn ($i) => ($i['kind'] ?? '') === 'database' && ($p['mode'] ?? '') === 'new');
-        $pending = Database::query()->where('hosting_account_id', $rj->hosting_account_id)->where('status', 'provisioning')
-            ->whereIn('name', $newDbs->pluck('target_name')->all())->get();
-        if ($res === null) {
-            foreach ($pending as $db) {
-                $db->delete();
+        $newNames = [];
+        $paths = [];
+        $restoredDbs = [];
+        $skipped = [];
+        $errors = [];
+        $preId = null;
+        foreach ($steps as [$p, $res, $err]) {
+            if (($p['mode'] ?? '') === 'new') {
+                foreach ((array) ($p['items'] ?? []) as $i) {
+                    if (($i['kind'] ?? '') === 'database') {
+                        $newNames[] = (string) ($i['target_name'] ?? '');
+                    }
+                }
             }
-            $rj->forceFill(['status' => 'failed', 'error' => $err ?? (string) ($job->error_message ?? 'Khôi phục thất bại.'), 'finished_at' => $now])->save();
+            if ($res === null) {
+                $errors[] = $err ?? (string) ($job->error_message ?? 'Khôi phục thất bại.');
 
-            return;
+                continue;
+            }
+            $paths = array_merge($paths, array_values((array) ($res['restored_paths'] ?? [])));
+            $restoredDbs = array_merge($restoredDbs, array_values((array) ($res['databases'] ?? [])));
+            $skipped = array_merge($skipped, (array) ($res['skipped'] ?? []));
+            $preId ??= is_string($res['pre_restore_snapshot_id'] ?? null) ? $res['pre_restore_snapshot_id'] : null;
         }
-        $restoredDbs = (array) ($res['databases'] ?? []);
+        $pending = Database::query()->where('hosting_account_id', $rj->hosting_account_id)->where('status', 'provisioning')
+            ->whereIn('name', $newNames)->get();
         foreach ($pending as $db) {
             if (in_array($db->name, $restoredDbs, true)) {
                 $db->forceFill(['status' => 'ready', 'observed_at' => $now])->save();
@@ -286,19 +309,22 @@ final class BackupJobHandler implements JobHandler
             }
         }
         $pre = null;
-        if (is_string($res['pre_restore_snapshot_id'] ?? null) && $acc instanceof HostingAccount) {
+        if ($preId !== null && $acc instanceof HostingAccount) {
             $src = $rj->snapshot_id !== null ? BackupSnapshot::query()->find($rj->snapshot_id) : null;
             if ($src instanceof BackupSnapshot) {
                 $pre = BackupSnapshot::query()->create(['destination_id' => $src->destination_id, 'repository_id' => $src->repository_id,
-                    'restic_snapshot_id' => $res['pre_restore_snapshot_id'], 'scope_type' => $src->scope_type, 'scope_id' => $src->scope_id,
+                    'restic_snapshot_id' => $preId, 'scope_type' => $src->scope_type, 'scope_id' => $src->scope_id,
                     'hosting_account_id' => $acc->id, 'website_id' => $src->website_id, 'databases' => $src->databases, 'contents' => $src->contents,
                     'tags' => ['itso', 'pre-restore', 'account:'.$acc->uuid], 'job_id' => $job->id, 'taken_at' => $now,
                     'locked_until' => ($days = BackupDestination::withTrashed()->find($src->destination_id)?->immutable_days) !== null ? $now->copy()->addDays($days) : null]);
             }
         }
-        $rj->forceFill(['status' => 'succeeded', 'finished_at' => $now, 'pre_restore_snapshot_id' => $pre?->id, 'error' => null,
-            'result' => ['restored_paths' => array_values((array) ($res['restored_paths'] ?? [])), 'databases' => array_values($restoredDbs),
-                'skipped' => array_slice((array) ($res['skipped'] ?? []), 0, 100)]])->save();
+        $ok = $errors === [];
+        $any = $paths !== [] || $restoredDbs !== [];
+        $rj->forceFill(['status' => $ok ? 'succeeded' : 'failed', 'finished_at' => $now, 'pre_restore_snapshot_id' => $pre?->id,
+            'error' => $ok ? null : mb_substr(implode('; ', array_unique($errors)), 0, 1000),
+            'result' => $ok || $any ? ['restored_paths' => array_values(array_unique($paths)), 'databases' => array_values(array_unique($restoredDbs)),
+                'skipped' => array_slice($skipped, 0, 100)] : $rj->result])->save();
     }
 
     /**

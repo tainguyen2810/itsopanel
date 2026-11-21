@@ -351,7 +351,7 @@ RECOVERY_KIT = {
 }
 SETUP_RESTORE_CANDIDATES = [
     {"snapshot_id": "6b3e91f0", "taken_at": "2026-11-15T02:31:00+07:00", "panel_version": "0.1.0-alpha",
-     "hostname": "srv-hn-01", "accounts": 11, "size_mb": 92.6},
+     "hostname": "srv-hn-01", "accounts": None, "size_mb": 92.6},
     {"snapshot_id": "61f0a2c4", "taken_at": "2026-11-08T02:31:00+07:00", "panel_version": "0.1.0-alpha",
      "hostname": "srv-hn-01", "accounts": 10, "size_mb": 88.1},
     {"snapshot_id": "5e77d013", "taken_at": "2026-11-01T02:30:00+07:00", "panel_version": "0.0.9",
@@ -680,7 +680,7 @@ SETUP_ACCESS = {"panel_domain": "panel.itso.local", "panel_port": 8443, "entranc
                 "allowlist": ["10.10.5.0/24", "203.0.113.7"]}
 
 SETUP_STATUS = {"installed": False, "code_verified": False, "admin_created": False, "admin_mfa_enabled": False,
-                "locale": "vi", "timezone": "Asia/Ho_Chi_Minh", "access": None, "steps_done": []}
+                "locale": "vi", "timezone": "Asia/Ho_Chi_Minh", "access": None, "steps_done": [], "restore_mode": False}
 
 SETUP_STACK = {"server": server_ref(0), "ready": False, "job_uuid": None, "components": [
     {"key": "nginx", "name": "Nginx", "installed_version": "1.24.0", "state": "installed"},

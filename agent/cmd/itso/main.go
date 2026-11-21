@@ -33,7 +33,7 @@ const usage = `itso — quản trị ITSO Panel
 
 Dùng: itso [--root DIR --sandbox] <lệnh> [tùy chọn]
 
-  install [--release-dir D] [--port N] [--no-firewall] [--yes] [--dry-run]
+  install [--release-dir D] [--port N] [--no-firewall] [--yes] [--dry-run] [--restore]
   preflight [--release-dir D] [--port N]
   status | doctor | url | setup-code | version
   admin reset-password|reset-mfa <email>
@@ -45,6 +45,7 @@ Dùng: itso [--root DIR --sandbox] <lệnh> [tùy chọn]
   logs <agent|web|worker|scheduler|redis> [-n 200]
   backup prune --kit FILE --keep-daily N [--keep-last|--keep-weekly|--keep-monthly|--keep-yearly N] [--ssh-key FILE] [--dry-run]
   backup panel-restore --kit FILE --snapshot ID [--out DIR] [--ssh-key FILE]
+  panel-restore-apply --dir /var/lib/itso/restore/panel-<ts>   (DR: thay DB panel + /etc/itso đã giải mã)
                                                    (credential đích đọc từ stdin: s3 = 2 dòng key id/secret, rest = 1 dòng mật khẩu)
 `
 
@@ -138,6 +139,9 @@ func installFlags(name string, args []string) (install.Options, error) {
 	fs.BoolVar(&o.NoFirewall, "no-firewall", false, "không đụng tường lửa")
 	fs.BoolVar(&o.Yes, "yes", false, "chấp nhận cảnh báo preflight")
 	fs.BoolVar(&o.DryRun, "dry-run", false, "chỉ preflight + liệt kê bước")
+	if name == "install" {
+		fs.BoolVar(&o.Restore, "restore", false, "cài như mới rồi vào chế độ khôi phục từ backup (DR)")
+	}
 	if err := fs.Parse(args); err != nil {
 		return o, errUsage
 	}
@@ -163,6 +167,15 @@ func dispatch(ctx context.Context, e *install.Env, cmd string, args []string) er
 			return nil
 		}
 		return e.Install(ctx, o)
+	case "panel-restore-apply":
+		// Do unit tạm của op panel.restore gọi (DR); chạy tay được theo runbook.
+		fs := flag.NewFlagSet("panel-restore-apply", flag.ContinueOnError)
+		fs.SetOutput(e.Out)
+		dir := fs.String("dir", "", "thư mục đã giải mã (/var/lib/itso/restore/panel-<ts>)")
+		if err := fs.Parse(args); err != nil || fs.NArg() != 0 || *dir == "" {
+			return errUsage
+		}
+		return e.PanelRestoreApply(ctx, *dir)
 	case "status":
 		return e.Status(ctx)
 	case "doctor":

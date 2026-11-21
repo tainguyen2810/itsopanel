@@ -565,23 +565,27 @@ def setup_paths(api: Api, jobs):
                  ok=ref("SetupQuota"), ok_example=one({"mode": "kernel", "server": D.server_ref(0), "facts_at": D.T2}))
     op["responses"]["410"] = gone
     public("post", "/setup/restore:inspect", "inspectSetupRestore", "Khôi phục thảm họa: mở repo panel, liệt kê bản backup panel",
-           extra=("403", "410"), body=ref("SetupRestoreSource"),
+           extra=("403", "409", "410"), body=ref("SetupRestoreSource"),
            body_example={"type": "s3", "config": {"endpoint": "https://s3.ap-southeast-1.example.com", "bucket": "itso-backup"},
                          "credentials": {"access_key": "AKIA…", "secret_key": "********"},
+                         "repository_path": "itso/" + D.SERVERS[0]["uuid"] + "/server",
                          "repository_password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw", "panel_private_key": D.RECOVERY_KIT["panel_private_key"]},
            ok={"type": "array", "items": ref("SetupRestoreCandidate")}, ok_example=one(D.SETUP_RESTORE_CANDIDATES),
-           desc="Cần phiên đã xác minh mã thiết lập (403 nếu chưa). Không lưu credential/mật khẩu/khóa riêng; sai mật khẩu → 422.")
+           desc="Cần phiên đã xác minh mã thiết lập (403 nếu chưa). Không lưu credential/mật khẩu/khóa riêng; sai mật khẩu → 422; đích SFTP → 422 (dùng CLI `itso backup panel-restore`, cần khóa SSH + host key của đích); wizard đã tạo SUPER_ADMIN → 409.")
     op = public("post", "/setup/restore", "startSetupRestore", "Khôi phục thảm họa: khôi phục DB panel + cấu hình rồi `itso repair`",
                 extra=("403", "409", "410"), body=ref("SetupRestoreRequest"),
                 body_example={"source": {"type": "s3", "config": {"endpoint": "https://s3.ap-southeast-1.example.com",
                                                                   "bucket": "itso-backup"},
                                          "credentials": {"access_key": "AKIA…", "secret_key": "********"},
-                                         "repository_password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw", "panel_private_key": D.RECOVERY_KIT["panel_private_key"]},
+                                         "repository_path": "itso/" + D.SERVERS[0]["uuid"] + "/server",
+                         "repository_password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw", "panel_private_key": D.RECOVERY_KIT["panel_private_key"]},
                               "snapshot_id": "6b3e91f0"},
                 job=True, job_example=jobs("setup.restore", "server", D.SERVERS[0]["uuid"],
-                                           ["backup.restore"]),
-                desc="Chỉ khi wizard chưa tạo SUPER_ADMIN. Xong job: wizard khóa (installed), đăng nhập bằng tài khoản cũ; "
-                     "account khôi phục tiếp ở Backup Center (D-87).")
+                                           ["panel.restore"]),
+                desc="Chỉ khi wizard chưa tạo SUPER_ADMIN. Job giải mã backup panel vào staging; vài giây sau "
+                     "`itso panel-restore-apply` thay DB panel + /etc/itso (giữ mật khẩu DB/Redis, TLS của máy mới), migrate, "
+                     "`itso:reconcile` rồi khôi phục dữ liệu account song song có giới hạn (`itso:dr-restore`). Sau đó đăng nhập "
+                     "bằng tài khoản cũ (D-87, docs/runbooks/disaster-recovery.md)."),
     op = api.add("post", "/setup:complete", "completeSetup", "Bước 9: tổng kết và khóa wizard", "Setup",
                  ok=ref("SetupStatus"), ok_example=one({**st, "installed": True, "code_verified": True,
                                                         "admin_created": True, "admin_mfa_enabled": True,

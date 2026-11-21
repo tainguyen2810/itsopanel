@@ -162,8 +162,11 @@ function Wizard({ initial }: { initial: Status }) {
   const [busy, setBusy] = useState(false);
   const [enroll, setEnroll] = useState<Enroll | null>(null);
   const [mfaDone, setMfaDone] = useState(initial.admin_mfa_enabled);
-  /** Bước 0: cài mới hay khôi phục thảm họa từ backup (D-87); chỉ chọn được trước khi tạo SA. */
-  const [path, setPath] = useState<'install' | 'restore'>('install');
+  /** Bước 0: cài mới hay khôi phục thảm họa từ backup (D-87); chỉ chọn được trước khi tạo SA.
+   * Máy cài bằng `install.sh --restore` (restore_mode) chọn sẵn khôi phục. */
+  const [path, setPath] = useState<'install' | 'restore'>(
+    initial.restore_mode ? 'restore' : 'install',
+  );
   const [dr, setDr] = useState(false);
   const step = STEPS[i] as Step;
   const quota = useQuery({

@@ -82,6 +82,8 @@ Route::prefix('v1')->group(function (): void {
             Route::post('code:verify', [SetupController::class, 'verifyCode']);
             Route::put('preferences', [SetupController::class, 'preferences']);
             Route::post('admin', [SetupController::class, 'createAdmin']);
+            Route::post('restore:inspect', [SetupController::class, 'inspectRestore']);
+            Route::post('restore', [SetupController::class, 'startRestore'])->middleware('itso.idempotent');
             Route::middleware(['itso.auth:admin', 'itso.mfa'])->group(function (): void {
                 Route::put('access', [SetupController::class, 'access']);
                 Route::get('quota', [SetupController::class, 'quota']);

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/panel.restore.schema.json",
+  "title": "panel.restore",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "snapshot_id": {
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "age_identity": {
+          "type": "string",
+          "pattern": "^AGE-SECRET-KEY-1[0-9A-Z]{58}$",
+          "writeOnly": true
+        },
+        "apply_delay_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300
+        }
+      },
+      "required": [
+        "repo",
+        "snapshot_id",
+        "age_identity",
+        "apply_delay_sec"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "staged_dir": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "maxItems": 10000
+        },
+        "apply_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "staged_dir",
+        "files",
+        "apply_unit"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

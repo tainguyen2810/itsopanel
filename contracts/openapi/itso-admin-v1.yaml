@@ -12699,6 +12699,7 @@ paths:
                   - language
                   - admin
                   - access
+                  restore_mode: false
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -12812,6 +12813,7 @@ paths:
                   access: null
                   steps_done:
                   - code
+                  restore_mode: false
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '422':
@@ -12862,6 +12864,7 @@ paths:
                   steps_done:
                   - code
                   - language
+                  restore_mode: false
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '422':
@@ -12911,8 +12914,9 @@ paths:
       summary: 'Khôi phục thảm họa: khôi phục DB panel + cấu hình rồi `itso repair`'
       tags:
       - Setup
-      description: 'Chỉ khi wizard chưa tạo SUPER_ADMIN. Xong job: wizard khóa (installed), đăng nhập bằng tài khoản cũ; account
-        khôi phục tiếp ở Backup Center (D-87).
+      description: 'Chỉ khi wizard chưa tạo SUPER_ADMIN. Job giải mã backup panel vào staging; vài giây sau `itso panel-restore-apply`
+        thay DB panel + /etc/itso (giữ mật khẩu DB/Redis, TLS của máy mới), migrate, `itso:reconcile` rồi khôi phục dữ liệu
+        account song song có giới hạn (`itso:dr-restore`). Sau đó đăng nhập bằng tài khoản cũ (D-87, docs/runbooks/disaster-recovery.md).
 
 
         Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
@@ -12933,6 +12937,7 @@ paths:
                 credentials:
                   access_key: AKIA…
                   secret_key: '********'
+                repository_path: itso/01938a02-0001-7000-8000-000002000001/server
                 repository_password: demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw
                 panel_private_key: AGE-SECRET-KEY-1DEMO0ITSO0PANEL0PRIVATE0KEY0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               snapshot_id: 6b3e91f0
@@ -12954,7 +12959,7 @@ paths:
                     uuid: 01938a02-0001-7000-8000-000002000001
                   steps:
                   - seq: 1
-                    op: backup.restore
+                    op: panel.restore
                     state: pending
                     started_at: null
                     finished_at: null
@@ -12997,7 +13002,8 @@ paths:
       tags:
       - Setup
       description: Cần phiên đã xác minh mã thiết lập (403 nếu chưa). Không lưu credential/mật khẩu/khóa riêng; sai mật khẩu
-        → 422.
+        → 422; đích SFTP → 422 (dùng CLI `itso backup panel-restore`, cần khóa SSH + host key của đích); wizard đã tạo SUPER_ADMIN
+        → 409.
       requestBody:
         required: true
         content:
@@ -13012,6 +13018,7 @@ paths:
               credentials:
                 access_key: AKIA…
                 secret_key: '********'
+              repository_path: itso/01938a02-0001-7000-8000-000002000001/server
               repository_password: demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw
               panel_private_key: AGE-SECRET-KEY-1DEMO0ITSO0PANEL0PRIVATE0KEY0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       responses:
@@ -13034,7 +13041,7 @@ paths:
                   taken_at: '2026-11-15T02:31:00+07:00'
                   panel_version: 0.1.0-alpha
                   hostname: srv-hn-01
-                  accounts: 11
+                  accounts: null
                   size_mb: 92.6
                 - snapshot_id: 61f0a2c4
                   taken_at: '2026-11-08T02:31:00+07:00'
@@ -13054,6 +13061,8 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '403':
           $ref: ./common.yaml#/components/responses/Forbidden
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
         '410':
           $ref: ./common.yaml#/components/responses/Gone
       security:
@@ -13211,6 +13220,7 @@ paths:
                   timezone: Asia/Ho_Chi_Minh
                   access: null
                   steps_done: []
+                  restore_mode: false
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
       security: []
@@ -13255,6 +13265,7 @@ paths:
                   - access
                   - stack
                   - quota
+                  restore_mode: false
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -18761,6 +18772,9 @@ components:
           minLength: 16
           maxLength: 256
           writeOnly: true
+        repository_path:
+          type: string
+          pattern: ^itso/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/server$
         panel_private_key:
           type: string
           pattern: ^AGE-SECRET-KEY-1[0-9A-Z]{58}$
@@ -18768,9 +18782,11 @@ components:
       required:
       - type
       - config
+      - repository_path
       - repository_password
       - panel_private_key
       additionalProperties: false
+      description: 'Lấy từ bộ khôi phục: đích, đường dẫn + mật khẩu repo server (dòng `repo server …`), khóa riêng age.'
     SetupRestoreCandidate:
       type: object
       properties:
@@ -18785,7 +18801,9 @@ components:
         hostname:
           type: string
         accounts:
-          type: integer
+          type:
+          - integer
+          - 'null'
           minimum: 0
         size_mb:
           type: number
@@ -18798,6 +18816,7 @@ components:
       - accounts
       - size_mb
       additionalProperties: false
+      description: '`accounts` null: chỉ biết sau khi giải mã (bản backup panel mã hóa age).'
     SetupRestoreRequest:
       type: object
       properties:
@@ -20489,6 +20508,8 @@ components:
             - access
             - stack
             - quota
+        restore_mode:
+          type: boolean
       required:
       - installed
       - code_verified
@@ -20498,6 +20519,7 @@ components:
       - timezone
       - access
       - steps_done
+      - restore_mode
       additionalProperties: false
       description: Trạng thái wizard. Khi `installed=true` mọi endpoint ghi của wizard trả 410.
     SetupCodeVerify:

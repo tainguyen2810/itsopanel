@@ -24,8 +24,9 @@ type Stage = 'source' | 'pick' | 'run';
 
 /**
  * Khôi phục thảm họa từ wizard cài đặt (D-87): máy chủ mới cài bằng `install.sh --restore`, SA nhập đích
- * + mật khẩu repo panel + khóa riêng từ bộ khôi phục → chọn bản backup panel → agent khôi phục DB panel +
- * /etc/itso rồi `itso repair` áp lại desired state. Không lưu credential/mật khẩu/khóa trên trình duyệt.
+ * + đường dẫn và mật khẩu repo server + khóa riêng từ bộ khôi phục → chọn bản backup panel → agent giải mã
+ * vào staging; `itso panel-restore-apply` thay DB panel + /etc/itso, itso:reconcile áp lại desired state,
+ * itso:dr-restore khôi phục dữ liệu account nền. Không lưu credential/mật khẩu/khóa trên trình duyệt.
  */
 export function DrRestore({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation('admin');
@@ -35,6 +36,7 @@ export function DrRestore({ onBack }: { onBack: () => void }) {
   const [stage, setStage] = useState<Stage>('source');
   const [type, setType] = useState<DestType>('s3');
   const [cfg, setCfg] = useState<Record<string, string>>({});
+  const [repoPath, setRepoPath] = useState('');
   const [password, setPassword] = useState('');
   const [privateKey, setPrivateKey] = useState('');
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -52,6 +54,7 @@ export function DrRestore({ onBack }: { onBack: () => void }) {
     credentials: Object.fromEntries(
       fields.secret.filter((k) => cfg[k]).map((k) => [k, cfg[k] ?? '']),
     ),
+    repository_path: repoPath.trim(),
     repository_password: password,
     panel_private_key: privateKey.trim(),
   });
@@ -132,6 +135,19 @@ export function DrRestore({ onBack }: { onBack: () => void }) {
             </div>
             {type === 'sftp' && <Alert tone="info" title={t('install.dr.sftpHint')} />}
             <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${ids}-path`}>{t('install.dr.repoPath')}</Label>
+              <Input
+                id={`${ids}-path`}
+                autoComplete="off"
+                spellCheck={false}
+                className="font-mono"
+                placeholder="itso/<uuid>/server"
+                value={repoPath}
+                onChange={(e) => setRepoPath(e.target.value)}
+              />
+              <p className="text-sm text-muted">{t('install.dr.repoPathHint')}</p>
+            </div>
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor={`${ids}-pw`}>{t('install.dr.repoPassword')}</Label>
               <Input
                 id={`${ids}-pw`}
@@ -177,8 +193,12 @@ export function DrRestore({ onBack }: { onBack: () => void }) {
                 </span>
                 <span className="mt-1 flex flex-wrap gap-x-3 text-sm text-muted">
                   <span>{c.hostname}</span>
-                  <span>{t('install.dr.version', { v: c.panel_version })}</span>
-                  <span>{t('install.dr.accounts', { count: c.accounts })}</span>
+                  {c.panel_version !== 'unknown' && (
+                    <span>{t('install.dr.version', { v: c.panel_version })}</span>
+                  )}
+                  {c.accounts !== null && (
+                    <span>{t('install.dr.accounts', { count: c.accounts })}</span>
+                  )}
                   <span>{fmt.mb(c.size_mb)}</span>
                   <span className="font-mono">{c.snapshot_id}</span>
                 </span>
@@ -198,7 +218,7 @@ export function DrRestore({ onBack }: { onBack: () => void }) {
                 {t('install.dr.doneHint')}
               </Alert>
             )}
-            {done && <CodeBlock code="sudo itso repair --check" label={t('install.dr.verify')} />}
+            {done && <CodeBlock code="sudo itso repair" label={t('install.dr.verify')} />}
             {done && (
               <AppLink href="/login" className="font-medium text-primary-text hover:underline">
                 {t('install.toLogin')}

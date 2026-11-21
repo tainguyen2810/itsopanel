@@ -32,6 +32,7 @@ type Options struct {
 	NoFirewall bool
 	DryRun     bool
 	Yes        bool
+	Restore    bool // cài như mới rồi vào chế độ khôi phục từ backup (DR)
 }
 
 // otherPanels: dấu hiệu panel khác đã cài (10 §3).

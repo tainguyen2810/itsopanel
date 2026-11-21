@@ -474,6 +474,12 @@ OPS = [
      obj({"restored_paths": arr(d("RelPath"), maxItems=50), "databases": arr(d("DbName"), maxItems=50),
           "pre_restore_snapshot_id": {"oneOf": [d("ResticSnapshotId"), {"type": "null"}]},
           "skipped": arr(obj({"path": d("RelPath"), "reason": enum("symlink", "device", "setuid", "outside_home")}), maxItems=1000)})),
+    # DR (Prompt 8.5): giải mã backup panel vào staging rồi hẹn `itso panel-restore-apply` (unit systemd tạm) thay DB panel +
+    # /etc/itso sau khi job này đã ghi kết quả (job đang chạy trên chính DB sẽ bị thay).
+    ("panel.restore", "backup", "critical", False, 8, "root", 3600,
+     obj({"repo": d("BackupRepo"), "snapshot_id": d("ResticSnapshotId"), "age_identity": s(pattern="^AGE-SECRET-KEY-1[0-9A-Z]{58}$", writeOnly=True),
+          "apply_delay_sec": i(minimum=1, maximum=300)}),
+     obj({"staged_dir": s(maxLength=4096), "files": arr(s(maxLength=4096), maxItems=10000), "apply_unit": {"type": ["string", "null"], "maxLength": 200}})),
     ("backup.check", "backup", "medium", True, 8, "root", 7200,
      obj({"repo": d("BackupRepo"), "read_data_percent": i(minimum=0, maximum=100)}),
      obj({"ok": b(), "errors": arr(s(maxLength=500), maxItems=100), "duration_ms": i(minimum=0)})),

@@ -8,6 +8,7 @@ use App\Auth\MfaService;
 use App\Auth\Realm;
 use App\Auth\SessionKeys;
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Backup\DisasterRecovery;
 use App\Domain\Security\SecurityBaseline;
 use App\Domain\Setup\SetupWizard;
 use App\Domain\Users\UserService;
@@ -176,6 +177,49 @@ final class SetupController
         $data = $this->jobs->job($this->web->installStack($user, $server)->refresh(), Realm::ADMIN);
 
         return response()->json(['job' => $data, 'resource' => $data['resource']], 202);
+    }
+
+    /** Khôi phục thảm họa (D-87): mở repo server bằng thông tin trong bộ khôi phục, liệt kê bản backup panel. */
+    public function inspectRestore(Request $request, DisasterRecovery $dr): JsonResponse
+    {
+        $this->requireRestorable($request);
+        $key = 'setup-restore:'.$request->ip();
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            throw ApiProblem::rateLimited(RateLimiter::availableIn($key), 'Thử mở repo quá nhiều lần, thử lại sau.');
+        }
+        RateLimiter::hit($key, 600);
+        $src = $dr->source((array) $request->json()->all());
+
+        return response()->json(['data' => $dr->inspect($src)]);
+    }
+
+    public function startRestore(Request $request, DisasterRecovery $dr): JsonResponse
+    {
+        $this->requireRestorable($request);
+        $in = (array) $request->json()->all();
+        foreach (array_keys($in) as $k) {
+            if (! in_array($k, ['source', 'snapshot_id'], true)) {
+                throw ApiProblem::field((string) $k, 'Trường không được hỗ trợ.');
+            }
+        }
+        $snap = $in['snapshot_id'] ?? null;
+        if (! is_string($snap) || preg_match('/^[0-9a-f]{8,64}$/', $snap) !== 1) {
+            throw ApiProblem::field('snapshot_id', 'Mã snapshot không hợp lệ.');
+        }
+        $src = $dr->source(is_array($in['source'] ?? null) ? $in['source'] : [], 'source.');
+        $data = $this->jobs->job($dr->start($src, $snap)->refresh(), Realm::ADMIN);
+
+        return response()->json(['job' => $data, 'resource' => $data['resource']], 202);
+    }
+
+    /** Khôi phục chỉ trước khi wizard tạo SUPER_ADMIN, trong phiên đã xác minh mã. */
+    private function requireRestorable(Request $request): void
+    {
+        $this->wizard->ensureOpen();
+        $this->requireVerified($request);
+        if ($this->wizard->wizardAdmin() !== null) {
+            throw ApiProblem::conflict('Wizard đã tạo SUPER_ADMIN: khôi phục thảm họa chỉ làm được trên panel mới cài, trước bước tạo quản trị viên.');
+        }
     }
 
     public function complete(Request $request): JsonResponse

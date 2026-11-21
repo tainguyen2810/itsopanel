@@ -83,6 +83,7 @@ function status(): S['SetupStatus'] {
       timezone: state.timezone,
       access: null,
       steps_done: [],
+      restore_mode: false,
     };
   }
   const steps: S['SetupStatus']['steps_done'] = [];
@@ -101,6 +102,7 @@ function status(): S['SetupStatus'] {
     timezone: state.timezone,
     access: state.access,
     steps_done: steps,
+    restore_mode: false,
   };
 }
 
@@ -286,7 +288,7 @@ export function registerSetup() {
     return startJob(ctx, {
       type: 'setup.restore',
       resource: { type: 'server', uuid: srv?.uuid ?? '' },
-      ops: ['backup.restore', 'backup.restore', 'panel.repair'],
+      ops: ['panel.restore'],
       server: srv ? { uuid: srv.uuid, name: srv.name } : null,
       onDone: () => {
         state.installed = true;

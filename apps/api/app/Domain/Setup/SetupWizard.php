@@ -75,7 +75,13 @@ final class SetupWizard
         return $sha;
     }
 
-    /** @return array{sha256: string, expires_at: string}|null */
+    /** Mã thiết lập sinh bởi "itso install --restore": wizard mở luồng khôi phục thảm họa (D-87). */
+    public function restoreMode(): bool
+    {
+        return ($this->codeFile()['mode'] ?? '') === 'restore';
+    }
+
+    /** @return array{sha256: string, expires_at: string, mode: string}|null */
     private function codeFile(): ?array
     {
         $path = (string) config('itso.setup_code_file');
@@ -88,7 +94,7 @@ final class SetupWizard
             return null;
         }
 
-        return ['sha256' => $d['sha256'], 'expires_at' => $d['expires_at']];
+        return ['sha256' => $d['sha256'], 'expires_at' => $d['expires_at'], 'mode' => is_string($d['mode'] ?? null) ? $d['mode'] : ''];
     }
 
     /** Phiên hiện tại đã xác minh mã đang có hiệu lực (mã cuối cùng được đánh dấu dùng). */
@@ -109,7 +115,7 @@ final class SetupWizard
     {
         if ($this->installed()) {
             return ['installed' => true, 'code_verified' => false, 'admin_created' => true, 'admin_mfa_enabled' => true,
-                'locale' => $this->locale(), 'timezone' => $this->timezone(), 'access' => null, 'steps_done' => []];
+                'locale' => $this->locale(), 'timezone' => $this->timezone(), 'access' => null, 'steps_done' => [], 'restore_mode' => false];
         }
         $admin = $this->wizardAdmin() !== null;
         $access = $this->get('access');
@@ -136,7 +142,8 @@ final class SetupWizard
 
         return ['installed' => false, 'code_verified' => $codeVerified, 'admin_created' => $admin,
             'admin_mfa_enabled' => $admin && $mfaEnabled, 'locale' => $this->locale(), 'timezone' => $this->timezone(),
-            'access' => is_array($access) ? self::access($access) : null, 'steps_done' => $steps];
+            'access' => is_array($access) ? self::access($access) : null, 'steps_done' => $steps,
+            'restore_mode' => ! $admin && $this->restoreMode()];
     }
 
     /**

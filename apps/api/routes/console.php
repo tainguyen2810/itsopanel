@@ -29,3 +29,5 @@ Schedule::command('itso:fim-check')->hourlyAt(53)->withoutOverlapping();
 // Phase 8: backup theo chính sách (khóa Redis + jitter) và kiểm chứng định kỳ (check tuần, restore test tháng).
 Schedule::command('itso:backup-due')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('itso:backup-verify')->dailyAt('04:41')->withoutOverlapping();
+// 8.5: khôi phục thảm họa: xếp hàng khôi phục dữ liệu account sau khi panel được khôi phục (không làm gì khi chưa bật).
+Schedule::command('itso:dr-restore')->everyFiveMinutes()->withoutOverlapping();

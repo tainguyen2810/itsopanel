@@ -1168,6 +1168,17 @@
       "status": "specified"
     },
     {
+      "op": "panel.restore",
+      "domain": "backup",
+      "risk": "critical",
+      "default_enabled": false,
+      "phase": 8,
+      "runs_as": "root",
+      "timeout_sec": 3600,
+      "schema": "ops/panel.restore.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "backup.check",
       "domain": "backup",
       "risk": "medium",

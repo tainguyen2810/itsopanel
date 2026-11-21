@@ -127,6 +127,7 @@
         "backup.file.read",
         "backup.stats",
         "backup.restore",
+        "panel.restore",
         "backup.check",
         "backup.restore_test",
         "backup.forget",
@@ -2210,6 +2211,25 @@
         "properties": {
           "params": {
             "$ref": "ops/backup.restore.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "panel.restore"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/panel.restore.schema.json#/$defs/params"
           }
         }
       }

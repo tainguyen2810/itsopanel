@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Jobs;
 
+use App\Domain\Backup\DisasterRecovery;
 use App\Models\BackupDestination;
 use App\Models\BackupRepository;
 use App\Models\Certificate;
@@ -72,6 +73,10 @@ final class Secrets
                     return $creds[$m[2]];
                 }
             }
+        }
+        // Khôi phục thảm họa (D-87): bí mật tạm của wizard trong Cache (Crypt), xóa khi job setup.restore xong.
+        if ($kind === DisasterRecovery::SECRET_KIND && ($v = DisasterRecovery::secret($uuid)) !== null) {
+            return $v;
         }
         // Mật khẩu DB user / FTP-SFTP (D-71, D-73): lưu mã hóa trong panel, chỉ giải ngay trước khi gửi agent.
         $model = match ($kind) {
