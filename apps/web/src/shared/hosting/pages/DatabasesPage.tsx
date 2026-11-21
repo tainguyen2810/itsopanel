@@ -18,7 +18,7 @@ import type { ColumnDef } from '@/ui/DataTable';
 import { FormField } from '@/ui/FormField';
 import { Label } from '@/ui/Label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
-import { list, send, type Row } from '@/shared/api/realm';
+import { list, send, type JobAccepted, type Row } from '@/shared/api/realm';
 import { useAction } from '@/shared/api/useAction';
 import { Mono, RowMenu, SecretDialog, useAccountFilter, useActiveAccounts } from './common';
 import { databaseSchema, dbUserSchema, type DatabaseForm, type DbUserForm } from './forms';
@@ -67,6 +67,7 @@ function Databases() {
   const fmt = useFmt();
   const accountFilter = useAccountFilter();
   const [creating, setCreating] = useState(false);
+  const [secret, setSecret] = useState<string | null>(null);
   const [removing, setRemoving] = useState<Db | null>(null);
   const exp = useAction((d: Db) =>
     send('POST', '/databases/{id}:export', { path: { id: d.uuid }, body: {} }),
@@ -129,7 +130,8 @@ function Databases() {
         getRowId={(d) => d.uuid}
         primaryColumnId="name"
       />
-      <CreateDatabase open={creating} onOpenChange={setCreating} />
+      <CreateDatabase open={creating} onOpenChange={setCreating} onSecret={setSecret} />
+      <SecretDialog secret={secret} title={t('dbs.newPassword')} onClose={() => setSecret(null)} />
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}
@@ -148,9 +150,11 @@ function Databases() {
 function CreateDatabase({
   open,
   onOpenChange,
+  onSecret,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  onSecret: (s: string) => void;
 }) {
   const { t } = useTranslation('admin');
   const { accounts, options } = useActiveAccounts(open);
@@ -173,9 +177,16 @@ function CreateDatabase({
     if (!o) reset(empty);
     onOpenChange(o);
   };
-  const create = useAction((v: DatabaseForm) => send('POST', '/databases', { body: v }), {
-    onSuccess: () => close(false),
-  });
+  const create = useAction(
+    (v: DatabaseForm) => send<JobAccepted>('POST', '/databases', { body: v }),
+    {
+      onSuccess: (r) => {
+        close(false);
+        // Mật khẩu user do panel sinh chỉ trả MỘT lần ở đây.
+        if (r.secret) onSecret(r.secret);
+      },
+    },
+  );
   return (
     <FormDialog
       open={open}
@@ -313,7 +324,7 @@ function Users() {
         getRowId={(u) => u.uuid}
         primaryColumnId="username"
       />
-      <CreateUser open={creating} onOpenChange={setCreating} />
+      <CreateUser open={creating} onOpenChange={setCreating} onSecret={setSecret} />
       {granting && <GrantsDialog user={granting} onClose={() => setGranting(null)} />}
       <ConfirmDialog
         open={removing !== null}
@@ -330,7 +341,15 @@ function Users() {
   );
 }
 
-function CreateUser({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+function CreateUser({
+  open,
+  onOpenChange,
+  onSecret,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onSecret: (s: string) => void;
+}) {
   const { t } = useTranslation('admin');
   const { accounts, options } = useActiveAccounts(open);
   const [accId, setAccId] = useState('');
@@ -353,7 +372,7 @@ function CreateUser({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
   };
   const create = useAction(
     (v: DbUserForm) =>
-      send('POST', '/database-users', {
+      send<JobAccepted>('POST', '/database-users', {
         body: {
           hosting_account_uuid: v.hosting_account_uuid,
           engine: v.engine,
@@ -361,7 +380,12 @@ function CreateUser({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
           ...(v.password ? { password: v.password } : {}),
         },
       }),
-    { onSuccess: () => close(false) },
+    {
+      onSuccess: (r) => {
+        close(false);
+        if (r.secret) onSecret(r.secret);
+      },
+    },
   );
   return (
     <FormDialog

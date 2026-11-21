@@ -736,7 +736,7 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
         uid += 1
 
     # ---- website, domain, chứng chỉ, database, SFTP, cron, snapshot cho account mới
-    site_n, db_n, sftp_n, cron_n, snap_n = 5, 4, 2, 3, 3
+    site_n, db_n, sftp_n, cron_n, snap_n = 5, 4, len(SFTP) + 1, 3, 3
     for i, (_, _, username, domain) in enumerate(_PORTAL_USERS):
         acc_idx = 4 + i
         names = [(domain, "wordpress" if domain in _WP else "php", "8.3")]

@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 6 / Prompt 6.5 — nhánh `phase-6`
+
+Môi trường: Node 22 + pnpm, Chromium Playwright có sẵn; demo MSW (không cần Laravel). Terminal thật (xterm ↔ gateway) chỉ chạy khi không ở demo: kiểm ở 6.6 trên stack thật.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts · demo data | `make contracts` · `make codegen` · `make codegen-check` · `python3 contracts/tools/check_demo.py` | PASS. Sửa lỗi 6.1: hai tài khoản SFTP demo trùng UUID (`anphat_deploy`/`binhminh`) làm React báo trùng key ở `/admin/sftp`; `check_demo.py` nay chặn UUID trùng trong mọi bảng |
+| Lint web | `make lint-web` (tokens, contrast, eslint, prettier, tsc, i18n) | PASS; i18n 2613 key, vi = en |
+| Vitest | `pnpm test` | PASS 500/500 (34 file). Mới: `upload.test.ts` 7 (chunk 8 MiB, Content-Range, 409 → gửi tiếp từ `errors.received`, tạm dừng/tiếp tục đồng bộ trạng thái, hủy → DELETE), `terminal.test.ts` (URL ws từ ticket, khung resize, mã đóng 4403/4410/4408/1000/1011); MSW: PATCH chunk lệch offset → 409 + `errors.received`, GET/DELETE phiên tải lên, `JobAccepted.secret` khi tạo SFTP không nhập mật khẩu và khi đổi mật khẩu; mọi GET handler hợp lệ theo schema |
+| Playwright demo | `pnpm e2e` | 260/261 lần đầu: `/admin/sftp` lỗi console trùng key (dữ liệu demo, đã sửa) → chạy lại `-g sftp` 4/4 PASS. Thêm 2 test (`-g "chunk\|một lần"` PASS 2/2): tải file lên theo chunk → "Xong" → file có trong thư mục; tạo SFTP không mật khẩu → hộp "Mật khẩu mới" hiện một lần. axe-core (demo-audit) PASS cho trang SFTP |
+| Build | `make build` · `make build-demo` | PASS; build thường không chứa MSW |
+| Pest (seeder demo dùng dataset) | `pest tests/Feature/Demo` | PASS 1/1 |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 6 / Prompt 6.4 — nhánh `phase-6`
 
 Môi trường: như 6.3. Agent: shell giả (sandbox) và socket unix thật trong thư mục tạm; không có systemd nên `systemd-run --pty` thật là **chờ VM**.

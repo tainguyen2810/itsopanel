@@ -19814,7 +19814,7 @@ export interface operations {
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         },
                      *         {
-                     *           "uuid": "01938a0b-0002-7000-8000-00000b000002",
+                     *           "uuid": "01938a0b-0003-7000-8000-00000b000003",
                      *           "hosting_account": {
                      *             "uuid": "01938a05-0005-7000-8000-000005000005",
                      *             "username": "binhminh"

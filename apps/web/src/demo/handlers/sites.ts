@@ -331,6 +331,11 @@ function runsOf(db: DemoDb, c: S['CronJob']): S['CronRun'][] {
   return rows;
 }
 
+/** API thật trả mật khẩu do panel sinh MỘT lần trong JobAccepted.secret. */
+function withSecret(r: Reply, pw: string | null): Reply {
+  if (pw !== null && r.status === 202) (r.body as Record<string, unknown>).secret = pw;
+  return r;
+}
 function secret(len = 20) {
   const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!#@%';
   return Array.from(crypto.getRandomValues(new Uint8Array(len)), (b) => abc[b % abc.length]).join(
@@ -857,28 +862,31 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
         pg ? 'db.pg.user_ensure' : 'db.mysql.user_ensure',
         pg ? 'db.pg.grant' : 'db.mysql.grant',
       );
-    return startJob(ctx, {
-      type: 'database.create',
-      resource: { type: 'database', uuid: d.uuid },
-      ops,
-      server: a.server,
-      changes: { name: b.name, engine: b.engine },
-      onDone: (db) => {
-        applied(d, db);
-        if (b.create_user && !db.data.db_users.some((u) => u.username === b.name)) {
-          db.data.db_users.push({
-            uuid: db.newUuid(),
-            hosting_account: accRef(a),
-            engine: b.engine as S['Database']['engine'],
-            username: b.name as string,
-            host: 'localhost',
-            max_connections: 10,
-            grants: [{ database: b.name as string, privileges: ['ALL'] }],
-            ...fresh(db),
-          });
-        }
-      },
-    });
+    return withSecret(
+      startJob(ctx, {
+        type: 'database.create',
+        resource: { type: 'database', uuid: d.uuid },
+        ops,
+        server: a.server,
+        changes: { name: b.name, engine: b.engine },
+        onDone: (db) => {
+          applied(d, db);
+          if (b.create_user && !db.data.db_users.some((u) => u.username === b.name)) {
+            db.data.db_users.push({
+              uuid: db.newUuid(),
+              hosting_account: accRef(a),
+              engine: b.engine as S['Database']['engine'],
+              username: b.name as string,
+              host: 'localhost',
+              max_connections: 10,
+              grants: [{ database: b.name as string, privileges: ['ALL'] }],
+              ...fresh(db),
+            });
+          }
+        },
+      }),
+      b.create_user ? secret(24) : null,
+    );
   });
   const dbOf = (ctx: Ctx) => owned(ctx, ctx.db.data.databases, 'database');
   on('delete', P('/databases/{id}'), (ctx) => {
@@ -971,13 +979,16 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       ...fresh(ctx.db),
     };
     ctx.db.data.db_users.push(u);
-    return startJob(ctx, {
-      type: 'database_user.create',
-      resource: { type: 'database_user', uuid: u.uuid },
-      ops: [u.engine === 'postgresql' ? 'db.pg.user_ensure' : 'db.mysql.user_ensure'],
-      server: a.server,
-      changes: { username: u.username },
-    });
+    return withSecret(
+      startJob(ctx, {
+        type: 'database_user.create',
+        resource: { type: 'database_user', uuid: u.uuid },
+        ops: [u.engine === 'postgresql' ? 'db.pg.user_ensure' : 'db.mysql.user_ensure'],
+        server: a.server,
+        changes: { username: u.username },
+      }),
+      b.password ? null : secret(24),
+    );
   });
   const dbUserOf = (ctx: Ctx) => owned(ctx, ctx.db.data.db_users, 'user database');
   on('delete', P('/database-users/{id}'), (ctx) => {
@@ -1156,11 +1167,19 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     const s = ctx.db.data[`upload@${ctx.params.upload}`] as
       { up: S['UploadSession']; account: string } | undefined;
     if (!s || s.account !== a.uuid) return notFound('phiên tải lên');
+    if (s.up.status !== 'receiving') return problem(409, 'conflict', 'Phiên tải lên đã kết thúc');
     const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(ctx.request.headers.get('Content-Range') ?? '');
+    if (range && Number(range[1]) !== s.up.received) {
+      // Như API thật: lệch offset → 409 kèm errors.received để client gửi tiếp đúng chỗ.
+      const r = problem(409, 'conflict', 'Sai vị trí chunk');
+      (r.body as Record<string, unknown>).errors = { received: [String(s.up.received)] };
+      return r;
+    }
     const len = range
       ? Number(range[2]) - Number(range[1]) + 1
       : (await ctx.request.clone().arrayBuffer()).byteLength;
     s.up.received = Math.min(s.up.size, s.up.received + len);
+    if (s.up.received >= s.up.size) s.up.status = 'completed';
     if (s.up.received >= s.up.size) {
       const fs = fsOf(ctx.db, a);
       fs[s.up.path] = {
@@ -1177,6 +1196,23 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       a.usage.disk_mb.used += Math.ceil(s.up.size / 1_048_576);
     }
     return ok(s.up);
+  });
+  on('get', P('/hosting-accounts/{id}/files/uploads/{upload}'), (ctx) => {
+    const a = fileAccount(ctx);
+    if (isReply(a)) return a;
+    const s = ctx.db.data[`upload@${ctx.params.upload}`] as
+      { up: S['UploadSession']; account: string } | undefined;
+    if (!s || s.account !== a.uuid) return notFound('phiên tải lên');
+    return ok(s.up);
+  });
+  on('delete', P('/hosting-accounts/{id}/files/uploads/{upload}'), (ctx) => {
+    const a = fileAccount(ctx);
+    if (isReply(a)) return a;
+    const s = ctx.db.data[`upload@${ctx.params.upload}`] as
+      { up: S['UploadSession']; account: string } | undefined;
+    if (!s || s.account !== a.uuid) return notFound('phiên tải lên');
+    if (s.up.status === 'receiving') s.up.status = 'cancelled';
+    return noContent();
   });
   on('post', P('/hosting-accounts/{id}/files:operate'), (ctx) => {
     const a = fileAccount(ctx);
@@ -1356,14 +1392,17 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     };
     ctx.db.data.sftp.push(s);
     a.usage.ftp_accounts.used += 1;
-    return startJob(ctx, {
-      type: 'sftp.create',
-      resource: { type: 'sftp_account', uuid: s.uuid },
-      ops: ['sftp.user.ensure'],
-      server: a.server,
-      changes: { username: s.username, root_path: root },
-      onDone: (db) => applied(s, db),
-    });
+    return withSecret(
+      startJob(ctx, {
+        type: 'sftp.create',
+        resource: { type: 'sftp_account', uuid: s.uuid },
+        ops: ['sftp.user.ensure'],
+        server: a.server,
+        changes: { username: s.username, root_path: root },
+        onDone: (db) => applied(s, db),
+      }),
+      b.password ? null : secret(24),
+    );
   });
   on('delete', P('/sftp-accounts/{id}'), (ctx) => {
     const s = owned(ctx, ctx.db.data.sftp, 'tài khoản SFTP');
@@ -1380,6 +1419,20 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
         if (a) a.usage.ftp_accounts.used = Math.max(0, a.usage.ftp_accounts.used - 1);
       },
     });
+  });
+  on('post', P('/sftp-accounts/{id}:rotate-password'), (ctx) => {
+    const s = owned(ctx, ctx.db.data.sftp, 'tài khoản SFTP');
+    if (isReply(s)) return s;
+    const a = ctx.db.data.accounts.find((x) => x.uuid === s.hosting_account.uuid);
+    return withSecret(
+      startJob(ctx, {
+        type: 'sftp_account.rotate_password',
+        resource: { type: 'sftp_account', uuid: s.uuid },
+        ops: ['sftp.user.ensure'],
+        server: a?.server ?? null,
+      }),
+      secret(24),
+    );
   });
   on('post', P('/ssh-keys'), (ctx) => {
     const b = (ctx.body ?? {}) as Partial<S['SshKeyCreate']>;

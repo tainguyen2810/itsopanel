@@ -104,7 +104,9 @@ export async function dispatch(request: Request): Promise<Reply | null> {
       r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1] ?? '')]),
     );
     let body: unknown = undefined;
-    if (method !== 'get' && method !== 'delete') {
+    const binary = /octet-stream/.test(request.headers.get('Content-Type') ?? '');
+    if (method !== 'get' && method !== 'delete' && !binary) {
+      // Chunk tải lên (octet-stream) để nguyên cho handler đọc bằng arrayBuffer().
       const text = await request.text();
       if (text) {
         try {

@@ -22,6 +22,18 @@ def index(name: str, key: str = "uuid") -> dict:
     return {x[key]: x for x in D[name]}
 
 
+# UUID trùng trong một bảng làm React báo trùng key và handler sửa nhầm bản ghi.
+for _name, _rows in D.items():
+    if isinstance(_rows, list):
+        _seen: set[str] = set()
+        for _x in _rows:
+            _id = _x.get("uuid") if isinstance(_x, dict) else None
+            if _id is not None and _id in _seen:
+                errors.append(f"{_name}: uuid {_id} bị trùng")
+            if _id is not None:
+                _seen.add(_id)
+
+
 users, servers, packages = index("users"), index("servers"), index("packages")
 accounts, websites, databases = index("accounts"), index("websites"), index("databases")
 

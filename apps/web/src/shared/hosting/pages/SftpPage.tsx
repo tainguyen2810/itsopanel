@@ -17,9 +17,9 @@ import type { ColumnDef } from '@/ui/DataTable';
 import { FormField } from '@/ui/FormField';
 import { Textarea } from '@/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
-import { list, send, type Row } from '@/shared/api/realm';
+import { list, send, type JobAccepted, type Row } from '@/shared/api/realm';
 import { useAction } from '@/shared/api/useAction';
-import { Mono, RowMenu, useAccountFilter, useActiveAccounts } from './common';
+import { Mono, RowMenu, SecretDialog, useAccountFilter, useActiveAccounts } from './common';
 import { sftpSchema, sshKeySchema, type SftpForm, type SshKeyForm } from './forms';
 
 type Sftp = Row<'/sftp-accounts'>;
@@ -54,9 +54,18 @@ function Accounts() {
   const accountFilter = useAccountFilter();
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<Sftp | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
   const remove = useAction(
     (s: Sftp) => send('DELETE', '/sftp-accounts/{id}', { path: { id: s.uuid } }),
     { onSuccess: () => setRemoving(null) },
+  );
+  const rotate = useAction(
+    (s: Sftp) =>
+      send<JobAccepted>('POST', '/sftp-accounts/{id}:rotate-password', {
+        path: { id: s.uuid },
+        body: {},
+      }),
+    { onSuccess: (r) => r.secret && setSecret(r.secret) },
   );
   const columns: ColumnDef<Sftp, unknown>[] = [
     {
@@ -101,6 +110,7 @@ function Accounts() {
         <RowMenu
           label={t('sftp.actionsFor', { name: row.original.username })}
           actions={[
+            { label: t('sftp.rotate'), onSelect: () => rotate.mutate(row.original) },
             { label: t('sftp.delete'), onSelect: () => setRemoving(row.original), danger: true },
           ]}
         />
@@ -125,7 +135,8 @@ function Accounts() {
         getRowId={(s) => s.uuid}
         primaryColumnId="username"
       />
-      <CreateSftp open={creating} onOpenChange={setCreating} />
+      <CreateSftp open={creating} onOpenChange={setCreating} onSecret={setSecret} />
+      <SecretDialog secret={secret} title={t('sftp.newPassword')} onClose={() => setSecret(null)} />
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}
@@ -140,7 +151,15 @@ function Accounts() {
   );
 }
 
-function CreateSftp({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+function CreateSftp({
+  open,
+  onOpenChange,
+  onSecret,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onSecret: (s: string) => void;
+}) {
   const { t } = useTranslation('admin');
   const { accounts, options } = useActiveAccounts(open);
   const [accId, setAccId] = useState('');
@@ -163,8 +182,16 @@ function CreateSftp({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
     onOpenChange(o);
   };
   const create = useAction(
-    (v: SftpForm) => send('POST', '/sftp-accounts', { body: { ...v, password: null } }),
-    { onSuccess: () => close(false) },
+    (v: SftpForm) =>
+      send<JobAccepted>('POST', '/sftp-accounts', {
+        body: { ...v, read_only: false, password: null },
+      }),
+    {
+      onSuccess: (r) => {
+        close(false);
+        if (r.secret) onSecret(r.secret);
+      },
+    },
   );
   return (
     <FormDialog

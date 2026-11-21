@@ -321,7 +321,12 @@ export function registerPortal() {
     if (a.lifecycle_state !== 'active')
       return problem(409, 'invalid_state_transition', 'Tài khoản không ở trạng thái hoạt động');
     if (!featuresOf(ctx.db, a).ssh_allowed)
-      return problem(403, 'forbidden', 'Gói hosting không có SSH', 'Liên hệ quản trị để đổi gói.');
+      return problem(
+        409,
+        'package_limit_reached',
+        'Gói hosting không có SSH',
+        'Liên hệ quản trị để đổi gói.',
+      );
     const tpl = ctx.db.data.terminal as S['TerminalTicket'];
     ctx.db.audit({
       actor: actorRef(ctx),
@@ -332,6 +337,7 @@ export function registerPortal() {
     return created({
       ...tpl,
       ticket: `tkt_${ctx.db.newUuid().slice(-12)}`,
+      session_uuid: ctx.db.newUuid(),
       mode: 'account',
       unix_user: a.username,
       expires_at: new Date(Date.now() + 30_000 + 7 * 3600_000)
