@@ -5,10 +5,10 @@
 ## Hiện tại
 
 - **Phase:** 9 — Multi-server & chuyển tài khoản (kế hoạch ✓ duyệt 2026-11-21 cùng D-88 → D-93, đang chạy liền 9.0 → 9.8 theo yêu cầu người dùng). Phase 8 ✓ APPROVED 2026-11-21 cùng D-82 → D-87 và mốc `v0.1.0-alpha` (kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 9.6 ✱ (9.0–9.5 ✓). Prompt chi tiết `docs/planning/seed/PHASE_9_PROMPTS.md`
+- **Prompt hiện tại:** 9.7 ✱ (9.0–9.6 ✓). Prompt chi tiết `docs/planning/seed/PHASE_9_PROMPTS.md`
 - **Task đang làm:** không
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-9`
-- **Bước tiếp theo:** 9.6 panel điều phối chuyển account (preflight → sync → verify → cutover → giữ nguồn → dọn nguồn, rollback), khôi phục sang server khác; chạy liền tới 9.8, merge main, dừng trước Phase 10; chạy `tests/vm/phase4–8.sh` (gồm DR 2 VM) khi có VM
+- **Bước tiếp theo:** 9.7 UI nối API thật (thêm server, danh sách/chi tiết node, gợi ý đặt, wizard chuyển account, khôi phục chéo, banner node mất kết nối, Portal "đang chuyển"); chạy liền tới 9.8, merge main, dừng trước Phase 10; chạy `tests/vm/phase4–8.sh` (gồm DR 2 VM) khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -24,7 +24,7 @@
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
 | 7 | Security Center | ✓ APPROVED (báo cáo `docs/reports/phase-7.md`; tiêu chí cần VM: chờ VM) |
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
-| 9 | Multi-server & chuyển tài khoản | ✱ đang làm (9.0–9.3 ✓) |
+| 9 | Multi-server & chuyển tài khoản | ✱ đang làm (9.0–9.6 ✓) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ○ |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
@@ -39,8 +39,8 @@ Phase 9 (kế hoạch ✓ duyệt 2026-11-21, đang làm) — prompt chi tiết:
 - ✓ 9.3 Installer `--role`, `itso node` — 8d37f3a
 - ✓ 9.4 Panel API nhiều server: enroll, năng lực, job theo server, gợi ý
 - ✓ 9.5 Agent: `migrate.*`, `http.check`, `account.remove`, khôi phục chéo server
-- ✱ 9.6 Panel: điều phối chuyển account, cutover, rollback
-- ○ 9.7 UI nối API thật
+- ✓ 9.6 Panel: điều phối chuyển account, cutover, rollback — (commit 9.6)
+- ✱ 9.7 UI nối API thật
 - ○ 9.8 e2e, VM Phase 9 (3 VM), review bảo mật, báo cáo, merge
 
 Phase 8: ✓ APPROVED 2026-11-21 (merge `7ec1afb`, tag `v0.1.0-alpha`) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.md`

@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.6 (điều phối chuyển account, khôi phục chéo server) — nhánh `phase-9`
+
+Phạm vi: `app/Domain/Migration/{MigrationService,MigrationJobHandler}.php`, `Models/AccountMigration.php`, `Admin/AccountMigrationController.php` (preflight, migrate, danh sách/chi tiết, cutover, rollback, cleanup), `RestoreService` (khôi phục sang server khác), lệnh `itso:migrations-cleanup` (hàng giờ), route Phase 9 (`accounts.write` + step-up: SA/ADMIN có phạm vi cả 2 server), contracts (bỏ 501 của `:migrate`). Commit (commit 9.6).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Chuyển account | `vendor/bin/pest tests/Feature/Phase9/MigrationTest.php` (PG 16 + Redis thật; nguồn = agent giả, đích = node mTLS qua relay giả, params/result kiểm theo `contracts/agent-ops`) | **6/6 PASS, 245 assertion**. Luồng trọn vẹn: preflight (ước lượng downtime, cùng server/ADMIN không phạm vi đích → 422, ngoài phạm vi → 404) → backup nguồn → đích account.ensure → DB → site → restore → cấu hình → verify → `verifying`; Portal thấy `migrating`, ghi → 409; lượt thứ hai → 409; dọn trước cutover → 409; cutover: nguồn khóa + backup `final` → đích restore lượt cuối, verify, mở, `http.check` → `holding`, account/site/DB đổi `server_id`, UID cấp ở đích, đo downtime, Portal ghi lại được (job chạy ở node mới); dọn sớm: sai username 422, ADMIN 403, SA → `account.remove reason=migrated` → `completed`, nhả UID nguồn; sau dọn không hoàn tác được. Preflight chặn: thiếu đích backup, PHP/đĩa/domain ở đích, node mất kết nối, account không active → 409 `precondition_failed`, không tạo lượt chuyển. Kiểm chứng lệch → cutover 409; hoàn tác ở verifying (đích khóa → nguồn mở) → `rolled_back`. DNS tự động (Cloudflare giả): TTL 3600 → 60 lúc đồng bộ, A đổi sang IP đích lúc cutover, hoàn tác sau cutover trả A + account/site về nguồn, nhả UID đích. Node đích rơi giữa chặng đồng bộ → `waiting_agent` có hạn, hoàn tác chen ngang → 409, quá hạn → job `agent_unreachable`, lượt chuyển `failed`, account active ở nguồn, có thông báo. Khôi phục chéo: job chạy ở node (account.ensure → backup.restore), account vẫn ở nguồn; ghi đè sang server khác 422, ADMIN không phạm vi 422, node offline 409 |
+| Phase 9 API | `vendor/bin/pest tests/Feature/Phase9` | 20/20 PASS |
+| Toàn bộ Pest | `scripts/pest-pg.sh --parallel` | 480/482 lần đầu: 2 test cũ còn giả định `:migrate`/`account-migrations` chưa có route; sửa test (gửi đủ Idempotency-Key; endpoint "chưa có ở bản này" đổi sang `compose-projects`) → chạy lại `tests/Feature/Platform` 20/20 PASS |
+| Lint | `make lint-api` (pint + phpstan) · `make no-exec` · `make docs-check` · `pnpm -s lint` (web) | sạch · OK · OK · sạch (i18n 2964 key vi = en) |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** chứng chỉ TLS không mang sang đích (khóa ACME ở agent nguồn) → vhost đích chỉ HTTP, cấp lại sau khi DNS trỏ về đích; chế độ DNS tay chỉ hiện bản ghi cần đổi. **Chờ VM:** chuyển account thật giữa 2 VM, đo downtime thật (`tests/vm/phase9.sh`, 9.8).
+
 ## 2026-11-21 — Phase 9 / Prompt 9.5 (agent: migrate.*, http.check, account.remove) — nhánh `phase-9`
 
 Phạm vi: `agent/internal/ops/{migrate.go,account_remove.go}` (+ `migrate_test.go`), `ops/sandbox*.go` (Sim `userdel`, `groupdel`, `pure-pw list`, đếm bảng), `platform/runner.go` (thêm `groupdel` vào bảng lệnh cho phép), `ops.Deps.HTTPAddrs` (test).

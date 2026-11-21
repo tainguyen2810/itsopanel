@@ -29,7 +29,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * /admin/hosting-accounts (Prompt 3.5): đọc theo phạm vi, mọi thay đổi qua ProvisioningService (job 202).
- * Purge (Phase 8) và chuyển server (Phase 9) trả 501 có mã riêng.
+ * Chuyển server: AccountMigrationController (Phase 9).
  */
 final class HostingAccountController
 {
@@ -204,13 +204,6 @@ final class HostingAccountController
     }
 
     /** migrate (Phase 9): chưa hiện thực — trả 501, không giả thành công. Purge: BackupAdminController (Phase 8). */
-    public function notAvailable(Request $request, string $id): JsonResponse
-    {
-        $this->find($request, $id);
-
-        throw new ApiProblem(501, 'migration_not_available', 'Chưa có ở phiên bản này', 'Chuyển account sang server khác hiện thực ở Phase 9.');
-    }
-
     public function placement(Request $request): JsonResponse
     {
         $request->validate(['package' => ['required', 'uuid']]);

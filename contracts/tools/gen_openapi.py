@@ -710,7 +710,7 @@ def admin_paths(api: Api):
          {"purge_uuid": D.PURGES[0]["uuid"], "confirm_username": "oldshop"}, ["account.remove"], True),
     ]
     # Phase 3 chưa hiện thực purge (Phase 8) và migrate (Phase 9): trả 501 có mã riêng, không giả thành công.
-    later = {"migrate": ("migration_not_available", "Phase 9"), "schedule-purge": ("purge_not_available", "Phase 8"),
+    later = {"schedule-purge": ("purge_not_available", "Phase 8"),
              "confirm-purge": ("purge_not_available", "Phase 8")}
     for action, label, body, body_ex, steps, step_up in acts:
         camel = "".join(x.title() for x in action.split("-"))

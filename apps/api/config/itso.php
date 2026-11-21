@@ -4,6 +4,8 @@ use App\Domain\Backup\BackupJobHandler;
 use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
 use App\Domain\Hosting\AccountJobHandler;
+use App\Domain\Migration\MigrationJobHandler;
+use App\Domain\Migration\MigrationService;
 use App\Domain\Security\FirewallApplyStep;
 use App\Domain\Security\FirewallConfirmStep;
 use App\Domain\Security\SecurityJobHandler;
@@ -79,7 +81,8 @@ return [
           CertificateJobHandler::class)
       + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class)
       + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class)
-      + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class),
+      + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class)
+      + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class),
 
     // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
     'panel_steps' => [

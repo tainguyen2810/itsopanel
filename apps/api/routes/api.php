@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AccountMigrationController;
 use App\Http\Controllers\Api\V1\Admin\ApiTokenController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\BackupAdminController;
@@ -196,8 +197,19 @@ Route::prefix('v1')->group(function (): void {
             }
             Route::post('hosting-accounts/{id}:terminate', [HostingAccountController::class, 'terminate'])
                 ->middleware(['itso.perm:accounts.terminate', 'itso.step-up', 'itso.idempotent']);
-            Route::post('hosting-accounts/{id}:migrate', [HostingAccountController::class, 'notAvailable'])
-                ->middleware(['itso.perm:accounts.terminate', 'itso.step-up']);
+            // Chuyển account giữa server (Phase 9, D-93): kiểm tra trước (không đổi gì) → các chặng job.
+            Route::post('hosting-accounts/{id}:migrate-preflight', [AccountMigrationController::class, 'preflight'])
+                ->middleware('itso.perm:accounts.write');
+            Route::post('hosting-accounts/{id}:migrate', [AccountMigrationController::class, 'migrate'])
+                ->middleware(['itso.perm:accounts.write', 'itso.step-up', 'itso.idempotent']);
+            Route::get('account-migrations', [AccountMigrationController::class, 'index'])->middleware('itso.perm:accounts.read');
+            Route::post('account-migrations/{id}:cutover', [AccountMigrationController::class, 'cutover'])
+                ->middleware(['itso.perm:accounts.write', 'itso.step-up', 'itso.idempotent']);
+            Route::post('account-migrations/{id}:rollback', [AccountMigrationController::class, 'rollback'])
+                ->middleware(['itso.perm:accounts.write', 'itso.idempotent']);
+            Route::post('account-migrations/{id}:cleanup', [AccountMigrationController::class, 'cleanup'])
+                ->middleware(['itso.perm:accounts.write', 'itso.step-up', 'itso.idempotent']);
+            Route::get('account-migrations/{id}', [AccountMigrationController::class, 'show'])->middleware('itso.perm:accounts.read');
             // Cổng purge (D-46, Prompt 8.4): backup cuối đã kiểm chứng + xác nhận gõ username.
             Route::post('hosting-accounts/{id}:schedule-purge', [BackupAdminController::class, 'schedulePurge'])
                 ->middleware(['itso.perm:backups.manage', 'itso.step-up', 'itso.idempotent']);

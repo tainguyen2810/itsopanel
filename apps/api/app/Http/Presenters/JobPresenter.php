@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Presenters;
 
 use App\Auth\Realm;
+use App\Models\AccountMigration;
 use App\Models\Certificate;
 use App\Models\CronJob;
 use App\Models\Database;
@@ -44,6 +45,7 @@ final class JobPresenter
         'cron_job' => CronJob::class,
         'malware_finding' => MalwareFinding::class,
         'quarantine_item' => QuarantineItem::class,
+        'account_migration' => AccountMigration::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */

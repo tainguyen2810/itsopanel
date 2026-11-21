@@ -12,6 +12,7 @@ Artisan::command('inspire', function () {
 Schedule::command('itso:metrics-collect')->everyMinute()->withoutOverlapping();
 // Phase 9: trạng thái node qua itso-relay, job waiting_agent, danh sách thu hồi (D-91).
 Schedule::command('itso:relay-sync')->everyMinute()->withoutOverlapping();
+Schedule::command('itso:migrations-cleanup')->hourly()->withoutOverlapping();
 Schedule::command('itso:usage-refresh')->everyFiveMinutes()->withoutOverlapping();
 
 // Phase 5: gia hạn chứng chỉ ACME (< 30 ngày) và đồng bộ DNS Cloudflare.

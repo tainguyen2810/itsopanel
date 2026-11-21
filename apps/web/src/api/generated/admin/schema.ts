@@ -1534,8 +1534,6 @@ export interface paths {
          * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
-         *
-         *     Phase 3: trả `501` mã `migration_not_available` (hiện thực ở Phase 9).
          */
         post: operations["migrateHostingAccount"];
         delete?: never;
@@ -15508,7 +15506,6 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
-            501: components["responses"]["NotImplemented"];
         };
     };
     preflightHostingAccountMigration: {
