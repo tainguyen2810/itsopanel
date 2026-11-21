@@ -38,7 +38,17 @@
 
 ## 4. Kết quả test
 
-@@CHECK@@
+`make check` (2026-11-21, PostgreSQL 16 + Redis cục bộ, trên commit 7.7): **19 PASS · 1 SKIP (staticcheck) · 3 FAIL** lần đầu (923 s): `docs-check` (bảng Markdown có `|` trong file review mới), `test-e2e` (ảnh mockup `admin-login-captcha` không còn đúng vì 7.6 bỏ CAPTCHA ở realm Admin, đã xóa mockup đó), `test-agent` (6 test installer kiểm preflight trên đĩa thật của container: "còn 9 GB trống, cần ≥ 10 GB"; dọn cache composer 19 GB). Chạy lại đúng 3 mục: `make docs-check` PASS, `make test-agent` PASS, `screenshots-phase7.spec.ts` 64/64 PASS. Chi tiết ở `TEST_REPORT.md` (Prompt 7.6, 7.7).
+
+| Bộ test | Kết quả |
+|---|---|
+| Pest (PostgreSQL 16 + Redis) | 451/451 |
+| Go (race, 15 package) + fuzz | PASS (600 866 lần chạy fuzz) |
+| Vitest | 541/541 |
+| Playwright (demo MSW + Design System + mockup, gồm axe) | 401 PASS + 4 mockup lỗi thời đã xóa (chạy lại spec mockup Phase 7: 64/64) |
+| Playwright stack thật + agent sandbox + gateway (`make test-e2e-real`) | 17/17 (5 luồng mới Phase 7) |
+| Installer · unit systemd | PASS |
+| pint, phpstan, ESLint, Prettier, tsc, i18n (2748 khóa, vi = en), gofmt, go vet, no-exec, docs-check, contracts/codegen/tokens, db-verify (60) | xanh |
 
 E2E stack thật Phase 7 (`e2e-real/phase7.spec.ts`, 5 luồng):
 

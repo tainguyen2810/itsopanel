@@ -87,17 +87,7 @@ const PAGES: readonly Shot[] = [
     },
   ],
   ['admin-settings-login', '/admin/settings?tab=security'],
-  [
-    'admin-login-captcha',
-    '/admin/login',
-    async (p) => {
-      await p.getByLabel('Mật khẩu').fill('wrong-password');
-      for (let i = 0; i < 4; i++) await p.getByRole('button', { name: 'Đăng nhập' }).click();
-      await expect(p.getByTestId('captcha')).toHaveAttribute('data-state', 'solved', {
-        timeout: 15_000,
-      });
-    },
-  ],
+  // Không có admin-login-captcha: CAPTCHA chỉ áp cho Portal (7.6, ADR 0028 §1).
   ['portal-security', '/portal/security'],
   [
     'portal-login-captcha',

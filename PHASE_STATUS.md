@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 7 — Security Center (✱ đang làm; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 7.7 e2e, VM, review bảo mật, báo cáo, merge (7.0–7.6 ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
-- **Task đang làm:** 7.7 e2e-real Phase 7, `tests/vm/phase7.sh`, review bảo mật, `make check`, báo cáo `docs/reports/phase-7.md`, merge `phase-7` → `main`
+- **Phase:** 7 — Security Center (✓ xong, **chờ duyệt**; merge local vào `main`; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 7.7 ✓ (7.0–7.7 xong). Báo cáo `docs/reports/phase-7.md`
+- **Task đang làm:** không (DỪNG chờ duyệt Phase 7 và D-76 → D-81)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-7`
-- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_7_PROMPTS.md`; cuối 7.7 báo cáo Phase 7 và DỪNG (không bắt đầu Phase 8)
+- **Bước tiếp theo:** chờ người dùng duyệt Phase 7; chạy `tests/vm/phase4–7.sh` khi có VM. **Không** bắt đầu Phase 8 khi chưa duyệt
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -22,7 +22,7 @@
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ✓ APPROVED (báo cáo `docs/reports/phase-4.md`; tiêu chí cần VM: chờ VM) |
 | 5 | Website / Nginx / PHP / SSL / DNS | ✓ APPROVED (báo cáo `docs/reports/phase-5.md`; tiêu chí cần VM: chờ VM) |
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
-| 7 | Security Center | ✱ |
+| 7 | Security Center | ✓ chờ duyệt |
 | 8 | Backup & Restore → v0.1.0-alpha | ○ |
 | 9 | Multi-server & chuyển tài khoản | ○ |
 | 10 | Docker Manager, WordPress Toolkit, Software | ○ |
@@ -40,7 +40,7 @@ Phase 7 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.
 - ✓ 7.4 Panel: Security Center API, CAPTCHA, IP allowlist chống tự khóa
 - ✓ 7.5 Terminal root theo policy + ghi phiên
 - ✓ 7.6 UI nối API thật
-- ✱ 7.7 e2e, VM Phase 7, review bảo mật, báo cáo, merge
+- ✓ 7.7 e2e, VM Phase 7, review bảo mật, báo cáo, merge
 
 Phase 6: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-6.md`, merge `547002f`; mockup bù `c811794`). Chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.md`
 
@@ -137,3 +137,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 7 / 7.4 | Panel: Domain/Security (FirewallRuleset bản PHP của RenderNft khớp golden agent, safe-apply chung firewall/sshd chỉ lưu sha256 token, token trong cache mã hóa qua panel step; SSH đổi port mở tường lửa trước; fail2ban; WAF + đồng bộ sự kiện theo con trỏ; mã độc quét/cách ly/khôi phục/xóa; FIM; điểm theo `SecurityScore::WEIGHTS`; sự kiện high/critical → thông báo), 32 endpoint admin + 5 portal + `GET /auth/captcha`, quyền `security.read/write` (ADMIN theo phạm vi) và `security.server` (SUPER_ADMIN), lệnh lịch `itso:waf-events-sync`, `itso:fim-check`, `itso:security-audit`, CAPTCHA PoW HMAC dùng một lần (Portal), `auth.log` cho jail itso-panel, `portal_mfa_required`, IP allowlist chống tự khóa, nền bảo mật khi xong wizard; bổ sung cột DB cho API (migration Phase 7 sinh lại) | cc0074a |
 | 2026-11-21 | 7 / 7.5 | Agent: policy `record_user` + bí danh `terminal.root`/`terminal.record_user`, `itso policy set` nhận on/off, `itso allowlist reset` (→ `artisan itso:allowlist-reset`); `pty.open.root` (chặn ở registry + handler khi policy tắt, systemd-run root golden), ghi asciicast v2 `/var/lib/itso/recordings/<uuid>.cast` 0600 (chỉ output, giữ rune UTF-8 cắt đôi, 50 MB → marker truncated + đóng phiên `limit`, không ghi được → không mở), `pty.list` (gồm phiên chờ ATTACH), `pty.policy`, `pty.recording.read` theo offset đầu dòng; Panel: `mode=root` chỉ SUPER_ADMIN realm Admin + step-up ≤ 10 phút, `terminal_recordings`, `GET /terminal/sessions` (ADMIN không thấy phiên root), `GET /servers/{id}/terminal/policy`, `GET /terminal/sessions/{id}/recording` (SUPER_ADMIN + step-up, audit một lần mỗi lượt xem), `itso:terminal-reap` 5 phút theo `pty.list` (dự phòng luật 12 giờ); ADR 0028 ghi file policy YAML sẵn có | 9ce6ef9 |
 | 2026-11-21 | 7 / 7.6 | Web nối API thật: tham số `?server=` cho SSH/fail2ban/điểm (bộ chọn máy chủ `useSecurityServer`, nhớ trong sessionStorage, chỉ hiện khi ≥ 2 máy), `send` nhận `query`, `getWith` đọc lại một lần sau step-up; fail2ban danh sách IP bị chặn + gỡ chặn; FIM theo `/security/fim/changes`; tường lửa: xem trước ruleset + chặn áp dụng khi `lockout_risk`, đếm ngược khôi phục từ `firewall/status`; sự kiện WAF trong tab website; terminal root chỉ hiện cho SUPER_ADMIN, phát lại bản ghi phân trang (tối đa 40 trang, cảnh báo cắt/không đủ); wizard xong → trang tường lửa xác nhận; ngưỡng CAPTCHA 0–10 (chỉ Portal); MSW theo hành vi mới | cd3b467 |
+| 2026-11-21 | 7 / 7.7 | e2e stack thật Phase 7 (tường lửa xem trước → giữ / không xác nhận → rolled_back, SSH hardening, WAF chặn + sự kiện, EICAR → cách ly → khôi phục, FIM, CAPTCHA Portal, root bị từ chối khi policy tắt), 17/17; sửa gốc sandbox thiếu user root (SSH luôn lỗi ở dev/e2e); `tests/vm/phase7.sh` S0–S7; review bảo mật `docs/security/security-center-review.md`; runbook Phase 7; bỏ mockup CAPTCHA Admin; `make check`; báo cáo `docs/reports/phase-7.md`; merge `--no-ff` vào `main` | (commit 7.7) |

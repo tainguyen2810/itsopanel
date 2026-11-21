@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.7 (e2e, VM, review, báo cáo) — nhánh `phase-7`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật | `make test-e2e-real` | PASS 17/17 (9,9 phút). Mới `phase7.spec.ts` 5: tường lửa (xem trước có cổng mới → áp dụng → "Giữ cấu hình mới" → confirmed; áp dụng không xác nhận 30 giây → `rolled_back`, confirm muộn 409, sự kiện high), SSH hardening (thiếu server 422, MaxAuthTries → xác nhận → API + UI), WAF (mặc định detect → block, sự kiện `942100 blocked` qua `itso:waf-events-sync`) + EICAR (quét → finding clamav → cách ly → khôi phục), FIM (added + modified qua `itso:fim-check`), CAPTCHA Portal (422 `captcha_required`, lời giải giả bị từ chối, UI tự giải rồi vào được) + root terminal policy tắt → 409. Lần chạy đầu 16/17: `phase3` tạo account lỗi `already_exists` (gid 20004) vì DB reset mà gốc sandbox còn account cũ; xóa gốc sandbox, chạy lại xanh |
+| Lỗi thật tìm thấy | — | Gốc sandbox không có user `root` → `sshd.config.apply` luôn `not_found` ở dev/e2e. Sửa `Sim.SeedBase()`; `go test ./internal/ops -run TestSimSeedBase` PASS; `go test ./...` PASS |
+| Toàn bộ | `make check` | 19 PASS · 1 SKIP (staticcheck) · 3 FAIL lần đầu (923 s): docs-check (dấu gạch đứng trong bảng của file review), test-e2e (4 ảnh mockup `admin-login-captcha`: realm Admin không còn CAPTCHA từ 7.6 → xóa mockup), test-agent (6 test installer kiểm preflight đĩa thật: còn 9 GB < 10 GB; `composer clear-cache` giải phóng 19 GB). Chạy lại: `make docs-check` PASS, `make test-agent` PASS, `playwright test e2e/screenshots-phase7.spec.ts` 64/64 PASS. Còn lại xanh: Pest 451, Vitest 541, Playwright demo 401, fuzz 600 866 lần, db-verify 60, contracts/codegen/tokens, installer, units, git-clean |
+| Script VM | `bash -n tests/vm/phase7.sh` | Cú pháp OK. **Chờ VM:** S0–S7 (gói, safe-apply khi dừng agent, fail2ban thật, WAF OWASP, EICAR + tải, FIM, điểm ≥ 80, root theo policy) |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase7.sh`.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.6 (UI nối API thật) — nhánh `phase-7`
 
 Phạm vi: `apps/web/src` — `shared/api/core.ts` (`SendOpts` có `query`, `getWith` thử lại sau step-up), `entries/admin/security/{useServer,SshPage,Fail2banPage,FimPage,TerminalSessionsPage}`, `servers/{ServerFirewallPage,firewall.ts,ServerTerminalPage}`, `sites/WebsiteDetailPage` (WAF events), `install/InstallPage`, `system/SettingsPage`; i18n VI/EN; MSW `demo/handlers/{security,governance,infra,admin}.ts`. Contracts không đổi.
