@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Presenters;
 
 use App\Auth\Realm;
+use App\Models\Certificate;
+use App\Models\DnsZone;
 use App\Models\HostingAccount;
 use App\Models\HostingPackage;
 use App\Models\Job;
@@ -26,6 +28,8 @@ final class JobPresenter
         'user' => User::class,
         'hosting_package' => HostingPackage::class,
         'website' => Website::class,
+        'certificate' => Certificate::class,
+        'dns_zone' => DnsZone::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */

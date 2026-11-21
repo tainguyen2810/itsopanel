@@ -20,3 +20,9 @@ ROADMAP gốc đưa DNS provider (Cloudflare) vào Phase 5. Quản lý DNS là g
 
 - Test bằng `Http::fake`; không cần mạng.
 - Thêm provider khác (PowerDNS…) sau này qua interface `DnsProvider` cùng hợp đồng.
+
+## Sửa đổi khi hiện thực (Prompt 5.4)
+
+- Bước panel: `config('itso.panel_steps')` ánh xạ op → lớp `PanelStep`; `JobRunner` chạy bước này trong worker thay vì gọi agent. Lỗi Cloudflare 4xx → `invalid_params` (không thử lại), 5xx/429/mạng → `dependency_unavailable` (thử lại theo backoff).
+- Quyền mới: `dns.read`, `dns.write` (ADMIN có, theo phạm vi account), `dns.providers` (chỉ SUPER_ADMIN; xóa provider cần step-up).
+- Cloudflare lỗi tạm thời khi thêm provider/zone hoặc đồng bộ → 409 `precondition_failed` (không đổi DB). Record loại panel chưa quản lý (HTTPS, SVCB…) giữ nguyên trên Cloudflare, không đồng bộ về.

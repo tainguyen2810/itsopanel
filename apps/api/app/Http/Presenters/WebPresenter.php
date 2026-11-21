@@ -38,6 +38,30 @@ final class WebPresenter
             'created_at' => $w->created_at->toIso8601String(), 'updated_at' => $w->updated_at->toIso8601String()];
     }
 
+    /** @return array<string, mixed> Certificate (common.yaml) */
+    public static function certificate(Certificate $c): array
+    {
+        /** @var Website $w */
+        $w = $c->website;
+        $status = match ($c->status) {
+            'ready' => match (true) {
+                $c->not_after !== null && $c->not_after->isPast() => 'expired',
+                $c->not_after !== null && $c->not_after->lt(now()->addDays((int) config('itso.acme.renew_before_days', 30))) => 'expiring',
+                default => 'valid',
+            },
+            'failed' => 'failed',
+            default => 'pending',
+        };
+        // Chứng chỉ chưa cấp xong chưa có thời hạn: schema bắt buộc, dùng thời điểm tạo.
+        $nb = $c->not_before ?? $c->created_at;
+        $na = $c->not_after ?? $c->created_at;
+
+        return ['uuid' => $c->uuid, 'website' => ['uuid' => $w->uuid, 'primary_domain' => $w->primary_domain],
+            'source' => $c->source, 'domains' => $c->domains, 'issuer' => (string) ($c->issuer ?? ''),
+            'not_before' => $nb->toIso8601String(), 'not_after' => $na->toIso8601String(), 'auto_renew' => $c->auto_renew,
+            'status' => $status, 'created_at' => $c->created_at->toIso8601String(), 'updated_at' => $c->updated_at->toIso8601String()];
+    }
+
     /** @return array<string, mixed> */
     public static function domain(WebsiteDomain $d, Website $w): array
     {

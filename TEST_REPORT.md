@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 5 / Prompt 5.4 — nhánh `phase-5`
+
+Môi trường: như 5.3. Cloudflare giả bằng `Http::fake` (bộ nhớ record, ép mã lỗi); agent giả bằng FakeAgent.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Chứng chỉ | `pest tests/Feature/Phase5/CertificateTest.php` | PASS 7 test: ACME → `cert.issue` (email/directory theo cấu hình) → `nginx.vhost.apply` có tls; danh sách admin + portal khớp OpenAPI; domain chưa gắn 422, thiếu `ITSO_ACME_EMAIL` / Pebble chưa cho phép 409; tải lên khóa lệch, SAN thiếu (wildcard không phủ gốc), không phải PEM, khóa mã hóa → 422; hết hạn → 422; hợp lệ → `cert.install` → vhost → gỡ bản ACME cũ; **bí mật**: `job_steps` chỉ có `{"$secret": "certificate_key:<uuid>"}`, khóa không có trong `job_steps`/`job_logs`/`audit_logs`/`certificates` (đã mã hóa)/phản hồi, agent nhận khóa thật; `itso:certs-renew` chỉ chọn chứng chỉ ACME < 30 ngày có auto_renew (bỏ qua bản 60 ngày, tắt auto_renew, tải lên); renew lỗi → `last_error`, audit `failure`, thông báo `certificate.renew_failed` cho SUPER_ADMIN; xóa chứng chỉ đang dùng → vhost bỏ tls rồi `cert.remove`; website tạo với `ssl_mode=acme` (cấp lỗi → `degraded`, chứng chỉ `failed`); PATCH none → acme cấp chứng chỉ; ma trận quyền 404 ngoài phạm vi |
+| DNS | `pest tests/Feature/Phase5/DnsTest.php` | PASS 4 test: token sai → 422, Cloudflare 503 → 409, DB không đổi; token mã hóa, không có trong phản hồi/`dns_providers`/audit/job; mọi request tới base URL cố định; zone không có trên Cloudflare 422, tạo zone đồng bộ record (bỏ loại HTTPS); ADMIN chỉ zone của account trong phạm vi, ADMIN ngoài phạm vi 404, portal không có route DNS; If-Match sai 412; record tạo/sửa/xóa ghi Cloudflare trước rồi DB; Cloudflare 400 → job failed `invalid_params`, DB giữ nguyên; 502 → thử lại 3 lần rồi failed `dependency_unavailable`; nội dung sai theo loại (IP, MX thiếu priority, proxied cho TXT, CAA, ký tự điều khiển) 422; `:sync` và `itso:dns-sync`; gỡ zone không gọi Cloudflare |
+| Laravel toàn bộ | `make test-api` | PASS 368 test, 3299 assertion |
+| Agent | `make lint-agent test-agent` | PASS. Thêm `TestCertReplaceInUseReloadsNginx`: thay chứng chỉ vhost đang dùng → `nginx -t` + reload; chưa ai dùng hoặc nội dung không đổi → không reload |
+| Lint · tĩnh · docs | `pint` · `phpstan` · `make no-exec` · `make docs-check` | PASS |
+
+**Lỗi tìm thấy nhờ test:** cast `Bytea` đọc stream PDO một lần, lần truy cập thứ hai trả chuỗi rỗng → `JobRunner` không giải được khóa chứng chỉ tải lên. Sửa: đọc stream từ offset 0 mỗi lần.
+
+**Test bị bỏ qua:** không. **Chờ CI/VM:** job `pebble` (`tests/vm/pebble/run.sh`: lego thật ↔ Pebble) chưa chạy được: repo chưa có remote, và lệnh chạy Pebble + test dưới root trong container dev bị từ chối (không thử lại). Test đã biên dịch (`go vet -tags pebble`).
+
 ## 2026-11-21 — Phase 5 / Prompt 5.3 — nhánh `phase-5`
 
 Môi trường: như 5.1 (PostgreSQL 16 + Redis local). Agent giả qua `Http::fake` (FakeAgent), job chạy đồng bộ.

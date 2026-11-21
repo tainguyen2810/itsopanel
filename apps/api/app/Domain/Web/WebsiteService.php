@@ -63,6 +63,10 @@ final class WebsiteService
             throw ApiProblem::field('proxy_target', 'Chỉ website loại proxy mới có proxy_target.');
         }
         $limits = $this->quota->limits($a);
+        if (($in['ssl_mode'] ?? 'none') === 'acme') {
+            WebsiteSpec::acmeEmail();
+            WebsiteSpec::acmeDirectory();
+        }
 
         return DB::transaction(function () use ($actor, $a, $type, $domain, $docRoot, $php, $proxyPort, $in, $limits): array {
             /** @var HostingAccount $acc */
@@ -85,6 +89,9 @@ final class WebsiteService
             WebsiteSetting::query()->create(['website_id' => $w->id, 'nginx' => $nginx, 'php' => $phpSettings]);
             $w->load('settings');
             $spec = WebsiteSpec::provision(new JobSpec('website.create', $w, $w->server_id, 3, 900), $w, $acc);
+            if ($w->ssl_mode === 'acme') {
+                CertificateService::appendAcme($spec, $w, $acc, 'none');
+            }
             $job = $this->dispatch($spec, $actor, $w);
             $this->audit->record('website.create', $w, ['primary_domain' => $domain, 'type' => $type,
                 'hosting_account' => $acc->uuid], 'success', $w->server_id, $job->id, $actor);
@@ -97,6 +104,13 @@ final class WebsiteService
     public function update(User $actor, Website $w, array $in): Job
     {
         $phpChanged = array_key_exists('php_version', $in) && ($in['php_version'] ?? PhpCatalog::DEFAULT) !== $w->php_version;
+        $issue = ($in['ssl_mode'] ?? null) === 'acme' && $w->ssl_mode !== 'acme'
+            && ! Certificate::query()->where('website_id', $w->id)->where('source', 'acme')->where('status', 'ready')->exists();
+        $prevMode = $w->ssl_mode;
+        if ($issue) {
+            WebsiteSpec::acmeEmail();
+            WebsiteSpec::acmeDirectory();
+        }
 
         return $this->mutate($actor, $w, 'website.update', function (Website $w, HostingAccount $a) use ($in): array {
             $changes = [];
@@ -119,7 +133,7 @@ final class WebsiteService
             }
             if (array_key_exists('ssl_mode', $in) && $in['ssl_mode'] !== $w->ssl_mode) {
                 if ($in['ssl_mode'] === 'custom' && ! Certificate::query()->where('website_id', $w->id)
-                    ->where('source', 'custom')->where('status', 'ready')->exists()) {
+                    ->where('source', 'upload')->where('status', 'ready')->exists()) {
                     throw ApiProblem::field('ssl_mode', 'Chưa có chứng chỉ tải lên cho website này.');
                 }
                 $changes['ssl_mode'] = ['from' => $w->ssl_mode, 'to' => $in['ssl_mode']];
@@ -138,11 +152,19 @@ final class WebsiteService
             }
 
             return $changes;
-        }, function (JobSpec $spec, Website $w, HostingAccount $a) use ($phpChanged): JobSpec {
+        }, function (JobSpec $spec, Website $w, HostingAccount $a) use ($phpChanged, $issue, $prevMode): JobSpec {
             // Đổi phiên bản PHP → dựng lại pool (socket mới) trước khi vhost trỏ sang.
-            return $phpChanged
-                ? $spec->step('php.pool.apply', WebsiteSpec::pool($w, $a))->step('nginx.vhost.apply', WebsiteSpec::vhost($w, $a))
-                : $spec->step('nginx.vhost.apply', WebsiteSpec::vhost($w, $a));
+            if ($phpChanged) {
+                $spec->step('php.pool.apply', WebsiteSpec::pool($w, $a));
+            }
+            if ($issue) {
+                // Bật ACME: vhost hiện tại đã phục vụ /.well-known/acme-challenge; cấp xong mới áp vhost có tls.
+                CertificateService::appendAcme($spec, $w, $a, $prevMode);
+
+                return $spec;
+            }
+
+            return $spec->step('nginx.vhost.apply', WebsiteSpec::vhost($w, $a));
         });
     }
 
@@ -373,6 +395,9 @@ final class WebsiteService
     {
         $job = $this->jobs->dispatch($spec, $actor);
         Website::query()->whereKey($w->id)->update(['last_job_id' => $job->id]);
+        // Chứng chỉ ACME vừa tạo trong cùng job (website.create/update với ssl_mode = acme).
+        Certificate::query()->where('website_id', $w->id)->where('status', 'provisioning')->whereNull('last_job_id')
+            ->update(['last_job_id' => $job->id]);
         $w->last_job_id = $job->id;
 
         return $job;

@@ -7,6 +7,7 @@ namespace App\Domain\Web;
 use App\Domain\Jobs\JobHandler;
 use App\Models\HostingAccount;
 use App\Models\Job;
+use App\Models\JobStep;
 use App\Models\Website;
 use App\Models\WebsiteDomain;
 use App\Models\WebsiteSetting;
@@ -20,6 +21,7 @@ final class WebsiteJobHandler implements JobHandler
 {
     public function succeeded(Job $job): void
     {
+        CertificateJobHandler::settle($job, true);
         $w = $this->website($job);
         if ($w === null) {
             return;
@@ -41,6 +43,8 @@ final class WebsiteJobHandler implements JobHandler
 
     public function failed(Job $job): void
     {
+        CertificateJobHandler::settle($job, false);
+        $failedOp = JobStep::query()->where('job_id', $job->id)->where('state', 'failed')->value('op');
         $w = $this->website($job);
         if ($w === null) {
             return;
@@ -53,8 +57,14 @@ final class WebsiteJobHandler implements JobHandler
         $w->observed_at = Carbon::now();
         switch ($job->type) {
             case 'website.create':
-                $w->status = 'failed';
-                $w->drift = ['apply' => $msg];
+                if ($failedOp === 'cert.issue') {
+                    // Site đã chạy HTTP; chỉ cấp chứng chỉ lỗi (thường do domain chưa trỏ về máy): xin lại sau.
+                    $w->status = 'degraded';
+                    $w->drift = ['ssl' => $msg];
+                } else {
+                    $w->status = 'failed';
+                    $w->drift = ['apply' => $msg];
+                }
                 break;
             case 'website.domain.add':
             case 'website.domain.remove':

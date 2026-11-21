@@ -23,3 +23,11 @@ Website cần HTTPS hợp lệ và tự gia hạn. Cấp chứng chỉ phải ch
 
 - Không cần ACME client trong Laravel; ACME chạy đúng máy phục vụ HTTP-01.
 - Test: runner giả cho argv lego; sandbox sinh chứng chỉ tự ký; Pebble trên VM/CI là bằng chứng cấp thật.
+
+## Sửa đổi khi hiện thực (Prompt 5.4)
+
+- Tham chiếu bí mật có dạng `{"$secret": "certificate_key:<cert uuid>"}` (lớp `App\Domain\Jobs\Secrets`). `AuditLogger::redact` giữ nguyên tham chiếu, che các khóa `private_key_pem`, `api_token`, `credentials`.
+- Thay chứng chỉ mà vhost đang dùng (gia hạn, tải lại cùng uuid) thì agent chạy `nginx -t` rồi `systemctl reload nginx` để Nginx nạp bản mới; `nginx -t` lỗi → trả lại cặp file cũ. Trước đó gia hạn ghi file nhưng Nginx vẫn phục vụ chứng chỉ cũ tới lần reload kế tiếp.
+- Cấp/tải mới cho website gỡ chứng chỉ cũ của website (`cert.remove`) trong cùng job, sau bước áp vhost sang bản mới.
+- Email ACME lấy từ `ITSO_ACME_EMAIL`, directory từ `ITSO_ACME_DIRECTORY` (mặc định `letsencrypt`); `pebble` thêm điều kiện `ITSO_ACME_ALLOW_PEBBLE` phía panel. Thiếu email → 409 `precondition_failed`.
+- Tạo website với `ssl_mode = acme` mà cấp lỗi (thường do domain chưa trỏ về máy) → website `degraded` (vẫn phục vụ HTTP), chứng chỉ `failed`; người dùng xin lại ở `/websites/{id}/certificates`.

@@ -408,3 +408,45 @@ func TestRenderedConfigsWithRealBinaries(t *testing.T) {
 	}
 	realCheck(t)
 }
+
+// Thay chứng chỉ vhost đang dùng (gia hạn/tải lại) → nginx -t + reload; chứng chỉ chưa ai dùng → không reload.
+func TestCertReplaceInUseReloadsNginx(t *testing.T) {
+	e := newEnv(t)
+	e.site("lehoa", 20001, "lehoa.vn")
+	e.h.OK(contracts.OpCertIssue, issueParams("letsencrypt", "lehoa.vn"))
+	up := func(issuer string) map[string]any {
+		chain, key, err := ops.SelfSigned([]string{"lehoa.vn"}, issuer, ct.Now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return map[string]any{"account": ct.Acct("lehoa", 20001), "website_uuid": wsA, "cert_uuid": certA,
+			"certificate_pem": string(chain), "private_key_pem": string(key)}
+	}
+	reloaded := func() bool {
+		for _, l := range e.fake.Lines() {
+			if strings.Contains(l, "reload nginx.service") {
+				return true
+			}
+		}
+		return false
+	}
+	e.fake.Reset()
+	e.h.OK(contracts.OpCertInstall, up("Chưa dùng CA"))
+	if reloaded() {
+		t.Fatal("chứng chỉ chưa có vhost dùng: không reload", e.fake.Lines())
+	}
+	tls := vhostParams("lehoa", 20001, wsA, "lehoa.vn", "static", "lehoa.vn")
+	tls["tls"] = map[string]any{"cert_uuid": certA, "hsts": false, "force_https": true}
+	e.h.OK(contracts.OpNginxVhostApply, tls)
+	e.fake.Reset()
+	e.h.OK(contracts.OpCertInstall, up("Mới CA"))
+	if !reloaded() {
+		t.Fatal("thay chứng chỉ đang dùng phải reload nginx", e.fake.Lines())
+	}
+	e.fake.Reset()
+	e.h.OK(contracts.OpCertInstall, map[string]any{"account": ct.Acct("lehoa", 20001), "website_uuid": wsA, "cert_uuid": certA,
+		"certificate_pem": e.file("/etc/itso/certs/" + certA + "/fullchain.pem"), "private_key_pem": e.file("/etc/itso/certs/" + certA + "/privkey.pem")})
+	if reloaded() {
+		t.Fatal("nội dung không đổi: không reload", e.fake.Lines())
+	}
+}

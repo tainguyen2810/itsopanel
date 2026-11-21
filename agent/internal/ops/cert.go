@@ -130,7 +130,7 @@ func certInfo(id string, c *x509.Certificate) contracts.CertInfo {
 }
 
 // storeCert kiểm cặp chứng chỉ/khóa rồi ghi /etc/itso/certs/<id>/{fullchain.pem 0644, privkey.pem 0600} (root).
-func (d *Deps) storeCert(id string, chain, key []byte) (contracts.CertInfo, error) {
+func (d *Deps) storeCert(ctx context.Context, id string, chain, key []byte) (contracts.CertInfo, error) {
 	if len(chain) > 64<<10 || len(key) > 16<<10 {
 		return contracts.CertInfo{}, &registry.OpError{Code: "invalid_params", Message: "PEM quá lớn"}
 	}
@@ -151,6 +151,12 @@ func (d *Deps) storeCert(id string, chain, key []byte) (contracts.CertInfo, erro
 	if _, err := d.FS.EnsureDir(certDir(id), 0o750, platform.Owner{}); err != nil {
 		return contracts.CertInfo{}, opErr(err)
 	}
+	// Thay chứng chỉ đang được vhost dùng (gia hạn, tải lại) → nginx -t + reload để nạp bản mới; lỗi → trả bản cũ.
+	nginxMu.Lock()
+	defer nginxMu.Unlock()
+	oldChain, cerr := d.FS.ReadFile(certDir(id) + "/fullchain.pem")
+	oldKey, kerr := d.FS.ReadFile(certDir(id) + "/privkey.pem")
+	replaced := cerr == nil && kerr == nil && (!bytes.Equal(oldChain, chain) || !bytes.Equal(oldKey, key))
 	// Khóa ghi trước để không bao giờ có fullchain mới đi với khóa cũ khi nginx đọc giữa chừng.
 	if _, err := d.FS.WriteAtomic(certDir(id)+"/privkey.pem", key, 0o600, platform.Owner{}); err != nil {
 		return contracts.CertInfo{}, opErr(err)
@@ -158,7 +164,31 @@ func (d *Deps) storeCert(id string, chain, key []byte) (contracts.CertInfo, erro
 	if _, err := d.FS.WriteAtomic(certDir(id)+"/fullchain.pem", chain, 0o644, platform.Owner{}); err != nil {
 		return contracts.CertInfo{}, opErr(err)
 	}
+	if replaced && d.certInUse(id) {
+		if err := d.nginxTest(ctx); err != nil {
+			_, _ = d.FS.WriteAtomic(certDir(id)+"/privkey.pem", oldKey, 0o600, platform.Owner{})
+			_, _ = d.FS.WriteAtomic(certDir(id)+"/fullchain.pem", oldChain, 0o644, platform.Owner{})
+			return contracts.CertInfo{}, err
+		}
+		if _, err := d.must(ctx, "dependency_unavailable", "systemctl", "reload", "nginx.service"); err != nil {
+			return contracts.CertInfo{}, err
+		}
+	}
 	return certInfo(id, certs[0]), nil
+}
+
+// certInUse: có vhost trỏ tới /etc/itso/certs/<id>/ không. Gọi khi đang giữ nginxMu.
+func (d *Deps) certInUse(id string) bool {
+	names, err := d.FS.ReadDir(VhostDir)
+	if err != nil {
+		return false
+	}
+	for _, n := range names {
+		if b, err := d.FS.ReadFile(VhostDir + "/" + n); err == nil && bytes.Contains(b, []byte(certDir(id)+"/")) {
+			return true
+		}
+	}
+	return false
 }
 
 // LegoArgs sinh argv cố định cho lego (D-69). Giá trị đã được validate trước.
@@ -251,14 +281,14 @@ func (d *Deps) certIssue(ctx context.Context, env *envelope.Envelope) (map[strin
 	if err != nil {
 		return nil, &registry.OpError{Code: "internal", Message: "lego không tạo " + key}
 	}
-	info, err := d.storeCert(string(p.CertUUID), chain, kb)
+	info, err := d.storeCert(ctx, string(p.CertUUID), chain, kb)
 	if err != nil {
 		return nil, err
 	}
 	return toData(info)
 }
 
-func (d *Deps) certInstall(_ context.Context, env *envelope.Envelope) (map[string]any, error) {
+func (d *Deps) certInstall(ctx context.Context, env *envelope.Envelope) (map[string]any, error) {
 	var p contracts.CertInstallParams
 	if err := decode(env, &p); err != nil {
 		return nil, err
@@ -278,7 +308,7 @@ func (d *Deps) certInstall(_ context.Context, env *envelope.Envelope) (map[strin
 	if err == nil && d.now().After(certs[0].NotAfter) {
 		return nil, &registry.OpError{Code: "invalid_params", Message: "chứng chỉ đã hết hạn"}
 	}
-	info, err := d.storeCert(string(p.CertUUID), []byte(p.CertificatePem), []byte(p.PrivateKeyPem))
+	info, err := d.storeCert(ctx, string(p.CertUUID), []byte(p.CertificatePem), []byte(p.PrivateKeyPem))
 	if err != nil {
 		return nil, err
 	}
@@ -329,15 +359,11 @@ func (d *Deps) certRemove(_ context.Context, env *envelope.Envelope) (map[string
 	// Không xóa chứng chỉ vhost còn dùng (nginx -t sẽ lỗi, mọi site không reload được).
 	nginxMu.Lock()
 	defer nginxMu.Unlock()
-	names, err := d.FS.ReadDir(VhostDir)
-	if err != nil {
+	if _, err := d.FS.ReadDir(VhostDir); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, opErr(err)
 	}
-	for _, n := range names {
-		b, err := d.FS.ReadFile(VhostDir + "/" + n)
-		if err == nil && bytes.Contains(b, []byte(certDir(id)+"/")) {
-			return nil, &registry.OpError{Code: "precondition_failed", Message: "vhost " + n + " còn dùng chứng chỉ (áp lại vhost không TLS trước)"}
-		}
+	if d.certInUse(id) {
+		return nil, &registry.OpError{Code: "precondition_failed", Message: "còn vhost dùng chứng chỉ (áp lại vhost không TLS trước)"}
 	}
 	if err := d.FS.RemoveTree(certDir(id)); err != nil {
 		return nil, opErr(err)

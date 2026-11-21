@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Admin\ApiTokenController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\DnsController;
 use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
 use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
+use App\Http\Controllers\Api\V1\Shared\CertificateController;
 use App\Http\Controllers\Api\V1\Shared\WebsiteController;
 use App\Http\Controllers\Api\V1\SystemController;
 use Illuminate\Support\Facades\Route;
@@ -192,6 +194,24 @@ Route::prefix('v1')->group(function (): void {
             Route::get('websites/{id}/php', [WebsiteController::class, 'php'])->middleware('itso.perm:websites.read');
             Route::patch('websites/{id}/php', [WebsiteController::class, 'updatePhp'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
             Route::get('websites/{id}/logs', [WebsiteController::class, 'logs'])->middleware('itso.perm:websites.read');
+            // ---- Chứng chỉ (Prompt 5.4)
+            Route::get('certificates', [CertificateController::class, 'index'])->middleware('itso.perm:websites.read');
+            Route::post('certificates/{id}:renew', [CertificateController::class, 'renew'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::delete('certificates/{id}', [CertificateController::class, 'destroy'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('websites/{id}/certificates', [CertificateController::class, 'store'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            // ---- DNS Cloudflare (Prompt 5.4, D-70)
+            Route::get('dns/providers', [DnsController::class, 'providers'])->middleware('itso.perm:dns.read');
+            Route::post('dns/providers', [DnsController::class, 'storeProvider'])->middleware('itso.perm:dns.providers');
+            Route::delete('dns/providers/{id}', [DnsController::class, 'destroyProvider'])->middleware(['itso.perm:dns.providers', 'itso.step-up']);
+            Route::get('dns/zones', [DnsController::class, 'zones'])->middleware('itso.perm:dns.read');
+            Route::post('dns/zones', [DnsController::class, 'storeZone'])->middleware('itso.perm:dns.write');
+            Route::patch('dns/zones/{id}', [DnsController::class, 'updateZone'])->middleware('itso.perm:dns.write');
+            Route::delete('dns/zones/{id}', [DnsController::class, 'destroyZone'])->middleware('itso.perm:dns.write');
+            Route::post('dns/zones/{id}:sync', [DnsController::class, 'sync'])->middleware('itso.perm:dns.write');
+            Route::get('dns/zones/{id}/records', [DnsController::class, 'records'])->middleware('itso.perm:dns.read');
+            Route::post('dns/zones/{id}/records', [DnsController::class, 'storeRecord'])->middleware(['itso.perm:dns.write', 'itso.idempotent']);
+            Route::patch('dns/zones/{id}/records/{record}', [DnsController::class, 'updateRecord'])->middleware(['itso.perm:dns.write', 'itso.idempotent']);
+            Route::delete('dns/zones/{id}/records/{record}', [DnsController::class, 'destroyRecord'])->middleware(['itso.perm:dns.write', 'itso.idempotent']);
         });
 
         // ---- /portal: realm portal (chỉ phiên cookie)
@@ -227,6 +247,11 @@ Route::prefix('v1')->group(function (): void {
             Route::get('websites/{id}/php', [WebsiteController::class, 'php']);
             Route::patch('websites/{id}/php', [WebsiteController::class, 'updatePhp'])->middleware(['itso.idempotent']);
             Route::get('websites/{id}/logs', [WebsiteController::class, 'logs']);
+            // ---- Chứng chỉ (Prompt 5.4)
+            Route::get('certificates', [CertificateController::class, 'index']);
+            Route::post('certificates/{id}:renew', [CertificateController::class, 'renew'])->middleware(['itso.idempotent']);
+            Route::delete('certificates/{id}', [CertificateController::class, 'destroy'])->middleware(['itso.idempotent']);
+            Route::post('websites/{id}/certificates', [CertificateController::class, 'store'])->middleware(['itso.idempotent']);
         });
     });
 });

@@ -20,7 +20,8 @@ final class Bytea implements CastsAttributes
             return null;
         }
         if (is_resource($value)) {
-            $value = stream_get_contents($value);
+            // Stream PDO đọc được nhiều lần (mỗi lần truy cập thuộc tính gọi lại cast).
+            $value = stream_get_contents($value, -1, 0);
             if ($value === false) {
                 return null;
             }

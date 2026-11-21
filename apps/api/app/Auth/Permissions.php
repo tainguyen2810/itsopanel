@@ -43,7 +43,10 @@ final class Permissions
         ],
         'web' => [
             'websites.read' => 'Xem website, tên miền, cấu hình Nginx/PHP, log',
-            'websites.write' => 'Tạo/sửa/xóa website và tên miền',
+            'websites.write' => 'Tạo/sửa/xóa website, tên miền và chứng chỉ',
+            'dns.read' => 'Xem zone và bản ghi DNS',
+            'dns.write' => 'Thêm zone, sửa bản ghi DNS (Cloudflare)',
+            'dns.providers' => 'Thêm/xóa nhà cung cấp DNS (token Cloudflare)',
         ],
         'operations' => [
             'jobs.read' => 'Xem job',
@@ -60,7 +63,7 @@ final class Permissions
     public const ROLE_GRANTS = [
         'SUPER_ADMIN' => ['*'],
         'ADMIN' => ['users.read', 'users.write', 'roles.read', 'servers.read', 'packages.read', 'accounts.read',
-            'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'databases.*', 'backups.read'],
+            'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'backups.read'],
         'USER' => ['own.*'],
     ];
 
