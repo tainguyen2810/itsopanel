@@ -4,9 +4,9 @@
 
 ## Hiện tại
 
-- **Phase:** 6 — Database / File Manager / FTP-SFTP / Cron / Terminal USER (đang làm; Phase 5 ✓ APPROVED 2026-11-21 cùng D-67 → D-70, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 6.6 e2e, review bảo mật, báo cáo, merge. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
-- **Task đang làm:** 6.6 — bắt đầu
+- **Phase:** 6 — Database / File Manager / FTP-SFTP / Cron / Terminal USER (✓ xong 2026-11-21, chờ duyệt; Phase 5 ✓ APPROVED 2026-11-21 cùng D-67 → D-70, kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** Phase 6 xong (6.1 → 6.6), merge main local; **DỪNG chờ duyệt** Phase 6 + D-71 → D-75. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
+- **Task đang làm:** không (chờ duyệt). Chờ VM: `tests/vm/phase4.sh`…`phase6.sh`
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-6`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_6_PROMPTS.md`; cuối 6.6 báo cáo Phase 6 và DỪNG (không bắt đầu Phase 7)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
@@ -38,7 +38,7 @@ Phase 6 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.
 - ✓ 6.3 Panel: databases, files, SFTP/FTP, SSH key, cron, suspend
 - ✓ 6.4 Terminal USER: pty.open, itso-gateway, phiên terminal
 - ✓ 6.5 UI nối API thật
-- ✱ 6.6 e2e, VM Phase 6, review bảo mật, báo cáo, merge
+- ✓ 6.6 e2e, VM Phase 6, review bảo mật, báo cáo, merge
 
 Phase 5: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-5.md`, merge `e347b0c`). Chi tiết: `docs/planning/seed/PHASE_5_PROMPTS.md`
 
@@ -116,3 +116,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 6 / 6.3 | Panel API dữ liệu hosting (admin + portal): database/user/quyền/export/import, SFTP/FTPS + khóa SSH, cron (+ `itso:cron-sync` 5 phút), File Manager (đọc/sửa ETag, thao tác qua job, upload tus 8 MiB, link tải HMAC 5 phút); mật khẩu sinh trả một lần, job chỉ giữ tham chiếu; tạm khóa account khóa DB/cron/FTPS; quyền `files.* ftp.* cron.*` | 95d2e4c |
 | 2026-11-21 | 6 / 6.4 | Terminal USER: agent `pty.open` (ticket 32 byte, 30 giây, một lần, ≤ 2 phiên/account, shell /bin/bash), socket stream `/run/itso/agent-stream.sock` (peercred itso-gw), jail `systemd-run --pty`, nhàn rỗi 15 phút / tối đa 12 giờ, shell giả ở sandbox; `cmd/itso-gateway` (WebSocket ↔ khung, kiểm Origin) + unit hardening; Laravel `/terminal/sessions` (step-up, gói SSH, audit, không lưu ticket), `itso:terminal-reap`; make dev chạy gateway, Vite proxy `/gateway` | f7f654a |
 | 2026-11-21 | 6 / 6.5 | UI nối API thật: tải lên tiếp tục được (chunk 8 MiB, tạm dừng/tiếp tục/hủy, tự đồng bộ khi 409), terminal xterm.js qua WebSocket gateway (theme theo token, tự fit, thông báo lý do đóng), mật khẩu DB/SFTP do panel sinh hiện một lần + đổi mật khẩu SFTP, tải file bằng link ký; MSW demo khớp hành vi mới; sửa UUID SFTP demo trùng | 612a8e6 |
+| 2026-11-21 | 6 / 6.6 | Playwright stack thật Phase 6 (12/12 cùng Phase 3–5); sửa 6 lỗi: `redact` đổi null thành `[REDACTED]` gửi agent, khóa SSH thiếu padding, gateway 2 khung close (coder/websocket 1.8.14), Uploader báo xong trước commit, staging `make dev`, cron `a/n` vượt miền (fuzz); `tests/vm/phase6.sh` S0–S7 + `term_client.py`; review bảo mật File Manager; runbook; báo cáo `docs/reports/phase-6.md`; merge phase-6 → main (local) | (commit 6.6) |

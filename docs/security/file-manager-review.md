@@ -6,7 +6,7 @@
 
 ## 1. Kiến trúc và ranh giới tin cậy
 
-```
+```text
 Trình duyệt ──HTTPS──► Laravel (user itso, không chạy lệnh) ──HMAC/unix socket──► itso-agent (root)
                                                                                      │ fork itso-fs-helper
                                                                                      ▼ setuid/setgid = uid account

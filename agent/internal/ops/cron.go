@@ -89,7 +89,7 @@ func parseField(s string, f cronField) ([]int, bool, error) {
 				hi = f.max
 			}
 		}
-		if lo < f.min || hi > f.max {
+		if lo < f.min || hi > f.max || lo > hi { // lo > hi: "a/n" với a vượt max (vd. giờ 27/1) → tập rỗng
 			return nil, false, invalid("trường %s ngoài miền %d–%d", f.name, f.min, f.max)
 		}
 		for v := lo; v <= hi; v += step {

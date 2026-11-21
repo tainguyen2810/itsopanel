@@ -105,7 +105,7 @@ final class CronSchedule
             } else {
                 throw $bad("giá trị $rng không hợp lệ");
             }
-            if ($lo < $min || $hi > $max) {
+            if ($lo < $min || $hi > $max || $lo > $hi) { // "a/n" với a vượt max → tập rỗng
                 throw $bad("ngoài miền {$min}–{$max}");
             }
             for ($v = $lo; $v <= $hi; $v += $step) {

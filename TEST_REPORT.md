@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 6 / Prompt 6.6 — nhánh `phase-6`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway), DB `migrate:fresh --seed` + `DemoSeeder`. Container không có KVM/systemd: `tests/vm/phase6.sh` **chờ VM**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật | `make test-e2e-real` | PASS 12/12 (4.9 phút). Mới `phase6.spec.ts`: DB + user (mật khẩu một lần) → export → import; FTPS phụ + đổi mật khẩu; khóa SSH ed25519 thật; cron chạy ngay → lịch sử; File Manager (thư mục, upload gửi lặp → 409 `received=5` → gửi tiếp → completed, upload UI, sửa ETag, nén/giải nén, link ký + chữ ký sai 403); terminal (step-up → xterm → `whoami` → `exit` → "Phiên đã kết thúc"); Portal tương tự. Chạy lại `phase5.spec.ts` sau Phase 6: PASS 2/2 |
+| Lỗi e2e tìm thấy | — | (1) `redact` đổi `null` thành `[REDACTED]` gửi agent làm mật khẩu (tạm khóa account có FTPS lỗi); (2) khóa SSH thiếu padding qua Laravel, agent từ chối; (3) gateway gửi 2 khung close → Chrome 1006 (coder/websocket 1.8.12 → 1.8.14 + Close một lần); (4) Uploader báo xong trước commit; (5) `make dev` staging ngoài gốc sandbox. Mỗi lỗi có test hồi quy (Pest kiểm thất bại trước khi sửa với (1), (2)) |
+| Pest liên quan | `pest tests/Feature/Phase6/DataTest.php` | PASS 7/7 (435 assertion) |
+| Vitest | `pnpm test` | PASS 501/501 (thêm: chờ `committing` → `completed`/`failed`) |
+| Go gateway | `go test -race ./internal/gateway` | PASS |
+| Toàn bộ | `make check` | Lần đầu **19 PASS · 1 SKIP (staticcheck) · 3 FAIL** (644 s): Pest 424, Vitest 501, Playwright demo 263, test-agent 15 gói. FAIL: `test-fuzz` — `FuzzCronToOnCalendar`: `"0 27/1 * 1 00"` → OnCalendar hỏng (lỗi thật từ 6.2: `a/n` với a > max cho tập rỗng; Laravel `CronSchedule` cùng lỗi); `docs-check` MD040 ở `file-manager-review.md`; `git-clean` do corpus fuzz + báo cáo chưa commit |
+| Chạy lại mục lỗi | `make test-fuzz` · `make docs-check` · `pest DataTest` · `go test ./internal/ops` | PASS · PASS · PASS (thêm `0 27/1 * * *` → 422) · PASS (seed fuzz mới) |
+| Script VM | `bash -n tests/vm/phase6.sh` · `python3 -m py_compile tests/vm/lib/term_client.py`; params thử với agent sandbox | Cú pháp OK; params khớp schema (fs.read/fs.chmod/cron.run_once). **Chờ VM:** S0–S7 |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase6.sh` (cùng phase4/phase5).
+
 ## 2026-11-21 — Phase 6 / Prompt 6.5 — nhánh `phase-6`
 
 Môi trường: Node 22 + pnpm, Chromium Playwright có sẵn; demo MSW (không cần Laravel). Terminal thật (xterm ↔ gateway) chỉ chạy khi không ở demo: kiểm ở 6.6 trên stack thật.

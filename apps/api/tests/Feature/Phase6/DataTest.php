@@ -243,7 +243,7 @@ it('cron: tạo/sửa (If-Match)/chạy ngay/đồng bộ lịch sử/xóa; lị
     $tooOften = d6($in, 'POST', '/api/v1/admin/cron-jobs', ['hosting_account_uuid' => $a->account->uuid, 'schedule' => '* * * * *', 'command' => 'php artisan schedule:run']);
     assertMatchesContract(D6A, 'post', '/api/v1/admin/cron-jobs', 422, $tooOften);
     expect($tooOften->json('errors'))->toHaveKey('schedule');
-    foreach (['*/5 * * *', '61 * * * *', '@reboot', '*/0 * * * *'] as $bad) {
+    foreach (['*/5 * * *', '61 * * * *', '0 27/1 * * *', '@reboot', '*/0 * * * *'] as $bad) {
         expect(d6($in, 'POST', '/api/v1/admin/cron-jobs', ['hosting_account_uuid' => $a->account->uuid, 'schedule' => $bad, 'command' => 'true'])
             ->status())->toBe(422, $bad);
     }

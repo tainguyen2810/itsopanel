@@ -12,7 +12,7 @@ import (
 var reCal = regexp.MustCompile(`^((Mon|Tue|Wed|Thu|Fri|Sat|Sun)[A-Za-z.,]* )?\*-[0-9*.,]+-[0-9*.,]+ [0-9*.,]+:[0-9*.,]+:00$`)
 
 func FuzzCronToOnCalendar(f *testing.F) {
-	for _, s := range []string{"* * * * *", "*/15 2-5 * * 1-5", "0 0 29 2 *", "1,2 3-4/2 * 1-12/3 0,7", "* * 1 * 1"} {
+	for _, s := range []string{"* * * * *", "*/15 2-5 * * 1-5", "0 0 29 2 *", "1,2 3-4/2 * 1-12/3 0,7", "* * 1 * 1", "0 27/1 * 1 00"} {
 		f.Add(s)
 	}
 	f.Fuzz(func(t *testing.T, s string) {
