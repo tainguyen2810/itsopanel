@@ -5,7 +5,7 @@ import type { DemoDb } from '../db';
 import { get as pick, page } from '../list';
 import { created, noContent, ok, on, problem, type Ctx, type Reply } from '../router';
 import { canSeeAccount, canSeeServer, scopeRows, visibility } from '../scope';
-import { sshState } from './security';
+import { needServer, sshState } from './security';
 import { actorRef, startJob } from './writes';
 
 /**
@@ -73,8 +73,18 @@ function registerSecurity() {
     return ok(e);
   });
 
+  on('get', P('/security/ssh'), (ctx) => {
+    const deny = saOnly(ctx) ?? needServer(ctx);
+    if (deny) return deny;
+    return ok(ctx.db.data.ssh_settings as S['SshSettings']);
+  });
+  on('get', P('/security/fail2ban'), (ctx) => {
+    const deny = saOnly(ctx) ?? needServer(ctx);
+    if (deny) return deny;
+    return ok(ctx.db.data.fail2ban as S['Fail2banSettings']);
+  });
   on('patch', P('/security/ssh'), (ctx) => {
-    const deny = saOnly(ctx);
+    const deny = saOnly(ctx) ?? needServer(ctx);
     if (deny) return deny;
     const cur = ctx.db.data.ssh_settings as S['SshSettings'];
     const pre = precondition(ctx, cur.updated_at);
@@ -136,7 +146,7 @@ function registerSecurity() {
   });
 
   on('patch', P('/security/fail2ban'), (ctx) => {
-    const deny = saOnly(ctx);
+    const deny = saOnly(ctx) ?? needServer(ctx);
     if (deny) return deny;
     const cur = ctx.db.data.fail2ban as S['Fail2banSettings'];
     const pre = precondition(ctx, cur.updated_at);
@@ -1248,7 +1258,7 @@ export function settingsError(group: string, v: Record<string, unknown>): string
     const n = v.session_lifetime_min as number;
     if (!Number.isInteger(n) || n < 15 || n > 720) return 'Thời gian phiên từ 15 đến 720 phút.';
     const c = v.portal_captcha_after_failures as number;
-    if (!Number.isInteger(c) || c < 1 || c > 10) return 'Captcha sau 1 đến 10 lần sai.';
+    if (!Number.isInteger(c) || c < 0 || c > 10) return 'Captcha sau 0 (luôn bật) đến 10 lần sai.';
     if (v.admin_mfa_required !== true) return 'MFA cho quản trị viên là bắt buộc, không tắt được.';
   }
   if (group === 'smtp') {

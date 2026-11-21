@@ -49,6 +49,18 @@ describe('safe-apply tường lửa: đếm ngược và tự hoàn tác', () =>
     expect(s.phase).toBe('confirmed');
   });
 
+  it('tải lại trang khi máy chủ còn chờ xác nhận → nối lại đếm ngược theo rollback_at (wizard, đổi máy)', () => {
+    const r = run([{ type: 'resume', deadline: t0 + 300_000, now: t0 }]);
+    expect(r).toEqual({ phase: 'awaiting', deadline: t0 + 300_000 });
+    expect(secondsLeft(r, t0 + 1_000)).toBe(299);
+    // Hạn đã qua (máy chủ đã/hoặc sắp hoàn tác) hoặc đang ở pha khác → không đổi.
+    expect(run([{ type: 'resume', deadline: t0 - 1, now: t0 }]).phase).toBe('idle');
+    const applying = run([{ type: 'applied', jobUuid: 'j', seconds: 30 }]);
+    expect(safeApplyReducer(applying, { type: 'resume', deadline: t0 + 9_000, now: t0 })).toBe(
+      applying,
+    );
+  });
+
   it('job áp dụng thất bại → quay về idle (máy chủ giữ rule cũ)', () => {
     expect(run([{ type: 'applied', jobUuid: 'j', seconds: 30 }, { type: 'jobFailed' }])).toEqual({
       phase: 'idle',

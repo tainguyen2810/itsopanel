@@ -1,7 +1,7 @@
 import type { components as A } from '@/api/generated/admin/schema';
 import { powValid } from '@/shared/auth/pow';
 import { onTick, type DemoDb } from '../db';
-import { isReply } from '../list';
+import { isReply, page } from '../list';
 import { ok, on, problem, type ApiPath, type Ctx } from '../router';
 import { canSeeAccount, canSeeServer, visibility } from '../scope';
 import { registerListSpecs } from './admin';
@@ -17,6 +17,25 @@ const AP = (p: string) => `/api/v1/admin${p}` as ApiPath;
 const PP = (p: string) => `/api/v1/portal${p}` as ApiPath;
 const saOnly = (ctx: Ctx) =>
   ctx.actor.role === 'SUPER_ADMIN' ? null : problem(403, 'forbidden', 'Chỉ Super Admin');
+
+/**
+ * Endpoint cấu hình theo máy chủ (SSH, fail2ban, điểm) bắt buộc `?server=<uuid>` như API thật; thiếu/sai → 422,
+ * máy chủ ngoài phạm vi → 404.
+ */
+export function needServer(ctx: Ctx) {
+  const id = ctx.query.get('server');
+  if (!id)
+    return problem(
+      422,
+      'validation_failed',
+      'Dữ liệu không hợp lệ',
+      'server phải là UUID máy chủ.',
+    );
+  const s = ctx.db.data.servers.find((x) => x.uuid === id);
+  if (!s || !canSeeServer(visibility(ctx.db, ctx.actor), s.uuid))
+    return problem(404, 'not_found', 'Không tìm thấy server');
+  return null;
+}
 
 const without = <T>(o: Record<string, T>, k: string): Record<string, T> =>
   Object.fromEntries(Object.entries(o).filter(([x]) => x !== k));
@@ -53,7 +72,9 @@ export async function checkLogin(
   const st = captchaState(ctx.db);
   const key = body.email.trim().toLowerCase();
   const fails = st.failures[key] ?? 0;
-  if (fails >= threshold(ctx.db)) {
+  // Như API thật (7.4): CAPTCHA chỉ áp cho đăng nhập Portal; ngưỡng 0 = luôn cần.
+  const portal = ctx.request.headers.get('X-Demo-Realm') === 'portal';
+  if (portal && fails >= threshold(ctx.db)) {
     const c = body.captcha;
     const exp = c?.challenge ? st.issued[c.challenge] : undefined;
     const good =
@@ -134,7 +155,7 @@ export function registerSecurity() {
     }
   });
   on('post', AP('/security/ssh:confirm'), (ctx) => {
-    const deny = saOnly(ctx);
+    const deny = saOnly(ctx) ?? needServer(ctx);
     if (deny) return deny;
     const st = sshState(ctx.db);
     if (!st.deadline) {
@@ -151,7 +172,69 @@ export function registerSecurity() {
     });
   });
 
-  // ---------------------------------------------------------------- FIM
+  // ---------------------------------------------------------------- điểm + fail2ban bans (7.6)
+  on('get', AP('/security/score'), (ctx) => {
+    const deny = needServer(ctx);
+    if (deny) return deny;
+    const s = ctx.db.data.servers.find((x) => x.uuid === ctx.query.get('server'));
+    return ok({
+      ...(ctx.db.data.security_score as S['SecurityScore']),
+      server: { uuid: s?.uuid ?? '', name: s?.name ?? '' },
+    });
+  });
+  const bans = (db: DemoDb) => db.data.fail2ban_bans as S['Fail2banBan'][];
+  registerListSpecs([
+    {
+      path: AP('/security/fail2ban/bans'),
+      rows: (db) => bans(db) as never,
+      scope: 'server',
+      search: ['ip'],
+      sort: '-banned_at',
+    },
+  ]);
+  on('post', AP('/security/fail2ban/bans:unban'), (ctx) => {
+    const b = (ctx.body ?? {}) as Partial<S['Fail2banUnban']>;
+    if (!b.server || !b.jail || !b.ip)
+      return problem(422, 'validation_failed', 'Dữ liệu không hợp lệ', 'Cần server, jail và ip.');
+    const v = visibility(ctx.db, ctx.actor);
+    if (!canSeeServer(v, b.server)) return problem(404, 'not_found', 'Không tìm thấy server');
+    const i = bans(ctx.db).findIndex(
+      (x) => x.server.uuid === b.server && x.jail === b.jail && x.ip === b.ip,
+    );
+    if (i < 0) return problem(404, 'not_found', 'IP không bị chặn trong jail này');
+    const [gone] = bans(ctx.db).splice(i, 1);
+    const f = ctx.db.data.fail2ban as S['Fail2banSettings'];
+    const j = f.jails.find((x) => x.name === b.jail);
+    if (j && j.banned_count > 0) j.banned_count -= 1;
+    return startJob(ctx, {
+      type: 'fail2ban.unban',
+      resource: { type: 'server', uuid: b.server },
+      ops: ['fail2ban.unban'],
+      server: gone?.server ?? null,
+      changes: { jail: b.jail, ip: b.ip },
+    });
+  });
+
+  // ---------------------------------------------------------------- FIM + sự kiện WAF theo website (7.6)
+  registerListSpecs([
+    {
+      path: AP('/security/fim/changes'),
+      rows: (db) => db.data.fim_changes as never,
+      scope: 'server',
+      search: ['path'],
+      sort: '-detected_at',
+    },
+  ]);
+  on('get', AP('/websites/{id}/waf/events'), (ctx) => {
+    const v = visibility(ctx.db, ctx.actor);
+    const w = ctx.db.data.websites.find((x) => x.uuid === ctx.params.id);
+    if (!w || !canSeeAccount(v, w.hosting_account.uuid))
+      return problem(404, 'not_found', 'Không tìm thấy website');
+    const rows = (ctx.db.data.waf_events as S['WafEvent'][]).filter(
+      (e) => e.website.uuid === w.uuid,
+    );
+    return page(ctx, rows, { search: ['uri', 'client_ip', 'message'], sort: '-at' });
+  });
   on('post', AP('/servers/{id}/fim:baseline'), (ctx) => {
     const deny = saOnly(ctx);
     if (deny) return deny;
@@ -199,9 +282,31 @@ export function registerSecurity() {
     );
     if (!t) return problem(404, 'not_found', 'Không tìm thấy phiên');
     if (!t.recorded) return problem(404, 'not_found', 'Phiên này không được ghi');
+    // Đọc theo trang như pty.recording.read: offset là vị trí đầu dòng; demo chia 4 sự kiện mỗi trang
+    // (offset = chỉ số sự kiện), trang cuối next_offset = null.
+    const rec = ctx.db.data.terminal_recording as S['TerminalRecording'];
+    const raw = ctx.query.get('offset') ?? '0';
+    if (!/^[0-9]{1,15}$/.test(raw))
+      return problem(
+        422,
+        'validation_failed',
+        'Dữ liệu không hợp lệ',
+        'offset phải là số nguyên ≥ 0.',
+      );
+    const off = Number(raw);
+    if (off > rec.events.length)
+      return problem(
+        422,
+        'validation_failed',
+        'Dữ liệu không hợp lệ',
+        'offset vượt kích thước bản ghi.',
+      );
+    const end = Math.min(rec.events.length, off + 4);
     return ok({
-      ...(ctx.db.data.terminal_recording as S['TerminalRecording']),
+      ...rec,
       session_uuid: t.uuid,
+      events: rec.events.slice(off, end),
+      next_offset: end >= rec.events.length ? null : end,
     });
   });
 

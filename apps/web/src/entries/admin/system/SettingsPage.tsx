@@ -37,7 +37,7 @@ export const generalSchema = z.object({
 export const securitySchema = z.object({
   admin_mfa_required: z.literal(true, { error: 'admin:settings.errors.mfa' }),
   session_lifetime_min: num(15, 720),
-  portal_captcha_after_failures: num(1, 10),
+  portal_captcha_after_failures: num(0, 10),
   portal_mfa_required: z.boolean(),
 });
 export const smtpSchema = z.object({

@@ -282,8 +282,7 @@ export function registerAdminLists() {
 
   const singletons: [ApiPath, string][] = [
     ['/api/v1/admin/security/overview', 'security_overview'],
-    ['/api/v1/admin/security/ssh', 'ssh_settings'],
-    ['/api/v1/admin/security/fail2ban', 'fail2ban'],
+    // /security/ssh, /security/fail2ban: governance.ts (bắt buộc ?server= như API thật).
     ['/api/v1/admin/security/ip-allowlist', 'ip_allowlist'],
     ['/api/v1/admin/notification-preferences', 'notification_prefs'],
   ];

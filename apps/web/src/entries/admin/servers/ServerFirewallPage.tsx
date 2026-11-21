@@ -72,6 +72,17 @@ export default function ServerFirewallPage() {
     }, 250);
     return () => clearInterval(h);
   }, [state.phase]);
+  // Lần áp dụng còn chờ xác nhận (tải lại trang, đổi máy): nối lại đếm ngược theo rollback_at của máy chủ.
+  const status = useQuery({
+    queryKey: [...key, 'status'],
+    enabled: sa,
+    queryFn: () => get('/api/v1/admin/servers/{id}/firewall/status', { path: { id: server.id } }),
+  });
+  useEffect(() => {
+    const st = status.data;
+    if (st?.state === 'pending_confirm' && st.rollback_at)
+      dispatch({ type: 'resume', deadline: Date.parse(st.rollback_at), now: Date.now() });
+  }, [status.data]);
   useEffect(() => {
     if (state.phase === 'rolledBack') refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -300,6 +311,7 @@ export default function ServerFirewallPage() {
         }
       />
       <ApplyDialog
+        serverId={server.id}
         open={applying}
         onOpenChange={setApplying}
         pending={apply.isPending}
@@ -310,11 +322,13 @@ export default function ServerFirewallPage() {
 }
 
 function ApplyDialog({
+  serverId,
   open,
   onOpenChange,
   pending,
   onApply,
 }: {
+  serverId: string;
   open: boolean;
   onOpenChange: (o: boolean) => void;
   pending: boolean;
@@ -323,6 +337,14 @@ function ApplyDialog({
   const { t } = useTranslation('admin');
   const [sec, setSec] = useState(120);
   const valid = Number.isInteger(sec) && sec >= 30 && sec <= 600;
+  // Xem trước ruleset sẽ nạp (chỉ bảng inet itso) + cảnh báo chống tự khóa, tính từ IP hiện tại của bạn.
+  const preview = useQuery({
+    queryKey: ['admin', 'server', serverId, 'firewall', 'preview'],
+    enabled: open,
+    gcTime: 0,
+    queryFn: () => get('/api/v1/admin/servers/{id}/firewall/preview', { path: { id: serverId } }),
+  });
+  const risk = preview.data?.lockout_risk === true;
   return (
     <FormDialog
       open={open}
@@ -330,9 +352,32 @@ function ApplyDialog({
       title={t('firewall.applyTitle')}
       description={t('firewall.applyHint')}
       submitLabel={t('firewall.apply')}
-      pending={pending || !valid}
-      onSubmit={() => valid && onApply(sec)}
+      pending={pending || !valid || risk || preview.isLoading}
+      onSubmit={() => valid && !risk && onApply(sec)}
     >
+      {risk && (
+        <Alert tone="danger" title={t('firewall.lockoutTitle')}>
+          {t('firewall.lockoutHint')}
+        </Alert>
+      )}
+      {(preview.data?.warnings ?? []).map((w) => (
+        <Alert key={w} tone="warning" title={w} />
+      ))}
+      {preview.data && (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-sm font-medium">
+            {t('firewall.previewTitle', { count: preview.data.rules_active })}
+          </p>
+          <pre
+            data-testid="firewall-preview"
+            tabIndex={0}
+            aria-label={t('firewall.previewTitle', { count: preview.data.rules_active })}
+            className="max-h-56 overflow-auto rounded-md bg-surface-2 p-3 font-mono text-sm"
+          >
+            {preview.data.ruleset}
+          </pre>
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="rollback">{t('firewall.rollbackAfter')}</Label>
         <Input

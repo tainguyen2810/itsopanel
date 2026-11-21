@@ -9,6 +9,8 @@ import { Button } from '@/ui/Button';
 import type { ColumnDef } from '@/ui/DataTable';
 import { Dialog, DialogContent } from '@/ui/Dialog';
 import { ProgressBar } from '@/ui/ProgressBar';
+import { Alert } from '@/ui/Alert';
+import { ErrorState } from '@/shared/page/states';
 import { get, list, type Row } from '../api';
 import { SecurityNav } from './common';
 
@@ -29,6 +31,55 @@ export function screenAt(events: Event[], at: number): string {
       .map((e) => e.data)
       .join(''),
   );
+}
+
+type Page = {
+  width: number;
+  height: number;
+  events: Event[];
+  next_offset: number | null;
+  truncated: boolean;
+};
+
+/** Số trang tối đa tải cho một lần phát lại (mỗi trang ≤ 256 KB từ agent → ~10 MB). */
+export const MAX_PAGES = 40;
+
+/**
+ * Tải bản ghi theo trang (pty.recording.read qua API): đọc nối tiếp theo next_offset tới khi null; quá MAX_PAGES
+ * thì dừng và đánh dấu `partial` (phát phần đầu, tránh treo trình duyệt với bản ghi 50 MB).
+ */
+export async function loadRecording(fetchPage: (offset: number) => Promise<Page>): Promise<{
+  width: number;
+  height: number;
+  events: Event[];
+  truncated: boolean;
+  partial: boolean;
+}> {
+  let offset = 0;
+  const events: Event[] = [];
+  let first: Page | null = null;
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const p = await fetchPage(offset);
+    first ??= p;
+    events.push(...p.events);
+    if (p.next_offset === null)
+      return {
+        width: first.width,
+        height: first.height,
+        events,
+        truncated: p.truncated,
+        partial: false,
+      };
+    if (p.next_offset <= offset) break; // phòng vòng lặp nếu API trả offset không tiến
+    offset = p.next_offset;
+  }
+  return {
+    width: first?.width ?? 80,
+    height: first?.height ?? 24,
+    events,
+    truncated: false,
+    partial: true,
+  };
 }
 
 /** Phiên terminal (D-81): ai mở, khi nào, root hay account; phiên được ghi xem lại được (cần step-up). */
@@ -138,9 +189,12 @@ function Player({ session, onClose }: { session: Session | null; onClose: () => 
     queryKey: ['admin', 'terminal', 'recording', session?.uuid],
     enabled: session !== null,
     queryFn: async () => {
-      const r = await get('/api/v1/admin/terminal/sessions/{id}/recording', {
-        path: { id: session?.uuid ?? '' },
-      });
+      const r = await loadRecording((offset) =>
+        get('/api/v1/admin/terminal/sessions/{id}/recording', {
+          path: { id: session?.uuid ?? '' },
+          query: { offset },
+        }),
+      );
       setReady(true);
       return r;
     },
@@ -213,6 +267,9 @@ function Player({ session, onClose }: { session: Session | null; onClose: () => 
               {shown.toFixed(1)}s / {total.toFixed(1)}s
             </span>
           </div>
+          {rec.data?.truncated && <Alert tone="warning" title={t('terminal.truncated')} />}
+          {rec.data?.partial && <Alert tone="info" title={t('terminal.partial')} />}
+          {rec.error && <ErrorState error={rec.error} onRetry={() => void rec.refetch()} />}
           {session && (
             <p className="text-sm text-muted">
               {t('terminal.recordingMeta', {

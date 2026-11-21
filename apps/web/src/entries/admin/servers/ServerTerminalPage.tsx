@@ -12,6 +12,7 @@ import { Label } from '@/ui/Label';
 import { Select } from '@/ui/Select';
 import { AppLink } from '@/ui/AppLink';
 import { Badge } from '@/ui/Badge';
+import { useSession } from '@/shared/session/SessionContext';
 import { get, list, send } from '../api';
 import { useAction } from '../useAction';
 import { ServerNav, useServer } from './common';
@@ -22,6 +23,8 @@ export { simulate };
 export default function ServerTerminalPage() {
   const { t } = useTranslation('admin');
   const server = useServer();
+  // Terminal root chỉ SUPER_ADMIN (ADR 0028): ADMIN không thấy lựa chọn này.
+  const sa = useSession().user.role === 'SUPER_ADMIN';
   const [mode, setMode] = useState<'root' | 'account'>('account');
   const [account, setAccount] = useState('');
   const [stepUp, setStepUp] = useState(false);
@@ -81,7 +84,7 @@ export default function ServerTerminalPage() {
                       onValueChange={(v) => setMode(v as typeof mode)}
                       options={[
                         { value: 'account', label: t('terminal.modes.account') },
-                        { value: 'root', label: t('terminal.modes.root') },
+                        ...(sa ? [{ value: 'root', label: t('terminal.modes.root') }] : []),
                       ]}
                     />
                   </div>

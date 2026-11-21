@@ -30,6 +30,7 @@ const RULE_RAM = '01938a20-0003-7000-8000-000020000003';
 const STEP = 10;
 const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 const A = (p: string) => `/api/v1/admin${p}`;
+const SRV_HN = '01938a02-0001-7000-8000-000002000001';
 
 async function call(
   method: string,
@@ -89,17 +90,21 @@ describe('bảo mật', () => {
   });
 
   it('SSH: chỉ SA, chặn cấu hình tự khóa, áp dụng qua job sshd.config.apply', async () => {
-    expect((await call('PATCH', A('/security/ssh'), { port: 2222 }, MINH)).status).toBe(403);
-    expect(code(await call('PATCH', A('/security/ssh'), { allow_groups: [] }))).toBe(
-      'validation_failed',
+    expect(
+      (await call('PATCH', A(`/security/ssh?server=${SRV_HN}`), { port: 2222 }, MINH)).status,
+    ).toBe(403);
+    expect(
+      code(await call('PATCH', A(`/security/ssh?server=${SRV_HN}`), { allow_groups: [] })),
+    ).toBe('validation_failed');
+    expect((await call('PATCH', A(`/security/ssh?server=${SRV_HN}`), { port: 70000 })).status).toBe(
+      422,
     );
-    expect((await call('PATCH', A('/security/ssh'), { port: 70000 })).status).toBe(422);
-    const stale = await call('PATCH', A('/security/ssh'), { port: 2222 }, SA, {
+    const stale = await call('PATCH', A(`/security/ssh?server=${SRV_HN}`), { port: 2222 }, SA, {
       'If-Match': '"x"',
     });
     expect(stale.status).toBe(412);
     const job = await finish(
-      await call('PATCH', A('/security/ssh'), {
+      await call('PATCH', A(`/security/ssh?server=${SRV_HN}`), {
         port: 2222,
         max_auth_tries: 4,
         rollback_after_sec: 60,
@@ -108,7 +113,9 @@ describe('bảo mật', () => {
     expect(
       data<{ steps: { op: string }[] }>(await call('GET', A(`/jobs/${job.uuid}`))).steps[0]?.op,
     ).toBe('sshd.config.apply');
-    const s = data<{ port: number; max_auth_tries: number }>(await call('GET', A('/security/ssh')));
+    const s = data<{ port: number; max_auth_tries: number }>(
+      await call('GET', A(`/security/ssh?server=${SRV_HN}`)),
+    );
     expect([s.port, s.max_auth_tries]).toEqual([2222, 4]);
   });
 
@@ -122,11 +129,15 @@ describe('bảo mật', () => {
       banned_count: 0,
     };
     expect(
-      (await call('PATCH', A('/security/fail2ban'), { jails: [{ ...jail, name: 'x' }] })).status,
+      (
+        await call('PATCH', A(`/security/fail2ban?server=${SRV_HN}`), {
+          jails: [{ ...jail, name: 'x' }],
+        })
+      ).status,
     ).toBe(422);
-    await finish(await call('PATCH', A('/security/fail2ban'), { jails: [jail] }));
+    await finish(await call('PATCH', A(`/security/fail2ban?server=${SRV_HN}`), { jails: [jail] }));
     const f = data<{ jails: { name: string; bantime_sec: number; banned_count: number }[] }>(
-      await call('GET', A('/security/fail2ban')),
+      await call('GET', A(`/security/fail2ban?server=${SRV_HN}`)),
     );
     expect(f.jails[0]).toMatchObject({ bantime_sec: 7200, banned_count: 12 });
   });

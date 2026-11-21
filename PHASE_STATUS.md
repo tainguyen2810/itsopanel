@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 7 — Security Center (✱ đang làm; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 7.6 UI nối API thật (7.0–7.5 ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
-- **Task đang làm:** 7.6 UI Admin + Portal theo mockup 7.0 (gồm wizard xác nhận firewall, terminal root + phát lại bản ghi), MSW theo hành vi mới
+- **Prompt hiện tại:** 7.7 e2e, VM, review bảo mật, báo cáo, merge (7.0–7.6 ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
+- **Task đang làm:** 7.7 e2e-real Phase 7, `tests/vm/phase7.sh`, review bảo mật, `make check`, báo cáo `docs/reports/phase-7.md`, merge `phase-7` → `main`
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-7`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_7_PROMPTS.md`; cuối 7.7 báo cáo Phase 7 và DỪNG (không bắt đầu Phase 8)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -39,8 +39,8 @@ Phase 7 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.
 - ✓ 7.3 Agent: WAF, mã độc + cách ly, FIM, security.audit
 - ✓ 7.4 Panel: Security Center API, CAPTCHA, IP allowlist chống tự khóa
 - ✓ 7.5 Terminal root theo policy + ghi phiên
-- ✱ 7.6 UI nối API thật
-- ○ 7.7 e2e, VM Phase 7, review bảo mật, báo cáo, merge
+- ✓ 7.6 UI nối API thật
+- ✱ 7.7 e2e, VM Phase 7, review bảo mật, báo cáo, merge
 
 Phase 6: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-6.md`, merge `547002f`; mockup bù `c811794`). Chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.md`
 
@@ -136,3 +136,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 7 / 7.3 | Agent: `waf.apply` (file rule + include `/etc/itso/waf/<uuid>.nginx*` mà vhost luôn include theo glob, nginx -t + hoàn tác, available=false khi thiếu gói), `waf.events` (audit log JSON theo con trỏ inode:offset, gán website theo Host ↔ server_name, bỏ rule điểm tổng CRS), `malware.scan` (clamdscan --fdpass + yara qua systemd-run dưới uid account trong slice, Nice 19, IO idle, CPUQuota 50%), `malware.quarantine/restore/delete` qua helper (op mới hash/raw/delete_if, không theo symlink, kiểm sha256, khôi phục không ghi đè trừ overwrite), `fim.baseline/check`, `security.audit`; rule YARA kèm bản phát hành; sửa lỗi helper luồng (raw trả lỗi qua stderr như cat) | 5e8565e |
 | 2026-11-21 | 7 / 7.4 | Panel: Domain/Security (FirewallRuleset bản PHP của RenderNft khớp golden agent, safe-apply chung firewall/sshd chỉ lưu sha256 token, token trong cache mã hóa qua panel step; SSH đổi port mở tường lửa trước; fail2ban; WAF + đồng bộ sự kiện theo con trỏ; mã độc quét/cách ly/khôi phục/xóa; FIM; điểm theo `SecurityScore::WEIGHTS`; sự kiện high/critical → thông báo), 32 endpoint admin + 5 portal + `GET /auth/captcha`, quyền `security.read/write` (ADMIN theo phạm vi) và `security.server` (SUPER_ADMIN), lệnh lịch `itso:waf-events-sync`, `itso:fim-check`, `itso:security-audit`, CAPTCHA PoW HMAC dùng một lần (Portal), `auth.log` cho jail itso-panel, `portal_mfa_required`, IP allowlist chống tự khóa, nền bảo mật khi xong wizard; bổ sung cột DB cho API (migration Phase 7 sinh lại) | cc0074a |
 | 2026-11-21 | 7 / 7.5 | Agent: policy `record_user` + bí danh `terminal.root`/`terminal.record_user`, `itso policy set` nhận on/off, `itso allowlist reset` (→ `artisan itso:allowlist-reset`); `pty.open.root` (chặn ở registry + handler khi policy tắt, systemd-run root golden), ghi asciicast v2 `/var/lib/itso/recordings/<uuid>.cast` 0600 (chỉ output, giữ rune UTF-8 cắt đôi, 50 MB → marker truncated + đóng phiên `limit`, không ghi được → không mở), `pty.list` (gồm phiên chờ ATTACH), `pty.policy`, `pty.recording.read` theo offset đầu dòng; Panel: `mode=root` chỉ SUPER_ADMIN realm Admin + step-up ≤ 10 phút, `terminal_recordings`, `GET /terminal/sessions` (ADMIN không thấy phiên root), `GET /servers/{id}/terminal/policy`, `GET /terminal/sessions/{id}/recording` (SUPER_ADMIN + step-up, audit một lần mỗi lượt xem), `itso:terminal-reap` 5 phút theo `pty.list` (dự phòng luật 12 giờ); ADR 0028 ghi file policy YAML sẵn có | 9ce6ef9 |
+| 2026-11-21 | 7 / 7.6 | Web nối API thật: tham số `?server=` cho SSH/fail2ban/điểm (bộ chọn máy chủ `useSecurityServer`, nhớ trong sessionStorage, chỉ hiện khi ≥ 2 máy), `send` nhận `query`, `getWith` đọc lại một lần sau step-up; fail2ban danh sách IP bị chặn + gỡ chặn; FIM theo `/security/fim/changes`; tường lửa: xem trước ruleset + chặn áp dụng khi `lockout_risk`, đếm ngược khôi phục từ `firewall/status`; sự kiện WAF trong tab website; terminal root chỉ hiện cho SUPER_ADMIN, phát lại bản ghi phân trang (tối đa 40 trang, cảnh báo cắt/không đủ); wizard xong → trang tường lửa xác nhận; ngưỡng CAPTCHA 0–10 (chỉ Portal); MSW theo hành vi mới | (commit 7.6) |

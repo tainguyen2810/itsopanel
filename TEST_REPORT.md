@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.6 (UI nối API thật) — nhánh `phase-7`
+
+Phạm vi: `apps/web/src` — `shared/api/core.ts` (`SendOpts` có `query`, `getWith` thử lại sau step-up), `entries/admin/security/{useServer,SshPage,Fail2banPage,FimPage,TerminalSessionsPage}`, `servers/{ServerFirewallPage,firewall.ts,ServerTerminalPage}`, `sites/WebsiteDetailPage` (WAF events), `install/InstallPage`, `system/SettingsPage`; i18n VI/EN; MSW `demo/handlers/{security,governance,infra,admin}.ts`. Contracts không đổi.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest (toàn bộ) | `pnpm exec vitest run` (apps/web) | 541/541 PASS (36 file). Mới/sửa: `demo/__tests__/security.test.ts` (CAPTCHA chỉ Portal + Admin không đòi; SSH/fail2ban thiếu/sai server → 422/404; root policy tắt 409, ADMIN 403, SA 201; bản ghi phân trang qua `loadRecording`; bans + unban; firewall status/preview; FIM changes; WAF events), `servers/__tests__/firewall.test.ts` (sự kiện `resume`), `shared/auth/__tests__/captcha.test.ts`; `governance`/`handlers`/`infra` test cập nhật theo `?server=` và 409 root |
+| Lint + Prettier + i18n | `pnpm lint` | PASS; `check-i18n: OK — 6 namespace, 2748 key, 0 thiếu (vi = en)` |
+| Playwright demo mới | `pnpm exec playwright test --trace off e2e/demo-security7.spec.ts` | 2/2 PASS (gỡ chặn IP fail2ban + axe 0 lỗi critical/serious; hộp áp dụng tường lửa hiện ruleset xem trước). Lần đầu đỏ do test: thiếu trường Nguồn, và drawer theo dõi job che bảng (đã đóng drawer trong test) |
+| Playwright demo hồi quy | `pnpm exec playwright test --trace off e2e/demo-smoke.spec.ts e2e/demo-infra.spec.ts` | 82/82 PASS. Trước đó smoke đỏ 1 do MSW thiếu `fim/changes` → thêm list spec, chạy lại xanh |
+
+**Chờ VM:** không (thay đổi chỉ ở web/MSW; luồng thật kiểm ở 7.7). **Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.5 (Terminal root + ghi phiên) — nhánh `phase-7`
 
 Phạm vi: agent `internal/policy` (record_user, bí danh khóa, `RootTerminal()`), `internal/term/record.go` (Recorder asciicast v2, ReadPage), `term.Manager` (phiên sống, ghi phiên, `ErrDuplicate`), `ops/pty.go` (`pty.open.root`, `pty.policy`, `pty.list`, `pty.recording.read`, argv root), CLI `itso allowlist reset`, `itso policy set … on|off`; Panel `TerminalService` (openRoot, policy, recording, reap theo pty.list), `TerminalController` mode=root, `Security/TerminalSessionController`, model `TerminalRecording`, lệnh `itso:allowlist-reset`. Contracts không đổi (đã đặc tả ở 7.1).

@@ -254,7 +254,7 @@ const CASES: [string, string, string, unknown, number, string?][] = [
     '/api/v1/admin/terminal/sessions',
     '/api/v1/admin/terminal/sessions',
     { mode: 'root', server_uuid: S1 },
-    403, // policy máy chủ mặc định tắt root (D-81)
+    409, // policy máy chủ mặc định tắt root (D-81): 409 precondition_failed như API thật
   ],
   [
     'post',

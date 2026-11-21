@@ -17,6 +17,7 @@ import { mmss, safeApplyReducer, secondsLeft } from '../servers/firewall';
 import { useAction } from '../useAction';
 import { SecurityNav } from './common';
 import { splitList, sshSchema, type SshForm } from './forms';
+import { useSecurityServer } from './useServer';
 
 /**
  * SSH hardening (D-77): áp dụng an toàn như tường lửa. Sau khi agent nạp lại sshd, phải bấm "Giữ cấu hình mới" trong
@@ -26,8 +27,13 @@ export default function SshPage() {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const qc = useQueryClient();
-  const key = ['admin', 'security', 'ssh'];
-  const q = useQuery({ queryKey: key, queryFn: () => get('/api/v1/admin/security/ssh') });
+  const { server, picker } = useSecurityServer();
+  const key = ['admin', 'security', 'ssh', server];
+  const q = useQuery({
+    queryKey: key,
+    enabled: server !== '',
+    queryFn: () => get('/api/v1/admin/security/ssh', { query: { server } }),
+  });
   const { control, handleSubmit, reset, formState } = useForm<SshForm>({
     resolver: zodResolver(sshSchema),
   });
@@ -69,6 +75,7 @@ export default function SshPage() {
   const save = useAction(
     (v: SshForm) =>
       send<JobAccepted>('PATCH', '/api/v1/admin/security/ssh', {
+        query: { server },
         body: { ...v, allow_groups: splitList(v.allow_groups) },
         headers: q.data ? { 'If-Match': `"${q.data.updated_at}"` } : {},
       }),
@@ -77,10 +84,13 @@ export default function SshPage() {
         dispatch({ type: 'applied', jobUuid: r.job.uuid, seconds: v.rollback_after_sec }),
     },
   );
-  const confirm = useAction(() => send('POST', '/api/v1/admin/security/ssh:confirm', {}), {
-    success: t('sec.sshConfirmedToast'),
-    onSuccess: () => dispatch({ type: 'confirmed' }),
-  });
+  const confirm = useAction(
+    () => send('POST', '/api/v1/admin/security/ssh:confirm', { query: { server } }),
+    {
+      success: t('sec.sshConfirmedToast'),
+      onSuccess: () => dispatch({ type: 'confirmed' }),
+    },
+  );
   const pwd = useWatch({ control, name: 'password_authentication' });
   const noKeys = q.data?.admin_keys === 0;
   const busy =
@@ -92,6 +102,7 @@ export default function SshPage() {
       <PageHeader
         title={t('sec.sshTitle')}
         description={t('sec.sshDescription')}
+        actions={busy ? undefined : picker}
         nav={<SecurityNav current="ssh" />}
       />
       <div className="mb-4 flex flex-col gap-3 empty:hidden" aria-live="polite">

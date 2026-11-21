@@ -275,7 +275,8 @@
       "installing": "Installing…",
       "job": "Install web stack",
       "optional": "This step is optional: you can press Continue and install later under Servers → Software."
-    }
+    },
+    "confirmFirewall": "The default firewall was applied: press \"Keep new configuration\" within 5 minutes or the server rolls it back."
   },
   "servers": {
     "title": "Servers",
@@ -506,7 +507,10 @@
       "source": "Invalid IP or CIDR",
       "ports": "Ports 1–65535, like 80,443 or 8000-8100"
     },
-    "lockoutTitle": "This rule would lock you out"
+    "lockoutTitle": "This rule would lock you out",
+    "lockoutHint": "A draft rule blocks the SSH or panel port from your current IP. Fix the rules before applying.",
+    "previewTitle_one": "Ruleset to apply ({{count}} rule)",
+    "previewTitle_other": "Ruleset to apply ({{count}} rules)"
   },
   "docker": {
     "title": "Docker",
@@ -658,7 +662,9 @@
     "notRecorded": "Not recorded",
     "playTitle": "Recording {{user}}@{{host}}",
     "loadingRecording": "Loading recording…",
-    "recordingMeta": "{{size}} · opened by {{by}} from {{ip}}. Stored by the agent on the server (root-only)."
+    "recordingMeta": "{{size}} · opened by {{by}} from {{ip}}. Stored by the agent on the server (root-only).",
+    "truncated": "Recording truncated at 50 MB (the session was closed at the limit).",
+    "partial": "Long recording: only the first ~10 MB is played."
   },
   "packages": {
     "title": "Hosting packages",
@@ -1650,7 +1656,11 @@
       "malware.found": "Malware found",
       "ssh.bruteforce": "SSH brute force",
       "login.failed": "Failed login",
-      "fim.change": "System file changed"
+      "fim.change": "System file changed",
+      "fim.changed": "System file changed",
+      "waf.burst": "WAF burst",
+      "firewall.rolled_back": "Firewall rolled back",
+      "sshd.rolled_back": "SSH rolled back"
     },
     "wafTitle": "WAF",
     "wafDescription": "ModSecurity + OWASP CRS per PHP website. Toggle here; mode, paranoia level and rule exclusions live in the website WAF tab.",
@@ -1774,7 +1784,33 @@
       "quarantined": "Quarantined",
       "restored": "Restored",
       "deleted": "Deleted"
-    }
+    },
+    "bans": "Banned IPs",
+    "bansHint": "Read live from fail2ban on the server.",
+    "bansEmpty": "No IP is banned right now.",
+    "bannedAt": "Banned",
+    "expiresAt": "Expires",
+    "banPermanent": "Permanent",
+    "ip": "IP",
+    "unban": "Unban",
+    "unbanFor": "Unban {{ip}}",
+    "unbanned": "IP unbanned",
+    "fimPath": "Path",
+    "fimChange": "Change",
+    "fimHash": "SHA-256 (old → new)",
+    "fimChanges": {
+      "added": "Added",
+      "modified": "Modified",
+      "removed": "Removed",
+      "metadata": "Metadata"
+    },
+    "wafActions": {
+      "detected": "Detected",
+      "blocked": "Blocked"
+    },
+    "wafSiteEvents": "WAF events",
+    "wafSiteEventsHint": "Requests logged by ModSecurity, synced every minute.",
+    "wafSiteEventsEmpty": "No WAF events for this website yet."
   },
   "bk": {
     "title": "Backups",
@@ -2342,7 +2378,7 @@
       "mfa": "Administrator MFA is mandatory",
       "scopes": "Choose at least one permission"
     },
-    "captchaHint": "After this many failures (per email or IP), Admin and Portal sign-in require the self-hosted CAPTCHA.",
+    "captchaHint": "After this many failures (per email or IP), Portal sign-in requires the self-hosted CAPTCHA. 0 = always required. Admin sign-in uses progressive lockout and MFA instead.",
     "portalMfa": "Require MFA for customers (Portal)",
     "portalMfaHint": "Customers without MFA are sent to their profile to enable it right after sign-in."
   },

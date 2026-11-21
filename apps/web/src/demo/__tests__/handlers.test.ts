@@ -44,6 +44,10 @@ const QUERY: Record<string, string> = {
   '/api/v1/admin/hosting-accounts/{id}/files/download': '?path=sites/anphat.vn/public/index.php',
   '/api/v1/admin/websites/{id}/logs': '?kind=access',
   '/api/v1/admin/backup-snapshots/{id}/browse': '?path=.',
+  // ServerQuery (bắt buộc ở API thật, 7.6): server srv-hn-01 của dataset.
+  '/api/v1/admin/security/ssh': '?server=01938a02-0001-7000-8000-000002000001',
+  '/api/v1/admin/security/fail2ban': '?server=01938a02-0001-7000-8000-000002000001',
+  '/api/v1/admin/security/score': '?server=01938a02-0001-7000-8000-000002000001',
 };
 // Portal dùng cùng tham số (người gọi mặc định là chủ account anphat).
 for (const [k, v] of Object.entries(QUERY)) QUERY[k.replace('/admin/', '/portal/')] = v;

@@ -275,7 +275,8 @@
       "installing": "Đang cài…",
       "job": "Cài web stack",
       "optional": "Bước này không bắt buộc: có thể bấm Tiếp tục và cài sau ở trang Máy chủ → Phần mềm."
-    }
+    },
+    "confirmFirewall": "Tường lửa mặc định đã được áp dụng: bấm \"Giữ cấu hình mới\" trong 5 phút, nếu không máy chủ tự hoàn tác."
   },
   "servers": {
     "title": "Máy chủ",
@@ -506,7 +507,10 @@
       "source": "IP hoặc CIDR không hợp lệ",
       "ports": "Cổng 1–65535, dạng 80,443 hoặc 8000-8100"
     },
-    "lockoutTitle": "Rule này sẽ khóa bạn khỏi máy chủ"
+    "lockoutTitle": "Rule này sẽ khóa bạn khỏi máy chủ",
+    "lockoutHint": "Rule nháp chặn cổng SSH hoặc panel từ IP hiện tại của bạn. Sửa rule trước khi áp dụng.",
+    "previewTitle_one": "Ruleset sẽ áp dụng ({{count}} rule)",
+    "previewTitle_other": "Ruleset sẽ áp dụng ({{count}} rule)"
   },
   "docker": {
     "title": "Docker",
@@ -658,7 +662,9 @@
     "notRecorded": "Không ghi",
     "playTitle": "Bản ghi {{user}}@{{host}}",
     "loadingRecording": "Đang tải bản ghi…",
-    "recordingMeta": "{{size}} · mở bởi {{by}} từ {{ip}}. Bản ghi do agent lưu trên máy chủ (chỉ root đọc được)."
+    "recordingMeta": "{{size}} · mở bởi {{by}} từ {{ip}}. Bản ghi do agent lưu trên máy chủ (chỉ root đọc được).",
+    "truncated": "Bản ghi bị cắt vì vượt 50 MB (phiên đã bị đóng khi chạm giới hạn).",
+    "partial": "Bản ghi dài: chỉ phát phần đầu (~10 MB)."
   },
   "packages": {
     "title": "Gói hosting",
@@ -1650,7 +1656,11 @@
       "malware.found": "Phát hiện mã độc",
       "ssh.bruteforce": "Dò mật khẩu SSH",
       "login.failed": "Đăng nhập sai",
-      "fim.change": "File hệ thống thay đổi"
+      "fim.change": "File hệ thống thay đổi",
+      "fim.changed": "File hệ thống thay đổi",
+      "waf.burst": "WAF chặn dồn dập",
+      "firewall.rolled_back": "Tường lửa tự hoàn tác",
+      "sshd.rolled_back": "SSH tự hoàn tác"
     },
     "wafTitle": "WAF",
     "wafDescription": "ModSecurity + OWASP CRS cho từng website PHP. Bật/tắt nhanh ở đây; chế độ, mức paranoia và rule loại trừ ở tab WAF của website.",
@@ -1774,7 +1784,33 @@
       "quarantined": "Đã cách ly",
       "restored": "Đã khôi phục",
       "deleted": "Đã xóa"
-    }
+    },
+    "bans": "IP đang bị chặn",
+    "bansHint": "Đọc trực tiếp từ fail2ban trên máy chủ.",
+    "bansEmpty": "Không có IP nào đang bị chặn.",
+    "bannedAt": "Bị chặn lúc",
+    "expiresAt": "Hết hạn",
+    "banPermanent": "Vĩnh viễn",
+    "ip": "IP",
+    "unban": "Gỡ chặn",
+    "unbanFor": "Gỡ chặn {{ip}}",
+    "unbanned": "Đã gỡ chặn IP",
+    "fimPath": "Đường dẫn",
+    "fimChange": "Thay đổi",
+    "fimHash": "SHA-256 (cũ → mới)",
+    "fimChanges": {
+      "added": "Thêm mới",
+      "modified": "Sửa nội dung",
+      "removed": "Bị xóa",
+      "metadata": "Đổi quyền/chủ"
+    },
+    "wafActions": {
+      "detected": "Phát hiện",
+      "blocked": "Đã chặn"
+    },
+    "wafSiteEvents": "Sự kiện WAF",
+    "wafSiteEventsHint": "Request bị ModSecurity ghi nhận, đồng bộ mỗi phút.",
+    "wafSiteEventsEmpty": "Chưa có sự kiện WAF cho website này."
   },
   "bk": {
     "title": "Sao lưu",
@@ -2342,7 +2378,7 @@
       "mfa": "MFA quản trị viên là bắt buộc",
       "scopes": "Chọn ít nhất một quyền"
     },
-    "captchaHint": "Sai mật khẩu bấy nhiêu lần (theo email hoặc IP) thì đăng nhập Admin và Portal cần CAPTCHA tự host.",
+    "captchaHint": "Sai mật khẩu bấy nhiêu lần (theo email hoặc IP) thì đăng nhập Portal cần CAPTCHA tự host. 0 = luôn cần. Đăng nhập Admin dùng khóa lũy tiến và MFA.",
     "portalMfa": "Bắt buộc MFA cho khách hàng (Portal)",
     "portalMfaHint": "Khách chưa bật MFA sẽ được đưa tới trang Hồ sơ để bật ngay sau khi đăng nhập."
   },

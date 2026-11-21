@@ -19,6 +19,7 @@ export type SafeApplyEvent =
   | { type: 'tick'; now: number }
   | { type: 'confirm' }
   | { type: 'confirmed' }
+  | { type: 'resume'; deadline: number; now: number }
   | { type: 'reset' };
 
 export function safeApplyReducer(s: SafeApply, e: SafeApplyEvent): SafeApply {
@@ -35,6 +36,11 @@ export function safeApplyReducer(s: SafeApply, e: SafeApplyEvent): SafeApply {
       return s.phase === 'awaiting' ? { phase: 'confirming' } : s;
     case 'confirmed':
       return s.phase === 'confirming' ? { phase: 'confirmed' } : s;
+    case 'resume':
+      // Tải lại trang khi agent còn chờ xác nhận (GET …/status = pending_confirm): tiếp tục đếm ngược theo hạn thật.
+      return s.phase === 'idle' && e.deadline > e.now
+        ? { phase: 'awaiting', deadline: e.deadline }
+        : s;
     case 'reset':
       return { phase: 'idle' };
   }

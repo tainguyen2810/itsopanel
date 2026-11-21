@@ -10,6 +10,7 @@ import {
   type JobAccepted,
   type Method,
   type Params,
+  type SendOpts,
 } from './core';
 
 export type { JobAccepted };
@@ -59,7 +60,7 @@ export function list<P extends RealmPath>(
 export function send<T = unknown>(
   method: Method,
   path: RealmPath,
-  opts: { path?: Record<string, string>; body?: unknown; headers?: Record<string, string> } = {},
+  opts: SendOpts = {},
 ): Promise<T> {
   return sendWith<T>(client, method, full(path), opts);
 }

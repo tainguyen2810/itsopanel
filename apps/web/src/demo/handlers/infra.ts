@@ -376,6 +376,54 @@ export function registerInfra() {
       },
     });
   });
+  // Trạng thái safe-apply (nối lại đếm ngược khi tải lại trang) và xem trước ruleset (7.6).
+  on('get', '/api/v1/admin/servers/{id}/firewall/status', (ctx) => {
+    const deny = SA_ONLY(ctx);
+    if (deny) return deny;
+    const s = serverOf(ctx);
+    if (isReply(s)) return s;
+    const st = fw(ctx.db, s.uuid);
+    const rules = perServer<S['FirewallRule']>(ctx.db, 'firewall_rules', s.uuid);
+    return ok({
+      server: ref(s),
+      state: st.deadline ? 'pending_confirm' : 'idle',
+      applied_at: null,
+      rollback_at: st.deadline ? new Date(st.deadline).toISOString() : null,
+      applied_by: null,
+      rules_active: rules.filter((r) => r.enabled).length,
+    } satisfies S['FirewallStatus']);
+  });
+  on('get', '/api/v1/admin/servers/{id}/firewall/preview', (ctx) => {
+    const deny = SA_ONLY(ctx);
+    if (deny) return deny;
+    const s = serverOf(ctx);
+    if (isReply(s)) return s;
+    const rules = perServer<S['FirewallRule']>(ctx.db, 'firewall_rules', s.uuid)
+      .filter((r) => r.enabled)
+      .sort((a, b) => a.priority - b.priority);
+    const lines = rules.map((r) => {
+      const src = r.source === '0.0.0.0/0' || r.source === '::/0' ? '' : `ip saddr ${r.source} `;
+      const port = r.ports && r.protocol !== 'icmp' ? `${r.protocol} dport { ${r.ports} } ` : '';
+      return `\t\t${src}${port}${r.action} comment "${r.comment ?? ''}"`;
+    });
+    const ruleset = [
+      'table inet itso {',
+      '\tchain input {',
+      '\t\ttype filter hook input priority filter; policy drop;',
+      '\t\tct state established,related accept',
+      '\t\tiif lo accept',
+      ...lines,
+      '\t}',
+      '}',
+    ].join('\n');
+    return ok({
+      server: ref(s),
+      ruleset,
+      rules_active: rules.length,
+      warnings: [],
+      lockout_risk: false,
+    });
+  });
   on('post', '/api/v1/admin/servers/{id}/firewall:confirm', (ctx) => {
     const deny = SA_ONLY(ctx);
     if (deny) return deny;
@@ -610,11 +658,12 @@ export function registerInfra() {
     // Root chỉ khi policy cục bộ của máy chủ cho phép (bật bằng `itso policy set`, D-81).
     const policy = ctx.db.data.terminal_policy as S['TerminalPolicy'] | undefined;
     if (b.mode === 'root' && !policy?.root_enabled) {
+      // Như API thật (7.5): agent trả op_disabled → 409 precondition_failed kèm hướng dẫn CLI.
       return problem(
-        403,
-        'forbidden',
-        'Policy máy chủ đang tắt terminal root',
-        'Bật bằng lệnh `itso policy set terminal.root on` trên máy chủ.',
+        409,
+        'precondition_failed',
+        'Terminal root đang tắt',
+        'Máy chủ chưa bật terminal root. Quản trị viên máy chủ bật bằng lệnh "itso policy set terminal.root on" (không bật được từ panel).',
       );
     }
     const tpl = ctx.db.data.terminal as S['TerminalTicket'];
