@@ -38,6 +38,8 @@ tags:
   description: Overview
 - name: Profile
   description: Profile
+- name: Protection
+  description: Protection
 - name: SFTP
   description: SFTP
 - name: SSL
@@ -51,6 +53,36 @@ tags:
 - name: WordPress
   description: WordPress
 paths:
+  /api/v1/auth/captcha:
+    get:
+      operationId: getCaptcha
+      summary: Thử thách CAPTCHA proof-of-work (dùng một lần, 5 phút)
+      tags:
+      - Auth
+      description: Tự host, không gọi dịch vụ ngoài (D-81). Đăng nhập/quên mật khẩu trả 422 `captcha_required` khi IP hoặc
+        email đã sai quá ngưỡng (`portal_captcha_after_failures`); khi đó gửi kèm `captcha`.
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/CaptchaChallenge
+                required:
+                - data
+              example:
+                data:
+                  challenge: v1.1763601300.4f9a2c.b1e0d7c3a95f4e21
+                  difficulty: 12
+                  expires_at: '2026-11-20T08:20:00+07:00'
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+      security: []
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/csrf:
     get:
       operationId: getCsrfCookie
@@ -422,7 +454,8 @@ paths:
       summary: Gửi email đặt lại mật khẩu
       tags:
       - Auth
-      description: Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản).
+      description: 'Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản). Portal: 422 `captcha_required` khi IP/email
+        đã sai quá ngưỡng như đăng nhập (D-81).'
       requestBody:
         required: true
         content:
@@ -433,6 +466,8 @@ paths:
                 email:
                   type: string
                   format: email
+                captcha:
+                  $ref: ./common.yaml#/components/schemas/CaptchaSolution
               required:
               - email
               additionalProperties: false
@@ -3529,6 +3564,70 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/hosting-accounts/{id}/scans:
+    post:
+      operationId: portalScanAccount
+      summary: Quét mã độc account
+      tags:
+      - Protection
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0151-7000-8000-00000f000151
+                  type: malware.scan
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: hosting_account
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                  steps:
+                  - seq: 1
+                    op: malware.scan
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151
+                    events: /api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151/events
+                resource:
+                  type: hosting_account
+                  uuid: 01938a05-0001-7000-8000-000005000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/portal/hosting-accounts/{id}/usage:
     get:
       operationId: portalGetHostingAccountUsage
@@ -4462,6 +4561,235 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
         '412':
           $ref: ./common.yaml#/components/responses/PreconditionFailed
+  /api/v1/portal/protection:
+    get:
+      operationId: portalGetSecurity
+      summary: 'Bảo mật account của tôi: WAF, mã độc'
+      tags:
+      - Protection
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/PortalSecurity
+                required:
+                - data
+              example:
+                data:
+                  accounts:
+                  - hosting_account:
+                      uuid: 01938a05-0001-7000-8000-000005000001
+                      username: anphat
+                    websites:
+                    - website:
+                        uuid: 01938a06-0001-7000-8000-000006000001
+                        primary_domain: anphat.vn
+                      waf_enabled: true
+                      waf_mode: block
+                      blocked_24h: 37
+                    - website:
+                        uuid: 01938a06-0002-7000-8000-000006000002
+                        primary_domain: shop.anphat.vn
+                      waf_enabled: true
+                      waf_mode: detect
+                      blocked_24h: 0
+                    findings_open: 1
+                    last_scan_at: '2026-11-20T08:15:00+07:00'
+                    scan_running: false
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+  /api/v1/portal/protection/findings:
+    get:
+      operationId: portalListMalwareFindings
+      summary: File nghi nhiễm của tôi
+      tags:
+      - Protection
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/FilterHostingAccount
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/MalwareFinding
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a32-0002-7000-8000-000032000002
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  website:
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                    primary_domain: shop.anphat.vn
+                  path: sites/shop.anphat.vn/public/tmp/eicar.com
+                  signature: Eicar-Signature
+                  engine: clamav
+                  action: none
+                  found_at: '2026-11-20T08:15:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/portal/protection/findings/{id}:
+    delete:
+      operationId: portalDeleteFinding
+      summary: Xóa file nghi nhiễm
+      tags:
+      - Protection
+      x-itso-step-up: true
+      description: 'Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0153-7000-8000-00000f000153
+                  type: malware.delete
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: malware_finding
+                    uuid: 01938a32-0002-7000-8000-000032000002
+                  steps:
+                  - seq: 1
+                    op: malware.delete
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153
+                    events: /api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153/events
+                resource:
+                  type: malware_finding
+                  uuid: 01938a32-0002-7000-8000-000032000002
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/protection/findings/{id}:quarantine:
+    post:
+      operationId: portalQuarantineFinding
+      summary: Cách ly file nghi nhiễm
+      tags:
+      - Protection
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0152-7000-8000-00000f000152
+                  type: malware.quarantine
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: malware_finding
+                    uuid: 01938a32-0002-7000-8000-000032000002
+                  steps:
+                  - seq: 1
+                    op: malware.quarantine
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152
+                    events: /api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152/events
+                resource:
+                  type: malware_finding
+                  uuid: 01938a32-0002-7000-8000-000032000002
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/portal/restores:
     get:
       operationId: portalListRestores

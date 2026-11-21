@@ -44,6 +44,7 @@ export const ADMIN_PAGES: PageLoaders = {
   securityFail2ban: () => import('./security/Fail2banPage'),
   securityFim: () => import('./security/FimPage'),
   securityAllowlist: () => import('./security/AllowlistPage'),
+  securityTerminal: () => import('./security/TerminalSessionsPage'),
   backups: () => import('./backups/BackupsPage'),
   restores: () => import('./backups/RestoresPage'),
   restoreNew: () => import('./backups/RestoreNewPage'),

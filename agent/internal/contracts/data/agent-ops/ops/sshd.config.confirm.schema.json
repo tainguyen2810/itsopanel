@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/sshd.config.confirm.schema.json",
+  "title": "sshd.config.confirm",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "apply_id": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "token": {
+          "$ref": "../defs.schema.json#/$defs/ConfirmToken"
+        }
+      },
+      "required": [
+        "apply_id",
+        "token"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "confirmed": {
+          "type": "boolean"
+        },
+        "rolled_back": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "confirmed",
+        "rolled_back"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -21,6 +21,13 @@ export type Params = {
   query?: Record<string, string | number | undefined>;
 };
 export type Method = 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+/** Tùy chọn thao tác ghi; `query` cho endpoint nhận tham số query (vd. `?server=` của SSH/fail2ban). */
+export type SendOpts = {
+  path?: Record<string, string>;
+  query?: Record<string, string | number | undefined>;
+  body?: unknown;
+  headers?: Record<string, string>;
+};
 
 export interface JobAccepted {
   job: { uuid: string; type: string; state: string };
@@ -30,8 +37,20 @@ export interface JobAccepted {
 }
 
 export async function getWith(client: AnyClient, path: string, params: Params = {}) {
-  const r = await client.GET(path as never, { params } as never);
-  return unwrap(r as never) as unknown;
+  const once = async () =>
+    unwrap((await client.GET(path as never, { params } as never)) as never) as unknown;
+  try {
+    return await once();
+  } catch (e) {
+    // GET nhạy cảm (vd. bản ghi terminal) cần step-up: hỏi mã TOTP rồi đọc lại một lần.
+    if (
+      e instanceof ApiError &&
+      e.problem.code === 'mfa_step_up_required' &&
+      (await requestStepUp())
+    )
+      return once();
+    throw e;
+  }
 }
 
 /** Tham số danh sách: limit 200, q và filter[...] theo contract. */
@@ -50,7 +69,7 @@ export async function sendWith<T>(
   client: AnyClient,
   method: Method,
   path: string,
-  opts: { path?: Record<string, string>; body?: unknown; headers?: Record<string, string> } = {},
+  opts: SendOpts = {},
 ): Promise<T> {
   try {
     return await sendOnce<T>(client, method, path, opts);
@@ -72,13 +91,13 @@ async function sendOnce<T>(
   client: AnyClient,
   method: Method,
   path: string,
-  opts: { path?: Record<string, string>; body?: unknown; headers?: Record<string, string> },
+  opts: SendOpts,
 ): Promise<T> {
   // Qua client openapi-fetch để middleware (header demo, sau này CSRF) luôn được áp dụng.
   const r = (await client[method](
     path as never,
     {
-      params: { path: opts.path ?? {} },
+      params: { path: opts.path ?? {}, ...(opts.query ? { query: opts.query } : {}) },
       ...(opts.body === undefined ? {} : { body: opts.body }),
       // Blob/ArrayBuffer (chunk upload) gửi nguyên byte, không JSON hóa.
       ...(opts.body instanceof Blob || opts.body instanceof ArrayBuffer

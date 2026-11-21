@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"itso.local/agent/internal/envelope"
@@ -15,8 +16,9 @@ import (
 type vectors struct {
 	Categories map[string]struct {
 		Vectors []struct {
-			Input  string `json:"input"`
-			Expect string `json:"expect"`
+			Raw    json.RawMessage `json:"input"`
+			Input  string          `json:"-"`
+			Expect string          `json:"expect"`
 		} `json:"vectors"`
 	} `json:"categories"`
 }
@@ -115,7 +117,7 @@ func TestEvilInputsRejectedBeforeAnyCommand(t *testing.T) {
 	n := 0
 	for cat, hs := range cases {
 		for _, x := range v.Categories[cat].Vectors {
-			if x.Expect != "reject" {
+			if x.Expect != "reject" || json.Unmarshal(x.Raw, &x.Input) != nil {
 				continue
 			}
 			for _, c := range hs {
@@ -146,5 +148,22 @@ func TestEvilInputsRejectedBeforeAnyCommand(t *testing.T) {
 		if _, err := d.accountEnsure(context.Background(), &envelope.Envelope{Params: raw}); err == nil || len(fake.Lines()) != 0 {
 			t.Errorf("%v: phải bị từ chối trước lệnh (err=%v, lệnh=%v)", p, err, fake.Lines())
 		}
+	}
+}
+
+// Gốc sandbox trống vẫn có user/group root như Ubuntu (sshd.config.apply cần user quản trị); không ghi đè, không lặp.
+func TestSimSeedBase(t *testing.T) {
+	fs := platform.NewFS(t.TempDir(), true)
+	s := NewSim(fs)
+	if r := s.write("/etc/passwd", []string{"anphat:x:20000:20000::/home/anphat:/bin/bash"}); r.ExitCode != 0 {
+		t.Fatal(string(r.Stderr))
+	}
+	s.SeedBase()
+	s.SeedBase()
+	if got := s.lines("/etc/passwd"); len(got) != 2 || got[0] != "root:x:0:0:root:/root:/bin/bash" || !strings.HasPrefix(got[1], "anphat:") {
+		t.Fatalf("passwd = %q", got)
+	}
+	if got := s.lines("/etc/group"); len(got) != 1 || got[0] != "root:x:0:" {
+		t.Fatalf("group = %q", got)
 	}
 }

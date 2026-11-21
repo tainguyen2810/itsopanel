@@ -21,10 +21,16 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0015](0015-php-fpm-per-account.md) | PHP-FPM master riêng cho từng account, pool theo website | Accepted | D-68, D-12 |
 | [0016](0016-acme-lego.md) | Chứng chỉ ACME bằng lego, gia hạn, chứng chỉ tải lên | Accepted | D-69 |
 | [0017](0017-dns-cloudflare.md) | DNS qua Cloudflare API từ Laravel | Accepted | D-70 |
-| [0018](0018-database-hosting.md) | Database hosting (MariaDB + PostgreSQL), danh tính chủ theo account | Proposed | D-71 |
-| [0019](0019-file-manager-ha-quyen.md) | File Manager chạy dưới uid account, openat2, nén/giải nén an toàn | Proposed | D-72 |
-| [0020](0020-sftp-ftps-ssh-key.md) | SFTP (OpenSSH chroot), FTPS phụ (Pure-FTPd), SSH key | Proposed | D-73 |
-| [0021](0021-cron-systemd-timer.md) | Cron bằng systemd timer trong slice của account | Proposed | D-74 |
-| [0022](0022-terminal-user-jail.md) | Terminal cho USER chạy trong jail qua itso-gateway | Proposed | D-75 |
+| [0018](0018-database-hosting.md) | Database hosting (MariaDB + PostgreSQL), danh tính chủ theo account | Accepted | D-71 |
+| [0019](0019-file-manager-ha-quyen.md) | File Manager chạy dưới uid account, openat2, nén/giải nén an toàn | Accepted | D-72 |
+| [0020](0020-sftp-ftps-ssh-key.md) | SFTP (OpenSSH chroot), FTPS phụ (Pure-FTPd), SSH key | Accepted | D-73 |
+| [0021](0021-cron-systemd-timer.md) | Cron bằng systemd timer trong slice của account | Accepted | D-74 |
+| [0022](0022-terminal-user-jail.md) | Terminal cho USER chạy trong jail qua itso-gateway | Accepted | D-75 |
+| [0023](0023-firewall-nftables-safe-apply.md) | Tường lửa nftables, bảng riêng, safe-apply có hoàn tác | Proposed | D-76 |
+| [0024](0024-ssh-hardening-fail2ban.md) | SSH hardening (safe-apply) và Fail2ban | Proposed | D-77 |
+| [0025](0025-waf-modsecurity-crs.md) | WAF ModSecurity v3 + OWASP CRS theo website | Proposed | D-78 |
+| [0026](0026-malware-quarantine.md) | Quét mã độc dưới uid account và khu cách ly | Proposed | D-79 |
+| [0027](0027-fim-security-score.md) | FIM trong agent, điểm bảo mật và sự kiện | Proposed | D-80 |
+| [0028](0028-portal-protection-terminal-root.md) | Bảo vệ đăng nhập, allowlist không tự khóa, Terminal root theo policy | Proposed | D-81 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

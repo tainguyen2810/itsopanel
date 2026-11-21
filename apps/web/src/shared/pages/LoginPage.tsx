@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
@@ -14,6 +15,7 @@ import { useSession } from '@/shared/session/SessionContext';
 import { Alert } from '@/ui/Alert';
 import { Button } from '@/ui/Button';
 import { sendAuth } from '@/shared/api/realm';
+import { Captcha, type CaptchaSolution } from '@/shared/auth/Captcha';
 
 const schema = z.object({
   email: z.email('form.email'),
@@ -33,11 +35,22 @@ export default function LoginPage() {
     resolver: zodResolver(schema),
     defaultValues: { email: demo ? user.email : '', password: demo ? 'demo-password' : '' },
   });
+  // Sai quá ngưỡng → server trả 422 `captcha_required`; hiện CAPTCHA proof-of-work, gửi lời giải ở lần sau (D-81).
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [needCaptcha, setNeedCaptcha] = useState(false);
+  const [captcha, setCaptcha] = useState<CaptchaSolution | null>(null);
   const login = useMutation({
     mutationFn: (v: V) =>
       sendAuth<{ mfa_required: boolean; mfa_methods?: string[] }>('POST', '/api/v1/auth/login', {
-        body: v,
+        body: captcha ? { ...v, captcha } : v,
       }),
+    onError: (e) => {
+      // Lời giải chỉ dùng một lần: lần sai nào cũng cần thử thách mới.
+      if (needCaptcha || (e instanceof ApiError && e.problem.code === 'captcha_required')) {
+        setNeedCaptcha(true);
+        setCaptchaKey((k) => k + 1);
+      }
+    },
     // Có phương thức MFA → bước mã; SUPER_ADMIN chưa bật MFA → shell đưa tới Hồ sơ để bật.
     onSuccess: async (r) => {
       await refresh();
@@ -58,7 +71,11 @@ export default function LoginPage() {
       >
         {login.isError && (
           <Alert tone="danger" title={t('auth.loginFailed')}>
-            {login.error instanceof ApiError ? login.error.problem.detail : String(login.error)}
+            {login.error instanceof ApiError
+              ? login.error.problem.code === 'captcha_required'
+                ? t('auth.captchaRequired')
+                : (login.error.problem.errors?.email?.[0] ?? login.error.problem.detail)
+              : String(login.error)}
           </Alert>
         )}
         <TextField
@@ -75,7 +92,8 @@ export default function LoginPage() {
           autoComplete="current-password"
           label={t('auth.password')}
         />
-        <Button type="submit" size="lg" disabled={login.isPending}>
+        {needCaptcha && <Captcha key={captchaKey} onSolved={setCaptcha} />}
+        <Button type="submit" size="lg" disabled={login.isPending || (needCaptcha && !captcha)}>
           <LogIn aria-hidden />
           {t('auth.signIn')}
         </Button>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Auth\Captcha;
 use App\Auth\Realm;
 use App\Auth\SessionRepository;
 use App\Domain\Users\UserService;
@@ -45,9 +46,10 @@ final class PasswordController
 
     public function forgot(Request $request): Response
     {
-        $in = $request->validate(['email' => ['required', 'string', 'email', 'max:254']]);
+        $in = $request->validate(['email' => ['required', 'string', 'email', 'max:254'], 'captcha' => ['sometimes', 'array:challenge,nonce']]);
         $realm = Realm::of($request);
         $email = mb_strtolower(trim((string) $in['email']));
+        app(Captcha::class)->enforce($realm, $email, (string) $request->ip(), $in['captcha'] ?? null);
         $key = 'pwforgot:'.$realm.':'.$email;
         if (RateLimiter::tooManyAttempts($key, 3)) {
             throw ApiProblem::rateLimited(RateLimiter::availableIn($key));

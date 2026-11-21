@@ -12,6 +12,8 @@ const first = (k: string) => D[k]?.[0]?.uuid ?? 'missing';
 /** Tham số mẫu cho {id} theo đoạn đường dẫn đứng trước. */
 const ID_BY_SEGMENT: Record<string, string> = {
   servers: first('servers'),
+  // Phiên terminal có bản ghi (root) để đọc được /recording.
+  sessions: '01938a31-0002-7000-8000-000031000002',
   'hosting-accounts': first('accounts'),
   'hosting-packages': first('packages'),
   websites: first('websites'),
@@ -42,6 +44,10 @@ const QUERY: Record<string, string> = {
   '/api/v1/admin/hosting-accounts/{id}/files/download': '?path=sites/anphat.vn/public/index.php',
   '/api/v1/admin/websites/{id}/logs': '?kind=access',
   '/api/v1/admin/backup-snapshots/{id}/browse': '?path=.',
+  // ServerQuery (bắt buộc ở API thật, 7.6): server srv-hn-01 của dataset.
+  '/api/v1/admin/security/ssh': '?server=01938a02-0001-7000-8000-000002000001',
+  '/api/v1/admin/security/fail2ban': '?server=01938a02-0001-7000-8000-000002000001',
+  '/api/v1/admin/security/score': '?server=01938a02-0001-7000-8000-000002000001',
 };
 // Portal dùng cùng tham số (người gọi mặc định là chủ account anphat).
 for (const [k, v] of Object.entries(QUERY)) QUERY[k.replace('/admin/', '/portal/')] = v;

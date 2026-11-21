@@ -93,7 +93,7 @@ func (d *Deps) callFS(ctx context.Context, r fsReq) (json.RawMessage, error) {
 	}
 	var out, errb bytes.Buffer
 	stdout := io.Writer(&out)
-	if r.op == "cat" {
+	if fsx.StreamsStdout(r.op) {
 		stdout = r.stdout
 	}
 	p := platform.Proc{Bin: "itso-fs-helper", Args: []string{"fs-helper"}, As: cred, Stdin: in, Stdout: stdout, Stderr: &errb}
@@ -108,7 +108,7 @@ func (d *Deps) callFS(ctx context.Context, r fsReq) (json.RawMessage, error) {
 		return nil, &registry.OpError{Code: "internal", Message: "fs-helper: " + err.Error(), Retryable: true}
 	}
 	raw := out.Bytes()
-	if r.op == "cat" {
+	if fsx.StreamsStdout(r.op) {
 		if code == 0 {
 			return json.RawMessage(`{}`), nil
 		}
@@ -377,13 +377,13 @@ func SandboxFSHelper(_ context.Context, p platform.Proc) (int, error) {
 			e = &fsx.Error{Code: "internal", Msg: err.Error()}
 		}
 		resp.Error = e
-	} else if req.Op == "cat" {
+	} else if fsx.StreamsStdout(req.Op) {
 		return 0, nil
 	} else {
 		resp.Data, _ = json.Marshal(data)
 	}
 	b, _ := json.Marshal(resp)
-	if req.Op == "cat" {
+	if fsx.StreamsStdout(req.Op) {
 		if p.Stderr != nil {
 			_, _ = p.Stderr.Write(append(b, '\n'))
 		}

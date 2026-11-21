@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fail2ban.apply.schema.json",
+  "title": "fail2ban.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "jails": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "../defs.schema.json#/$defs/Fail2banJail"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "bantime_sec": {
+                "type": "integer",
+                "minimum": 60,
+                "maximum": 2592000
+              },
+              "findtime_sec": {
+                "type": "integer",
+                "minimum": 60,
+                "maximum": 86400
+              },
+              "maxretry": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "name",
+              "enabled",
+              "bantime_sec",
+              "findtime_sec",
+              "maxretry"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 3
+        },
+        "ignoreip": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Cidr"
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "enabled",
+        "jails",
+        "ignoreip"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "changed": {
+          "type": "boolean"
+        },
+        "reloaded": {
+          "type": "boolean"
+        },
+        "jails_active": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "changed",
+        "reloaded",
+        "jails_active"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

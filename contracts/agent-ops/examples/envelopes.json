@@ -169,6 +169,47 @@
         "user_uuid": "01938a01-0003-7000-8000-000001000003",
         "role": "USER"
       }
+    },
+    {
+      "v": 1,
+      "op": "firewall.apply",
+      "op_id": "01938a0f-0007-7000-8000-00000f000007:1:1",
+      "params": {
+        "apply_id": "01938a0f-0007-7000-8000-00000f000007",
+        "rules": [
+          {
+            "priority": 10,
+            "action": "accept",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "22",
+            "source": "10.10.0.0/16",
+            "comment": "SSH chỉ từ mạng nội bộ"
+          },
+          {
+            "priority": 20,
+            "action": "accept",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "80,443",
+            "source": "0.0.0.0/0",
+            "comment": "Web"
+          }
+        ],
+        "anti_lockout": {
+          "ssh_port": 22,
+          "panel_port": 8443,
+          "client_ip": "10.10.5.20"
+        },
+        "confirm_within_sec": 120
+      },
+      "deadline": "2026-11-20T08:25:00+07:00",
+      "ts": 1795137300,
+      "nonce": "n0nce_Fw7Hk2pQ9xVb3mN6",
+      "requested_by": {
+        "user_uuid": "01938a01-0001-7000-8000-000001000001",
+        "role": "SUPER_ADMIN"
+      }
     }
   ],
   "invalid": [
@@ -391,6 +432,50 @@
           "role": "USER"
         }
       }
+    },
+    {
+      "envelope": {
+        "v": 1,
+        "op": "firewall.apply",
+        "op_id": "01938a0f-0007-7000-8000-00000f000007:1:1",
+        "params": {
+          "apply_id": "01938a0f-0007-7000-8000-00000f000007",
+          "rules": [
+            {
+              "priority": 10,
+              "action": "accept",
+              "direction": "in",
+              "protocol": "tcp",
+              "ports": "22",
+              "source": "10.10.0.0/16",
+              "comment": "SSH chỉ từ mạng nội bộ"
+            },
+            {
+              "priority": 20,
+              "action": "accept",
+              "direction": "in",
+              "protocol": "tcp",
+              "ports": "80,443",
+              "source": "0.0.0.0/0",
+              "comment": "Web"
+            }
+          ],
+          "anti_lockout": {
+            "ssh_port": 0,
+            "panel_port": 8443,
+            "client_ip": "10.10.5.20"
+          },
+          "confirm_within_sec": 120
+        },
+        "deadline": "2026-11-20T08:25:00+07:00",
+        "ts": 1795137300,
+        "nonce": "n0nce_Fw7Hk2pQ9xVb3mN6",
+        "requested_by": {
+          "user_uuid": "01938a01-0001-7000-8000-000001000001",
+          "role": "SUPER_ADMIN"
+        }
+      },
+      "why": "firewall.apply: cổng SSH trong anti_lockout ngoài 1–65535"
     }
   ]
 }

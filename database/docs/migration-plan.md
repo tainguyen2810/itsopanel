@@ -10,12 +10,14 @@ Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations có t�
 | 4 — Server, phần mềm, quota | `server_services`, `server_capacity`, `software_catalog`, `server_software`, `account_usage_snapshots`, `metric_samples` | 6 |
 | 5 — Website, SSL, DNS | `websites`, `domains`, `website_settings`, `acme_accounts`, `certificates`, `php_versions`, `dns_providers`, `dns_zones`, `dns_records` | 9 |
 | 6 — DB, SFTP, cron, file, terminal | `databases`, `database_users`, `database_grants`, `sftp_accounts`, `ssh_keys`, `cron_jobs`, `cron_runs`, `upload_sessions`, `file_operations`, `terminal_sessions` | 10 |
-| 7 — Bảo mật | `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `fim_baselines` | 6 |
+| 7 — Bảo mật | `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `fim_baselines`, `firewall_applies`, `security_settings`, `waf_settings`, `waf_events` (partition tháng), `fim_changes`, `terminal_recordings` | 6 |
 | 8 — Backup, purge | `backup_destinations`, `backup_policies`, `backup_jobs`, `backup_snapshots`, `backup_verifications`, `restore_jobs`, `purge_records` | 7 |
 | 9 — Multi-server, chuyển account | `agent_enrollment_tokens`, `account_migrations` | 2 |
 | 10 — Docker, WordPress | `docker_hosts`, `registries`, `compose_projects`, `compose_revisions`, `containers`, `port_allocations`, `wordpress_sites`, `git_repositories`, `git_deployments` | 9 |
 | 11 — Giám sát, cảnh báo | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `notification_channels`, `notification_preferences` | 6 |
 | **Tổng** | | **81** |
+
+Prompt 7.4 bổ sung cột mà API Security Center cần (migration Phase 7 chưa phát hành nên sinh lại, không viết migration mới): `uuid` cho `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `waf_events` (không unique vì là bảng partition); `security_events.message`, `acknowledged_at`; `firewall_rules.direction`, `enabled`; `malware_scans.target`, `engines`; `malware_findings.sha256`, `size`, `found_at`; `quarantine_items.signature`, `size`; CHECK direction/protocol/priority, engine/action/sha256.
 
 Phần trong `extras.sql` đi cùng bảng của nó: trigger realm (Phase 3), audit append-only + hash chain + partition (Phase 3), package version bất biến (Phase 3), purge guard (Phase 8, khi có `purge_records`), partition `metric_samples` (Phase 4).
 

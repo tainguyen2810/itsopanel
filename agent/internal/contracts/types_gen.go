@@ -52,9 +52,13 @@ const (
 	OpDBPGUserEnsure         = "db.pg.user_ensure"
 	OpDockerContainerControl = "docker.container.control"
 	OpFail2banApply          = "fail2ban.apply"
+	OpFail2banStatus         = "fail2ban.status"
+	OpFail2banUnban          = "fail2ban.unban"
 	OpFimBaseline            = "fim.baseline"
+	OpFimCheck               = "fim.check"
 	OpFirewallApply          = "firewall.apply"
 	OpFirewallConfirm        = "firewall.confirm"
+	OpFirewallStatus         = "firewall.status"
 	OpFsArchive              = "fs.archive"
 	OpFsChmod                = "fs.chmod"
 	OpFsCopy                 = "fs.copy"
@@ -74,6 +78,8 @@ const (
 	OpGitDeploy              = "git.deploy"
 	OpGitRollback            = "git.rollback"
 	OpLogTail                = "log.tail"
+	OpMalwareDelete          = "malware.delete"
+	OpMalwareQuarantine      = "malware.quarantine"
 	OpMalwareRestore         = "malware.restore"
 	OpMalwareScan            = "malware.scan"
 	OpMetricsCgroup          = "metrics.cgroup"
@@ -93,9 +99,14 @@ const (
 	OpPHPPoolRemove          = "php.pool.remove"
 	OpPHPVersionInstall      = "php.version.install"
 	OpPHPVersionRemove       = "php.version.remove"
+	OpPtyList                = "pty.list"
 	OpPtyOpen                = "pty.open"
+	OpPtyOpenRoot            = "pty.open.root"
+	OpPtyPolicy              = "pty.policy"
+	OpPtyRecordingRead       = "pty.recording.read"
 	OpQuotaApply             = "quota.apply"
 	OpQuotaReport            = "quota.report"
+	OpSecurityAudit          = "security.audit"
 	OpServiceControl         = "service.control"
 	OpServiceStatus          = "service.status"
 	OpSFTPUserEnsure         = "sftp.user.ensure"
@@ -104,12 +115,14 @@ const (
 	OpSoftwareRemove         = "software.remove"
 	OpSSHKeysApply           = "ssh.keys.apply"
 	OpSshdConfigApply        = "sshd.config.apply"
+	OpSshdConfigConfirm      = "sshd.config.confirm"
 	OpSshdMatchApply         = "sshd.match.apply"
 	OpSystemHostnameSet      = "system.hostname.set"
 	OpSystemInfo             = "system.info"
 	OpSystemPing             = "system.ping"
 	OpSystemReboot           = "system.reboot"
 	OpWAFApply               = "waf.apply"
+	OpWAFEvents              = "waf.events"
 	OpWpClone                = "wp.clone"
 	OpWpHarden               = "wp.harden"
 	OpWpInstall              = "wp.install"
@@ -173,7 +186,7 @@ type SHA256 string
 // Hostname — Hostname máy chủ (RFC 1123, chữ thường).
 type Hostname string
 
-// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng", "nginx", "php8.3", "lego", "mariadb", "postgresql", "pure-ftpd".
+// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng", "nginx", "php8.3", "lego", "mariadb", "postgresql", "pure-ftpd", "fail2ban", "clamav", "yara", "modsecurity".
 type Recipe string
 
 // QuotaMode — kiểu QuotaMode trong contracts/agent-ops. Giá trị: "kernel", "soft".
@@ -233,6 +246,47 @@ type DBPrivileges []string
 // FileType — kiểu FileType trong contracts/agent-ops. Giá trị: "file", "dir", "symlink", "other".
 type FileType string
 
+// Port — kiểu Port trong contracts/agent-ops.
+type Port int64
+
+// IPAddress — Một địa chỉ IPv4/IPv6 (không prefix). Tầng nghiệp vụ kiểm thêm octet ≤ 255.
+type IPAddress string
+
+// FirewallRule — kiểu FirewallRule trong contracts/agent-ops.
+type FirewallRule struct {
+	Priority int64 `json:"priority"`
+	// Giá trị: "accept", "drop", "reject".
+	Action string `json:"action"`
+	// Giá trị: "in", "out".
+	Direction string `json:"direction"`
+	// Giá trị: "tcp", "udp", "icmp", "any".
+	Protocol string  `json:"protocol"`
+	Ports    *string `json:"ports"`
+	Source   CIDR    `json:"source"`
+	Comment  string  `json:"comment"`
+}
+
+// ConfirmToken — Token xác nhận safe-apply do agent sinh, dùng một lần (D-76).
+type ConfirmToken string
+
+// Fail2banJail — kiểu Fail2banJail trong contracts/agent-ops. Giá trị: "sshd", "itso-panel", "pure-ftpd".
+type Fail2banJail string
+
+// WAFRuleID — Id rule ModSecurity/CRS (số nguyên, không chuỗi tự do).
+type WAFRuleID int64
+
+// WAFMode — kiểu WAFMode trong contracts/agent-ops. Giá trị: "DetectionOnly", "On", "Off".
+type WAFMode string
+
+// ScanEngine — kiểu ScanEngine trong contracts/agent-ops. Giá trị: "clamav", "yara".
+type ScanEngine string
+
+// AbsPath — kiểu AbsPath trong contracts/agent-ops.
+type AbsPath string
+
+// NullableTime — kiểu NullableTime trong contracts/agent-ops.
+type NullableTime *string
+
 // BackupRepo — kiểu BackupRepo trong contracts/agent-ops.
 type BackupRepo struct {
 	RepoUUID UUID `json:"repo_uuid"`
@@ -241,7 +295,7 @@ type BackupRepo struct {
 	AppendOnly      *bool  `json:"append_only,omitempty"`
 }
 
-// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "internal".
+// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "would_lock_out", "internal".
 type ErrorCode string
 
 // EnvelopeRequestedBy được sinh từ schema.
@@ -823,6 +877,149 @@ type DBPGUserEnsureResult struct {
 	Changed bool `json:"changed"`
 }
 
+// Fail2banApplyParamsJailsItem được sinh từ schema.
+type Fail2banApplyParamsJailsItem struct {
+	Name        Fail2banJail `json:"name"`
+	Enabled     bool         `json:"enabled"`
+	BantimeSec  int64        `json:"bantime_sec"`
+	FindtimeSec int64        `json:"findtime_sec"`
+	Maxretry    int64        `json:"maxretry"`
+}
+
+// Fail2banApplyParams — params của op fail2ban.apply (ops/fail2ban.apply.schema.json).
+type Fail2banApplyParams struct {
+	Enabled  bool                           `json:"enabled"`
+	Jails    []Fail2banApplyParamsJailsItem `json:"jails"`
+	Ignoreip []CIDR                         `json:"ignoreip"`
+}
+
+// Fail2banApplyResult — result của op fail2ban.apply (ops/fail2ban.apply.schema.json).
+type Fail2banApplyResult struct {
+	Changed     bool  `json:"changed"`
+	Reloaded    bool  `json:"reloaded"`
+	JailsActive int64 `json:"jails_active"`
+}
+
+// Fail2banStatusParams — params của op fail2ban.status (ops/fail2ban.status.schema.json).
+type Fail2banStatusParams struct {
+}
+
+// Fail2banStatusResultJailsItemBannedItem được sinh từ schema.
+type Fail2banStatusResultJailsItemBannedItem struct {
+	IP        IPAddress    `json:"ip"`
+	BannedAt  string       `json:"banned_at"`
+	ExpiresAt NullableTime `json:"expires_at"`
+}
+
+// Fail2banStatusResultJailsItem được sinh từ schema.
+type Fail2banStatusResultJailsItem struct {
+	Name        Fail2banJail                              `json:"name"`
+	Enabled     bool                                      `json:"enabled"`
+	TotalBanned int64                                     `json:"total_banned"`
+	Banned      []Fail2banStatusResultJailsItemBannedItem `json:"banned"`
+}
+
+// Fail2banStatusResult — result của op fail2ban.status (ops/fail2ban.status.schema.json).
+type Fail2banStatusResult struct {
+	Running bool                            `json:"running"`
+	Jails   []Fail2banStatusResultJailsItem `json:"jails"`
+}
+
+// Fail2banUnbanParams — params của op fail2ban.unban (ops/fail2ban.unban.schema.json).
+type Fail2banUnbanParams struct {
+	Jail Fail2banJail `json:"jail"`
+	IP   IPAddress    `json:"ip"`
+}
+
+// Fail2banUnbanResult — result của op fail2ban.unban (ops/fail2ban.unban.schema.json).
+type Fail2banUnbanResult struct {
+	Unbanned bool `json:"unbanned"`
+}
+
+// FimBaselineParams — params của op fim.baseline (ops/fim.baseline.schema.json).
+type FimBaselineParams struct {
+}
+
+// FimBaselineResult — result của op fim.baseline (ops/fim.baseline.schema.json).
+type FimBaselineResult struct {
+	Files     int64  `json:"files"`
+	SHA256    SHA256 `json:"sha256"`
+	CreatedAt string `json:"created_at"`
+}
+
+// FimCheckParams — params của op fim.check (ops/fim.check.schema.json).
+type FimCheckParams struct {
+}
+
+// FimCheckResultChangesItem được sinh từ schema.
+type FimCheckResultChangesItem struct {
+	Path AbsPath `json:"path"`
+	// Giá trị: "added", "modified", "removed", "metadata".
+	Change    string          `json:"change"`
+	OldSHA256 json.RawMessage `json:"old_sha256"`
+	NewSHA256 json.RawMessage `json:"new_sha256"`
+	Mode      json.RawMessage `json:"mode"`
+	Owner     *string         `json:"owner"`
+}
+
+// FimCheckResult — result của op fim.check (ops/fim.check.schema.json).
+type FimCheckResult struct {
+	Checked    int64                       `json:"checked"`
+	BaselineAt NullableTime                `json:"baseline_at"`
+	Changes    []FimCheckResultChangesItem `json:"changes"`
+}
+
+// FirewallApplyParamsAntiLockout được sinh từ schema.
+type FirewallApplyParamsAntiLockout struct {
+	SSHPort   Port      `json:"ssh_port"`
+	PanelPort Port      `json:"panel_port"`
+	ClientIP  IPAddress `json:"client_ip"`
+}
+
+// FirewallApplyParams — params của op firewall.apply (ops/firewall.apply.schema.json).
+type FirewallApplyParams struct {
+	ApplyID          UUID                           `json:"apply_id"`
+	Rules            []FirewallRule                 `json:"rules"`
+	AntiLockout      FirewallApplyParamsAntiLockout `json:"anti_lockout"`
+	ConfirmWithinSec int64                          `json:"confirm_within_sec"`
+}
+
+// FirewallApplyResult — result của op firewall.apply (ops/firewall.apply.schema.json).
+type FirewallApplyResult struct {
+	Token         ConfirmToken `json:"token"`
+	RollbackAt    string       `json:"rollback_at"`
+	RulesetSHA256 SHA256       `json:"ruleset_sha256"`
+	RulesActive   int64        `json:"rules_active"`
+	Changed       bool         `json:"changed"`
+}
+
+// FirewallConfirmParams — params của op firewall.confirm (ops/firewall.confirm.schema.json).
+type FirewallConfirmParams struct {
+	ApplyID UUID         `json:"apply_id"`
+	Token   ConfirmToken `json:"token"`
+}
+
+// FirewallConfirmResult — result của op firewall.confirm (ops/firewall.confirm.schema.json).
+type FirewallConfirmResult struct {
+	Confirmed  bool `json:"confirmed"`
+	RolledBack bool `json:"rolled_back"`
+}
+
+// FirewallStatusParams — params của op firewall.status (ops/firewall.status.schema.json).
+type FirewallStatusParams struct {
+}
+
+// FirewallStatusResult — result của op firewall.status (ops/firewall.status.schema.json).
+type FirewallStatusResult struct {
+	// Giá trị: "idle", "pending_confirm", "confirmed", "rolled_back".
+	State         string          `json:"state"`
+	ApplyID       json.RawMessage `json:"apply_id"`
+	RollbackAt    NullableTime    `json:"rollback_at"`
+	RulesetSHA256 json.RawMessage `json:"ruleset_sha256"`
+	RulesActive   int64           `json:"rules_active"`
+	TablePresent  bool            `json:"table_present"`
+}
+
 // FsArchiveParams — params của op fs.archive (ops/fs.archive.schema.json).
 type FsArchiveParams struct {
 	Account Account   `json:"account"`
@@ -1064,6 +1261,73 @@ type LogTailParams struct {
 type LogTailResult struct {
 	Lines     []string `json:"lines"`
 	Truncated bool     `json:"truncated"`
+}
+
+// MalwareDeleteParams — params của op malware.delete (ops/malware.delete.schema.json).
+type MalwareDeleteParams struct {
+	Account        Account `json:"account"`
+	Path           RelPath `json:"path"`
+	ExpectedSHA256 SHA256  `json:"expected_sha256"`
+}
+
+// MalwareDeleteResult — result của op malware.delete (ops/malware.delete.schema.json).
+type MalwareDeleteResult struct {
+	Deleted bool `json:"deleted"`
+}
+
+// MalwareQuarantineParams — params của op malware.quarantine (ops/malware.quarantine.schema.json).
+type MalwareQuarantineParams struct {
+	Account        Account `json:"account"`
+	ItemUUID       UUID    `json:"item_uuid"`
+	Path           RelPath `json:"path"`
+	ExpectedSHA256 SHA256  `json:"expected_sha256"`
+}
+
+// MalwareQuarantineResult — result của op malware.quarantine (ops/malware.quarantine.schema.json).
+type MalwareQuarantineResult struct {
+	Quarantined bool   `json:"quarantined"`
+	Size        Bytes  `json:"size"`
+	SHA256      SHA256 `json:"sha256"`
+}
+
+// MalwareRestoreParams — params của op malware.restore (ops/malware.restore.schema.json).
+type MalwareRestoreParams struct {
+	Account      Account `json:"account"`
+	ItemUUID     UUID    `json:"item_uuid"`
+	OriginalPath RelPath `json:"original_path"`
+	SHA256       SHA256  `json:"sha256"`
+	Overwrite    bool    `json:"overwrite"`
+}
+
+// MalwareRestoreResult — result của op malware.restore (ops/malware.restore.schema.json).
+type MalwareRestoreResult struct {
+	Restored bool `json:"restored"`
+}
+
+// MalwareScanParams — params của op malware.scan (ops/malware.scan.schema.json).
+type MalwareScanParams struct {
+	Account   Account      `json:"account"`
+	ScanUUID  UUID         `json:"scan_uuid"`
+	Target    RelPath      `json:"target"`
+	Engines   []ScanEngine `json:"engines"`
+	MaxFileMB int64        `json:"max_file_mb"`
+}
+
+// MalwareScanResultFindingsItem được sinh từ schema.
+type MalwareScanResultFindingsItem struct {
+	Path      RelPath    `json:"path"`
+	Signature string     `json:"signature"`
+	Engine    ScanEngine `json:"engine"`
+	SHA256    SHA256     `json:"sha256"`
+	Size      Bytes      `json:"size"`
+}
+
+// MalwareScanResult — result của op malware.scan (ops/malware.scan.schema.json).
+type MalwareScanResult struct {
+	FilesScanned   int64                           `json:"files_scanned"`
+	Skipped        int64                           `json:"skipped"`
+	Findings       []MalwareScanResultFindingsItem `json:"findings"`
+	EngineVersions map[string]string               `json:"engine_versions"`
 }
 
 // MetricsCgroupParams — params của op metrics.cgroup (ops/metrics.cgroup.schema.json).
@@ -1325,6 +1589,27 @@ type PHPVersionRemoveResult struct {
 	Removed bool `json:"removed"`
 }
 
+// PtyListParams — params của op pty.list (ops/pty.list.schema.json).
+type PtyListParams struct {
+}
+
+// PtyListResultSessionsItem được sinh từ schema.
+type PtyListResultSessionsItem struct {
+	SessionUUID UUID `json:"session_uuid"`
+	// Giá trị: "account", "root".
+	Mode           string `json:"mode"`
+	UnixUser       string `json:"unix_user"`
+	StartedAt      string `json:"started_at"`
+	LastInputAt    string `json:"last_input_at"`
+	Recording      bool   `json:"recording"`
+	RecordingBytes Bytes  `json:"recording_bytes"`
+}
+
+// PtyListResult — result của op pty.list (ops/pty.list.schema.json).
+type PtyListResult struct {
+	Sessions []PtyListResultSessionsItem `json:"sessions"`
+}
+
 // PtyOpenParams — params của op pty.open (ops/pty.open.schema.json).
 type PtyOpenParams struct {
 	Account        Account `json:"account"`
@@ -1339,6 +1624,59 @@ type PtyOpenResult struct {
 	Ticket    string   `json:"ticket"`
 	ExpiresAt string   `json:"expires_at"`
 	UnixUser  Username `json:"unix_user"`
+}
+
+// PtyOpenRootParams — params của op pty.open.root (ops/pty.open.root.schema.json).
+type PtyOpenRootParams struct {
+	SessionUUID    UUID  `json:"session_uuid"`
+	Cols           int64 `json:"cols"`
+	Rows           int64 `json:"rows"`
+	IdleTimeoutSec int64 `json:"idle_timeout_sec"`
+}
+
+// PtyOpenRootResult — result của op pty.open.root (ops/pty.open.root.schema.json).
+type PtyOpenRootResult struct {
+	Ticket    string `json:"ticket"`
+	ExpiresAt string `json:"expires_at"`
+	// Giá trị: "root".
+	UnixUser  string `json:"unix_user"`
+	Recording bool   `json:"recording"`
+}
+
+// PtyPolicyParams — params của op pty.policy (ops/pty.policy.schema.json).
+type PtyPolicyParams struct {
+}
+
+// PtyPolicyResult — result của op pty.policy (ops/pty.policy.schema.json).
+type PtyPolicyResult struct {
+	RootEnabled           bool  `json:"root_enabled"`
+	RecordRoot            bool  `json:"record_root"`
+	RecordUser            bool  `json:"record_user"`
+	MaxSessionsPerAccount int64 `json:"max_sessions_per_account"`
+	IdleTimeoutSec        int64 `json:"idle_timeout_sec"`
+}
+
+// PtyRecordingReadParams — params của op pty.recording.read (ops/pty.recording.read.schema.json).
+type PtyRecordingReadParams struct {
+	SessionUUID UUID  `json:"session_uuid"`
+	Offset      int64 `json:"offset"`
+	MaxBytes    int64 `json:"max_bytes"`
+}
+
+// PtyRecordingReadResultEventsItem được sinh từ schema.
+type PtyRecordingReadResultEventsItem struct {
+	T    float64 `json:"t"`
+	Data string  `json:"data"`
+}
+
+// PtyRecordingReadResult — result của op pty.recording.read (ops/pty.recording.read.schema.json).
+type PtyRecordingReadResult struct {
+	Width      int64                              `json:"width"`
+	Height     int64                              `json:"height"`
+	Events     []PtyRecordingReadResultEventsItem `json:"events"`
+	NextOffset int64                              `json:"next_offset"`
+	Truncated  bool                               `json:"truncated"`
+	Eof        bool                               `json:"eof"`
 }
 
 // QuotaApplyParams — params của op quota.apply (ops/quota.apply.schema.json).
@@ -1370,6 +1708,63 @@ type QuotaReportResultUsageItem struct {
 // QuotaReportResult — result của op quota.report (ops/quota.report.schema.json).
 type QuotaReportResult struct {
 	Usage []QuotaReportResultUsageItem `json:"usage"`
+}
+
+// SecurityAuditParams — params của op security.audit (ops/security.audit.schema.json).
+type SecurityAuditParams struct {
+}
+
+// SecurityAuditResultSshd được sinh từ schema.
+type SecurityAuditResultSshd struct {
+	Port                   Port   `json:"port"`
+	PermitRootLogin        string `json:"permit_root_login"`
+	PasswordAuthentication bool   `json:"password_authentication"`
+	MaxAuthTries           int64  `json:"max_auth_tries"`
+}
+
+// SecurityAuditResultFirewall được sinh từ schema.
+type SecurityAuditResultFirewall struct {
+	TablePresent bool `json:"table_present"`
+	// Giá trị: "accept", "drop".
+	InputPolicy string `json:"input_policy"`
+	Rules       int64  `json:"rules"`
+}
+
+// SecurityAuditResultFail2ban được sinh từ schema.
+type SecurityAuditResultFail2ban struct {
+	Running bool  `json:"running"`
+	Jails   int64 `json:"jails"`
+}
+
+// SecurityAuditResultUpdates được sinh từ schema.
+type SecurityAuditResultUpdates struct {
+	UnattendedUpgrades bool  `json:"unattended_upgrades"`
+	PendingSecurity    int64 `json:"pending_security"`
+	RebootRequired     bool  `json:"reboot_required"`
+}
+
+// SecurityAuditResultPackages được sinh từ schema.
+type SecurityAuditResultPackages struct {
+	Modsecurity bool `json:"modsecurity"`
+	Crs         bool `json:"crs"`
+	Clamav      bool `json:"clamav"`
+	Yara        bool `json:"yara"`
+}
+
+// SecurityAuditResultFim được sinh từ schema.
+type SecurityAuditResultFim struct {
+	BaselinePresent bool  `json:"baseline_present"`
+	Changes         int64 `json:"changes"`
+}
+
+// SecurityAuditResult — result của op security.audit (ops/security.audit.schema.json).
+type SecurityAuditResult struct {
+	Sshd     SecurityAuditResultSshd     `json:"sshd"`
+	Firewall SecurityAuditResultFirewall `json:"firewall"`
+	Fail2ban SecurityAuditResultFail2ban `json:"fail2ban"`
+	Updates  SecurityAuditResultUpdates  `json:"updates"`
+	Packages SecurityAuditResultPackages `json:"packages"`
+	Fim      SecurityAuditResultFim      `json:"fim"`
 }
 
 // ServiceControlParams — params của op service.control (ops/service.control.schema.json).
@@ -1460,6 +1855,45 @@ type SSHKeysApplyResult struct {
 	Count int64 `json:"count"`
 }
 
+// SshdConfigApplyParams — params của op sshd.config.apply (ops/sshd.config.apply.schema.json).
+type SshdConfigApplyParams struct {
+	ApplyID                UUID `json:"apply_id"`
+	Port                   Port `json:"port"`
+	PasswordAuthentication bool `json:"password_authentication"`
+	// Giá trị: "no", "prohibit-password".
+	PermitRootLogin  string    `json:"permit_root_login"`
+	MaxAuthTries     int64     `json:"max_auth_tries"`
+	LoginGraceSec    int64     `json:"login_grace_sec"`
+	X11Forwarding    bool      `json:"x11_forwarding"`
+	AgentForwarding  bool      `json:"agent_forwarding"`
+	AllowGroups      []string  `json:"allow_groups"`
+	AdminUser        string    `json:"admin_user"`
+	ClientIP         IPAddress `json:"client_ip"`
+	ConfirmWithinSec int64     `json:"confirm_within_sec"`
+}
+
+// SshdConfigApplyResult — result của op sshd.config.apply (ops/sshd.config.apply.schema.json).
+type SshdConfigApplyResult struct {
+	Token      ConfirmToken `json:"token"`
+	RollbackAt string       `json:"rollback_at"`
+	// Giá trị: "ok".
+	SshdTest  string `json:"sshd_test"`
+	Changed   bool   `json:"changed"`
+	AdminKeys int64  `json:"admin_keys"`
+}
+
+// SshdConfigConfirmParams — params của op sshd.config.confirm (ops/sshd.config.confirm.schema.json).
+type SshdConfigConfirmParams struct {
+	ApplyID UUID         `json:"apply_id"`
+	Token   ConfirmToken `json:"token"`
+}
+
+// SshdConfigConfirmResult — result của op sshd.config.confirm (ops/sshd.config.confirm.schema.json).
+type SshdConfigConfirmResult struct {
+	Confirmed  bool `json:"confirmed"`
+	RolledBack bool `json:"rolled_back"`
+}
+
 // SshdMatchApplyParams — params của op sshd.match.apply (ops/sshd.match.apply.schema.json).
 type SshdMatchApplyParams struct {
 	PasswordAuthentication bool `json:"password_authentication"`
@@ -1525,6 +1959,50 @@ type SystemRebootParams struct {
 // SystemRebootResult — result của op system.reboot (ops/system.reboot.schema.json).
 type SystemRebootResult struct {
 	ScheduledAt string `json:"scheduled_at"`
+}
+
+// WAFApplyParams — params của op waf.apply (ops/waf.apply.schema.json).
+type WAFApplyParams struct {
+	WebsiteUUID    UUID        `json:"website_uuid"`
+	Account        Account     `json:"account"`
+	Mode           WAFMode     `json:"mode"`
+	ParanoiaLevel  int64       `json:"paranoia_level"`
+	RuleExclusions []WAFRuleID `json:"rule_exclusions"`
+}
+
+// WAFApplyResult — result của op waf.apply (ops/waf.apply.schema.json).
+type WAFApplyResult struct {
+	Available bool `json:"available"`
+	Changed   bool `json:"changed"`
+	// Giá trị: "ok", "skipped".
+	NginxTest string `json:"nginx_test"`
+}
+
+// WAFEventsParams — params của op waf.events (ops/waf.events.schema.json).
+type WAFEventsParams struct {
+	Cursor *string `json:"cursor"`
+	Limit  int64   `json:"limit"`
+}
+
+// WAFEventsResultEventsItem được sinh từ schema.
+type WAFEventsResultEventsItem struct {
+	WebsiteUUID UUID      `json:"website_uuid"`
+	RuleID      WAFRuleID `json:"rule_id"`
+	Message     string    `json:"message"`
+	// Giá trị: "info", "low", "medium", "high", "critical".
+	Severity string    `json:"severity"`
+	ClientIP IPAddress `json:"client_ip"`
+	Method   string    `json:"method"`
+	URI      string    `json:"uri"`
+	// Giá trị: "detected", "blocked".
+	Action string `json:"action"`
+	At     string `json:"at"`
+}
+
+// WAFEventsResult — result của op waf.events (ops/waf.events.schema.json).
+type WAFEventsResult struct {
+	Events     []WAFEventsResultEventsItem `json:"events"`
+	NextCursor string                      `json:"next_cursor"`
 }
 
 // NewParams trả về con trỏ tới struct Params của op, nil nếu op chưa có schema.
@@ -1606,6 +2084,22 @@ func NewParams(op string) any {
 		return new(DBPGUserDropParams)
 	case OpDBPGUserEnsure:
 		return new(DBPGUserEnsureParams)
+	case OpFail2banApply:
+		return new(Fail2banApplyParams)
+	case OpFail2banStatus:
+		return new(Fail2banStatusParams)
+	case OpFail2banUnban:
+		return new(Fail2banUnbanParams)
+	case OpFimBaseline:
+		return new(FimBaselineParams)
+	case OpFimCheck:
+		return new(FimCheckParams)
+	case OpFirewallApply:
+		return new(FirewallApplyParams)
+	case OpFirewallConfirm:
+		return new(FirewallConfirmParams)
+	case OpFirewallStatus:
+		return new(FirewallStatusParams)
 	case OpFsArchive:
 		return new(FsArchiveParams)
 	case OpFsChmod:
@@ -1640,6 +2134,14 @@ func NewParams(op string) any {
 		return new(FTPUserRemoveParams)
 	case OpLogTail:
 		return new(LogTailParams)
+	case OpMalwareDelete:
+		return new(MalwareDeleteParams)
+	case OpMalwareQuarantine:
+		return new(MalwareQuarantineParams)
+	case OpMalwareRestore:
+		return new(MalwareRestoreParams)
+	case OpMalwareScan:
+		return new(MalwareScanParams)
 	case OpMetricsCgroup:
 		return new(MetricsCgroupParams)
 	case OpMetricsSnapshot:
@@ -1674,12 +2176,22 @@ func NewParams(op string) any {
 		return new(PHPVersionInstallParams)
 	case OpPHPVersionRemove:
 		return new(PHPVersionRemoveParams)
+	case OpPtyList:
+		return new(PtyListParams)
 	case OpPtyOpen:
 		return new(PtyOpenParams)
+	case OpPtyOpenRoot:
+		return new(PtyOpenRootParams)
+	case OpPtyPolicy:
+		return new(PtyPolicyParams)
+	case OpPtyRecordingRead:
+		return new(PtyRecordingReadParams)
 	case OpQuotaApply:
 		return new(QuotaApplyParams)
 	case OpQuotaReport:
 		return new(QuotaReportParams)
+	case OpSecurityAudit:
+		return new(SecurityAuditParams)
 	case OpServiceControl:
 		return new(ServiceControlParams)
 	case OpServiceStatus:
@@ -1694,6 +2206,10 @@ func NewParams(op string) any {
 		return new(SoftwareRemoveParams)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyParams)
+	case OpSshdConfigApply:
+		return new(SshdConfigApplyParams)
+	case OpSshdConfigConfirm:
+		return new(SshdConfigConfirmParams)
 	case OpSshdMatchApply:
 		return new(SshdMatchApplyParams)
 	case OpSystemHostnameSet:
@@ -1704,6 +2220,10 @@ func NewParams(op string) any {
 		return new(SystemPingParams)
 	case OpSystemReboot:
 		return new(SystemRebootParams)
+	case OpWAFApply:
+		return new(WAFApplyParams)
+	case OpWAFEvents:
+		return new(WAFEventsParams)
 	}
 	return nil
 }
@@ -1787,6 +2307,22 @@ func NewResult(op string) any {
 		return new(DBPGUserDropResult)
 	case OpDBPGUserEnsure:
 		return new(DBPGUserEnsureResult)
+	case OpFail2banApply:
+		return new(Fail2banApplyResult)
+	case OpFail2banStatus:
+		return new(Fail2banStatusResult)
+	case OpFail2banUnban:
+		return new(Fail2banUnbanResult)
+	case OpFimBaseline:
+		return new(FimBaselineResult)
+	case OpFimCheck:
+		return new(FimCheckResult)
+	case OpFirewallApply:
+		return new(FirewallApplyResult)
+	case OpFirewallConfirm:
+		return new(FirewallConfirmResult)
+	case OpFirewallStatus:
+		return new(FirewallStatusResult)
 	case OpFsArchive:
 		return new(FsArchiveResult)
 	case OpFsChmod:
@@ -1821,6 +2357,14 @@ func NewResult(op string) any {
 		return new(FTPUserRemoveResult)
 	case OpLogTail:
 		return new(LogTailResult)
+	case OpMalwareDelete:
+		return new(MalwareDeleteResult)
+	case OpMalwareQuarantine:
+		return new(MalwareQuarantineResult)
+	case OpMalwareRestore:
+		return new(MalwareRestoreResult)
+	case OpMalwareScan:
+		return new(MalwareScanResult)
 	case OpMetricsCgroup:
 		return new(MetricsCgroupResult)
 	case OpMetricsSnapshot:
@@ -1855,12 +2399,22 @@ func NewResult(op string) any {
 		return new(PHPVersionInstallResult)
 	case OpPHPVersionRemove:
 		return new(PHPVersionRemoveResult)
+	case OpPtyList:
+		return new(PtyListResult)
 	case OpPtyOpen:
 		return new(PtyOpenResult)
+	case OpPtyOpenRoot:
+		return new(PtyOpenRootResult)
+	case OpPtyPolicy:
+		return new(PtyPolicyResult)
+	case OpPtyRecordingRead:
+		return new(PtyRecordingReadResult)
 	case OpQuotaApply:
 		return new(QuotaApplyResult)
 	case OpQuotaReport:
 		return new(QuotaReportResult)
+	case OpSecurityAudit:
+		return new(SecurityAuditResult)
 	case OpServiceControl:
 		return new(ServiceControlResult)
 	case OpServiceStatus:
@@ -1875,6 +2429,10 @@ func NewResult(op string) any {
 		return new(SoftwareRemoveResult)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyResult)
+	case OpSshdConfigApply:
+		return new(SshdConfigApplyResult)
+	case OpSshdConfigConfirm:
+		return new(SshdConfigConfirmResult)
 	case OpSshdMatchApply:
 		return new(SshdMatchApplyResult)
 	case OpSystemHostnameSet:
@@ -1885,6 +2443,10 @@ func NewResult(op string) any {
 		return new(SystemPingResult)
 	case OpSystemReboot:
 		return new(SystemRebootResult)
+	case OpWAFApply:
+		return new(WAFApplyResult)
+	case OpWAFEvents:
+		return new(WAFEventsResult)
 	}
 	return nil
 }

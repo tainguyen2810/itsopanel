@@ -9,12 +9,15 @@ import SharedWebsiteDetailPage, {
 } from '@/shared/hosting/pages/WebsiteDetailPage';
 import { ErrorState, TableSkeleton } from '@/shared/page/states';
 import { Alert } from '@/ui/Alert';
+import { Badge, SeverityBadge, type Severity } from '@/ui/Badge';
+import { Card, CardContent, CardHeader } from '@/ui/Card';
+import { DataTable, type ColumnDef } from '@/ui/DataTable';
 import { DropdownMenuItem } from '@/ui/DropdownMenu';
 import { Input } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Checkbox';
-import { get, send, type Data } from '../api';
+import { get, list, send, type Data, type Row } from '../api';
 import { useAction } from '../useAction';
 
 /** Chi tiết website (Admin): trang dùng chung + quét mã độc và tab WAF (chỉ Admin). */
@@ -43,7 +46,87 @@ function WafTab({ w }: { w: Site }) {
   });
   if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   if (!q.data) return <TableSkeleton rows={4} />;
-  return <WafForm w={w} value={q.data} />;
+  return (
+    <div className="flex flex-col gap-4">
+      <WafForm w={w} value={q.data} />
+      <WafEvents w={w} />
+    </div>
+  );
+}
+
+type WafEvent = Row<'/api/v1/admin/websites/{id}/waf/events'>;
+
+/** Sự kiện ModSecurity của website (đồng bộ mỗi phút từ audit log qua agent). */
+function WafEvents({ w }: { w: Site }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  const ev = useQuery({
+    queryKey: [...keyOf(w.uuid), 'waf', 'events'],
+    queryFn: () =>
+      list('/api/v1/admin/websites/{id}/waf/events', undefined, { path: { id: w.uuid } }),
+  });
+  const columns: ColumnDef<WafEvent, unknown>[] = [
+    {
+      id: 'at',
+      header: t('sec.at'),
+      accessorKey: 'at',
+      cell: ({ row }) => <span className="whitespace-nowrap">{fmt.rel(row.original.at)}</span>,
+    },
+    {
+      id: 'severity',
+      header: t('sec.severity'),
+      accessorKey: 'severity',
+      cell: ({ row }) => <SeverityBadge severity={row.original.severity as Severity} />,
+    },
+    {
+      id: 'message',
+      header: t('sec.message'),
+      accessorKey: 'message',
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <p className="wrap-anywhere">{row.original.message}</p>
+          <p className="font-mono text-sm text-muted wrap-anywhere">
+            {row.original.rule_id} · {row.original.method} {row.original.uri}
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'ip',
+      header: t('sec.ip'),
+      accessorKey: 'client_ip',
+      cell: ({ row }) => <span className="font-mono">{row.original.client_ip}</span>,
+    },
+    {
+      id: 'action',
+      header: t('firewall.action'),
+      accessorKey: 'action',
+      cell: ({ row }) => (
+        <Badge tone={row.original.action === 'blocked' ? 'danger' : 'warning'}>
+          {t(`sec.wafActions.${row.original.action}`)}
+        </Badge>
+      ),
+    },
+  ];
+  return (
+    <Card>
+      <CardHeader title={t('sec.wafSiteEvents')} description={t('sec.wafSiteEventsHint')} />
+      <CardContent>
+        {ev.error ? (
+          <ErrorState error={ev.error} onRetry={() => void ev.refetch()} />
+        ) : (
+          <DataTable
+            data={ev.data ?? []}
+            columns={columns}
+            getRowId={(e) => e.uuid}
+            primaryColumnId="message"
+            caption={t('sec.wafSiteEvents')}
+            empty={t('sec.wafSiteEventsEmpty')}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function WafForm({ w, value }: { w: Site; value: Data<'/api/v1/admin/websites/{id}/waf'> }) {

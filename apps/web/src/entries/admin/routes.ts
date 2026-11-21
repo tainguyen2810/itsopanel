@@ -52,6 +52,7 @@ export const ADMIN_ROUTES: RouteDef[] = [
   { id: 'securityFail2ban', path: '/security/fail2ban', nav: 'security', roles: SA },
   { id: 'securityFim', path: '/security/fim', nav: 'security', roles: SA },
   { id: 'securityAllowlist', path: '/security/allowlist', nav: 'security', roles: SA },
+  { id: 'securityTerminal', path: '/security/terminal', nav: 'security', roles: SA },
   { id: 'backups', path: '/backups', nav: 'backups' },
   { id: 'restores', path: '/restores', nav: 'restores' },
   { id: 'restoreNew', path: '/restores/new', nav: 'restores' },

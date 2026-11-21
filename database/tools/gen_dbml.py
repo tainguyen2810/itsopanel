@@ -471,38 +471,98 @@ t("security", "audit_logs", [
     "prev_hash text", "hash text",
 ], ["(id, at) [pk]", "(actor_user_id, at)", "(resource_type, resource_id)"],
   "Append-only (trigger), partition theo tháng (extras.sql).")
-t("security", "security_events", IDN + [
+t("security", "security_events", ID + [
     "server_id bigint [ref: > servers.id]", "website_id bigint [ref: > websites.id]",
     "type text [not null]", "severity text [not null, note: 'info|low|medium|high|critical']",
-    "source_ip inet", "details jsonb", "acknowledged_by_user_id bigint [ref: > users.id]",
+    "source_ip inet", "message text [not null, default: '']", "details jsonb", "acknowledged_by_user_id bigint [ref: > users.id]",
+    "acknowledged_at timestamptz",
     "at timestamptz [not null, default: `now()`]",
 ], ["(server_id, at)", "(severity, at)"])
-t("security", "firewall_rules", IDN + [
+t("security", "firewall_rules", ID + [
     "server_id bigint [not null, ref: > servers.id]", "priority int [not null, default: 100]",
-    "action text [not null, note: 'accept|drop|reject']", "protocol text [not null, default: 'tcp']",
+    "action text [not null, note: 'accept|drop|reject']", "direction text [not null, default: 'in', note: 'in|out']",
+    "protocol text [not null, default: 'tcp', note: 'tcp|udp|icmp|any']", "enabled boolean [not null, default: true]",
     "port_range text", "source_cidr cidr", "comment text",
     "managed_by text [not null, default: 'user', note: 'system|user']",
 ] + TS, ["(server_id, priority)"])
-t("security", "malware_scans", IDN + [
+t("security", "malware_scans", ID + [
     "server_id bigint [not null, ref: > servers.id]", "hosting_account_id bigint [ref: > hosting_accounts.id]",
     "website_id bigint [ref: > websites.id]", "job_id bigint [ref: > jobs.id]",
-    "status text [not null]", "files_scanned int", "findings_count int",
+    "status text [not null, note: 'JobState']", "target text [not null, default: '.', note: 'RelPath trong home account']",
+    "engines text[] [not null, default: `'{clamav,yara}'`]", "files_scanned int", "findings_count int",
     "started_at timestamptz", "finished_at timestamptz",
 ])
-t("security", "malware_findings", IDN + [
+t("security", "malware_findings", ID + [
     "scan_id bigint [not null, ref: > malware_scans.id]", "path text [not null]",
     "signature text [not null]", "engine text [not null, note: 'clamav|yara']",
+    "sha256 text [not null]", "size bigint [not null, default: 0]",
+    "found_at timestamptz [not null, default: `now()`]",
     "action text [not null, default: 'none', note: 'none|quarantined|restored|deleted']",
 ], ["scan_id"])
-t("security", "quarantine_items", IDN + [
+t("security", "quarantine_items", ID + [
     "finding_id bigint [ref: > malware_findings.id]", "hosting_account_id bigint [ref: > hosting_accounts.id]",
-    "original_path text [not null]", "stored_path text [not null]", "sha256 text [not null]",
+    "original_path text [not null]", "stored_path text [not null, note: 'id file trên agent: /var/lib/itso/quarantine/<uuid>.bin']",
+    "sha256 text [not null]", "signature text [not null, default: '']", "size bigint [not null, default: 0]",
     "quarantined_at timestamptz [not null, default: `now()`]", "restored_at timestamptz",
 ])
 t("security", "fim_baselines", IDN + [
     "server_id bigint [not null, ref: > servers.id]", "path text [not null]",
     "sha256 text [not null]", "mode int", "owner text", "updated_at timestamptz [not null, default: `now()`]",
 ], ["(server_id, path) [unique]"])
+t("security", "firewall_applies", ID + [
+    "server_id bigint [not null, ref: > servers.id]",
+    "target text [not null, note: 'firewall|sshd (safe-apply chung, D-76/D-77)']",
+    "user_id bigint [ref: > users.id]", "client_ip inet [not null]",
+    "token_hash text [note: 'sha256 của token xác nhận do agent sinh; không lưu token thô']",
+    "spec jsonb [not null, default: `'{}'::jsonb`, note: 'Rule/khóa sshd đã áp dụng']",
+    "previous jsonb [note: 'Cấu hình trước đó (để hiển thị khi hoàn tác)']",
+    "ruleset_sha256 text",
+    "status text [not null, default: 'pending_confirm', note: 'pending_confirm|confirmed|rolled_back|failed']",
+    "deadline_at timestamptz [not null]", "confirmed_at timestamptz", "rolled_back_at timestamptz",
+    "job_id bigint [ref: > jobs.id]",
+    "created_at timestamptz [not null, default: `now()`]",
+], ["(server_id, created_at)", "(status, deadline_at)"])
+t("security", "security_settings", [
+    "server_id bigint [pk, ref: - servers.id]",
+    "ssh jsonb [not null, default: `'{}'::jsonb`, note: 'Desired: khóa sshd_config.d/10-itso-hardening.conf']",
+    "fail2ban jsonb [not null, default: `'{}'::jsonb`, note: 'Desired: jail sshd|itso-panel|pure-ftpd']",
+    "audit_facts jsonb [note: 'Kết quả security.audit gần nhất']", "audited_at timestamptz",
+    "score int", "score_items jsonb", "scored_at timestamptz",
+    "fim_baseline_at timestamptz", "fim_checked_at timestamptz",
+    "waf_events_cursor text [note: 'Con trỏ waf.events của agent']",
+] + TS)
+t("security", "waf_settings", [
+    "website_id bigint [pk, ref: - websites.id]",
+    "mode text [not null, default: 'DetectionOnly', note: 'DetectionOnly|On|Off (D-78)']",
+    "paranoia_level smallint [not null, default: 1]",
+    "rule_exclusions int[] [not null, default: `'{}'`]",
+    "detection_since timestamptz [note: 'Mốc bắt đầu DetectionOnly; sau 7 ngày nhắc chuyển On']",
+    "auto_block boolean [not null, default: false]",
+    "available boolean [not null, default: true, note: 'false khi máy chủ thiếu gói ModSecurity/CRS']",
+    "applied_at timestamptz",
+] + TS)
+t("security", "waf_events", [
+    "id bigint [increment]", "uuid uuid [not null, default: `gen_random_uuid()`, note: 'Không unique toàn cục được trên bảng partition; tra kèm website']",
+    "at timestamptz [not null]",
+    "website_id bigint [not null, ref: > websites.id]", "rule_id int [not null]",
+    "severity text [not null]", "action text [not null, note: 'detected|blocked']",
+    "client_ip inet", "method text", "uri text", "message text",
+], ["(id, at) [pk]", "(website_id, at)"], "Partition theo tháng như audit_logs (extras.sql).")
+t("security", "fim_changes", ID + [
+    "server_id bigint [not null, ref: > servers.id]", "path text [not null]",
+    "change text [not null, note: 'added|modified|removed|metadata']",
+    "old_sha256 text", "new_sha256 text", "mode int", "owner text",
+    "detected_at timestamptz [not null, default: `now()`]",
+    "acknowledged_by_user_id bigint [ref: > users.id]", "acknowledged_at timestamptz",
+], ["(server_id, detected_at)"])
+t("security", "terminal_recordings", [
+    "terminal_session_id bigint [pk, ref: - terminal_sessions.id]",
+    "mode text [not null, note: 'account|root']", "client_ip inet",
+    "stored_ref text [not null, note: 'Tên file trên agent: /var/lib/itso/recordings/<session_uuid>.cast']",
+    "bytes bigint [not null, default: 0]", "width int", "height int",
+    "truncated boolean [not null, default: false]",
+    "created_at timestamptz [not null, default: `now()`]",
+])
 
 # ---------------------------------------------------------------- Notifications, settings, monitoring
 t("ops", "notifications", IDN + [

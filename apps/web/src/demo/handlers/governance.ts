@@ -5,6 +5,7 @@ import type { DemoDb } from '../db';
 import { get as pick, page } from '../list';
 import { created, noContent, ok, on, problem, type Ctx, type Reply } from '../router';
 import { canSeeAccount, canSeeServer, scopeRows, visibility } from '../scope';
+import { needServer, sshState } from './security';
 import { actorRef, startJob } from './writes';
 
 /**
@@ -72,13 +73,35 @@ function registerSecurity() {
     return ok(e);
   });
 
+  on('get', P('/security/ssh'), (ctx) => {
+    const deny = saOnly(ctx) ?? needServer(ctx);
+    if (deny) return deny;
+    return ok(ctx.db.data.ssh_settings as S['SshSettings']);
+  });
+  on('get', P('/security/fail2ban'), (ctx) => {
+    const deny = saOnly(ctx) ?? needServer(ctx);
+    if (deny) return deny;
+    return ok(ctx.db.data.fail2ban as S['Fail2banSettings']);
+  });
   on('patch', P('/security/ssh'), (ctx) => {
-    const deny = saOnly(ctx);
+    const deny = saOnly(ctx) ?? needServer(ctx);
     if (deny) return deny;
     const cur = ctx.db.data.ssh_settings as S['SshSettings'];
     const pre = precondition(ctx, cur.updated_at);
     if (pre) return pre;
     const b = body<S['SshSettingsPatch']>(ctx);
+    const sec = b.rollback_after_sec;
+    if (sec === undefined || sec < 30 || sec > 600)
+      return invalid('rollback_after_sec từ 30 đến 600 giây.');
+    if (sshState(ctx.db).deadline)
+      return problem(409, 'conflict', 'Đang chờ xác nhận lần áp dụng SSH trước');
+    if (b.password_authentication === false && (cur.admin_keys ?? 0) === 0)
+      return problem(
+        422,
+        'would_lock_out',
+        'Sẽ tự khóa mình',
+        'Chưa có khóa SSH nào cho user quản trị; thêm khóa trước khi tắt đăng nhập bằng mật khẩu.',
+      );
     if (b.port !== undefined && (!Number.isInteger(b.port) || b.port < 1 || b.port > 65535))
       return invalid('Cổng SSH từ 1 đến 65535.');
     if (b.max_auth_tries !== undefined && (b.max_auth_tries < 1 || b.max_auth_tries > 10))
@@ -112,13 +135,18 @@ function registerSecurity() {
       changes,
       onDone: (db) => {
         const s = db.data.ssh_settings as S['SshSettings'];
-        Object.assign(s, b, { updated_at: db.now() });
+        const st = sshState(db);
+        st.previous = structuredClone(s);
+        st.deadline = Date.now() + sec * 1000;
+        const { rollback_after_sec: _r, ...rest } = b;
+        void _r;
+        Object.assign(s, rest, { updated_at: db.now() });
       },
     });
   });
 
   on('patch', P('/security/fail2ban'), (ctx) => {
-    const deny = saOnly(ctx);
+    const deny = saOnly(ctx) ?? needServer(ctx);
     if (deny) return deny;
     const cur = ctx.db.data.fail2ban as S['Fail2banSettings'];
     const pre = precondition(ctx, cur.updated_at);
@@ -1230,7 +1258,7 @@ export function settingsError(group: string, v: Record<string, unknown>): string
     const n = v.session_lifetime_min as number;
     if (!Number.isInteger(n) || n < 15 || n > 720) return 'Thời gian phiên từ 15 đến 720 phút.';
     const c = v.portal_captcha_after_failures as number;
-    if (!Number.isInteger(c) || c < 1 || c > 10) return 'Captcha sau 1 đến 10 lần sai.';
+    if (!Number.isInteger(c) || c < 0 || c > 10) return 'Captcha sau 0 (luôn bật) đến 10 lần sai.';
     if (v.admin_mfa_required !== true) return 'MFA cho quản trị viên là bắt buộc, không tắt được.';
   }
   if (group === 'smtp') {

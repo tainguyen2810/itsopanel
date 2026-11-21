@@ -10,7 +10,10 @@ import { Card, CardContent, CardHeader } from '@/ui/Card';
 import { Input } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { Select } from '@/ui/Select';
-import { list, send } from '../api';
+import { AppLink } from '@/ui/AppLink';
+import { Badge } from '@/ui/Badge';
+import { useSession } from '@/shared/session/SessionContext';
+import { get, list, send } from '../api';
 import { useAction } from '../useAction';
 import { ServerNav, useServer } from './common';
 import { TerminalView as Terminal, simulate, type Ticket } from '@/shared/hosting/pages/Terminal';
@@ -20,6 +23,8 @@ export { simulate };
 export default function ServerTerminalPage() {
   const { t } = useTranslation('admin');
   const server = useServer();
+  // Terminal root chỉ SUPER_ADMIN (ADR 0028): ADMIN không thấy lựa chọn này.
+  const sa = useSession().user.role === 'SUPER_ADMIN';
   const [mode, setMode] = useState<'root' | 'account'>('account');
   const [account, setAccount] = useState('');
   const [stepUp, setStepUp] = useState(false);
@@ -29,6 +34,12 @@ export default function ServerTerminalPage() {
     queryKey: ['admin', 'server', server.id, 'accounts', 'terminal'],
     queryFn: () => list('/api/v1/admin/hosting-accounts', { filters: { server: server.id } }),
   });
+  // Policy cục bộ của máy chủ (D-81): root chỉ mở được khi bật bằng `itso policy set` trên máy chủ.
+  const policy = useQuery({
+    queryKey: ['admin', 'server', server.id, 'terminal-policy'],
+    queryFn: () => get('/api/v1/admin/servers/{id}/terminal/policy', { path: { id: server.id } }),
+  });
+  const rootOff = mode === 'root' && policy.data?.root_enabled === false;
   const open = useAction(
     async () => {
       if (mode === 'root') {
@@ -73,7 +84,7 @@ export default function ServerTerminalPage() {
                       onValueChange={(v) => setMode(v as typeof mode)}
                       options={[
                         { value: 'account', label: t('terminal.modes.account') },
-                        { value: 'root', label: t('terminal.modes.root') },
+                        ...(sa ? [{ value: 'root', label: t('terminal.modes.root') }] : []),
                       ]}
                     />
                   </div>
@@ -92,15 +103,24 @@ export default function ServerTerminalPage() {
                     </div>
                   )}
                 </div>
-                {mode === 'root' && (
-                  <Alert tone="warning" title={t('terminal.rootWarning')}>
-                    {t('terminal.rootWarningHint')}
-                  </Alert>
-                )}
+                {mode === 'root' &&
+                  (rootOff ? (
+                    <Alert tone="danger" title={t('terminal.rootOff')}>
+                      {t('terminal.rootOffHint')}{' '}
+                      <code className="font-mono">itso policy set terminal.root on</code>
+                    </Alert>
+                  ) : (
+                    <Alert tone="warning" title={t('terminal.rootWarning')}>
+                      {t('terminal.rootWarningHint')}
+                      {policy.data?.record_root && ` ${t('terminal.recordedHint')}`}
+                    </Alert>
+                  ))}
                 <div>
                   <Button
                     onClick={() => (mode === 'root' ? setStepUp(true) : open.mutate())}
-                    disabled={open.isPending || (mode === 'account' && !accounts.data?.length)}
+                    disabled={
+                      open.isPending || rootOff || (mode === 'account' && !accounts.data?.length)
+                    }
                   >
                     <SquareTerminal aria-hidden />
                     {t('terminal.connect')}
@@ -109,17 +129,52 @@ export default function ServerTerminalPage() {
               </CardContent>
             </Card>
           ) : (
-            <Terminal ticket={ticket} host={host} onClose={() => setTicket(null)} />
+            <>
+              {(ticket.mode === 'root' ? policy.data?.record_root : policy.data?.record_user) && (
+                <Badge tone="danger" className="self-start" data-testid="recording">
+                  {t('terminal.recording')}
+                </Badge>
+              )}
+              <Terminal ticket={ticket} host={host} onClose={() => setTicket(null)} />
+            </>
           )}
         </div>
         <Card>
           <CardHeader title={t('terminal.policy')} />
-          <CardContent>
+          <CardContent className="flex flex-col gap-4">
+            {policy.data && (
+              <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-sm">
+                <dt className="text-muted">{t('terminal.policyRoot')}</dt>
+                <dd>
+                  <Badge tone={policy.data.root_enabled ? 'warning' : 'neutral'}>
+                    {policy.data.root_enabled ? t('terminal.on') : t('terminal.off')}
+                  </Badge>
+                </dd>
+                <dt className="text-muted">{t('terminal.policyRecordRoot')}</dt>
+                <dd>
+                  <Badge tone={policy.data.record_root ? 'success' : 'neutral'}>
+                    {policy.data.record_root ? t('terminal.on') : t('terminal.off')}
+                  </Badge>
+                </dd>
+                <dt className="text-muted">{t('terminal.policyRecordUser')}</dt>
+                <dd>
+                  <Badge tone={policy.data.record_user ? 'success' : 'neutral'}>
+                    {policy.data.record_user ? t('terminal.on') : t('terminal.off')}
+                  </Badge>
+                </dd>
+              </dl>
+            )}
             <ul className="flex list-disc flex-col gap-2 pl-5 text-base">
               {(['p1', 'p2', 'p3', 'p4', 'p5'] as const).map((k) => (
                 <li key={k}>{t(`terminal.policies.${k}`)}</li>
               ))}
             </ul>
+            <AppLink
+              href="/admin/security/terminal"
+              className="text-sm text-primary-text hover:underline"
+            >
+              {t('terminal.sessionsLink')}
+            </AppLink>
           </CardContent>
         </Card>
       </div>

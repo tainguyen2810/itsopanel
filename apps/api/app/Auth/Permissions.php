@@ -62,6 +62,11 @@ final class Permissions
             'cron.write' => 'Tạo/sửa/xóa/chạy cron',
             'terminal.account' => 'Mở terminal của tài khoản hosting (jail, cần step-up)',
         ],
+        'security' => [
+            'security.read' => 'Xem Security Center: điểm, sự kiện, fail2ban, FIM, WAF, mã độc (theo phạm vi)',
+            'security.write' => 'WAF website, quét/cách ly/khôi phục mã độc, gỡ cấm IP, xác nhận sự kiện (theo phạm vi)',
+            'security.server' => 'Tường lửa, SSH, cấu hình fail2ban, baseline FIM, IP allowlist Admin (SUPER_ADMIN)',
+        ],
         'operations' => [
             'jobs.read' => 'Xem job',
             'jobs.write' => 'Hủy/thử lại job',
@@ -78,7 +83,7 @@ final class Permissions
         'SUPER_ADMIN' => ['*'],
         'ADMIN' => ['users.read', 'users.write', 'roles.read', 'servers.read', 'packages.read', 'accounts.read',
             'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'files.*', 'ftp.*',
-            'cron.*', 'terminal.account', 'backups.read'],
+            'cron.*', 'terminal.account', 'backups.read', 'security.read', 'security.write'],
         'USER' => ['own.*'],
     ];
 

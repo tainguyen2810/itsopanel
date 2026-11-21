@@ -2,6 +2,26 @@
 // Sửa contracts rồi chạy: make codegen
 
 export interface paths {
+    "/api/v1/auth/captcha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Thử thách CAPTCHA proof-of-work (dùng một lần, 5 phút)
+         * @description Tự host, không gọi dịch vụ ngoài (D-81). Đăng nhập/quên mật khẩu trả 422 `captcha_required` khi IP hoặc email đã sai quá ngưỡng (`portal_captcha_after_failures`); khi đó gửi kèm `captcha`.
+         */
+        get: operations["getCaptcha"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/csrf": {
         parameters: {
             query?: never;
@@ -189,7 +209,7 @@ export interface paths {
         put?: never;
         /**
          * Gửi email đặt lại mật khẩu
-         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản).
+         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản). Portal: 422 `captcha_required` khi IP/email đã sai quá ngưỡng như đăng nhập (D-81).
          */
         post: operations["forgotPassword"];
         delete?: never;
@@ -924,6 +944,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal/hosting-accounts/{id}/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quét mã độc account
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["portalScanAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portal/hosting-accounts/{id}/usage": {
         parameters: {
             query?: never;
@@ -1153,6 +1193,82 @@ export interface paths {
         head?: never;
         /** Đổi hồ sơ */
         patch: operations["portalUpdateProfile"];
+        trace?: never;
+    };
+    "/api/v1/portal/protection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bảo mật account của tôi: WAF, mã độc */
+        get: operations["portalGetSecurity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/protection/findings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** File nghi nhiễm của tôi */
+        get: operations["portalListMalwareFindings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/protection/findings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Xóa file nghi nhiễm
+         * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+         *
+         *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        delete: operations["portalDeleteFinding"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/protection/findings/{id}:quarantine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cách ly file nghi nhiễm
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["portalQuarantineFinding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/portal/restores": {
@@ -1594,8 +1710,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CaptchaChallenge: {
+            challenge: string;
+            difficulty: number;
+            /** Format: date-time */
+            expires_at: string;
+        };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -1653,11 +1775,16 @@ export interface components {
             mfa_verified_at: string | null;
             impersonating: components["schemas"]["UserRef"] | null;
         };
+        CaptchaSolution: {
+            challenge: string;
+            nonce: string;
+        };
         LoginRequest: {
             /** Format: email */
             email: string;
             password: string;
             remember?: boolean;
+            captcha?: components["schemas"]["CaptchaSolution"];
         };
         LoginResult: {
             mfa_required: boolean;
@@ -2248,6 +2375,36 @@ export interface components {
             }[];
             notifications_unread: number;
         };
+        PortalSecurity: {
+            accounts: {
+                hosting_account: components["schemas"]["AccountRef"];
+                websites: {
+                    website: components["schemas"]["WebsiteRef"];
+                    waf_enabled: boolean;
+                    /** @enum {string} */
+                    waf_mode: "detect" | "block";
+                    blocked_24h: number;
+                }[];
+                findings_open: number;
+                /** Format: date-time */
+                last_scan_at: string | null;
+                scan_running: boolean;
+            }[];
+        };
+        MalwareFinding: {
+            /** Format: uuid */
+            uuid: string;
+            hosting_account: components["schemas"]["AccountRef"];
+            website: components["schemas"]["WebsiteRef"] | null;
+            path: components["schemas"]["RelPath"];
+            signature: string;
+            /** @enum {string} */
+            engine: "clamav" | "yara";
+            /** @enum {string} */
+            action: "none" | "quarantined" | "restored" | "deleted";
+            /** Format: date-time */
+            found_at: string;
+        };
         Restore: {
             /** Format: uuid */
             uuid: string;
@@ -2717,6 +2874,41 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getCaptcha: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "challenge": "v1.1763601300.4f9a2c.b1e0d7c3a95f4e21",
+                     *         "difficulty": 12,
+                     *         "expires_at": "2026-11-20T08:20:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["CaptchaChallenge"];
+                    };
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getCsrfCookie: {
         parameters: {
             query?: never;
@@ -3159,6 +3351,7 @@ export interface operations {
                 "application/json": {
                     /** Format: email */
                     email: string;
+                    captcha?: components["schemas"]["CaptchaSolution"];
                 };
             };
         };
@@ -6788,6 +6981,85 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    portalScanAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0151-7000-8000-00000f000151",
+                     *         "type": "malware.scan",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "hosting_account",
+                     *           "uuid": "01938a05-0001-7000-8000-000005000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "malware.scan",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "hosting_account",
+                     *         "uuid": "01938a05-0001-7000-8000-000005000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     portalGetHostingAccountUsage: {
         parameters: {
             query?: never;
@@ -7905,6 +8177,288 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalGetSecurity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "accounts": [
+                     *           {
+                     *             "hosting_account": {
+                     *               "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *               "username": "anphat"
+                     *             },
+                     *             "websites": [
+                     *               {
+                     *                 "website": {
+                     *                   "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *                   "primary_domain": "anphat.vn"
+                     *                 },
+                     *                 "waf_enabled": true,
+                     *                 "waf_mode": "block",
+                     *                 "blocked_24h": 37
+                     *               },
+                     *               {
+                     *                 "website": {
+                     *                   "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *                   "primary_domain": "shop.anphat.vn"
+                     *                 },
+                     *                 "waf_enabled": true,
+                     *                 "waf_mode": "detect",
+                     *                 "blocked_24h": 0
+                     *               }
+                     *             ],
+                     *             "findings_open": 1,
+                     *             "last_scan_at": "2026-11-20T08:15:00+07:00",
+                     *             "scan_running": false
+                     *           }
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["PortalSecurity"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalListMalwareFindings: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+                /** @description Lọc theo account. */
+                "filter[hosting_account]"?: components["parameters"]["FilterHostingAccount"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a32-0002-7000-8000-000032000002",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "path": "sites/shop.anphat.vn/public/tmp/eicar.com",
+                     *           "signature": "Eicar-Signature",
+                     *           "engine": "clamav",
+                     *           "action": "none",
+                     *           "found_at": "2026-11-20T08:15:00+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["MalwareFinding"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalDeleteFinding: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0153-7000-8000-00000f000153",
+                     *         "type": "malware.delete",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "malware_finding",
+                     *           "uuid": "01938a32-0002-7000-8000-000032000002"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "malware.delete",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "malware_finding",
+                     *         "uuid": "01938a32-0002-7000-8000-000032000002"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalQuarantineFinding: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0152-7000-8000-00000f000152",
+                     *         "type": "malware.quarantine",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "malware_finding",
+                     *           "uuid": "01938a32-0002-7000-8000-000032000002"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "malware.quarantine",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "malware_finding",
+                     *         "uuid": "01938a32-0002-7000-8000-000032000002"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };

@@ -21,7 +21,7 @@ import { Input, Textarea } from '@/ui/Input';
 import { Label } from '@/ui/Label';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Select } from '@/ui/Select';
-import { get, send, type Data } from '../api';
+import { get, list, send, type Data } from '../api';
 import {
   accessBody,
   allowlistLines,
@@ -274,7 +274,16 @@ function Wizard({ initial }: { initial: Status }) {
       await send('POST', '/api/v1/admin/setup:complete');
       toast.success(t('install.done'));
       await refresh();
-      void navigate({ to: home });
+      // Phase 7: hoàn tất wizard áp tường lửa mặc định bằng safe-apply (tự hoàn tác sau 5 phút nếu không xác nhận).
+      // Chuyển tới trang Tường lửa của máy chủ để xác nhận ngay khi vẫn vào được panel.
+      const servers = await list('/api/v1/admin/servers').catch(() => []);
+      const local = servers[0];
+      if (local) {
+        toast.info(t('install.confirmFirewall'));
+        void navigate({ to: '/servers/$id/firewall', params: { id: local.uuid } });
+      } else {
+        void navigate({ to: home });
+      }
     } catch (err) {
       onError(err);
     } finally {

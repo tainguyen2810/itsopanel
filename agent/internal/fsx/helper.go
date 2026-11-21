@@ -3,7 +3,9 @@ package fsx
 import (
 	"bufio"
 	"compress/gzip"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -162,9 +164,61 @@ func Serve(req Request, in io.Reader, out io.Writer, extra *os.File) (any, error
 			return nil, fail("internal", "đọc %s: %v", p.Path, err)
 		}
 		return map[string]any{"bytes": n}, nil
+	case "hash": // malware (ADR 0026): sha256 + kích thước, không theo symlink
+		f, err := root.OpenRead(p.Path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		h := sha256.New()
+		n, err := io.Copy(h, f)
+		if err != nil {
+			return nil, fail("internal", "đọc %s: %v", p.Path, err)
+		}
+		return map[string]any{"sha256": hex.EncodeToString(h.Sum(nil)), "size": n}, nil
+	case "raw": // cách ly: nội dung thô (không giải gzip) ra stdout cho agent root, tối đa max_bytes
+		f, err := root.OpenRead(p.Path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		limit := p.MaxBytes
+		if limit <= 0 {
+			limit = 256 << 20
+		}
+		if st, err := f.Stat(); err == nil && st.Size() > limit {
+			return nil, fail("quota_exceeded", "%s lớn hơn %d byte", p.Path, limit)
+		}
+		n, err := io.Copy(out, io.LimitReader(f, limit))
+		if err != nil {
+			return nil, fail("internal", "đọc %s: %v", p.Path, err)
+		}
+		return map[string]any{"bytes": n}, nil
+	case "delete_if": // xóa file khi sha256 còn khớp (cách ly/xóa file nghi nhiễm)
+		if p.IfSHA256 == nil {
+			return nil, fail("invalid_params", "thiếu if_sha256")
+		}
+		f, err := root.OpenRead(p.Path)
+		if err != nil {
+			return nil, err
+		}
+		h := sha256.New()
+		_, err = io.Copy(h, f)
+		f.Close()
+		if err != nil {
+			return nil, fail("internal", "đọc %s: %v", p.Path, err)
+		}
+		if hex.EncodeToString(h.Sum(nil)) != *p.IfSHA256 {
+			return nil, fail("precondition_failed", "%s đã thay đổi (sha256 khác)", p.Path)
+		}
+		n, err := root.Delete([]string{p.Path})
+		return map[string]any{"deleted": n}, err
 	}
 	return nil, fail("invalid_params", "op helper không hỗ trợ: %q", req.Op)
 }
+
+// StreamsStdout: op ghi nội dung file ra stdout (cat, raw); kết quả lỗi đi qua stderr với mã thoát 3.
+func StreamsStdout(op string) bool { return op == "cat" || op == "raw" }
 
 var reHome = regexp.MustCompile(`^/home/[a-z][a-z0-9]{2,15}$`)
 
@@ -206,14 +260,14 @@ func HelperMain(stdin io.Reader, stdout, stderr io.Writer) int {
 				e = &Error{Code: "internal", Msg: err.Error()}
 			}
 			resp.Error = e
-		} else if req.Op != "cat" {
+		} else if !StreamsStdout(req.Op) {
 			resp.OK = true
 			resp.Data, _ = json.Marshal(data)
 		} else {
 			return 0
 		}
 	}
-	if req.Op == "cat" && resp.Error != nil {
+	if StreamsStdout(req.Op) && resp.Error != nil {
 		b, _ := json.Marshal(resp)
 		fmt.Fprintln(stderr, string(b))
 		return 3

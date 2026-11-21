@@ -41,6 +41,10 @@ type Deps struct {
 	AcmePebble bool
 	// Term: phiên terminal USER (pty.open cấp ticket, socket stream ATTACH). Nil = chưa bật.
 	Term *term.Manager
+	// RootTerminal / RecordUser: policy cục bộ (agent-policy.yaml root_terminal, record_user; ADR 0028).
+	// Handler pty.open.root kiểm lại RootTerminal dù registry đã chặn op khi policy tắt.
+	RootTerminal bool
+	RecordUser   bool
 
 	mu       sync.Mutex
 	inflight map[string]context.CancelFunc

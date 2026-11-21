@@ -15,7 +15,10 @@ return [
         // MFA cho quản trị viên luôn bật (D-58), giữ khóa để UI hiển thị.
         'admin_mfa_required' => ['default' => true, 'rules' => ['boolean', 'accepted']],
         'session_lifetime_min' => ['default' => 120, 'rules' => ['integer', 'between:15,720']],
-        'portal_captcha_after_failures' => ['default' => 3, 'rules' => ['integer', 'between:1,10']],
+        // CAPTCHA proof-of-work (ADR 0028): sau N lần sai theo IP hoặc email; 0 = luôn bật.
+        'portal_captcha_after_failures' => ['default' => 3, 'rules' => ['integer', 'between:0,10']],
+        // Bắt buộc USER Portal bật MFA (ADR 0028 §2).
+        'portal_mfa_required' => ['default' => false, 'rules' => ['boolean']],
     ],
     'smtp' => [
         'host' => ['default' => '', 'rules' => ['string', 'max:255']],

@@ -181,7 +181,8 @@
     "useTotp": "Dùng ứng dụng xác thực",
     "portalArea": "Hosting",
     "portalLoginHint": "Đăng nhập để quản lý website, database, file và sao lưu của bạn.",
-    "forgot": "Quên mật khẩu?"
+    "forgot": "Quên mật khẩu?",
+    "captchaRequired": "Đã đăng nhập sai nhiều lần. Chờ xác minh xong rồi đăng nhập lại."
   },
   "install": {
     "title": "Cài đặt ITSO Panel",
@@ -274,7 +275,8 @@
       "installing": "Đang cài…",
       "job": "Cài web stack",
       "optional": "Bước này không bắt buộc: có thể bấm Tiếp tục và cài sau ở trang Máy chủ → Phần mềm."
-    }
+    },
+    "confirmFirewall": "Tường lửa mặc định đã được áp dụng: bấm \"Giữ cấu hình mới\" trong 5 phút, nếu không máy chủ tự hoàn tác."
   },
   "servers": {
     "title": "Máy chủ",
@@ -504,7 +506,11 @@
       "priority": "Từ 1 đến 9999",
       "source": "IP hoặc CIDR không hợp lệ",
       "ports": "Cổng 1–65535, dạng 80,443 hoặc 8000-8100"
-    }
+    },
+    "lockoutTitle": "Rule này sẽ khóa bạn khỏi máy chủ",
+    "lockoutHint": "Rule nháp chặn cổng SSH hoặc panel từ IP hiện tại của bạn. Sửa rule trước khi áp dụng.",
+    "previewTitle_one": "Ruleset sẽ áp dụng ({{count}} rule)",
+    "previewTitle_other": "Ruleset sẽ áp dụng ({{count}} rule)"
   },
   "docker": {
     "title": "Docker",
@@ -624,7 +630,41 @@
       "ticketExpired": "Ticket đã hết hạn (quá 30 giây)",
       "unavailable": "Không kết nối được máy chủ terminal"
     },
-    "endedHint": "Bấm Ngắt kết nối rồi mở phiên mới nếu cần."
+    "endedHint": "Bấm Ngắt kết nối rồi mở phiên mới nếu cần.",
+    "rootOff": "Policy máy chủ đang tắt terminal root",
+    "rootOffHint": "Panel không bật được (kể cả khi bị chiếm). Super Admin bật trực tiếp trên máy chủ bằng:",
+    "recordedHint": "Phiên root được ghi lại để xem lại sau.",
+    "recording": "● Đang ghi phiên",
+    "policyRoot": "Terminal root",
+    "policyRecordRoot": "Ghi phiên root",
+    "policyRecordUser": "Ghi phiên account",
+    "on": "Bật",
+    "off": "Tắt",
+    "sessionsLink": "Xem các phiên terminal và bản ghi →",
+    "sessionsTitle": "Phiên terminal",
+    "sessionsDescription": "Ai đã mở terminal, khi nào, từ IP nào. Phiên root được ghi lại theo policy máy chủ; xem bản ghi cần xác thực lại MFA.",
+    "unixUser": "Phiên",
+    "openedBy": "Người mở",
+    "startedAt": "Bắt đầu",
+    "endedReason": {
+      "exit": "Đã thoát",
+      "idle": "Đóng do nhàn rỗi",
+      "closed": "Đã đóng",
+      "killed": "Bị ngắt",
+      "expired": "Hết hạn",
+      "limit": "Vượt giới hạn bản ghi"
+    },
+    "recordingCol": "Bản ghi",
+    "play": "Xem lại",
+    "pause": "Tạm dừng",
+    "restart": "Phát lại từ đầu",
+    "progress": "Tiến độ phát",
+    "notRecorded": "Không ghi",
+    "playTitle": "Bản ghi {{user}}@{{host}}",
+    "loadingRecording": "Đang tải bản ghi…",
+    "recordingMeta": "{{size}} · mở bởi {{by}} từ {{ip}}. Bản ghi do agent lưu trên máy chủ (chỉ root đọc được).",
+    "truncated": "Bản ghi bị cắt vì vượt 50 MB (phiên đã bị đóng khi chạm giới hạn).",
+    "partial": "Bản ghi dài: chỉ phát phần đầu (~10 MB)."
   },
   "packages": {
     "title": "Gói hosting",
@@ -1581,7 +1621,8 @@
       "ssh": "SSH",
       "fail2ban": "Fail2ban",
       "fim": "Toàn vẹn file",
-      "allowlist": "IP được phép"
+      "allowlist": "IP được phép",
+      "terminal": "Phiên terminal"
     },
     "score": "Điểm bảo mật",
     "grade": "Xếp loại {{grade}}",
@@ -1615,7 +1656,11 @@
       "malware.found": "Phát hiện mã độc",
       "ssh.bruteforce": "Dò mật khẩu SSH",
       "login.failed": "Đăng nhập sai",
-      "fim.change": "File hệ thống thay đổi"
+      "fim.change": "File hệ thống thay đổi",
+      "fim.changed": "File hệ thống thay đổi",
+      "waf.burst": "WAF chặn dồn dập",
+      "firewall.rolled_back": "Tường lửa tự hoàn tác",
+      "sshd.rolled_back": "SSH tự hoàn tác"
     },
     "wafTitle": "WAF",
     "wafDescription": "ModSecurity + OWASP CRS cho từng website PHP. Bật/tắt nhanh ở đây; chế độ, mức paranoia và rule loại trừ ở tab WAF của website.",
@@ -1711,7 +1756,61 @@
       "cidr": "IP/CIDR không hợp lệ",
       "dup": "Bị trùng",
       "allowEmpty": "Cần ít nhất một dải IP"
-    }
+    },
+    "server": "Máy chủ",
+    "sshApplying": "Đang áp dụng cấu hình sshd (sshd -t rồi nạp lại)…",
+    "sshAwaitingHint_one": "Mở một phiên SSH mới để thử. Còn {{count}} giây trước khi tự hoàn tác.",
+    "sshAwaitingHint_other": "Mở một phiên SSH mới để thử. Còn {{count}} giây trước khi tự hoàn tác.",
+    "sshConfirmed": "Đã xác nhận cấu hình SSH mới",
+    "sshConfirmedToast": "Đã xác nhận SSH",
+    "sshRolledBack": "Đã tự hoàn tác cấu hình SSH",
+    "sshRolledBackHint": "Không có xác nhận trong thời hạn nên agent đã khôi phục sshd về cấu hình trước đó.",
+    "sshNoKeysTitle": "Chưa có khóa SSH cho quản trị",
+    "sshNoKeys": "Tắt đăng nhập bằng mật khẩu lúc này sẽ khóa bạn khỏi máy chủ. Thêm khóa SSH cho user quản trị trước.",
+    "sshRollbackHint": "Từ 30 đến 600 giây. Hết hạn mà chưa bấm “Giữ cấu hình mới” thì agent tự khôi phục.",
+    "sshKeys_one": "{{count}} khóa SSH quản trị",
+    "sshKeys_other": "{{count}} khóa SSH quản trị",
+    "sshKeysHint": "Khóa của user quản trị trên máy chủ (ngoài panel). Cần ít nhất một khóa để tắt mật khẩu.",
+    "fimRebaseline": "Chụp lại baseline",
+    "fimRebaselineTitle": "Chụp lại baseline toàn vẹn file",
+    "fimRebaselineHint": "Agent băm lại mọi đường dẫn được theo dõi và coi trạng thái hiện tại là chuẩn. Chỉ làm sau khi đã kiểm tra các thay đổi. Cần xác thực lại MFA.",
+    "quarantining": "Đang cách ly file",
+    "findingsTitle": "File nghi nhiễm",
+    "findingsHint": "Kết quả quét gần đây. Cách ly chuyển file khỏi website, giữ nguyên nội dung để điều tra.",
+    "findingsEmpty": "Không có file nghi nhiễm",
+    "filePath": "Đường dẫn",
+    "quarantineFile": "Cách ly",
+    "findingAction": {
+      "quarantined": "Đã cách ly",
+      "restored": "Đã khôi phục",
+      "deleted": "Đã xóa"
+    },
+    "bans": "IP đang bị chặn",
+    "bansHint": "Đọc trực tiếp từ fail2ban trên máy chủ.",
+    "bansEmpty": "Không có IP nào đang bị chặn.",
+    "bannedAt": "Bị chặn lúc",
+    "expiresAt": "Hết hạn",
+    "banPermanent": "Vĩnh viễn",
+    "ip": "IP",
+    "unban": "Gỡ chặn",
+    "unbanFor": "Gỡ chặn {{ip}}",
+    "unbanned": "Đã gỡ chặn IP",
+    "fimPath": "Đường dẫn",
+    "fimChange": "Thay đổi",
+    "fimHash": "SHA-256 (cũ → mới)",
+    "fimChanges": {
+      "added": "Thêm mới",
+      "modified": "Sửa nội dung",
+      "removed": "Bị xóa",
+      "metadata": "Đổi quyền/chủ"
+    },
+    "wafActions": {
+      "detected": "Phát hiện",
+      "blocked": "Đã chặn"
+    },
+    "wafSiteEvents": "Sự kiện WAF",
+    "wafSiteEventsHint": "Request bị ModSecurity ghi nhận, đồng bộ mỗi phút.",
+    "wafSiteEventsEmpty": "Chưa có sự kiện WAF cho website này."
   },
   "bk": {
     "title": "Sao lưu",
@@ -2278,7 +2377,10 @@
     "errors": {
       "mfa": "MFA quản trị viên là bắt buộc",
       "scopes": "Chọn ít nhất một quyền"
-    }
+    },
+    "captchaHint": "Sai mật khẩu bấy nhiêu lần (theo email hoặc IP) thì đăng nhập Portal cần CAPTCHA tự host. 0 = luôn cần. Đăng nhập Admin dùng khóa lũy tiến và MFA.",
+    "portalMfa": "Bắt buộc MFA cho khách hàng (Portal)",
+    "portalMfaHint": "Khách chưa bật MFA sẽ được đưa tới trang Hồ sơ để bật ngay sau khi đăng nhập."
   },
   "pt": {
     "overview": "Tổng quan",
@@ -2342,6 +2444,31 @@
     "retention_one": "{{count}} bản {{unit}}",
     "retention_other": "{{count}} bản {{unit}}",
     "minutes_one": "{{count}} phút/lần",
-    "minutes_other": "{{count}} phút/lần"
+    "minutes_other": "{{count}} phút/lần",
+    "security": "Bảo mật",
+    "securityHint": "Tường lửa ứng dụng (WAF) của website và quét mã độc cho tài khoản của bạn.",
+    "lastScan": "Quét gần nhất {{at}}",
+    "neverScanned": "Chưa quét lần nào",
+    "scanAccount": "Quét mã độc",
+    "scanning": "Đang quét…",
+    "scanStarted": "Đã bắt đầu quét",
+    "findingsOpen": "File nghi nhiễm chưa xử lý",
+    "findingsOpenHint": "Cách ly hoặc xóa ở bảng bên dưới",
+    "blocked24h": "Yêu cầu bị WAF chặn (24 giờ)",
+    "blockedHint": "Tổng các website PHP của tài khoản",
+    "wafMode": "WAF",
+    "waf": {
+      "off": "Tắt",
+      "block": "Chặn",
+      "detect": "Chỉ phát hiện"
+    },
+    "wafTable": "WAF theo website",
+    "noPhpSites": "Chưa có website PHP",
+    "wafNoteTitle": "Đổi chế độ WAF",
+    "wafNote": "Website mới chạy ở chế độ “Chỉ phát hiện” 7 ngày để tránh chặn nhầm, sau đó quản trị chuyển sang “Chặn”. Liên hệ quản trị nếu website bị chặn nhầm.",
+    "findingsHint": "Bạn có thể cách ly hoặc xóa file. Khôi phục file đã cách ly: liên hệ quản trị.",
+    "deleteFile": "Xóa file",
+    "deleteFileTitle": "Xóa file nghi nhiễm?",
+    "deleteFileHint": "Xóa hẳn {{path}} khỏi tài khoản. Không khôi phục được (trừ từ backup)."
   }
 }

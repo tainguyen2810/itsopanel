@@ -184,6 +184,8 @@ components:
       - setup_code_expired
       - setup_not_verified
       - setup_completed
+      - captcha_required
+      - would_lock_out
       - internal_error
     CursorMeta:
       type: object
@@ -599,9 +601,136 @@ components:
           writeOnly: true
         remember:
           type: boolean
+        captcha:
+          $ref: '#/components/schemas/CaptchaSolution'
       required:
       - email
       - password
+      additionalProperties: false
+    CaptchaChallenge:
+      type: object
+      properties:
+        challenge:
+          type: string
+          maxLength: 512
+        difficulty:
+          type: integer
+          minimum: 4
+          maximum: 24
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - challenge
+      - difficulty
+      - expires_at
+      additionalProperties: false
+    CaptchaSolution:
+      type: object
+      properties:
+        challenge:
+          type: string
+          maxLength: 512
+        nonce:
+          type: string
+          pattern: ^[0-9]{1,12}$
+      required:
+      - challenge
+      - nonce
+      additionalProperties: false
+    MalwareFinding:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        hosting_account:
+          $ref: '#/components/schemas/AccountRef'
+        website:
+          oneOf:
+          - $ref: '#/components/schemas/WebsiteRef'
+          - type: 'null'
+        path:
+          $ref: '#/components/schemas/RelPath'
+        signature:
+          type: string
+        engine:
+          type: string
+          enum:
+          - clamav
+          - yara
+        action:
+          type: string
+          enum:
+          - none
+          - quarantined
+          - restored
+          - deleted
+        found_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - hosting_account
+      - website
+      - path
+      - signature
+      - engine
+      - action
+      - found_at
+      additionalProperties: false
+    PortalSecurity:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              hosting_account:
+                $ref: '#/components/schemas/AccountRef'
+              websites:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    website:
+                      $ref: '#/components/schemas/WebsiteRef'
+                    waf_enabled:
+                      type: boolean
+                    waf_mode:
+                      type: string
+                      enum:
+                      - detect
+                      - block
+                    blocked_24h:
+                      type: integer
+                      minimum: 0
+                  required:
+                  - website
+                  - waf_enabled
+                  - waf_mode
+                  - blocked_24h
+                  additionalProperties: false
+              findings_open:
+                type: integer
+                minimum: 0
+              last_scan_at:
+                type:
+                - string
+                - 'null'
+                format: date-time
+              scan_running:
+                type: boolean
+            required:
+            - hosting_account
+            - websites
+            - findings_open
+            - last_scan_at
+            - scan_running
+            additionalProperties: false
+      required:
+      - accounts
       additionalProperties: false
     LoginResult:
       type: object
@@ -3212,6 +3341,15 @@ components:
         type: string
         maxLength: 200
       description: Tìm kiếm tự do.
+    Offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Vị trí byte bắt đầu đọc.
     PathQuery:
       name: path
       in: query

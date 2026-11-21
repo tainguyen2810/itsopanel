@@ -10,7 +10,7 @@ user server package package_version account website domain certificate database 
 sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_record migration purge
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
-uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal""".split())}
+uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal malware_finding waf_event fim_change""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -419,12 +419,81 @@ WAF = {"website": site_ref(0), "enabled": True, "mode": "block", "paranoia_level
        "rule_exclusions": ["942100"], "blocked_24h": 37, "updated_at": T1}
 
 SSH_SETTINGS = {"port": 22, "password_authentication": False, "permit_root_login": "no",
-                "allow_groups": ["itso-ssh"], "max_auth_tries": 3, "updated_at": T0}
+                "allow_groups": ["itso-ssh"], "max_auth_tries": 3, "admin_keys": 2, "updated_at": T0}
 
 FAIL2BAN = {"enabled": True, "jails": [
     {"name": "sshd", "enabled": True, "bantime_sec": 3600, "findtime_sec": 600, "maxretry": 5, "banned_count": 12},
-    {"name": "itso-portal-login", "enabled": True, "bantime_sec": 1800, "findtime_sec": 300, "maxretry": 10,
-     "banned_count": 3}], "updated_at": T0}
+    {"name": "itso-panel", "enabled": True, "bantime_sec": 1800, "findtime_sec": 300, "maxretry": 10,
+     "banned_count": 3},
+    {"name": "pure-ftpd", "enabled": True, "bantime_sec": 3600, "findtime_sec": 600, "maxretry": 5,
+     "banned_count": 0}], "updated_at": T0}
+
+# Phase 7.1 (D-76…D-80): xem trước/trạng thái tường lửa, IP bị cấm, sự kiện WAF, thay đổi FIM, điểm chi tiết.
+FIREWALL_STATUS = {"server": server_ref(0), "state": "confirmed", "applied_at": T1, "rollback_at": None,
+                   "applied_by": user_ref(0), "rules_active": 3}
+
+FIREWALL_PREVIEW = {
+    "server": server_ref(0), "rules_active": 3, "lockout_risk": False, "warnings": [],
+    "ruleset": "table inet itso {\n  chain input {\n    type filter hook input priority 0; policy drop;\n"
+               "    iif lo accept\n    ct state established,related accept\n"
+               "    icmp type echo-request limit rate 10/second accept\n"
+               "    tcp dport 22 ip saddr 10.10.0.0/16 accept comment \"SSH chỉ từ mạng nội bộ\"\n"
+               "    tcp dport { 80, 443 } accept comment \"Web\"\n"
+               "    tcp dport 8443 ip saddr 10.10.0.0/16 accept comment \"Admin Panel\"\n  }\n}\n",
+}
+
+FAIL2BAN_BANS = [
+    {"server": server_ref(0), "jail": "sshd", "ip": "203.0.113.45", "banned_at": T2, "expires_at": "2026-11-20T09:15:00+07:00"},
+    {"server": server_ref(0), "jail": "itso-panel", "ip": "198.51.100.77", "banned_at": T2, "expires_at": "2026-11-20T08:45:00+07:00"},
+    {"server": server_ref(0), "jail": "sshd", "ip": "192.0.2.10", "banned_at": T1, "expires_at": None},
+]
+
+WAF_EVENTS = [
+    {"uuid": u("waf_event", 1), "website": site_ref(0), "rule_id": 942100, "message": "SQL Injection Attack Detected via libinjection",
+     "severity": "critical", "client_ip": "198.51.100.23", "method": "GET", "uri": "/search?q=1%27%20OR%201=1--",
+     "action": "blocked", "at": T2},
+    {"uuid": u("waf_event", 2), "website": site_ref(0), "rule_id": 941100, "message": "XSS Attack Detected via libinjection",
+     "severity": "high", "client_ip": "203.0.113.9", "method": "POST", "uri": "/contact",
+     "action": "blocked", "at": T2},
+    {"uuid": u("waf_event", 3), "website": site_ref(0), "rule_id": 930120, "message": "OS File Access Attempt",
+     "severity": "medium", "client_ip": "192.0.2.50", "method": "GET", "uri": "/index.php?f=/etc/passwd",
+     "action": "detected", "at": T1},
+]
+
+FIM_CHANGES = [
+    {"uuid": u("fim_change", 1), "server": server_ref(0), "path": "/etc/ssh/sshd_config.d/10-itso-hardening.conf",
+     "change": "modified", "old_sha256": "1b4f0e9870cecd0e3d1b2f7b6a7a2a1e7d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a",
+     "new_sha256": "2c5a1f0981dfde1f4e2c3a8c7b8b3b2f8e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b", "detected_at": T2,
+     "acknowledged_at": None},
+    {"uuid": u("fim_change", 2), "server": server_ref(0), "path": "/usr/local/bin/backup-helper",
+     "change": "added", "old_sha256": None,
+     "new_sha256": "3d6b2a1092e0ef2a5f3d4b9d8c9c4c3a9f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c", "detected_at": T1,
+     "acknowledged_at": T2},
+]
+
+SECURITY_SCORE = {
+    "server": server_ref(0), "score": 82, "grade": "B", "computed_at": T2,
+    "items": [
+        {"key": "ssh_password_auth", "title": "Tắt đăng nhập SSH bằng mật khẩu", "weight": 15, "earned": 15, "status": "pass",
+         "detail": "PasswordAuthentication no"},
+        {"key": "ssh_root_login", "title": "Không cho root đăng nhập bằng mật khẩu", "weight": 10, "earned": 10, "status": "pass",
+         "detail": "PermitRootLogin no"},
+        {"key": "firewall_policy", "title": "Tường lửa mặc định chặn (policy drop)", "weight": 15, "earned": 15, "status": "pass",
+         "detail": "table inet itso, 3 rule"},
+        {"key": "fail2ban", "title": "Fail2ban chạy với jail sshd và panel", "weight": 10, "earned": 10, "status": "pass",
+         "detail": "3 jail"},
+        {"key": "admin_mfa", "title": "MFA cho mọi quản trị viên", "weight": 15, "earned": 15, "status": "pass",
+         "detail": "4/4 quản trị viên"},
+        {"key": "waf_all_sites", "title": "WAF bật cho mọi website PHP", "weight": 10, "earned": 5, "status": "warn",
+         "detail": "3/6 website ở chế độ chặn"},
+        {"key": "security_updates", "title": "Không còn bản cập nhật bảo mật chờ cài", "weight": 10, "earned": 0, "status": "fail",
+         "detail": "4 gói, cần khởi động lại"},
+        {"key": "fim_clean", "title": "Không có thay đổi FIM chưa xử lý", "weight": 5, "earned": 2, "status": "warn",
+         "detail": "1 thay đổi"},
+        {"key": "admin_allowlist", "title": "Admin Panel giới hạn theo IP allowlist", "weight": 10, "earned": 10, "status": "pass",
+         "detail": "2 dải"},
+    ],
+}
 
 IP_ALLOWLIST = {"entries": [{"cidr": "10.10.0.0/16", "note": "Mạng văn phòng HN"},
                             {"cidr": "10.20.0.0/16", "note": "Mạng văn phòng HCM"}], "updated_at": T0}
@@ -544,7 +613,8 @@ AUDIT = [
 
 SETTINGS = {
     "general": {"panel_name": "ITSO Panel", "default_locale": "vi", "timezone": "Asia/Ho_Chi_Minh"},
-    "security": {"admin_mfa_required": True, "session_lifetime_min": 120, "portal_captcha_after_failures": 3},
+    "security": {"admin_mfa_required": True, "session_lifetime_min": 120, "portal_captcha_after_failures": 3,
+                 "portal_mfa_required": False},
     "smtp": {"host": "smtp.itso.local", "port": 587, "username": "panel@itso.local", "from": "ITSO Panel <panel@itso.local>",
              "encryption": "starttls"},
 }
@@ -651,6 +721,54 @@ ME_PORTAL = {"user": USERS[2], "permissions": ["own.*"], "scopes": [], "mfa_veri
 TERMINAL = {"ticket": "tkt_9QwErTy2uIoP", "ws_url": "wss://admin.itso.local/gateway/terminal",
             "expires_at": "2026-11-20T08:15:30+07:00", "mode": "account", "unix_user": "anphat",
             "session_uuid": u("terminal", 1)}
+
+# ---- Phase 7: CAPTCHA, terminal root + ghi phiên, mã độc theo file, bảo mật Portal
+CAPTCHA = {"challenge": "v1.1763601300.4f9a2c.b1e0d7c3a95f4e21", "difficulty": 12,
+           "expires_at": "2026-11-20T08:20:00+07:00"}
+
+TERMINAL_POLICY = {"server": server_ref(0), "root_enabled": False, "record_root": True, "record_user": False,
+                   "max_sessions_per_account": 2, "idle_timeout_sec": 900}
+
+TERMINAL_SESSIONS = [
+    {"uuid": u("terminal", 1), "mode": "account", "unix_user": "anphat", "server": server_ref(0),
+     "hosting_account": acc_ref(0), "opened_by": user_ref(0), "client_ip": "10.10.5.20",
+     "started_at": T2, "ended_at": None, "ended_reason": None, "recorded": False, "recording_bytes": 0},
+    {"uuid": u("terminal", 2), "mode": "root", "unix_user": "root", "server": server_ref(0),
+     "hosting_account": None, "opened_by": user_ref(0), "client_ip": "10.10.5.20",
+     "started_at": "2026-11-19T16:02:00+07:00", "ended_at": "2026-11-19T16:09:41+07:00", "ended_reason": "exit",
+     "recorded": True, "recording_bytes": 1843},
+    {"uuid": u("terminal", 3), "mode": "account", "unix_user": "lehoa", "server": server_ref(2),
+     "hosting_account": acc_ref(2), "opened_by": user_ref(0), "client_ip": "10.10.5.31",
+     "started_at": T1, "ended_at": "2026-11-19T14:22:10+07:00", "ended_reason": "idle",
+     "recorded": False, "recording_bytes": 0},
+]
+
+TERMINAL_RECORDING = {"session_uuid": u("terminal", 2), "width": 100, "height": 24, "truncated": False,
+                      "next_offset": None, "events": [
+    {"t": 0.0, "data": "root@srv-hn-01:~# "},
+    {"t": 1.4, "data": "systemctl status nginx --no-pager | head -3\r\n"},
+    {"t": 1.6, "data": "\u25cf nginx.service - A high performance web server\r\n     Loaded: loaded\r\n     Active: active (running) since Wed 2026-11-19 09:12:04 +07\r\n"},
+    {"t": 1.7, "data": "root@srv-hn-01:~# "},
+    {"t": 4.9, "data": "nft list table inet itso | head -4\r\n"},
+    {"t": 5.0, "data": "table inet itso {\r\n\tchain input {\r\n\t\ttype filter hook input priority filter; policy drop;\r\n\t\tct state established,related accept\r\n"},
+    {"t": 5.1, "data": "root@srv-hn-01:~# "},
+    {"t": 8.3, "data": "exit\r\n"},
+]}
+
+MALWARE_FINDINGS = [
+    {"uuid": u("malware_finding", 1), "hosting_account": acc_ref(2), "website": site_ref(3),
+     "path": "sites/lehoa.blog/public/wp-content/uploads/2026/11/x.php", "signature": "PHP.Webshell.Generic",
+     "engine": "yara", "action": "quarantined", "found_at": T1},
+    {"uuid": u("malware_finding", 2), "hosting_account": acc_ref(0), "website": site_ref(1),
+     "path": "sites/shop.anphat.vn/public/tmp/eicar.com", "signature": "Eicar-Signature",
+     "engine": "clamav", "action": "none", "found_at": T2},
+]
+
+PORTAL_SECURITY = {"accounts": [{
+    "hosting_account": acc_ref(0),
+    "websites": [{"website": site_ref(0), "waf_enabled": True, "waf_mode": "block", "blocked_24h": 37},
+                 {"website": site_ref(1), "waf_enabled": True, "waf_mode": "detect", "blocked_24h": 0}],
+    "findings_open": 1, "last_scan_at": T2, "scan_running": False}]}
 
 UPLOAD = {"uuid": u("upload", 1), "path": "sites/anphat.vn/public/brochure.pdf", "size": 5242880,
           "chunk_size": 8388608, "received": 0, "expires_at": "2026-11-20T09:15:00+07:00", "status": "receiving",

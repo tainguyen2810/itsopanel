@@ -60,7 +60,7 @@ it('mở terminal: admin trong phạm vi + chủ account (đã step-up) nhận t
     expect($p->json('data.ws_url'))->toBe('wss://panel.itso.local/gateway/terminal');
 });
 
-it('từ chối: gói không SSH 409, account khóa 409, mode=root 409, ngoài phạm vi 422, chưa step-up 403, agent hết chỗ 409, agent không kết nối 503', function () {
+it('từ chối: gói không SSH 409, account khóa 409, mode=root thiếu server 422, ngoài phạm vi 422, chưa step-up 403, agent hết chỗ 409, agent không kết nối 503', function () {
     $agent = t6agent();
     $a = new Actors($this);
     $sa = $a->spa('SA');
@@ -70,7 +70,7 @@ it('từ chối: gói không SSH 409, account khóa 409, mode=root 409, ngoài p
     assertMatchesContract(T6A, 'post', '/api/v1/admin/terminal/sessions', 409, $nossh);
     expect($nossh->json('code'))->toBe('package_limit_reached')->and($agent->ops())->toBe([]);
     t6ssh($a);
-    expect($open($sa, ['mode' => 'root'])->status())->toBe(409)
+    expect($open($sa, ['mode' => 'root'])->status())->toBe(422) // 7.5: root cần server_uuid (xem Phase7/TerminalRootTest)
         ->and($open($sa, ['hosting_account_uuid' => null])->status())->toBe(422)
         ->and($open($sa, ['rogue' => 1])->status())->toBe(422);
     $out = $open($a->spa('AD_OUT'));

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/pty.open.root.schema.json",
+  "title": "pty.open.root",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "session_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 500
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 200
+        },
+        "idle_timeout_sec": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        }
+      },
+      "required": [
+        "session_uuid",
+        "cols",
+        "rows",
+        "idle_timeout_sec"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{32,64}$"
+        },
+        "expires_at": {
+          "type": "string"
+        },
+        "unix_user": {
+          "type": "string",
+          "enum": [
+            "root"
+          ]
+        },
+        "recording": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ticket",
+        "expires_at",
+        "unix_user",
+        "recording"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

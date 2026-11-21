@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/firewall.status.schema.json",
+  "title": "firewall.status",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "idle",
+            "pending_confirm",
+            "confirmed",
+            "rolled_back"
+          ]
+        },
+        "apply_id": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rollback_at": {
+          "$ref": "../defs.schema.json#/$defs/NullableTime"
+        },
+        "ruleset_sha256": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rules_active": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "table_present": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "state",
+        "apply_id",
+        "rollback_at",
+        "ruleset_sha256",
+        "rules_active",
+        "table_present"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

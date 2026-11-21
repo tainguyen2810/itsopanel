@@ -181,7 +181,8 @@
     "useTotp": "Use authenticator app",
     "portalArea": "Hosting",
     "portalLoginHint": "Sign in to manage your websites, databases, files and backups.",
-    "forgot": "Forgot password?"
+    "forgot": "Forgot password?",
+    "captchaRequired": "Too many failed sign-ins. Wait for verification, then sign in again."
   },
   "install": {
     "title": "Install ITSO Panel",
@@ -274,7 +275,8 @@
       "installing": "Installing…",
       "job": "Install web stack",
       "optional": "This step is optional: you can press Continue and install later under Servers → Software."
-    }
+    },
+    "confirmFirewall": "The default firewall was applied: press \"Keep new configuration\" within 5 minutes or the server rolls it back."
   },
   "servers": {
     "title": "Servers",
@@ -504,7 +506,11 @@
       "priority": "Between 1 and 9999",
       "source": "Invalid IP or CIDR",
       "ports": "Ports 1–65535, like 80,443 or 8000-8100"
-    }
+    },
+    "lockoutTitle": "This rule would lock you out",
+    "lockoutHint": "A draft rule blocks the SSH or panel port from your current IP. Fix the rules before applying.",
+    "previewTitle_one": "Ruleset to apply ({{count}} rule)",
+    "previewTitle_other": "Ruleset to apply ({{count}} rules)"
   },
   "docker": {
     "title": "Docker",
@@ -624,7 +630,41 @@
       "ticketExpired": "The ticket has expired (over 30 seconds)",
       "unavailable": "Could not reach the terminal server"
     },
-    "endedHint": "Click Disconnect, then open a new session if needed."
+    "endedHint": "Click Disconnect, then open a new session if needed.",
+    "rootOff": "Root terminal is disabled by server policy",
+    "rootOffHint": "The panel cannot enable it (even if compromised). A Super Admin enables it on the server with:",
+    "recordedHint": "Root sessions are recorded for later review.",
+    "recording": "● Recording session",
+    "policyRoot": "Root terminal",
+    "policyRecordRoot": "Record root sessions",
+    "policyRecordUser": "Record account sessions",
+    "on": "On",
+    "off": "Off",
+    "sessionsLink": "View terminal sessions and recordings →",
+    "sessionsTitle": "Terminal sessions",
+    "sessionsDescription": "Who opened a terminal, when and from which IP. Root sessions are recorded by server policy; viewing a recording requires MFA step-up.",
+    "unixUser": "Session",
+    "openedBy": "Opened by",
+    "startedAt": "Started",
+    "endedReason": {
+      "exit": "Exited",
+      "idle": "Closed when idle",
+      "closed": "Closed",
+      "killed": "Killed",
+      "expired": "Expired",
+      "limit": "Recording limit reached"
+    },
+    "recordingCol": "Recording",
+    "play": "Play",
+    "pause": "Pause",
+    "restart": "Restart",
+    "progress": "Playback progress",
+    "notRecorded": "Not recorded",
+    "playTitle": "Recording {{user}}@{{host}}",
+    "loadingRecording": "Loading recording…",
+    "recordingMeta": "{{size}} · opened by {{by}} from {{ip}}. Stored by the agent on the server (root-only).",
+    "truncated": "Recording truncated at 50 MB (the session was closed at the limit).",
+    "partial": "Long recording: only the first ~10 MB is played."
   },
   "packages": {
     "title": "Hosting packages",
@@ -1581,7 +1621,8 @@
       "ssh": "SSH",
       "fail2ban": "Fail2ban",
       "fim": "File integrity",
-      "allowlist": "IP allowlist"
+      "allowlist": "IP allowlist",
+      "terminal": "Terminal sessions"
     },
     "score": "Security score",
     "grade": "Grade {{grade}}",
@@ -1615,7 +1656,11 @@
       "malware.found": "Malware found",
       "ssh.bruteforce": "SSH brute force",
       "login.failed": "Failed login",
-      "fim.change": "System file changed"
+      "fim.change": "System file changed",
+      "fim.changed": "System file changed",
+      "waf.burst": "WAF burst",
+      "firewall.rolled_back": "Firewall rolled back",
+      "sshd.rolled_back": "SSH rolled back"
     },
     "wafTitle": "WAF",
     "wafDescription": "ModSecurity + OWASP CRS per PHP website. Toggle here; mode, paranoia level and rule exclusions live in the website WAF tab.",
@@ -1711,7 +1756,61 @@
       "cidr": "Invalid IP/CIDR",
       "dup": "Duplicate",
       "allowEmpty": "At least one IP range is required"
-    }
+    },
+    "server": "Server",
+    "sshApplying": "Applying sshd config (sshd -t, then reload)…",
+    "sshAwaitingHint_one": "Open a new SSH session to test. {{count}} second left before automatic rollback.",
+    "sshAwaitingHint_other": "Open a new SSH session to test. {{count}} seconds left before automatic rollback.",
+    "sshConfirmed": "New SSH config confirmed",
+    "sshConfirmedToast": "SSH confirmed",
+    "sshRolledBack": "SSH config rolled back",
+    "sshRolledBackHint": "No confirmation arrived in time, so the agent restored the previous sshd config.",
+    "sshNoKeysTitle": "No admin SSH key yet",
+    "sshNoKeys": "Disabling password login now would lock you out. Add an SSH key for the admin user first.",
+    "sshRollbackHint": "30 to 600 seconds. If you don't press “Keep new config” in time, the agent restores the old one.",
+    "sshKeys_one": "{{count}} admin SSH key",
+    "sshKeys_other": "{{count}} admin SSH keys",
+    "sshKeysHint": "Keys of the admin user on the server (outside the panel). At least one is needed to disable passwords.",
+    "fimRebaseline": "Re-baseline",
+    "fimRebaselineTitle": "Re-baseline file integrity",
+    "fimRebaselineHint": "The agent re-hashes every watched path and treats the current state as trusted. Only do this after reviewing changes. Requires MFA step-up.",
+    "quarantining": "Quarantining file",
+    "findingsTitle": "Suspicious files",
+    "findingsHint": "Recent scan results. Quarantine moves the file out of the website and keeps it for investigation.",
+    "findingsEmpty": "No suspicious files",
+    "filePath": "Path",
+    "quarantineFile": "Quarantine",
+    "findingAction": {
+      "quarantined": "Quarantined",
+      "restored": "Restored",
+      "deleted": "Deleted"
+    },
+    "bans": "Banned IPs",
+    "bansHint": "Read live from fail2ban on the server.",
+    "bansEmpty": "No IP is banned right now.",
+    "bannedAt": "Banned",
+    "expiresAt": "Expires",
+    "banPermanent": "Permanent",
+    "ip": "IP",
+    "unban": "Unban",
+    "unbanFor": "Unban {{ip}}",
+    "unbanned": "IP unbanned",
+    "fimPath": "Path",
+    "fimChange": "Change",
+    "fimHash": "SHA-256 (old → new)",
+    "fimChanges": {
+      "added": "Added",
+      "modified": "Modified",
+      "removed": "Removed",
+      "metadata": "Metadata"
+    },
+    "wafActions": {
+      "detected": "Detected",
+      "blocked": "Blocked"
+    },
+    "wafSiteEvents": "WAF events",
+    "wafSiteEventsHint": "Requests logged by ModSecurity, synced every minute.",
+    "wafSiteEventsEmpty": "No WAF events for this website yet."
   },
   "bk": {
     "title": "Backups",
@@ -2278,7 +2377,10 @@
     "errors": {
       "mfa": "Administrator MFA is mandatory",
       "scopes": "Choose at least one permission"
-    }
+    },
+    "captchaHint": "After this many failures (per email or IP), Portal sign-in requires the self-hosted CAPTCHA. 0 = always required. Admin sign-in uses progressive lockout and MFA instead.",
+    "portalMfa": "Require MFA for customers (Portal)",
+    "portalMfaHint": "Customers without MFA are sent to their profile to enable it right after sign-in."
   },
   "pt": {
     "overview": "Overview",
@@ -2342,6 +2444,31 @@
     "retention_one": "{{count}} {{unit}}",
     "retention_other": "{{count}} {{unit}}",
     "minutes_one": "every {{count}} minute",
-    "minutes_other": "every {{count}} minutes"
+    "minutes_other": "every {{count}} minutes",
+    "security": "Security",
+    "securityHint": "Web application firewall (WAF) for your websites and malware scanning for your accounts.",
+    "lastScan": "Last scanned {{at}}",
+    "neverScanned": "Never scanned",
+    "scanAccount": "Scan for malware",
+    "scanning": "Scanning…",
+    "scanStarted": "Scan started",
+    "findingsOpen": "Unhandled suspicious files",
+    "findingsOpenHint": "Quarantine or delete them below",
+    "blocked24h": "Requests blocked by WAF (24h)",
+    "blockedHint": "Across this account's PHP websites",
+    "wafMode": "WAF",
+    "waf": {
+      "off": "Off",
+      "block": "Blocking",
+      "detect": "Detect only"
+    },
+    "wafTable": "WAF per website",
+    "noPhpSites": "No PHP websites yet",
+    "wafNoteTitle": "Changing WAF mode",
+    "wafNote": "New websites run in “Detect only” for 7 days to avoid false positives, then an admin switches them to “Blocking”. Contact an admin if legitimate requests are blocked.",
+    "findingsHint": "You can quarantine or delete files. To restore a quarantined file, contact an admin.",
+    "deleteFile": "Delete file",
+    "deleteFileTitle": "Delete suspicious file?",
+    "deleteFileHint": "Permanently delete {{path}} from the account. This cannot be undone (except from backups)."
   }
 }

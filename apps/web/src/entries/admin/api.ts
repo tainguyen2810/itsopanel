@@ -8,6 +8,7 @@ import {
   type AnyClient,
   type Method,
   type Params,
+  type SendOpts,
 } from '@/shared/api/core';
 import type { ListQuery } from '@/shared/page/ListPage';
 
@@ -41,7 +42,7 @@ export function list<P extends keyof paths>(
 export function send<T = unknown>(
   method: Method,
   path: keyof paths,
-  opts: { path?: Record<string, string>; body?: unknown; headers?: Record<string, string> } = {},
+  opts: SendOpts = {},
 ): Promise<T> {
   return sendWith<T>(client, method, path, opts);
 }

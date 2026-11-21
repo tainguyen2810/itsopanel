@@ -1,0 +1,21 @@
+table inet itso {
+  chain input {
+    type filter hook input priority filter; policy drop;
+    iif "lo" accept
+    ct state established,related accept
+    ct state invalid drop
+    meta l4proto icmp icmp type { echo-request, destination-unreachable, time-exceeded } limit rate 10/second accept
+    meta l4proto ipv6-icmp accept
+    ip saddr 10.10.5.20 tcp dport { 22, 8443 } accept comment "itso: chống tự khóa"
+    ip saddr 10.10.0.0/16 tcp dport 22 accept comment "SSH chỉ từ mạng nội bộ"
+    tcp dport { 80, 443 } accept comment "Web"
+    ip saddr 10.10.0.0/16 tcp dport 8443 accept comment "Admin Panel"
+    tcp dport 3306 drop comment "Chặn MySQL"
+    ip6 saddr 2001:db8::/32 udp dport 51820 accept
+    ip saddr 10.0.0.0/8 meta l4proto { icmp, ipv6-icmp } accept
+  }
+  chain output {
+    type filter hook output priority filter; policy accept;
+    meta l4proto { tcp, udp } th dport 25 reject comment "Chặn SMTP ra"
+  }
+}

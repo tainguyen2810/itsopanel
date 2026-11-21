@@ -11,8 +11,8 @@
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | Realm admin/portal; **Hosting Provisioning Service**; package version; vòng đời account | |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | Sandbox systemd, egress per UID, quota inode | **✓ APPROVED** (2026-11-21) · báo cáo `docs/reports/phase-4.md` (kết quả VM: chờ VM) |
 | 5 | Website / Nginx / PHP / SSL / DNS | DNS provider API (Cloudflare) đưa vào đây. Chi tiết: `PHASE_5_PROMPTS.md` | **✓ APPROVED** (2026-11-21) · báo cáo `docs/reports/phase-5.md` (kết quả VM: chờ VM) |
-| 6 | Database / File Manager / FTP-SFTP / Cron / Terminal USER | Terminal cho USER (jail) đưa vào đây. Chi tiết: `PHASE_6_PROMPTS.md` | ✱ đang làm |
-| 7 | Security Center | Firewall nftables, Fail2ban, WAF, Malware, FIM, SSH hardening, bảo vệ User Portal | |
+| 6 | Database / File Manager / FTP-SFTP / Cron / Terminal USER | Terminal cho USER (jail) đưa vào đây. Chi tiết: `PHASE_6_PROMPTS.md` | **✓ APPROVED** (2026-11-21) · báo cáo `docs/reports/phase-6.md` (kết quả VM: chờ VM) |
+| 7 | Security Center | Firewall nftables, Fail2ban, WAF, Malware, FIM, SSH hardening, bảo vệ User Portal, Terminal root + ghi phiên. Chi tiết: `PHASE_7_PROMPTS.md` (mockup trước khi code) | ✓ chờ duyệt |
 | 8 | Backup & Restore theo tài khoản | Repo restic riêng cho mỗi account, offsite immutable, DR all-in-one | **v0.1.0-alpha** (1 server, nội bộ) |
 | 9 | Multi-server & chuyển tài khoản | Node join, mTLS, CA nội bộ, chọn server có gợi ý, `account.migrate`, restore chéo server | |
 | 10 | Docker Manager, WordPress Toolkit, Software Manager | Docker chỉ cho SUPER_ADMIN/ADMIN; USER không có Docker | |

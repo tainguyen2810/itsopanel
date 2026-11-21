@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/sshd.config.apply.schema.json",
+  "title": "sshd.config.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "apply_id": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "port": {
+          "$ref": "../defs.schema.json#/$defs/Port"
+        },
+        "password_authentication": {
+          "type": "boolean"
+        },
+        "permit_root_login": {
+          "type": "string",
+          "enum": [
+            "no",
+            "prohibit-password"
+          ]
+        },
+        "max_auth_tries": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "login_grace_sec": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 300
+        },
+        "x11_forwarding": {
+          "type": "boolean"
+        },
+        "agent_forwarding": {
+          "type": "boolean"
+        },
+        "allow_groups": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,31}$"
+          },
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "admin_user": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_-]{0,31}$"
+        },
+        "client_ip": {
+          "$ref": "../defs.schema.json#/$defs/IpAddress"
+        },
+        "confirm_within_sec": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 600
+        }
+      },
+      "required": [
+        "apply_id",
+        "port",
+        "password_authentication",
+        "permit_root_login",
+        "max_auth_tries",
+        "login_grace_sec",
+        "x11_forwarding",
+        "agent_forwarding",
+        "allow_groups",
+        "admin_user",
+        "client_ip",
+        "confirm_within_sec"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "$ref": "../defs.schema.json#/$defs/ConfirmToken"
+        },
+        "rollback_at": {
+          "type": "string"
+        },
+        "sshd_test": {
+          "type": "string",
+          "enum": [
+            "ok"
+          ]
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "admin_keys": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "token",
+        "rollback_at",
+        "sshd_test",
+        "changed",
+        "admin_keys"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

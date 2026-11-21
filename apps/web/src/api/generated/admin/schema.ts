@@ -1967,6 +1967,60 @@ export interface paths {
         patch: operations["updateFail2ban"];
         trace?: never;
     };
+    "/api/v1/admin/security/fail2ban/bans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** IP đang bị fail2ban cấm */
+        get: operations["listFail2banBans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/security/fail2ban/bans:unban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gỡ cấm một IP
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["unbanIp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/security/fim/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Thay đổi toàn vẹn file (FIM) */
+        get: operations["listFimChanges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/security/ip-allowlist": {
         parameters: {
             query?: never;
@@ -1982,6 +2036,43 @@ export interface paths {
          */
         put: operations["setIpAllowlist"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/security/malware/findings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** File nghi nhiễm */
+        get: operations["listMalwareFindings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/security/malware/findings/{id}:quarantine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cách ly file nghi nhiễm
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["quarantineMalwareFinding"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2061,6 +2152,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/security/score": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Điểm bảo mật chi tiết theo máy chủ
+         * @description Laravel tính từ `security.audit` của agent + dữ liệu panel theo bảng trọng số công khai (D-80).
+         */
+        get: operations["getSecurityScore"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/security/ssh": {
         parameters: {
             query?: never;
@@ -2077,11 +2188,33 @@ export interface paths {
         head?: never;
         /**
          * Đổi cấu hình SSH (safe-apply)
-         * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+         * @description Safe-apply như tường lửa: `sshd -t` → reload → tự hoàn tác nếu không gọi `:confirm` trong `rollback_after_sec`. Tắt mật khẩu khi `admin_keys = 0` trả 422.
+         *
+         *     Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
         patch: operations["updateSshSettings"];
+        trace?: never;
+    };
+    "/api/v1/admin/security/ssh:confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Xác nhận giữ cấu hình SSH vừa áp dụng
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["confirmSsh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/servers": {
@@ -2261,6 +2394,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/servers/{id}/fim:baseline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chụp lại baseline toàn vẹn file
+         * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+         *
+         *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["rebaselineFim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/servers/{id}/firewall/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem trước ruleset nft từ rule nháp
+         * @description Sinh ruleset bảng `inet itso` như khi áp dụng và kiểm bất biến chống tự khóa (D-76); không đổi máy chủ.
+         */
+        get: operations["previewFirewall"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/servers/{id}/firewall/rules": {
         parameters: {
             query?: never;
@@ -2291,6 +2466,23 @@ export interface paths {
         post?: never;
         /** Xóa rule (nháp) */
         delete: operations["deleteFirewallRule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/servers/{id}/firewall/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Trạng thái safe-apply tường lửa */
+        get: operations["getFirewallStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2486,6 +2678,26 @@ export interface paths {
          * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
         post: operations["manageServerSoftware"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/servers/{id}/terminal/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Policy terminal của máy chủ (chỉ đọc)
+         * @description Đọc từ agent; chỉ bật/tắt được bằng `itso policy set` trên máy chủ (D-81).
+         */
+        get: operations["getTerminalPolicy"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2880,7 +3092,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Phiên terminal */
+        get: operations["listTerminalSessions"];
         put?: never;
         /**
          * Mở terminal (ticket 30 giây, dùng một lần)
@@ -2889,6 +3102,26 @@ export interface paths {
          *     Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
          */
         post: operations["createTerminalSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/terminal/sessions/{id}/recording": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bản ghi phiên (asciicast)
+         * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+         */
+        get: operations["getTerminalRecording"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3252,6 +3485,23 @@ export interface paths {
         patch: operations["updateWebsiteWaf"];
         trace?: never;
     };
+    "/api/v1/admin/websites/{id}/waf/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sự kiện WAF của website */
+        get: operations["listWafEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/wordpress/sites": {
         parameters: {
             query?: never;
@@ -3327,6 +3577,26 @@ export interface paths {
          * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
         post: operations["wordPressUpdate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/captcha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Thử thách CAPTCHA proof-of-work (dùng một lần, 5 phút)
+         * @description Tự host, không gọi dịch vụ ngoài (D-81). Đăng nhập/quên mật khẩu trả 422 `captcha_required` khi IP hoặc email đã sai quá ngưỡng (`portal_captcha_after_failures`); khi đó gửi kèm `captcha`.
+         */
+        get: operations["getCaptcha"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3483,7 +3753,7 @@ export interface paths {
         put?: never;
         /**
          * Gửi email đặt lại mật khẩu
-         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản).
+         * @description Luôn trả 204 dù email có tồn tại hay không (không lộ tài khoản). Portal: 422 `captcha_required` khi IP/email đã sai quá ngưỡng như đăng nhập (D-81).
          */
         post: operations["forgotPassword"];
         delete?: never;
@@ -4110,7 +4380,8 @@ export interface components {
             direction: "in" | "out";
             /** @enum {string} */
             protocol: "tcp" | "udp" | "icmp" | "any";
-            ports: string;
+            /** @description null = mọi cổng (vd. icmp). */
+            ports: string | null;
             source: components["schemas"]["Cidr"];
             comment: string;
             enabled: boolean;
@@ -4127,7 +4398,7 @@ export interface components {
             direction: "in" | "out";
             /** @enum {string} */
             protocol: "tcp" | "udp" | "icmp" | "any";
-            ports?: string;
+            ports?: string | null;
             source: components["schemas"]["Cidr"];
             comment?: string;
             enabled?: boolean;
@@ -4203,8 +4474,143 @@ export interface components {
             permit_root_login: "no" | "prohibit-password";
             allow_groups: string[];
             max_auth_tries: number;
+            /** @description Số khóa SSH của user quản trị; 0 thì không tắt được mật khẩu. */
+            readonly admin_keys?: number;
             /** Format: date-time */
             updated_at: string;
+        };
+        SshSettingsPatch: {
+            port?: number;
+            password_authentication?: boolean;
+            /** @enum {string} */
+            permit_root_login?: "no" | "prohibit-password";
+            allow_groups?: string[];
+            max_auth_tries?: number;
+            /** @description Safe-apply: tự hoàn tác nếu không xác nhận. */
+            rollback_after_sec: number;
+        };
+        TerminalPolicy: {
+            server: components["schemas"]["ServerRef"];
+            root_enabled: boolean;
+            record_root: boolean;
+            record_user: boolean;
+            max_sessions_per_account: number;
+            idle_timeout_sec: number;
+        };
+        TerminalSession: {
+            /** Format: uuid */
+            uuid: string;
+            /** @enum {string} */
+            mode: "account" | "root";
+            unix_user: string;
+            server: components["schemas"]["ServerRef"];
+            hosting_account: components["schemas"]["AccountRef"] | null;
+            opened_by: components["schemas"]["UserRef"];
+            client_ip: string | null;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            ended_at: string | null;
+            /** @enum {string|null} */
+            ended_reason: "exit" | "idle" | "closed" | "killed" | "expired" | "limit" | null;
+            recorded: boolean;
+            recording_bytes: number;
+        };
+        TerminalRecording: {
+            /** Format: uuid */
+            session_uuid: string;
+            width: number;
+            height: number;
+            events: {
+                t: number;
+                data: string;
+            }[];
+            next_offset: number | null;
+            truncated: boolean;
+        };
+        FirewallPreview: {
+            server: components["schemas"]["ServerRef"];
+            /** @description Ruleset nft sẽ áp dụng (chỉ bảng `inet itso`). */
+            ruleset: string;
+            rules_active: number;
+            warnings: string[];
+            /** @description true nếu rule nháp chặn cổng SSH/panel từ IP hiện tại (sẽ bị từ chối). */
+            lockout_risk: boolean;
+        };
+        FirewallStatus: {
+            server: components["schemas"]["ServerRef"];
+            /** @enum {string} */
+            state: "idle" | "pending_confirm" | "confirmed" | "rolled_back";
+            /** Format: date-time */
+            applied_at: string | null;
+            /** Format: date-time */
+            rollback_at: string | null;
+            applied_by: components["schemas"]["UserRef"] | null;
+            rules_active: number;
+        };
+        Fail2banBan: {
+            server: components["schemas"]["ServerRef"];
+            /** @enum {string} */
+            jail: "sshd" | "itso-panel" | "pure-ftpd";
+            ip: string;
+            /** Format: date-time */
+            banned_at: string;
+            /** Format: date-time */
+            expires_at: string | null;
+        };
+        Fail2banUnban: {
+            /** Format: uuid */
+            server: string;
+            /** @enum {string} */
+            jail: "sshd" | "itso-panel" | "pure-ftpd";
+            ip: string;
+        };
+        WafEvent: {
+            /** Format: uuid */
+            uuid: string;
+            website: components["schemas"]["WebsiteRef"];
+            rule_id: number;
+            message: string;
+            /** @enum {string} */
+            severity: "info" | "low" | "medium" | "high" | "critical";
+            client_ip: string;
+            method: string;
+            uri: string;
+            /** @enum {string} */
+            action: "detected" | "blocked";
+            /** Format: date-time */
+            at: string;
+        };
+        FimChange: {
+            /** Format: uuid */
+            uuid: string;
+            server: components["schemas"]["ServerRef"];
+            path: string;
+            /** @enum {string} */
+            change: "added" | "modified" | "removed" | "metadata";
+            old_sha256: string | null;
+            new_sha256: string | null;
+            /** Format: date-time */
+            detected_at: string;
+            /** Format: date-time */
+            acknowledged_at: string | null;
+        };
+        SecurityScore: {
+            server: components["schemas"]["ServerRef"];
+            score: number;
+            /** @enum {string} */
+            grade: "A" | "B" | "C" | "D" | "F";
+            items: {
+                key: string;
+                title: string;
+                weight: number;
+                earned: number;
+                /** @enum {string} */
+                status: "pass" | "warn" | "fail";
+                detail: string;
+            }[];
+            /** Format: date-time */
+            computed_at: string;
         };
         Fail2banSettings: {
             enabled: boolean;
@@ -4571,17 +4977,6 @@ export interface components {
             };
             enabled?: boolean;
         };
-        /** @description Cập nhật một phần SshSettings: chỉ gửi trường cần đổi. */
-        SshSettingsPatch: {
-            port?: number;
-            password_authentication?: boolean;
-            /** @enum {string} */
-            permit_root_login?: "no" | "prohibit-password";
-            allow_groups?: string[];
-            max_auth_tries?: number;
-            /** Format: date-time */
-            updated_at?: string;
-        };
         /** @description Cập nhật một phần Fail2banSettings: chỉ gửi trường cần đổi. */
         Fail2banSettingsPatch: {
             enabled?: boolean;
@@ -4650,7 +5045,7 @@ export interface components {
             email: string;
         };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -5270,6 +5665,20 @@ export interface components {
             confirm?: string | null;
         };
         Cidr: string;
+        MalwareFinding: {
+            /** Format: uuid */
+            uuid: string;
+            hosting_account: components["schemas"]["AccountRef"];
+            website: components["schemas"]["WebsiteRef"] | null;
+            path: components["schemas"]["RelPath"];
+            signature: string;
+            /** @enum {string} */
+            engine: "clamav" | "yara";
+            /** @enum {string} */
+            action: "none" | "quarantined" | "restored" | "deleted";
+            /** Format: date-time */
+            found_at: string;
+        };
         /** @description Giá trị kích thước Nginx, ví dụ 64m. */
         NginxSize: string;
         User: {
@@ -5533,11 +5942,22 @@ export interface components {
             /** @enum {string} */
             locale: "vi" | "en_US";
         };
+        CaptchaChallenge: {
+            challenge: string;
+            difficulty: number;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        CaptchaSolution: {
+            challenge: string;
+            nonce: string;
+        };
         LoginRequest: {
             /** Format: email */
             email: string;
             password: string;
             remember?: boolean;
+            captcha?: components["schemas"]["CaptchaSolution"];
         };
         LoginResult: {
             mfa_required: boolean;
@@ -5845,6 +6265,8 @@ export interface components {
         SoftwareAction: "install" | "remove" | "upgrade";
         /** @description Nhóm cài đặt. */
         SettingsGroup: "general" | "security" | "smtp" | "backup" | "updates";
+        /** @description Vị trí byte bắt đầu đọc. */
+        Offset: number;
         /** @description Lọc theo realm. */
         FilterRealm: "admin" | "portal";
         /** @description UUID domain. */
@@ -8485,7 +8907,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00aa-7000-8000-00000f0000aa",
+                     *         "uuid": "01938a0f-00ae-7000-8000-00000f0000ae",
                      *         "type": "compose.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8526,8 +8948,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8622,7 +9044,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ac-7000-8000-00000f0000ac",
+                     *         "uuid": "01938a0f-00b0-7000-8000-00000f0000b0",
                      *         "type": "compose.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8663,8 +9085,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8720,7 +9142,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ab-7000-8000-00000f0000ab",
+                     *         "uuid": "01938a0f-00af-7000-8000-00000f0000af",
                      *         "type": "compose.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8761,8 +9183,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8807,7 +9229,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00af-7000-8000-00000f0000af",
+                     *         "uuid": "01938a0f-00b3-7000-8000-00000f0000b3",
                      *         "type": "compose.down",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8841,8 +9263,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8886,7 +9308,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00b0-7000-8000-00000f0000b0",
+                     *         "uuid": "01938a0f-00b4-7000-8000-00000f0000b4",
                      *         "type": "compose.pull",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8920,8 +9342,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b4-7000-8000-00000f0000b4",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b4-7000-8000-00000f0000b4/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8965,7 +9387,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ae-7000-8000-00000f0000ae",
+                     *         "uuid": "01938a0f-00b2-7000-8000-00000f0000b2",
                      *         "type": "compose.up",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8999,8 +9421,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -9044,7 +9466,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ad-7000-8000-00000f0000ad",
+                     *         "uuid": "01938a0f-00b1-7000-8000-00000f0000b1",
                      *         "type": "compose.validate",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -9078,8 +9500,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b1-7000-8000-00000f0000b1",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b1-7000-8000-00000f0000b1/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -16553,12 +16975,20 @@ export interface operations {
                      *             "banned_count": 12
                      *           },
                      *           {
-                     *             "name": "itso-portal-login",
+                     *             "name": "itso-panel",
                      *             "enabled": true,
                      *             "bantime_sec": 1800,
                      *             "findtime_sec": 300,
                      *             "maxretry": 10,
                      *             "banned_count": 3
+                     *           },
+                     *           {
+                     *             "name": "pure-ftpd",
+                     *             "enabled": true,
+                     *             "bantime_sec": 3600,
+                     *             "findtime_sec": 600,
+                     *             "maxretry": 5,
+                     *             "banned_count": 0
                      *           }
                      *         ],
                      *         "updated_at": "2026-11-18T09:30:00+07:00"
@@ -16610,7 +17040,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a5-7000-8000-00000f0000a5",
+                     *         "uuid": "01938a0f-00a8-7000-8000-00000f0000a8",
                      *         "type": "fail2ban.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -16644,8 +17074,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -16661,6 +17091,242 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listFail2banBans: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+                /** @description Lọc theo server. */
+                "filter[server]"?: components["parameters"]["FilterServer"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "jail": "sshd",
+                     *           "ip": "203.0.113.45",
+                     *           "banned_at": "2026-11-20T08:15:00+07:00",
+                     *           "expires_at": "2026-11-20T09:15:00+07:00"
+                     *         },
+                     *         {
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "jail": "itso-panel",
+                     *           "ip": "198.51.100.77",
+                     *           "banned_at": "2026-11-20T08:15:00+07:00",
+                     *           "expires_at": "2026-11-20T08:45:00+07:00"
+                     *         },
+                     *         {
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "jail": "sshd",
+                     *           "ip": "192.0.2.10",
+                     *           "banned_at": "2026-11-19T14:05:00+07:00",
+                     *           "expires_at": null
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["Fail2banBan"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    unbanIp: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "server": "01938a02-0001-7000-8000-000002000001",
+                 *       "jail": "sshd",
+                 *       "ip": "203.0.113.45"
+                 *     }
+                 */
+                "application/json": components["schemas"]["Fail2banUnban"];
+            };
+        };
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-00a9-7000-8000-00000f0000a9",
+                     *         "type": "fail2ban.unban",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "server",
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "fail2ban.unban",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "server",
+                     *         "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listFimChanges: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+                /** @description Lọc theo server. */
+                "filter[server]"?: components["parameters"]["FilterServer"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a34-0001-7000-8000-000034000001",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "path": "/etc/ssh/sshd_config.d/10-itso-hardening.conf",
+                     *           "change": "modified",
+                     *           "old_sha256": "1b4f0e9870cecd0e3d1b2f7b6a7a2a1e7d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a",
+                     *           "new_sha256": "2c5a1f0981dfde1f4e2c3a8c7b8b3b2f8e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b",
+                     *           "detected_at": "2026-11-20T08:15:00+07:00",
+                     *           "acknowledged_at": null
+                     *         },
+                     *         {
+                     *           "uuid": "01938a34-0002-7000-8000-000034000002",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "path": "/usr/local/bin/backup-helper",
+                     *           "change": "added",
+                     *           "old_sha256": null,
+                     *           "new_sha256": "3d6b2a1092e0ef2a5f3d4b9d8c9c4c3a9f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c",
+                     *           "detected_at": "2026-11-19T14:05:00+07:00",
+                     *           "acknowledged_at": "2026-11-20T08:15:00+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["FimChange"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
@@ -16765,6 +17431,164 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listMalwareFindings: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+                /** @description Lọc theo account. */
+                "filter[hosting_account]"?: components["parameters"]["FilterHostingAccount"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a32-0001-7000-8000-000032000001",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0003-7000-8000-000005000003",
+                     *             "username": "lehoa"
+                     *           },
+                     *           "website": {
+                     *             "uuid": "01938a06-0004-7000-8000-000006000004",
+                     *             "primary_domain": "lehoa.blog"
+                     *           },
+                     *           "path": "sites/lehoa.blog/public/wp-content/uploads/2026/11/x.php",
+                     *           "signature": "PHP.Webshell.Generic",
+                     *           "engine": "yara",
+                     *           "action": "quarantined",
+                     *           "found_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a32-0002-7000-8000-000032000002",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "path": "sites/shop.anphat.vn/public/tmp/eicar.com",
+                     *           "signature": "Eicar-Signature",
+                     *           "engine": "clamav",
+                     *           "action": "none",
+                     *           "found_at": "2026-11-20T08:15:00+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["MalwareFinding"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    quarantineMalwareFinding: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-00a7-7000-8000-00000f0000a7",
+                     *         "type": "malware.quarantine",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "malware_finding",
+                     *           "uuid": "01938a32-0002-7000-8000-000032000002"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "malware.quarantine",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "malware_finding",
+                     *         "uuid": "01938a32-0002-7000-8000-000032000002"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
@@ -17025,7 +17849,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a8-7000-8000-00000f0000a8",
+                     *         "uuid": "01938a0f-00ac-7000-8000-00000f0000ac",
                      *         "type": "malware.restore",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -17059,8 +17883,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -17077,6 +17901,121 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getSecurityScore: {
+        parameters: {
+            query: {
+                /** @description Server áp dụng. */
+                server: components["parameters"]["ServerQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "score": 82,
+                     *         "grade": "B",
+                     *         "computed_at": "2026-11-20T08:15:00+07:00",
+                     *         "items": [
+                     *           {
+                     *             "key": "ssh_password_auth",
+                     *             "title": "Tắt đăng nhập SSH bằng mật khẩu",
+                     *             "weight": 15,
+                     *             "earned": 15,
+                     *             "status": "pass",
+                     *             "detail": "PasswordAuthentication no"
+                     *           },
+                     *           {
+                     *             "key": "ssh_root_login",
+                     *             "title": "Không cho root đăng nhập bằng mật khẩu",
+                     *             "weight": 10,
+                     *             "earned": 10,
+                     *             "status": "pass",
+                     *             "detail": "PermitRootLogin no"
+                     *           },
+                     *           {
+                     *             "key": "firewall_policy",
+                     *             "title": "Tường lửa mặc định chặn (policy drop)",
+                     *             "weight": 15,
+                     *             "earned": 15,
+                     *             "status": "pass",
+                     *             "detail": "table inet itso, 3 rule"
+                     *           },
+                     *           {
+                     *             "key": "fail2ban",
+                     *             "title": "Fail2ban chạy với jail sshd và panel",
+                     *             "weight": 10,
+                     *             "earned": 10,
+                     *             "status": "pass",
+                     *             "detail": "3 jail"
+                     *           },
+                     *           {
+                     *             "key": "admin_mfa",
+                     *             "title": "MFA cho mọi quản trị viên",
+                     *             "weight": 15,
+                     *             "earned": 15,
+                     *             "status": "pass",
+                     *             "detail": "4/4 quản trị viên"
+                     *           },
+                     *           {
+                     *             "key": "waf_all_sites",
+                     *             "title": "WAF bật cho mọi website PHP",
+                     *             "weight": 10,
+                     *             "earned": 5,
+                     *             "status": "warn",
+                     *             "detail": "3/6 website ở chế độ chặn"
+                     *           },
+                     *           {
+                     *             "key": "security_updates",
+                     *             "title": "Không còn bản cập nhật bảo mật chờ cài",
+                     *             "weight": 10,
+                     *             "earned": 0,
+                     *             "status": "fail",
+                     *             "detail": "4 gói, cần khởi động lại"
+                     *           },
+                     *           {
+                     *             "key": "fim_clean",
+                     *             "title": "Không có thay đổi FIM chưa xử lý",
+                     *             "weight": 5,
+                     *             "earned": 2,
+                     *             "status": "warn",
+                     *             "detail": "1 thay đổi"
+                     *           },
+                     *           {
+                     *             "key": "admin_allowlist",
+                     *             "title": "Admin Panel giới hạn theo IP allowlist",
+                     *             "weight": 10,
+                     *             "earned": 10,
+                     *             "status": "pass",
+                     *             "detail": "2 dải"
+                     *           }
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["SecurityScore"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -17108,6 +18047,7 @@ export interface operations {
                      *           "itso-ssh"
                      *         ],
                      *         "max_auth_tries": 3,
+                     *         "admin_keys": 2,
                      *         "updated_at": "2026-11-18T09:30:00+07:00"
                      *       }
                      *     }
@@ -17141,7 +18081,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "max_auth_tries": 3
+                 *       "max_auth_tries": 3,
+                 *       "rollback_after_sec": 120
                  *     }
                  */
                 "application/json": components["schemas"]["SshSettingsPatch"];
@@ -17208,6 +18149,84 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    confirmSsh: {
+        parameters: {
+            query: {
+                /** @description Server áp dụng. */
+                server: components["parameters"]["ServerQuery"];
+            };
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-00a5-7000-8000-00000f0000a5",
+                     *         "type": "sshd.confirm",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "server",
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "sshd.config.confirm",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "server",
+                     *         "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
@@ -17797,7 +18816,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a9-7000-8000-00000f0000a9",
+                     *         "uuid": "01938a0f-00ad-7000-8000-00000f0000ad",
                      *         "type": "docker.container_control",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -17831,8 +18850,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -18019,6 +19038,129 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    rebaselineFim: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-00a6-7000-8000-00000f0000a6",
+                     *         "type": "fim.baseline",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "server",
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "fim.baseline",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "server",
+                     *         "uuid": "01938a02-0001-7000-8000-000002000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    previewFirewall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "rules_active": 3,
+                     *         "lockout_risk": false,
+                     *         "warnings": [],
+                     *         "ruleset": "table inet itso {\n  chain input {\n    type filter hook input priority 0; policy drop;\n    iif lo accept\n    ct state established,related accept\n    icmp type echo-request limit rate 10/second accept\n    tcp dport 22 ip saddr 10.10.0.0/16 accept comment \"SSH chỉ từ mạng nội bộ\"\n    tcp dport { 80, 443 } accept comment \"Web\"\n    tcp dport 8443 ip saddr 10.10.0.0/16 accept comment \"Admin Panel\"\n  }\n}\n"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["FirewallPreview"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     listFirewallRules: {
         parameters: {
             query?: {
@@ -18196,6 +19338,55 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getFirewallStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "state": "confirmed",
+                     *         "applied_at": "2026-11-19T14:05:00+07:00",
+                     *         "rollback_at": null,
+                     *         "applied_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "rules_active": 3
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["FirewallStatus"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -19054,6 +20245,51 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getTerminalPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "root_enabled": false,
+                     *         "record_root": true,
+                     *         "record_user": false,
+                     *         "max_sessions_per_account": 2,
+                     *         "idle_timeout_sec": 900
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["TerminalPolicy"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -20453,6 +21689,122 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    listTerminalSessions: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+                /** @description Lọc theo server. */
+                "filter[server]"?: components["parameters"]["FilterServer"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a31-0001-7000-8000-000031000001",
+                     *           "mode": "account",
+                     *           "unix_user": "anphat",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "opened_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "client_ip": "10.10.5.20",
+                     *           "started_at": "2026-11-20T08:15:00+07:00",
+                     *           "ended_at": null,
+                     *           "ended_reason": null,
+                     *           "recorded": false,
+                     *           "recording_bytes": 0
+                     *         },
+                     *         {
+                     *           "uuid": "01938a31-0002-7000-8000-000031000002",
+                     *           "mode": "root",
+                     *           "unix_user": "root",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "hosting_account": null,
+                     *           "opened_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "client_ip": "10.10.5.20",
+                     *           "started_at": "2026-11-19T16:02:00+07:00",
+                     *           "ended_at": "2026-11-19T16:09:41+07:00",
+                     *           "ended_reason": "exit",
+                     *           "recorded": true,
+                     *           "recording_bytes": 1843
+                     *         },
+                     *         {
+                     *           "uuid": "01938a31-0003-7000-8000-000031000003",
+                     *           "mode": "account",
+                     *           "unix_user": "lehoa",
+                     *           "server": {
+                     *             "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *             "name": "srv-hcm-01"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0003-7000-8000-000005000003",
+                     *             "username": "lehoa"
+                     *           },
+                     *           "opened_by": {
+                     *             "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *             "name": "Quản trị hệ thống",
+                     *             "email": "superadmin@itso.local"
+                     *           },
+                     *           "client_ip": "10.10.5.31",
+                     *           "started_at": "2026-11-19T14:05:00+07:00",
+                     *           "ended_at": "2026-11-19T14:22:10+07:00",
+                     *           "ended_reason": "idle",
+                     *           "recorded": false,
+                     *           "recording_bytes": 0
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["TerminalSession"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     createTerminalSession: {
         parameters: {
             query?: never;
@@ -20502,6 +21854,84 @@ export interface operations {
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["AgentUnavailable"];
+        };
+    };
+    getTerminalRecording: {
+        parameters: {
+            query?: {
+                /** @description Vị trí byte bắt đầu đọc. */
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "session_uuid": "01938a31-0002-7000-8000-000031000002",
+                     *         "width": 100,
+                     *         "height": 24,
+                     *         "truncated": false,
+                     *         "next_offset": null,
+                     *         "events": [
+                     *           {
+                     *             "t": 0,
+                     *             "data": "root@srv-hn-01:~# "
+                     *           },
+                     *           {
+                     *             "t": 1.4,
+                     *             "data": "systemctl status nginx --no-pager | head -3\r\n"
+                     *           },
+                     *           {
+                     *             "t": 1.6,
+                     *             "data": "● nginx.service - A high performance web server\r\n     Loaded: loaded\r\n     Active: active (running) since Wed 2026-11-19 09:12:04 +07\r\n"
+                     *           },
+                     *           {
+                     *             "t": 1.7,
+                     *             "data": "root@srv-hn-01:~# "
+                     *           },
+                     *           {
+                     *             "t": 4.9,
+                     *             "data": "nft list table inet itso | head -4\r\n"
+                     *           },
+                     *           {
+                     *             "t": 5,
+                     *             "data": "table inet itso {\r\n\tchain input {\r\n\t\ttype filter hook input priority filter; policy drop;\r\n\t\tct state established,related accept\r\n"
+                     *           },
+                     *           {
+                     *             "t": 5.1,
+                     *             "data": "root@srv-hn-01:~# "
+                     *           },
+                     *           {
+                     *             "t": 8.3,
+                     *             "data": "exit\r\n"
+                     *           }
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["TerminalRecording"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     listUptimeChecks: {
@@ -22353,7 +23783,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a7-7000-8000-00000f0000a7",
+                     *         "uuid": "01938a0f-00ab-7000-8000-00000f0000ab",
                      *         "type": "malware.scan",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -22387,8 +23817,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -22492,7 +23922,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a6-7000-8000-00000f0000a6",
+                     *         "uuid": "01938a0f-00aa-7000-8000-00000f0000aa",
                      *         "type": "waf.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -22533,8 +23963,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -22551,6 +23981,100 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listWafEvents: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a33-0001-7000-8000-000033000001",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "rule_id": 942100,
+                     *           "message": "SQL Injection Attack Detected via libinjection",
+                     *           "severity": "critical",
+                     *           "client_ip": "198.51.100.23",
+                     *           "method": "GET",
+                     *           "uri": "/search?q=1%27%20OR%201=1--",
+                     *           "action": "blocked",
+                     *           "at": "2026-11-20T08:15:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a33-0002-7000-8000-000033000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "rule_id": 941100,
+                     *           "message": "XSS Attack Detected via libinjection",
+                     *           "severity": "high",
+                     *           "client_ip": "203.0.113.9",
+                     *           "method": "POST",
+                     *           "uri": "/contact",
+                     *           "action": "blocked",
+                     *           "at": "2026-11-20T08:15:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a33-0003-7000-8000-000033000003",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "rule_id": 930120,
+                     *           "message": "OS File Access Attempt",
+                     *           "severity": "medium",
+                     *           "client_ip": "192.0.2.50",
+                     *           "method": "GET",
+                     *           "uri": "/index.php?f=/etc/passwd",
+                     *           "action": "detected",
+                     *           "at": "2026-11-19T14:05:00+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["WafEvent"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
@@ -23001,6 +24525,41 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getCaptcha: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production), host quyết định và header bị bỏ qua (D-58). */
+                "X-ITSO-Realm"?: components["parameters"]["Realm"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "challenge": "v1.1763601300.4f9a2c.b1e0d7c3a95f4e21",
+                     *         "difficulty": 12,
+                     *         "expires_at": "2026-11-20T08:20:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["CaptchaChallenge"];
+                    };
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getCsrfCookie: {
         parameters: {
             query?: never;
@@ -23349,6 +24908,7 @@ export interface operations {
                 "application/json": {
                     /** Format: email */
                     email: string;
+                    captcha?: components["schemas"]["CaptchaSolution"];
                 };
             };
         };

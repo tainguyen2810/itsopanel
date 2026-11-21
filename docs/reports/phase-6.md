@@ -1,6 +1,6 @@
 # Báo cáo Phase 6: Database, File Manager, SFTP/FTPS, Cron, Terminal USER
 
-- **Trạng thái:** ✓ hoàn tất phần làm được không cần VM. Nhánh `phase-6`, merge `--no-ff` vào `main` ở Git local (không push, không remote). Tiêu chí cần kernel/systemd thật được đánh dấu **chờ VM**; bộ script đã sẵn sàng (`tests/vm/phase6.sh`).
+- **Trạng thái:** ✓ **APPROVED** (2026-11-21). Hoàn tất phần làm được không cần VM. Nhánh `phase-6`, merge `--no-ff` vào `main` ở Git local (không push, không remote). Tiêu chí cần kernel/systemd thật được đánh dấu **chờ VM**; bộ script đã sẵn sàng (`tests/vm/phase6.sh`).
 - **Thời gian:** 2026-11-21.
 - **Cách làm:** như Phase 4–5 ("Làm trước, VM test sau"). Code và test chạy với runner giả, agent `--sandbox` (ký HMAC; MariaDB/pure-ftpd/sshd mô phỏng ở tầng lệnh, file thật dưới gốc sandbox, shell giả cho terminal) và stack cloud thật (PostgreSQL 16 + Redis + Laravel + Vite + itso-gateway).
 - **Phạm vi giữ đúng:** không đổi cấu hình máy chủ thật, không deploy. Laravel không chạy lệnh hệ thống (`check-no-exec` xanh). Agent không có op chạy lệnh tùy ý, không `sh -c`; thao tác dữ liệu của account chạy dưới uid account (helper hạ quyền, `systemd-run` cho cron/terminal). Billing/WooCommerce/thanh toán: OUT OF SCOPE.

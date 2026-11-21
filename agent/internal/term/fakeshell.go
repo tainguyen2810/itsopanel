@@ -37,7 +37,19 @@ func NewFakeShell(s *Session) *FakeShell {
 	return f
 }
 
-func (f *FakeShell) prompt() string { return f.user + "@itso:~$ " }
+func (f *FakeShell) prompt() string {
+	if f.user == "root" {
+		return "root@itso:~# "
+	}
+	return f.user + "@itso:~$ "
+}
+
+func (f *FakeShell) home() string {
+	if f.user == "root" {
+		return "/root"
+	}
+	return "/home/" + f.user
+}
 
 // Read trả output.
 func (f *FakeShell) Read(b []byte) (int, error) { return f.pr.Read(b) }
@@ -94,7 +106,7 @@ func (f *FakeShell) exec(cmd string) (string, bool) {
 	case "whoami":
 		return f.user + "\r\n", false
 	case "pwd":
-		return "/home/" + f.user + "\r\n", false
+		return f.home() + "\r\n", false
 	case "echo":
 		return arg + "\r\n", false
 	case "clear":

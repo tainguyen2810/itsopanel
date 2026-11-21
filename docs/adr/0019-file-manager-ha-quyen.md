@@ -1,6 +1,6 @@
 # ADR 0019: File Manager chạy dưới uid account, openat2 và nén/giải nén an toàn
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 6)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 6)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-72, D-63, 06 §5
 

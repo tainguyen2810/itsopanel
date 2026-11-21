@@ -17,6 +17,7 @@ const SECTIONS = [
   { key: 'fail2ban', path: '/fail2ban', sa: true },
   { key: 'fim', path: '/fim', sa: true },
   { key: 'allowlist', path: '/allowlist', sa: true },
+  { key: 'terminal', path: '/terminal', sa: true },
 ] as const;
 export type Section = (typeof SECTIONS)[number]['key'];
 

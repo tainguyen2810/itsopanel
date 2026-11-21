@@ -611,5 +611,12 @@
     "code": "Mã 6 số",
     "confirm": "Xác nhận và tiếp tục",
     "invalid": "Nhập đủ 6 số"
+  },
+  "captcha": {
+    "loading": "Đang lấy thử thách xác minh…",
+    "solving": "Đang xác minh trình duyệt…",
+    "solved": "Đã xác minh",
+    "error": "Không xác minh được, tải lại trang để thử lại",
+    "hint": "CAPTCHA tự host, không gửi dữ liệu ra ngoài; trình duyệt tự giải trong vài giây."
   }
 }

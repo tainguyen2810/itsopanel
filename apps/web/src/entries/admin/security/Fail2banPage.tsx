@@ -14,25 +14,30 @@ import { Card, CardContent, CardHeader } from '@/ui/Card';
 import { Switch } from '@/ui/Checkbox';
 import { DataTable, type ColumnDef } from '@/ui/DataTable';
 import { Label } from '@/ui/Label';
-import { get, send, type Data } from '../api';
+import { get, list, send, type Data, type Row } from '../api';
 import { useAction } from '../useAction';
 import { SecurityNav } from './common';
 import { jailSchema, type JailForm } from './forms';
+import { useSecurityServer } from './useServer';
 
 type F2b = Data<'/api/v1/admin/security/fail2ban'>;
 type Jail = F2b['jails'][number];
+type Ban = Row<'/api/v1/admin/security/fail2ban/bans'>;
 
 export default function Fail2banPage() {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const [editing, setEditing] = useState<Jail | null>(null);
+  const { server, picker } = useSecurityServer();
   const q = useQuery({
-    queryKey: ['admin', 'security', 'fail2ban'],
-    queryFn: () => get('/api/v1/admin/security/fail2ban'),
+    queryKey: ['admin', 'security', 'fail2ban', server],
+    enabled: server !== '',
+    queryFn: () => get('/api/v1/admin/security/fail2ban', { query: { server } }),
   });
   const patch = useAction(
     (body: { enabled?: boolean; jails?: Jail[] }) =>
       send('PATCH', '/api/v1/admin/security/fail2ban', {
+        query: { server },
         body,
         headers: q.data ? { 'If-Match': `"${q.data.updated_at}"` } : {},
       }),
@@ -96,6 +101,7 @@ export default function Fail2banPage() {
       <PageHeader
         title={t('sec.f2bTitle')}
         description={t('sec.f2bDescription')}
+        actions={picker}
         nav={<SecurityNav current="fail2ban" />}
       />
       {q.isLoading && <PageSkeleton />}
@@ -132,6 +138,7 @@ export default function Fail2banPage() {
               />
             </CardContent>
           </Card>
+          <BansCard server={server} />
         </div>
       )}
       {editing && (
@@ -143,6 +150,88 @@ export default function Fail2banPage() {
         />
       )}
     </>
+  );
+}
+
+/** IP đang bị cấm (đọc trực tiếp từ fail2ban qua agent) + gỡ cấm. */
+function BansCard({ server }: { server: string }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  const bans = useQuery({
+    queryKey: ['admin', 'security', 'fail2ban', 'bans', server],
+    queryFn: () => list('/api/v1/admin/security/fail2ban/bans', { filters: { server } }),
+  });
+  const unban = useAction(
+    (b: Ban) =>
+      send('POST', '/api/v1/admin/security/fail2ban/bans:unban', {
+        body: { server: b.server.uuid, jail: b.jail, ip: b.ip },
+      }),
+    {
+      success: t('sec.unbanned'),
+      invalidate: [['admin', 'security', 'fail2ban']],
+    },
+  );
+  const columns: ColumnDef<Ban, unknown>[] = [
+    {
+      id: 'ip',
+      header: t('sec.ip'),
+      accessorKey: 'ip',
+      cell: ({ row }) => <span className="font-mono">{row.original.ip}</span>,
+    },
+    {
+      id: 'jail',
+      header: t('sec.jail'),
+      accessorKey: 'jail',
+      cell: ({ row }) => <span className="font-mono">{row.original.jail}</span>,
+    },
+    {
+      id: 'banned_at',
+      header: t('sec.bannedAt'),
+      accessorKey: 'banned_at',
+      cell: ({ row }) => fmt.rel(row.original.banned_at),
+    },
+    {
+      id: 'expires_at',
+      header: t('sec.expiresAt'),
+      accessorFn: (b) => b.expires_at ?? '',
+      cell: ({ row }) =>
+        row.original.expires_at ? fmt.rel(row.original.expires_at) : t('sec.banPermanent'),
+    },
+    {
+      id: 'actions',
+      header: t('sites.actions'),
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={unban.isPending}
+          onClick={() => unban.mutate(row.original)}
+          aria-label={t('sec.unbanFor', { ip: row.original.ip })}
+        >
+          {t('sec.unban')}
+        </Button>
+      ),
+    },
+  ];
+  return (
+    <Card>
+      <CardHeader title={t('sec.bans')} description={t('sec.bansHint')} />
+      <CardContent>
+        {bans.error ? (
+          <ErrorState error={bans.error} onRetry={() => void bans.refetch()} />
+        ) : (
+          <DataTable
+            data={bans.data ?? []}
+            columns={columns}
+            getRowId={(b) => `${b.jail}:${b.ip}`}
+            primaryColumnId="ip"
+            caption={t('sec.bans')}
+            empty={t('sec.bansEmpty')}
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

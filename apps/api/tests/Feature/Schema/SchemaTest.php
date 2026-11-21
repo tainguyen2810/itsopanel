@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
-// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql. Prompt 4.5: thêm 6 bảng Phase 4. Prompt 5.1: thêm 9 bảng Phase 5. Prompt 6.1: thêm 10 bảng Phase 6.
+// Prompt 3.1: migration Phase 3 tạo đúng 26 bảng + ràng buộc/trigger của extras.sql. Prompt 4.5: thêm 6 bảng Phase 4. Prompt 5.1: thêm 9 bảng Phase 5. Prompt 6.1: thêm 10 bảng Phase 6. Prompt 7.1: thêm 12 bảng Phase 7.
 
 const PHASE3_TABLES = [
     'users', 'roles', 'permissions', 'role_permissions', 'user_roles', 'user_scopes', 'mfa_credentials',
@@ -27,6 +27,10 @@ const PHASE5_TABLES = ['websites', 'domains', 'website_settings', 'acme_accounts
 const PHASE6_TABLES = ['databases', 'database_users', 'database_grants', 'sftp_accounts', 'ssh_keys', 'cron_jobs',
     'cron_runs', 'upload_sessions', 'file_operations', 'terminal_sessions'];
 
+const PHASE7_TABLES = ['security_events', 'firewall_rules', 'malware_scans', 'malware_findings', 'quarantine_items',
+    'fim_baselines', 'firewall_applies', 'security_settings', 'waf_settings', 'waf_events', 'fim_changes',
+    'terminal_recordings'];
+
 function rejects(callable $fn, string $pattern): void
 {
     try {
@@ -39,14 +43,15 @@ function rejects(callable $fn, string $pattern): void
     throw new RuntimeException('Mong đợi lỗi DB khớp '.$pattern);
 }
 
-it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 (không hơn), audit_logs và metric_samples có partition mặc định', function () {
+it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 (không hơn), audit_logs, metric_samples và waf_events có partition mặc định', function () {
     $tables = collect(DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         ->pluck('tablename')
-        ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default'], true))
+        ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default', 'waf_events_default'], true))
         ->sort()->values()->all();
-    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES])->sort()->values()->all());
+    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES, ...PHASE7_TABLES])->sort()->values()->all());
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'metric_samples_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'audit_logs_default'"))->toBe(1);
+    expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'waf_events_default'"))->toBe(1);
 });
 
 it('seed 3 vai trò đúng realm; vai trò sai realm bị CHECK chặn', function () {
@@ -154,4 +159,23 @@ it('Phase 6: tên DB/DB user hợp lệ và duy nhất khi chưa xóa; upload kh
     $cron = DB::table('cron_jobs')->insertGetId(['hosting_account_id' => $acc->id, 'schedule' => '*/5 * * * *',
         'command' => 'php artisan schedule:run'], 'id');
     rejects(fn () => DB::table('cron_runs')->insert(['cron_job_id' => $cron, 'started_at' => now(), 'status' => 'weird']), '/cron_runs_status_chk/');
+});
+
+it('Phase 7: một safe-apply chờ xác nhận cho mỗi loại/máy chủ; WAF mặc định DetectionOnly; miền giá trị FIM/WAF', function () {
+    $srv = HostingAccount::factory()->create()->server_id;
+    $row = ['server_id' => $srv, 'target' => 'firewall', 'client_ip' => '10.10.5.20', 'deadline_at' => now()->addMinutes(2)];
+    DB::table('firewall_applies')->insert($row);
+    rejects(fn () => DB::table('firewall_applies')->insert($row), '/firewall_applies_one_pending/');
+    rejects(fn () => DB::table('firewall_applies')->insert(['target' => 'nginx'] + $row), '/firewall_applies_target_chk/');
+    DB::table('firewall_applies')->insert(['target' => 'sshd'] + $row);
+
+    $site = DB::table('websites')->insertGetId(['hosting_account_id' => HostingAccount::query()->value('id'),
+        'server_id' => $srv, 'primary_domain' => 'waf.example.vn'], 'id');
+    DB::table('waf_settings')->insert(['website_id' => $site]);
+    expect(DB::table('waf_settings')->where('website_id', $site)->value('mode'))->toBe('DetectionOnly');
+    rejects(fn () => DB::table('waf_settings')->where('website_id', $site)->update(['paranoia_level' => 5]), '/waf_settings_paranoia_chk/');
+    rejects(fn () => DB::table('waf_events')->insert(['at' => now(), 'website_id' => $site, 'rule_id' => 1,
+        'severity' => 'low', 'action' => 'allow']), '/waf_events_action_chk/');
+    rejects(fn () => DB::table('fim_changes')->insert(['server_id' => $srv, 'path' => '/etc/passwd', 'change' => 'renamed']),
+        '/fim_changes_change_chk/');
 });

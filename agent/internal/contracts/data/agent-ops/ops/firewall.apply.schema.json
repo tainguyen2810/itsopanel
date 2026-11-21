@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/firewall.apply.schema.json",
+  "title": "firewall.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "apply_id": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/FirewallRule"
+          },
+          "maxItems": 500
+        },
+        "anti_lockout": {
+          "type": "object",
+          "properties": {
+            "ssh_port": {
+              "$ref": "../defs.schema.json#/$defs/Port"
+            },
+            "panel_port": {
+              "$ref": "../defs.schema.json#/$defs/Port"
+            },
+            "client_ip": {
+              "$ref": "../defs.schema.json#/$defs/IpAddress"
+            }
+          },
+          "required": [
+            "ssh_port",
+            "panel_port",
+            "client_ip"
+          ],
+          "additionalProperties": false
+        },
+        "confirm_within_sec": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 600
+        }
+      },
+      "required": [
+        "apply_id",
+        "rules",
+        "anti_lockout",
+        "confirm_within_sec"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "$ref": "../defs.schema.json#/$defs/ConfirmToken"
+        },
+        "rollback_at": {
+          "type": "string"
+        },
+        "ruleset_sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        },
+        "rules_active": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "token",
+        "rollback_at",
+        "ruleset_sha256",
+        "rules_active",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -40,6 +40,10 @@ func main() {
 	if len(os.Args) == 2 && os.Args[1] == "fs-helper" {
 		os.Exit(fsx.HelperMain(os.Stdin, os.Stdout, os.Stderr))
 	}
+	// Hoàn tác safe-apply (ADR 0023/0024): transient timer systemd gọi `itso-agent safe-rollback <kind> <apply_id>`.
+	if len(os.Args) == 4 && os.Args[1] == "safe-rollback" {
+		os.Exit(safeRollback(os.Args[2], os.Args[3]))
+	}
 	var o options
 	flag.StringVar(&o.listen, "listen", "unix:/run/itso/agent.sock", "unix:/path.sock (máy thật chỉ dùng unix socket)")
 	flag.StringVar(&o.keyFile, "key-file", "/etc/itso/agent.key", "khóa HMAC dùng chung với panel (≤ 0640)")
@@ -98,7 +102,8 @@ func run(o options, log *slog.Logger) error {
 
 	// Host: chỉ đọc /proc, /sys của máy (kể cả sandbox, để số liệu là thật).
 	deps := &ops.Deps{Run: platform.ExecRunner{}, FS: platform.NewFS(o.root, false), Host: platform.NewFS("/", true),
-		AuditPath: o.auditLog, Sandbox: o.sandbox, CPUSample: 250 * time.Millisecond, AcmePebble: pol.File.AcmePebble}
+		AuditPath: o.auditLog, Sandbox: o.sandbox, CPUSample: 250 * time.Millisecond, AcmePebble: pol.File.AcmePebble,
+		RootTerminal: pol.RootTerminal(), RecordUser: pol.File.RecordUser}
 	if o.sandbox {
 		deps.FS = platform.NewFS(o.root, os.Geteuid() != 0)
 		deps.Run = ops.SandboxRunner(deps)
@@ -122,6 +127,10 @@ func run(o options, log *slog.Logger) error {
 		}
 		streamLn = ln
 		deps.Term = ops.NewTermManager(deps, log)
+	}
+	// Lần safe-apply đã quá hạn mà timer chưa chạy (máy khởi động lại, timer lỗi) → hoàn tác ngay.
+	if err := ops.RecoverSafeApply(context.Background(), deps); err != nil {
+		log.Error("hoàn tác safe-apply quá hạn lỗi", "err", err)
 	}
 	reg := registry.New(ops.Version)
 	reg.SetAllow(pol.Enabled)
@@ -200,4 +209,20 @@ func chgrpSocket(path, group string) error {
 	}
 	gid, _ := strconv.Atoi(g.Gid)
 	return os.Lchown(path, 0, gid)
+}
+
+// safeRollback chạy bằng root từ timer systemd: khôi phục cấu hình đã lưu nếu lần áp dụng vẫn chờ xác nhận.
+func safeRollback(kind, applyID string) int {
+	if os.Geteuid() != 0 {
+		fmt.Fprintln(os.Stderr, "safe-rollback phải chạy bằng root")
+		return 1
+	}
+	d := &ops.Deps{Run: platform.ExecRunner{}, FS: platform.NewFS("/", false)}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	if err := ops.SafeRollback(ctx, d, kind, applyID); err != nil {
+		fmt.Fprintln(os.Stderr, "safe-rollback:", err)
+		return 1
+	}
+	return 0
 }

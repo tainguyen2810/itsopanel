@@ -2,6 +2,121 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.7 (e2e, VM, review, báo cáo) — nhánh `phase-7`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật | `make test-e2e-real` | PASS 17/17 (9,9 phút). Mới `phase7.spec.ts` 5: tường lửa (xem trước có cổng mới → áp dụng → "Giữ cấu hình mới" → confirmed; áp dụng không xác nhận 30 giây → `rolled_back`, confirm muộn 409, sự kiện high), SSH hardening (thiếu server 422, MaxAuthTries → xác nhận → API + UI), WAF (mặc định detect → block, sự kiện `942100 blocked` qua `itso:waf-events-sync`) + EICAR (quét → finding clamav → cách ly → khôi phục), FIM (added + modified qua `itso:fim-check`), CAPTCHA Portal (422 `captcha_required`, lời giải giả bị từ chối, UI tự giải rồi vào được) + root terminal policy tắt → 409. Lần chạy đầu 16/17: `phase3` tạo account lỗi `already_exists` (gid 20004) vì DB reset mà gốc sandbox còn account cũ; xóa gốc sandbox, chạy lại xanh |
+| Lỗi thật tìm thấy | — | Gốc sandbox không có user `root` → `sshd.config.apply` luôn `not_found` ở dev/e2e. Sửa `Sim.SeedBase()`; `go test ./internal/ops -run TestSimSeedBase` PASS; `go test ./...` PASS |
+| Toàn bộ | `make check` | 19 PASS · 1 SKIP (staticcheck) · 3 FAIL lần đầu (923 s): docs-check (dấu gạch đứng trong bảng của file review), test-e2e (4 ảnh mockup `admin-login-captcha`: realm Admin không còn CAPTCHA từ 7.6 → xóa mockup), test-agent (6 test installer kiểm preflight đĩa thật: còn 9 GB < 10 GB; `composer clear-cache` giải phóng 19 GB). Chạy lại: `make docs-check` PASS, `make test-agent` PASS, `playwright test e2e/screenshots-phase7.spec.ts` 64/64 PASS. Còn lại xanh: Pest 451, Vitest 541, Playwright demo 401, fuzz 600 866 lần, db-verify 60, contracts/codegen/tokens, installer, units, git-clean |
+| Script VM | `bash -n tests/vm/phase7.sh` | Cú pháp OK. **Chờ VM:** S0–S7 (gói, safe-apply khi dừng agent, fail2ban thật, WAF OWASP, EICAR + tải, FIM, điểm ≥ 80, root theo policy) |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase7.sh`.
+
+## 2026-11-21 — Phase 7 / Prompt 7.6 (UI nối API thật) — nhánh `phase-7`
+
+Phạm vi: `apps/web/src` — `shared/api/core.ts` (`SendOpts` có `query`, `getWith` thử lại sau step-up), `entries/admin/security/{useServer,SshPage,Fail2banPage,FimPage,TerminalSessionsPage}`, `servers/{ServerFirewallPage,firewall.ts,ServerTerminalPage}`, `sites/WebsiteDetailPage` (WAF events), `install/InstallPage`, `system/SettingsPage`; i18n VI/EN; MSW `demo/handlers/{security,governance,infra,admin}.ts`. Contracts không đổi.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest (toàn bộ) | `pnpm exec vitest run` (apps/web) | 541/541 PASS (36 file). Mới/sửa: `demo/__tests__/security.test.ts` (CAPTCHA chỉ Portal + Admin không đòi; SSH/fail2ban thiếu/sai server → 422/404; root policy tắt 409, ADMIN 403, SA 201; bản ghi phân trang qua `loadRecording`; bans + unban; firewall status/preview; FIM changes; WAF events), `servers/__tests__/firewall.test.ts` (sự kiện `resume`), `shared/auth/__tests__/captcha.test.ts`; `governance`/`handlers`/`infra` test cập nhật theo `?server=` và 409 root |
+| Lint + Prettier + i18n | `pnpm lint` | PASS; `check-i18n: OK — 6 namespace, 2748 key, 0 thiếu (vi = en)` |
+| Playwright demo mới | `pnpm exec playwright test --trace off e2e/demo-security7.spec.ts` | 2/2 PASS (gỡ chặn IP fail2ban + axe 0 lỗi critical/serious; hộp áp dụng tường lửa hiện ruleset xem trước). Lần đầu đỏ do test: thiếu trường Nguồn, và drawer theo dõi job che bảng (đã đóng drawer trong test) |
+| Playwright demo hồi quy | `pnpm exec playwright test --trace off e2e/demo-smoke.spec.ts e2e/demo-infra.spec.ts` | 82/82 PASS. Trước đó smoke đỏ 1 do MSW thiếu `fim/changes` → thêm list spec, chạy lại xanh |
+
+**Chờ VM:** không (thay đổi chỉ ở web/MSW; luồng thật kiểm ở 7.7). **Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 7 / Prompt 7.5 (Terminal root + ghi phiên) — nhánh `phase-7`
+
+Phạm vi: agent `internal/policy` (record_user, bí danh khóa, `RootTerminal()`), `internal/term/record.go` (Recorder asciicast v2, ReadPage), `term.Manager` (phiên sống, ghi phiên, `ErrDuplicate`), `ops/pty.go` (`pty.open.root`, `pty.policy`, `pty.list`, `pty.recording.read`, argv root), CLI `itso allowlist reset`, `itso policy set … on|off`; Panel `TerminalService` (openRoot, policy, recording, reap theo pty.list), `TerminalController` mode=root, `Security/TerminalSessionController`, model `TerminalRecording`, lệnh `itso:allowlist-reset`. Contracts không đổi (đã đặc tả ở 7.1).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go (toàn bộ, race) | `cd agent && go test -race ./...` | PASS. Mới: `term/record_test.go` 4 (ghi + đọc theo trang 1 KB ghép bằng bản đọc một lần, offset giữa dòng/vượt kích thước bị từ chối, file 0600; vượt giới hạn → marker truncated + đóng phiên `limit`; không ghi được / thiếu RecDir → `record_failed`, uuid trùng → ErrDuplicate; rune UTF-8 cắt đôi), `ops/pty_test.go` +3 (pty.open.root khi policy tắt → `op_disabled` ở handler và ở registry dùng policy thật dù Deps cấu hình sai, `ops.pty.open.root=false` thắng cờ; pty.list/pty.recording.read qua harness hợp đồng, đọc theo trang ≥ 3 trang ghép lại khớp; golden argv root), `install_test` (bí danh terminal.root/record_user, on/off, `allowlist reset` → artisan). Test cũ sửa: `term_test`, `pty_test`, `gateway_test` cấp session_uuid mới mỗi lần (uuid trùng phiên sống nay bị từ chối) |
+| Go vet + gofmt | `make lint-agent` | PASS |
+| Pest (toàn bộ, PostgreSQL 16 + Redis) | `scripts/pest-pg.sh --parallel` tương đương `make test-api-pg` | 451/451 PASS (32 s). Mới `Phase7/TerminalRootTest` 7: SUPER_ADMIN mở root khớp hợp đồng, ticket không vào DB/audit; policy tắt → 409 kèm hướng dẫn CLI, audit failure; ADMIN trong phạm vi / USER Portal → 403 không gọi agent; thiếu/sai server 422; step_up_seconds = 3600 nhưng root đòi ≤ 10 phút; mỗi lần mở một session_uuid mới, agent hết chỗ → 409; policy + danh sách phiên theo phạm vi (ADMIN không thấy root, ngoài phạm vi 404); bản ghi theo offset, next_offset null khi hết, metadata bytes/truncated cập nhật, offset sai 422, ADMIN 403, step-up quá hạn, phiên không ghi 404; reap theo pty.list + dự phòng 12 giờ; `itso:allowlist-reset`. Test cũ sửa: `Phase6/TerminalTest` mode=root không còn 409 (nay 422 thiếu server_uuid) |
+| PHPStan level 8 + Pint | `make lint-api` | PASS (0 lỗi) |
+| Không lệnh hệ thống | `make no-exec` | OK (lần đầu bắt được backtick trong chuỗi thông báo → đổi sang ngoặc kép) |
+| Codegen | `make codegen-check` | OK |
+
+**Chờ VM:** root terminal thật qua systemd-run + itso-gateway, bật bằng `itso policy set terminal.root on` rồi có bản ghi, policy tắt → bị từ chối (`tests/vm/phase7.sh` ở 7.7). **Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 7 / Prompt 7.4 (Panel API Security Center) — nhánh `phase-7`
+
+Phạm vi: `apps/api/app/Domain/Security/*` (Net, FirewallRuleset, SafeApply + 4 panel step, FirewallService, SshService, Fail2banService, WafService, MalwareService, SecurityAudit, SecurityScore, SecurityEvents, SecurityBaseline, SecurityJobHandler), controller `Security/{Firewall,Security,Protection}Controller`, `Auth/{Captcha,AuthFailureLog}`, 10 model, 3 lệnh lịch; contracts: `FirewallRule.ports` cho phép null (icmp), `password:forgot` nhận `captcha`; DB: thêm cột uuid/direction/enabled/sha256… cho bảng Phase 7 (migration Phase 7 chưa phát hành → sinh lại).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest (toàn bộ, PostgreSQL 16 + Redis) | `scripts/pest-pg` tương đương `make test-api-pg` | 444/444 PASS (56 s). Mới `tests/Feature/Phase7/`: FirewallTest 6 (ruleset PHP == golden `firewall.nft` của agent; vector evil-inputs `firewall_rule`/`cidr` dùng chung với agent; rule nháp → xem trước → apply step-up → pending → confirm; token không có trong job_steps/job_logs/audit_logs/jobs/firewall_applies; một lần chờ → 409; confirm quá hạn → job failed `precondition_failed`, rolled_back + sự kiện high + thông báo; `itso:security-audit --expire-only`; apply tự khóa → 422 would_lock_out, agent would_lock_out → failed; ma trận quyền + step-up), SecurityCenterTest 6 (điểm mặc định 80/100 hạng B với dữ kiện sau cài, tổng trọng số 100, thiếu dữ kiện không 500; SSH safe-apply, admin_keys = 0 chặn tắt mật khẩu, đổi port = job firewall.apply + sshd.config.apply, một confirm cho cả hai; fail2ban ignoreip = allowlist, jail lạ/bantime sai → 422, bans + unban, ADMIN chỉ xem/gỡ cấm; FIM không trùng lặp + baseline step-up; sự kiện lọc/ack, ADMIN ngoài phạm vi 404; allowlist không chứa IP hiện tại → would_lock_out, chuẩn hóa CIDR, chặn IP ngoài danh sách), ProtectionTest 3 (quét website → finding + sự kiện; cách ly/khôi phục; quét dở → 409; Portal: tổng quan, quét, cách ly, xóa cần step-up, USER khác 404; WAF DetectionOnly mặc định, If-Match 412, chặn → mode On, đồng bộ 55 sự kiện theo con trỏ + `waf.burst`), AuthProtectionTest 4 (CAPTCHA sai/sửa/realm khác/dùng lại/hết hạn → 422 captcha_required, ngưỡng 0, quên mật khẩu; auth.log đúng failregex, không chứa email/mật khẩu; portal_mfa_required) |
+| Test cũ phải sửa theo hành vi mới | — | `Auth/LoginTest` khóa lũy tiến: đặt ngưỡng CAPTCHA = 10 trong test (CAPTCHA Portal mặc định bật sau 3 lần sai, kiểm riêng ở Phase7); `Platform/PlatformApiTest` "chưa có route": đổi sang `/admin/backup-snapshots` (Phase 8) vì `/admin/security/overview` nay đã có |
+| PHPStan level 8 + Pint | `make lint-api` | PASS (0 lỗi) |
+| Không lệnh hệ thống | `make no-exec` | OK |
+| Contracts / codegen | `make contracts-check` · `make codegen-check` | PASS · OK |
+| DB | `make db-verify` | 60 SQL test PASS (thêm 7: direction/protocol/priority, sha256/engine của finding); Phase 3 → 11 áp lần lượt == `itso.sql` + `extras.sql` |
+| Web | `pnpm exec tsc --noEmit` · `pnpm vitest run` | PASS · 525/525 (sau khi sinh lại kiểu từ contracts) |
+
+**Chờ VM:** safe-apply thật qua agent (mất kết nối → tự hoàn tác), fail2ban đọc `/var/log/itso/auth.log`, ModSecurity/ClamAV thật. **Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 7 / Prompt 7.3 (agent WAF, malware, FIM, audit) — nhánh `phase-7`
+
+Phạm vi: `agent/internal/ops/{waf,malware,fim}.go`, helper `fsx` (op `hash`, `raw`, `delete_if`), `platform.FS.Lstat/ReadChunk`, vhost template thêm `include /etc/itso/waf/<uuid>.nginx*;`, sandbox mô phỏng clamdscan/yara (EICAR, `eval(base64_decode(`), `packaging/share/yara/itso-webshell.yar` (đóng gói trong `scripts/release.sh`).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go (toàn bộ) | `go test -count=1 ./...` (agent) | PASS (15 package có test). Mới `ops/security2_test.go`: WAF (thiếu gói → available=false; golden rule/include/argv; đổi rule vẫn nginx -t + reload; nginx -t lỗi → khôi phục; Off gỡ; rule id trùng/chuỗi, paranoia 5 bị từ chối), sự kiện WAF (Host ↔ server_name, chọn rule cụ thể thay vì 949110, dòng hỏng/dòng chưa ghi xong, limit, xoay vòng log), quét (EICAR + webshell, symlink tới file hệ thống không bị theo, argv systemd-run có slice/Nice/IO idle, traversal bị từ chối), cách ly (sha256 lệch, symlink → path_outside_home, 0600, idempotent), khôi phục (không ghi đè, account khác bị từ chối, overwrite), xóa theo sha256, FIM (thêm/sửa/xóa/chmod setuid, bỏ qua thư mục chứng chỉ, chỉ itso* trong systemd), security.audit (sshd -T, unattended, reboot-required, gói -security, firewall policy drop, baseline) |
+| Golden vhost | `go test ./internal/ops -run Vhost -update` | 5 file golden vhost chỉ thêm đúng 1 dòng include WAF (đã xem diff) |
+| Lỗi thật phát hiện khi test | — | helper op `raw` (mới) ghi JSON lỗi vào stdout như op thường → agent coi là nội dung file; sửa: `fsx.StreamsStdout` dùng chung cho cat/raw (lỗi qua stderr, mã 3) |
+| Lint agent | `make lint-agent` | PASS |
+
+**Chờ VM:** ModSecurity/CRS thật (payload SQLi/XSS bị chặn ở On, chỉ ghi nhận ở DetectionOnly), clamd thật với EICAR, yara 4.5 (`-N`, `-z`). **Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 7 / Prompt 7.2 (agent firewall, SSH, Fail2ban) — nhánh `phase-7`
+
+Phạm vi: `agent/internal/ops/{safe,firewall,sshd_hardening,fail2ban,sandbox_security}.go`, lệnh `itso-agent safe-rollback <kind> <apply_id>` (timer systemd gọi) + hoàn tác lần chờ quá hạn lúc khởi động, Bins `nft`, `fail2ban-client`, recipe Phase 7 trong `validate.Recipes`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go (toàn bộ) | `go test ./...` (agent) | PASS (15 package có test). Mới `ops/security_test.go`: safe-apply + xác nhận (token sai/đúng, lặp lại idempotent, busy khi còn chờ, token không lưu thô), hết hạn → hoàn tác (đồng hồ giả), lần đầu bị hoàn tác → xóa bảng, timer chạy muộn không làm gì, agent khởi động lại sau hạn → hoàn tác, không hẹn được timer → hoàn tác ngay, `nft -c` lỗi → không áp dụng, 13 biến thể tự khóa/độc, vector `firewall_rule` + `cidr` từ contracts, SSH hardening (0 khóa → would_lock_out, thứ tự sshd -t → reload → timer, hết hạn → xóa file, `sshd -t` lỗi → khôi phục không reload), fail2ban (golden jail/filter, status/ban list, unban, IP/jail lạ, `-t` lỗi); golden mới `firewall.nft`, `10-itso-hardening.conf`, `fail2ban-itso*.conf`, `fail2ban.apply.argv` |
+| Lần chạy đầu | `go test ./...` | 2 lỗi thật đã sửa: test vector cũ đọc `input` kiểu chuỗi (vector mới là số/đối tượng) → đọc RawMessage; `validate.Recipes` thiếu fail2ban/modsecurity |
+| Fuzz | `go test -run='^$' -fuzz=FuzzFirewallRule -fuzztime=10s ./internal/ops` (thêm vào `make test-fuzz`) | PASS (~100k exec, không lỗi) |
+| Lint agent | `make lint-agent` (gofmt, go vet, không os/exec ngoài platform) | PASS |
+
+**Chờ VM:** nft/sshd/fail2ban thật, mất kết nối → tự hoàn tác (tests/vm/phase7.sh ở 7.7). **Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 7 / Prompt 7.1 (ADR + contracts + migration) — nhánh `phase-7`
+
+Phạm vi: ADR 0023–0028; agent-ops Phase 7 (22 op có schema, `would_lock_out`, recipe, ví dụ envelope `firewall.apply` hợp lệ + 1 không hợp lệ); OpenAPI +7 operation; DBML +6 bảng, extras (CHECK, unique một phần "một safe-apply chờ", partition `waf_events`), migration Phase 7. Chưa đổi hành vi Laravel/agent/UI (handler demo cho 7 endpoint mới làm ở 7.6).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` → `make codegen` → `make codegen-check`; `make contracts-check` | PASS (admin 258, portal 113 operation; agent-ops 108 op có schema, 12 khai báo; evil-inputs 190 vector, tầng schema đúng kỳ vọng; 7 envelope hợp lệ, 11 không hợp lệ bị từ chối) |
+| Schema DB | `make db-schema`, `make db-verify` | PASS: 53 test SQL (mới `database/tests/60_security.sql` 12 test); migration Phase 3–7 khớp đặc tả, áp lần lượt = itso.sql + extras.sql |
+| Pest SchemaTest (PG16) | `php vendor/bin/pest --filter=SchemaTest` | 12/12 (thêm kiểm 12 bảng Phase 7 + ràng buộc safe-apply/WAF/FIM) |
+| Go | `go build ./...`, `go test ./internal/contracts/... ./internal/registry/... ./internal/mock/...` | PASS (struct sinh cho 22 op mới) |
+| Vitest | `pnpm exec vitest run` | 525/525 (không đổi) |
+| Cấu trúc / docs | `make structure`, `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 7 / Prompt 7.0 (mockup trước khi code) — nhánh `phase-7`
+
+Phạm vi: chỉ bản demo + contract cho màn mới (không đụng Laravel/agent). Contract thêm trước: `GET /auth/captcha` + `LoginRequest.captcha`, `ErrorCode` `captcha_required`/`would_lock_out`, `SshSettingsPatch.rollback_after_sec` + `POST /security/ssh:confirm`, `GET /servers/{id}/terminal/policy`, `GET /terminal/sessions` + `/{id}/recording`, `GET /security/malware/findings` + `:quarantine`, `POST /servers/{id}/fim:baseline`, Portal `/protection`, `/protection/findings` (+ `:quarantine`, `DELETE`), `POST /hosting-accounts/{id}/scans`; op khai báo `sshd.config.confirm`, `malware.quarantine`, `malware.delete`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` → `make codegen` → `make codegen-check`, `make contracts-check` | PASS (admin 251, portal 113 operation; lần đầu contracts-check báo Portal dùng tài nguyên/tag admin-only `security` → đổi sang `/protection`, tag `Protection`; op job chưa có trong catalog → khai báo) |
+| Dữ liệu demo | `python3 contracts/tools/check_demo.py` | PASS |
+| Vitest | `pnpm exec vitest run` | 525/525 (mới: `demo/__tests__/security.test.ts` 16 test: PoW, CAPTCHA ngưỡng + dùng một lần, SSH safe-apply xác nhận/tự hoàn tác/would_lock_out, chống tự khóa tường lửa, policy root, phiên + bản ghi, mã độc Admin/Portal). Lần đầu 4 test cũ lỗi do đổi hành vi có chủ đích (PATCH SSH cần `rollback_after_sec`, root mặc định bị policy chặn, route `/recording` cần id phiên có ghi) → cập nhật test |
+| Playwright demo (gồm axe) | `pnpm exec playwright test --grep-invert "screenshots…"` | 211/211 |
+| Mockup | `SCREENSHOT_DIR_P7=docs/screenshots/phase-7 playwright test e2e/screenshots-phase7.spec.ts` | 68/68 ảnh (17 màn × 1440/390 × sáng/tối) |
+| Lint web | `make lint-web` (ESLint, Prettier, tsc, i18n 2716 khóa vi = en, tokens) | PASS |
+| Go | `go build ./...`, `go test ./internal/contracts/...` | PASS |
+| Pest (PG16 + Redis) | `php vendor/bin/pest` | 424/424 (không đổi hành vi Laravel) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 6 / Prompt 6.6 — nhánh `phase-6`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway), DB `migrate:fresh --seed` + `DemoSeeder`. Container không có KVM/systemd: `tests/vm/phase6.sh` **chờ VM**.

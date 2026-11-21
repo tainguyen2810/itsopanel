@@ -442,6 +442,30 @@ func TestRepairStatusDoctorPolicyLogsAdmin(t *testing.T) {
 	if err := r.e.PolicySet(ctx, "khong.co", "true"); err == nil {
 		t.Fatal("khóa lạ phải bị từ chối")
 	}
+	// Bí danh 7.5: terminal.root / terminal.record_user, giá trị on|off.
+	r.out.Reset()
+	if err := r.e.PolicyGet("terminal.root"); err != nil || r.out.String() != "root_terminal=false\n" {
+		t.Fatal(err, r.out.String())
+	}
+	for _, kv := range [][2]string{{"terminal.root", "on"}, {"terminal.record_user", "on"}} {
+		if err := r.e.PolicySet(ctx, kv[0], kv[1]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r.out.Reset()
+	if err := r.e.PolicyGet(""); err != nil || !strings.Contains(r.out.String(), "root_terminal=true\nrecord_user=true\n") {
+		t.Fatal(err, r.out.String())
+	}
+	if err := r.e.PolicySet(ctx, "terminal.root", "maybe"); err == nil {
+		t.Fatal("giá trị lạ phải bị từ chối")
+	}
+	r.fake.Reset()
+	if err := r.e.AllowlistReset(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if l := r.fake.Lines(); len(l) != 1 || !strings.HasSuffix(l[0], "artisan itso:allowlist-reset --no-interaction") {
+		t.Fatal(l)
+	}
 	if err := r.e.Logs(ctx, "../etc", 10); err == nil {
 		t.Fatal("dịch vụ lạ phải bị từ chối")
 	}

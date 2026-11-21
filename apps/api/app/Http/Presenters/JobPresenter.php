@@ -15,6 +15,8 @@ use App\Models\HostingPackage;
 use App\Models\Job;
 use App\Models\JobLog;
 use App\Models\JobStep;
+use App\Models\MalwareFinding;
+use App\Models\QuarantineItem;
 use App\Models\Server;
 use App\Models\SftpAccount;
 use App\Models\SshKey;
@@ -40,6 +42,8 @@ final class JobPresenter
         'sftp_account' => SftpAccount::class,
         'ssh_key' => SshKey::class,
         'cron_job' => CronJob::class,
+        'malware_finding' => MalwareFinding::class,
+        'quarantine_item' => QuarantineItem::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */

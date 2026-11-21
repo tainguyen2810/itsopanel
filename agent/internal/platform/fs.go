@@ -381,3 +381,50 @@ func (f *FS) Tail(p string, n int, maxBytes int64) ([]string, bool, error) {
 	}
 	return lines, truncated, nil
 }
+
+// Lstat trả thông tin đường dẫn (không theo symlink).
+func (f *FS) Lstat(p string) (fs.FileInfo, error) {
+	rp, err := f.Path(p)
+	if err != nil {
+		return nil, err
+	}
+	return os.Lstat(rp)
+}
+
+// ReadChunk đọc tối đa max byte từ offset của file thường (không theo symlink). Trả inode và kích thước hiện tại
+// để người gọi nhận biết file đã xoay vòng (con trỏ waf.events).
+func (f *FS) ReadChunk(p string, offset, max int64) ([]byte, uint64, int64, error) {
+	rp, err := f.Path(p)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	fd, err := os.OpenFile(rp, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	defer fd.Close()
+	fi, err := fd.Stat()
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	if !fi.Mode().IsRegular() {
+		return nil, 0, 0, fmt.Errorf("platform: %s không phải file thường", p)
+	}
+	var ino uint64
+	if st, ok := fi.Sys().(*syscall.Stat_t); ok {
+		ino = st.Ino
+	}
+	size := fi.Size()
+	if offset >= size {
+		return nil, ino, size, nil
+	}
+	n := size - offset
+	if n > max {
+		n = max
+	}
+	buf := make([]byte, n)
+	if _, err := fd.ReadAt(buf, offset); err != nil && !errors.Is(err, io.EOF) {
+		return nil, 0, 0, err
+	}
+	return buf, ino, size, nil
+}

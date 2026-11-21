@@ -611,5 +611,12 @@
     "code": "6-digit code",
     "confirm": "Verify and continue",
     "invalid": "Enter all 6 digits"
+  },
+  "captcha": {
+    "loading": "Fetching verification challenge…",
+    "solving": "Verifying your browser…",
+    "solved": "Verified",
+    "error": "Verification failed, reload the page to retry",
+    "hint": "Self-hosted CAPTCHA, no data leaves the panel; your browser solves it in a few seconds."
   }
 }

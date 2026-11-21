@@ -2,6 +2,7 @@ package ops
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,21 +24,34 @@ type Sim struct {
 	installed map[string]string
 	quota     map[string][4]string // uid → block soft/hard, inode soft/hard
 	data      *dbSim               // DB, Pure-FTPd, sshd, systemd-run (Phase 6)
+	sec       *secSim              // nft, fail2ban-client (Phase 7)
 }
 
 // NewSim tạo trình mô phỏng trên fs. Dịch vụ (.service, .timer) mặc định đang chạy; slice chưa chạy.
 func NewSim(fs *platform.FS) *Sim {
 	return &Sim{FS: fs, Mount: "/ ext4 rw,relatime,usrjquota=aquota.user,jqfmt=vfsv1",
-		acl: map[string][]string{}, active: map[string]bool{}, installed: map[string]string{}, quota: map[string][4]string{}, data: newDBSim()}
+		acl: map[string][]string{}, active: map[string]bool{}, installed: map[string]string{}, quota: map[string][4]string{}, data: newDBSim(), sec: &secSim{fs: fs}}
 }
 
 // SandboxRunner trả runner giả cho --sandbox: lệnh được kiểm như runner thật, ghi lại, và mô phỏng bằng Sim.
 func SandboxRunner(d *Deps) *platform.FakeRunner {
 	sim := NewSim(d.FS)
+	sim.SeedBase()
 	f := platform.NewFake()
 	f.Hook = sim.Handle
 	f.StreamHook = sim.Stream
 	return f
+}
+
+// SeedBase thêm các mục luôn có trên Ubuntu mà gốc sandbox trống thì thiếu: user/group root (user quản trị SSH
+// mặc định của sshd.config.apply, ADR 0024). Không ghi đè mục đã có.
+func (s *Sim) SeedBase() {
+	for p, line := range map[string]string{"/etc/passwd": "root:x:0:0:root:/root:/bin/bash", "/etc/group": "root:x:0:"} {
+		ls := s.lines(p)
+		if !slices.ContainsFunc(ls, func(l string) bool { return strings.HasPrefix(l, "root:") }) {
+			_ = s.write(p, append([]string{line}, ls...))
+		}
+	}
 }
 
 func ok(out string) platform.Result { return platform.Result{Stdout: []byte(out)} }
@@ -48,6 +62,9 @@ func fail(code int, msg string) platform.Result {
 
 // Handle mô phỏng một lệnh. Luôn trả handled=true.
 func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
+	if r, handled := s.sec.handle(c); handled {
+		return r, true
+	}
 	if r, handled := s.data.handle(c); handled {
 		return r, true
 	}
