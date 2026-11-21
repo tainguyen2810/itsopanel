@@ -772,6 +772,11 @@ def admin_paths(api: Api):
     api.add("post", "/servers/{id}/firewall:confirm", "confirmFirewall", "Xác nhận giữ cấu hình vừa áp dụng",
             "Firewall", params=idp, job=True,
             job_example=jobs("firewall.confirm", "server", srv["uuid"], ["firewall.confirm"]))
+    api.add("get", "/servers/{id}/firewall/preview", "previewFirewall", "Xem trước ruleset nft từ rule nháp", "Firewall",
+            params=idp, ok=ref("FirewallPreview"), ok_example=one(D.FIREWALL_PREVIEW),
+            desc="Sinh ruleset bảng `inet itso` như khi áp dụng và kiểm bất biến chống tự khóa (D-76); không đổi máy chủ.")
+    api.add("get", "/servers/{id}/firewall/status", "getFirewallStatus", "Trạng thái safe-apply tường lửa", "Firewall",
+            params=idp, ok=ref("FirewallStatus"), ok_example=one(D.FIREWALL_STATUS))
     api.add("get", "/security/ssh", "getSshSettings", "Cấu hình SSH", "Security", params=[Api.p("ServerQuery")],
             ok=ref("SshSettings"), ok_example=one(D.SSH_SETTINGS))
     api.add("patch", "/security/ssh", "updateSshSettings", "Đổi cấu hình SSH (safe-apply)", "Security",
@@ -804,6 +809,16 @@ def admin_paths(api: Api):
     api.add("patch", "/security/fail2ban", "updateFail2ban", "Đổi cấu hình fail2ban", "Security",
             params=[Api.p("ServerQuery")], body=partial(ADMIN, "Fail2banSettings", ref), body_example={"enabled": True}, job=True,
             job_example=jobs("fail2ban.update", "server", srv["uuid"], ["fail2ban.apply"]))
+    api.add("get", "/security/fail2ban/bans", "listFail2banBans", "IP đang bị fail2ban cấm", "Security", list_=True,
+            params=[Api.p("FilterServer")], ok=ref("Fail2banBan"), ok_example=page(D.FAIL2BAN_BANS))
+    api.add("post", "/security/fail2ban/bans:unban", "unbanIp", "Gỡ cấm một IP", "Security", body=ref("Fail2banUnban"),
+            body_example={"server": srv["uuid"], "jail": "sshd", "ip": "203.0.113.45"}, job=True,
+            job_example=jobs("fail2ban.unban", "server", srv["uuid"], ["fail2ban.unban"]))
+    api.add("get", "/security/fim/changes", "listFimChanges", "Thay đổi toàn vẹn file (FIM)", "Security", list_=True,
+            params=[Api.p("FilterServer")], ok=ref("FimChange"), ok_example=page(D.FIM_CHANGES))
+    api.add("get", "/security/score", "getSecurityScore", "Điểm bảo mật chi tiết theo máy chủ", "Security",
+            params=[Api.p("ServerQuery")], ok=ref("SecurityScore"), ok_example=one(D.SECURITY_SCORE),
+            desc="Laravel tính từ `security.audit` của agent + dữ liệu panel theo bảng trọng số công khai (D-80).")
     api.add("get", "/security/ip-allowlist", "getIpAllowlist", "IP allowlist cho Admin Panel", "Security",
             ok=ref("IpAllowlist"), ok_example=one(D.IP_ALLOWLIST))
     api.add("put", "/security/ip-allowlist", "setIpAllowlist", "Đặt IP allowlist (từ chối nếu khóa chính mình)",
@@ -814,6 +829,8 @@ def admin_paths(api: Api):
     api.add("patch", "/websites/{id}/waf", "updateWebsiteWaf", "Đổi WAF của website", "WAF", params=idp,
             body=ref("WafUpdate"), body_example={"mode": "block", "paranoia_level": 2}, job=True,
             job_example=jobs("waf.update", "website", D.WEBSITES[0]["uuid"], ["waf.apply", "nginx.vhost.apply"]))
+    api.add("get", "/websites/{id}/waf/events", "listWafEvents", "Sự kiện WAF của website", "WAF", params=idp, list_=True,
+            ok=ref("WafEvent"), ok_example=page(D.WAF_EVENTS))
     api.add("get", "/security/malware/scans", "listMalwareScans", "Lượt quét mã độc", "Malware", list_=True,
             ok=ref("MalwareScan"), ok_example=page(D.MALWARE_SCANS))
     api.add("post", "/websites/{id}/scans", "scanWebsite", "Quét mã độc website", "Malware", params=idp, job=True,

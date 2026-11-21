@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/waf.apply.schema.json",
+  "title": "waf.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "website_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "mode": {
+          "$ref": "../defs.schema.json#/$defs/WafMode"
+        },
+        "paranoia_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "rule_exclusions": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/WafRuleId"
+          },
+          "maxItems": 200,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "website_uuid",
+        "account",
+        "mode",
+        "paranoia_level",
+        "rule_exclusions"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "nginx_test": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "skipped"
+          ]
+        }
+      },
+      "required": [
+        "available",
+        "changed",
+        "nginx_test"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

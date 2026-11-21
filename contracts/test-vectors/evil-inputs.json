@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 155,
+  "total": 190,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -861,6 +861,24 @@
           "expect": "reject",
           "layer": "schema",
           "note": "PHP ngoài kho Ubuntu (cần PPA, D-68)"
+        },
+        {
+          "input": "fail2ban",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 7"
+        },
+        {
+          "input": "modsecurity",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 7 (WAF, D-78)"
+        },
+        {
+          "input": "coraza",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Coraza: DEFERRED"
         }
       ]
     },
@@ -1019,6 +1037,289 @@
           "expect": "reject",
           "layer": "schema",
           "note": "Thiếu TLD"
+        }
+      ]
+    },
+    "port": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Port",
+      "vectors": [
+        {
+          "input": 22,
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Cổng SSH"
+        },
+        {
+          "input": 0,
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Cổng 0"
+        },
+        {
+          "input": 70000,
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoài 1–65535"
+        },
+        {
+          "input": "22",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chuỗi thay cho số"
+        }
+      ]
+    },
+    "cidr": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Cidr",
+      "vectors": [
+        {
+          "input": "10.10.5.0/24",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "CIDR IPv4"
+        },
+        {
+          "input": "2001:db8::/32",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "CIDR IPv6"
+        },
+        {
+          "input": "10.0.0.0/33",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Prefix > 32"
+        },
+        {
+          "input": "0.0.0.0/0; flush ruleset",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh nft"
+        },
+        {
+          "input": "999.1.1.1/8",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Octet > 255: Laravel + agent (net/netip) phải từ chối"
+        },
+        {
+          "input": "10.0.0.1/8",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Có bit host: chuẩn hóa hoặc từ chối ở tầng nghiệp vụ"
+        }
+      ]
+    },
+    "firewall_rule": {
+      "schema": "agent-ops/defs.schema.json#/$defs/FirewallRule",
+      "vectors": [
+        {
+          "input": {
+            "priority": 100,
+            "action": "accept",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "80,443",
+            "source": "0.0.0.0/0",
+            "comment": "web"
+          },
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Rule hợp lệ"
+        },
+        {
+          "input": {
+            "priority": 10,
+            "action": "drop",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "22",
+            "source": "10.10.5.20/32",
+            "comment": "chặn ssh"
+          },
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Chặn cổng SSH từ IP người áp dụng: bất biến chống tự khóa (Laravel + agent) phải từ chối"
+        },
+        {
+          "input": {
+            "priority": 10,
+            "action": "drop",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "1-65535",
+            "source": "0.0.0.0/0",
+            "comment": "chặn hết"
+          },
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Dải cổng nuốt SSH/panel với nguồn 0.0.0.0/0: phải từ chối (would_lock_out)"
+        },
+        {
+          "input": {
+            "priority": 100,
+            "action": "accept",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "80; flush ruleset",
+            "source": "0.0.0.0/0",
+            "comment": ""
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh vào ports"
+        },
+        {
+          "input": {
+            "priority": 100,
+            "action": "accept",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "99999",
+            "source": "0.0.0.0/0",
+            "comment": ""
+          },
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Port > 65535 trong chuỗi: agent phải từ chối"
+        },
+        {
+          "input": {
+            "priority": 100,
+            "action": "accept",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "80",
+            "source": "0.0.0.0/0",
+            "comment": "x\"\nadd rule inet filter input accept"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn dòng qua comment"
+        },
+        {
+          "input": {
+            "priority": 100,
+            "action": "jump",
+            "direction": "in",
+            "protocol": "tcp",
+            "ports": "80",
+            "source": "0.0.0.0/0",
+            "comment": ""
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Action ngoài allowlist"
+        }
+      ]
+    },
+    "waf_rule_id": {
+      "schema": "agent-ops/defs.schema.json#/$defs/WafRuleId",
+      "vectors": [
+        {
+          "input": 942100,
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Rule CRS SQLi"
+        },
+        {
+          "input": "942100",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chuỗi thay cho số"
+        },
+        {
+          "input": "942100\nSecRuleEngine Off",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn directive ModSecurity"
+        },
+        {
+          "input": -1,
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Số âm"
+        }
+      ]
+    },
+    "scan_path": {
+      "schema": "agent-ops/defs.schema.json#/$defs/RelPath",
+      "vectors": [
+        {
+          "input": "sites/anphat.vn/public",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Thư mục quét trong home"
+        },
+        {
+          "input": "../lehoa",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal sang account khác"
+        },
+        {
+          "input": "/etc",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đường dẫn tuyệt đối"
+        },
+        {
+          "input": "sites/../../root",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal giữa đường dẫn"
+        }
+      ]
+    },
+    "confirm_token": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ConfirmToken",
+      "vectors": [
+        {
+          "input": "Zk3q9xN0bW1yT7uV5sR2pL8mC4hJ6dFa",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Token đúng định dạng"
+        },
+        {
+          "input": "short",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Quá ngắn"
+        },
+        {
+          "input": "Zk3q9xN0bW1yT7uV5sR2pL8mC4hJ6dFa;x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự lạ"
+        },
+        {
+          "input": "Zk3q9xN0bW1yT7uV5sR2pL8mC4hJ6dFb",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Token sai (không khớp lần áp dụng): agent trả precondition_failed"
+        }
+      ]
+    },
+    "fail2ban_jail": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Fail2banJail",
+      "vectors": [
+        {
+          "input": "sshd",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Jail có sẵn"
+        },
+        {
+          "input": "recidive",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Jail ngoài allowlist"
+        },
+        {
+          "input": "sshd]\naction = shell",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn section cấu hình"
         }
       ]
     }

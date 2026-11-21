@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/pty.list.schema.json",
+  "title": "pty.list",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "sessions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "session_uuid": {
+                "$ref": "../defs.schema.json#/$defs/Uuid"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "account",
+                  "root"
+                ]
+              },
+              "unix_user": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "started_at": {
+                "type": "string"
+              },
+              "last_input_at": {
+                "type": "string"
+              },
+              "recording": {
+                "type": "boolean"
+              },
+              "recording_bytes": {
+                "$ref": "../defs.schema.json#/$defs/Bytes"
+              }
+            },
+            "required": [
+              "session_uuid",
+              "mode",
+              "unix_user",
+              "started_at",
+              "last_input_at",
+              "recording",
+              "recording_bytes"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 500
+        }
+      },
+      "required": [
+        "sessions"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

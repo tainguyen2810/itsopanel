@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fim.check.schema.json",
+  "title": "fim.check",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "checked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "baseline_at": {
+          "$ref": "../defs.schema.json#/$defs/NullableTime"
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "$ref": "../defs.schema.json#/$defs/AbsPath"
+              },
+              "change": {
+                "type": "string",
+                "enum": [
+                  "added",
+                  "modified",
+                  "removed",
+                  "metadata"
+                ]
+              },
+              "old_sha256": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/Sha256"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "new_sha256": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/Sha256"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "mode": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/Mode"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "owner": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              }
+            },
+            "required": [
+              "path",
+              "change",
+              "old_sha256",
+              "new_sha256",
+              "mode",
+              "owner"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 5000
+        }
+      },
+      "required": [
+        "checked",
+        "baseline_at",
+        "changes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/security.audit.schema.json",
+  "title": "security.audit",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "sshd": {
+          "type": "object",
+          "properties": {
+            "port": {
+              "$ref": "../defs.schema.json#/$defs/Port"
+            },
+            "permit_root_login": {
+              "type": "string",
+              "maxLength": 32
+            },
+            "password_authentication": {
+              "type": "boolean"
+            },
+            "max_auth_tries": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "port",
+            "permit_root_login",
+            "password_authentication",
+            "max_auth_tries"
+          ],
+          "additionalProperties": false
+        },
+        "firewall": {
+          "type": "object",
+          "properties": {
+            "table_present": {
+              "type": "boolean"
+            },
+            "input_policy": {
+              "type": "string",
+              "enum": [
+                "accept",
+                "drop"
+              ]
+            },
+            "rules": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "table_present",
+            "input_policy",
+            "rules"
+          ],
+          "additionalProperties": false
+        },
+        "fail2ban": {
+          "type": "object",
+          "properties": {
+            "running": {
+              "type": "boolean"
+            },
+            "jails": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "running",
+            "jails"
+          ],
+          "additionalProperties": false
+        },
+        "updates": {
+          "type": "object",
+          "properties": {
+            "unattended_upgrades": {
+              "type": "boolean"
+            },
+            "pending_security": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reboot_required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "unattended_upgrades",
+            "pending_security",
+            "reboot_required"
+          ],
+          "additionalProperties": false
+        },
+        "packages": {
+          "type": "object",
+          "properties": {
+            "modsecurity": {
+              "type": "boolean"
+            },
+            "crs": {
+              "type": "boolean"
+            },
+            "clamav": {
+              "type": "boolean"
+            },
+            "yara": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "modsecurity",
+            "crs",
+            "clamav",
+            "yara"
+          ],
+          "additionalProperties": false
+        },
+        "fim": {
+          "type": "object",
+          "properties": {
+            "baseline_present": {
+              "type": "boolean"
+            },
+            "changes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "baseline_present",
+            "changes"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "sshd",
+        "firewall",
+        "fail2ban",
+        "updates",
+        "packages",
+        "fim"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -181,7 +181,11 @@
         "lego",
         "mariadb",
         "postgresql",
-        "pure-ftpd"
+        "pure-ftpd",
+        "fail2ban",
+        "clamav",
+        "yara",
+        "modsecurity"
       ]
     },
     "QuotaMode": {
@@ -378,6 +382,125 @@
         "dir",
         "symlink",
         "other"
+      ]
+    },
+    "Port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "IpAddress": {
+      "type": "string",
+      "maxLength": 45,
+      "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}$|^[0-9a-f:]{2,39}$",
+      "description": "Một địa chỉ IPv4/IPv6 (không prefix). Tầng nghiệp vụ kiểm thêm octet ≤ 255."
+    },
+    "FirewallRule": {
+      "type": "object",
+      "properties": {
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "accept",
+            "drop",
+            "reject"
+          ]
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "in",
+            "out"
+          ]
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "tcp",
+            "udp",
+            "icmp",
+            "any"
+          ]
+        },
+        "ports": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200,
+          "pattern": "^([0-9]{1,5}(-[0-9]{1,5})?)(,[0-9]{1,5}(-[0-9]{1,5})?)*$"
+        },
+        "source": {
+          "$ref": "defs.schema.json#/$defs/Cidr"
+        },
+        "comment": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[^\\x00-\\x1f\"\\\\]*$"
+        }
+      },
+      "required": [
+        "priority",
+        "action",
+        "direction",
+        "protocol",
+        "ports",
+        "source",
+        "comment"
+      ],
+      "additionalProperties": false
+    },
+    "ConfirmToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{32,64}$",
+      "description": "Token xác nhận safe-apply do agent sinh, dùng một lần (D-76)."
+    },
+    "Fail2banJail": {
+      "type": "string",
+      "enum": [
+        "sshd",
+        "itso-panel",
+        "pure-ftpd"
+      ]
+    },
+    "WafRuleId": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99999999,
+      "description": "Id rule ModSecurity/CRS (số nguyên, không chuỗi tự do)."
+    },
+    "WafMode": {
+      "type": "string",
+      "enum": [
+        "DetectionOnly",
+        "On",
+        "Off"
+      ]
+    },
+    "ScanEngine": {
+      "type": "string",
+      "enum": [
+        "clamav",
+        "yara"
+      ]
+    },
+    "AbsPath": {
+      "type": "string",
+      "maxLength": 4096,
+      "pattern": "^/[^\\x00-\\x1f]*$",
+      "not": {
+        "pattern": "(^|/)\\.{1,2}(/|$)"
+      }
+    },
+    "NullableTime": {
+      "type": [
+        "string",
+        "null"
       ]
     },
     "BackupRepo": {

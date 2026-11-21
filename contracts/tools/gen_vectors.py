@@ -172,6 +172,9 @@ V = {
         ("nginx", A, "schema", "Recipe Phase 5"),
         ("php8.3", A, "schema", "Recipe Phase 5"),
         ("php8.1", R, "schema", "PHP ngoài kho Ubuntu (cần PPA, D-68)"),
+        ("fail2ban", A, "schema", "Recipe Phase 7"),
+        ("modsecurity", A, "schema", "Recipe Phase 7 (WAF, D-78)"),
+        ("coraza", R, "schema", "Coraza: DEFERRED"),
     ]),
     # Phase 5: giá trị đi vào cấu hình Nginx/PHP/ACME.
     "header_value": ("HeaderValue", [
@@ -220,6 +223,62 @@ V = {
         ("it@anphat.vn\n--server=https://evil", R, "schema", "Chèn tham số dòng lệnh lego"),
         ("--email=x@y.z", R, "schema", "Bắt đầu như cờ dòng lệnh"),
         ("it@localhost", R, "schema", "Thiếu TLD"),
+    ]),
+    # Phase 7: tường lửa, SSH, WAF, quét mã độc (D-76…D-79).
+    "port": ("Port", [
+        (22, A, "schema", "Cổng SSH"),
+        (0, R, "schema", "Cổng 0"),
+        (70000, R, "schema", "Ngoài 1–65535"),
+        ("22", R, "schema", "Chuỗi thay cho số"),
+    ]),
+    "cidr": ("Cidr", [
+        ("10.10.5.0/24", A, "schema", "CIDR IPv4"),
+        ("2001:db8::/32", A, "schema", "CIDR IPv6"),
+        ("10.0.0.0/33", R, "schema", "Prefix > 32"),
+        ("0.0.0.0/0; flush ruleset", R, "schema", "Chèn lệnh nft"),
+        ("999.1.1.1/8", A, "semantic", "Octet > 255: Laravel + agent (net/netip) phải từ chối"),
+        ("10.0.0.1/8", A, "semantic", "Có bit host: chuẩn hóa hoặc từ chối ở tầng nghiệp vụ"),
+    ]),
+    "firewall_rule": ("FirewallRule", [
+        ({"priority": 100, "action": "accept", "direction": "in", "protocol": "tcp", "ports": "80,443",
+          "source": "0.0.0.0/0", "comment": "web"}, A, "schema", "Rule hợp lệ"),
+        ({"priority": 10, "action": "drop", "direction": "in", "protocol": "tcp", "ports": "22",
+          "source": "10.10.5.20/32", "comment": "chặn ssh"}, A, "semantic",
+         "Chặn cổng SSH từ IP người áp dụng: bất biến chống tự khóa (Laravel + agent) phải từ chối"),
+        ({"priority": 10, "action": "drop", "direction": "in", "protocol": "tcp", "ports": "1-65535",
+          "source": "0.0.0.0/0", "comment": "chặn hết"}, A, "semantic",
+         "Dải cổng nuốt SSH/panel với nguồn 0.0.0.0/0: phải từ chối (would_lock_out)"),
+        ({"priority": 100, "action": "accept", "direction": "in", "protocol": "tcp", "ports": "80; flush ruleset",
+          "source": "0.0.0.0/0", "comment": ""}, R, "schema", "Chèn lệnh vào ports"),
+        ({"priority": 100, "action": "accept", "direction": "in", "protocol": "tcp", "ports": "99999",
+          "source": "0.0.0.0/0", "comment": ""}, A, "semantic", "Port > 65535 trong chuỗi: agent phải từ chối"),
+        ({"priority": 100, "action": "accept", "direction": "in", "protocol": "tcp", "ports": "80",
+          "source": "0.0.0.0/0", "comment": "x\"\nadd rule inet filter input accept"}, R, "schema", "Chèn dòng qua comment"),
+        ({"priority": 100, "action": "jump", "direction": "in", "protocol": "tcp", "ports": "80",
+          "source": "0.0.0.0/0", "comment": ""}, R, "schema", "Action ngoài allowlist"),
+    ]),
+    "waf_rule_id": ("WafRuleId", [
+        (942100, A, "schema", "Rule CRS SQLi"),
+        ("942100", R, "schema", "Chuỗi thay cho số"),
+        ("942100\nSecRuleEngine Off", R, "schema", "Chèn directive ModSecurity"),
+        (-1, R, "schema", "Số âm"),
+    ]),
+    "scan_path": ("RelPath", [
+        ("sites/anphat.vn/public", A, "schema", "Thư mục quét trong home"),
+        ("../lehoa", R, "schema", "Traversal sang account khác"),
+        ("/etc", R, "schema", "Đường dẫn tuyệt đối"),
+        ("sites/../../root", R, "schema", "Traversal giữa đường dẫn"),
+    ]),
+    "confirm_token": ("ConfirmToken", [
+        ("Zk3q9xN0bW1yT7uV5sR2pL8mC4hJ6dFa", A, "schema", "Token đúng định dạng"),
+        ("short", R, "schema", "Quá ngắn"),
+        ("Zk3q9xN0bW1yT7uV5sR2pL8mC4hJ6dFa;x", R, "schema", "Ký tự lạ"),
+        ("Zk3q9xN0bW1yT7uV5sR2pL8mC4hJ6dFb", A, "semantic", "Token sai (không khớp lần áp dụng): agent trả precondition_failed"),
+    ]),
+    "fail2ban_jail": ("Fail2banJail", [
+        ("sshd", A, "schema", "Jail có sẵn"),
+        ("recidive", R, "schema", "Jail ngoài allowlist"),
+        ("sshd]\naction = shell", R, "schema", "Chèn section cấu hình"),
     ]),
 }
 

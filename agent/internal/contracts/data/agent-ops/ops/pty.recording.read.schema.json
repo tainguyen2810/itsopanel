@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/pty.recording.read.schema.json",
+  "title": "pty.recording.read",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "session_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 1048576
+        }
+      },
+      "required": [
+        "session_uuid",
+        "offset",
+        "max_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "number",
+                "minimum": 0
+              },
+              "data": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "t",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100000
+        },
+        "next_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "eof": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "events",
+        "next_offset",
+        "truncated",
+        "eof"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

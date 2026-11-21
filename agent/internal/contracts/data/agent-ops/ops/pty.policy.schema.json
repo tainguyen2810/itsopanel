@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/pty.policy.schema.json",
+  "title": "pty.policy",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "root_enabled": {
+          "type": "boolean"
+        },
+        "record_root": {
+          "type": "boolean"
+        },
+        "record_user": {
+          "type": "boolean"
+        },
+        "max_sessions_per_account": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "idle_timeout_sec": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        }
+      },
+      "required": [
+        "root_enabled",
+        "record_root",
+        "record_user",
+        "max_sessions_per_account",
+        "idle_timeout_sec"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

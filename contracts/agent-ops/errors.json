@@ -87,6 +87,11 @@
       "description": "SO_PEERCRED/HMAC không hợp lệ"
     },
     {
+      "code": "would_lock_out",
+      "retryable": false,
+      "description": "Thay đổi sẽ chặn cổng SSH/panel của chính người áp dụng (D-76)"
+    },
+    {
       "code": "internal",
       "retryable": true,
       "description": "Lỗi nội bộ agent"

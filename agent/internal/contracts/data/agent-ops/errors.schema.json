@@ -23,6 +23,7 @@
         "dependency_unavailable",
         "replay_rejected",
         "unauthorized_caller",
+        "would_lock_out",
         "internal"
       ]
     }

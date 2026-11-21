@@ -200,3 +200,26 @@ BEGIN
                  part, p_day, p_day + 1);
   RETURN part;
 END $$;
+
+-- ============================================================ Phase 7: Security Center (D-76…D-81)
+ALTER TABLE firewall_applies ADD CONSTRAINT firewall_applies_target_chk CHECK (target IN ('firewall', 'sshd'));
+ALTER TABLE firewall_applies ADD CONSTRAINT firewall_applies_status_chk
+  CHECK (status IN ('pending_confirm', 'confirmed', 'rolled_back', 'failed'));
+-- Mỗi máy chủ chỉ có một lần safe-apply đang chờ xác nhận cho mỗi loại (firewall/sshd).
+CREATE UNIQUE INDEX firewall_applies_one_pending ON firewall_applies (server_id, target) WHERE status = 'pending_confirm';
+ALTER TABLE waf_settings ADD CONSTRAINT waf_settings_mode_chk CHECK (mode IN ('DetectionOnly', 'On', 'Off'));
+ALTER TABLE waf_settings ADD CONSTRAINT waf_settings_paranoia_chk CHECK (paranoia_level BETWEEN 1 AND 4);
+ALTER TABLE waf_events ADD CONSTRAINT waf_events_action_chk CHECK (action IN ('detected', 'blocked'));
+ALTER TABLE fim_changes ADD CONSTRAINT fim_changes_change_chk CHECK (change IN ('added', 'modified', 'removed', 'metadata'));
+ALTER TABLE terminal_recordings ADD CONSTRAINT terminal_recordings_mode_chk CHECK (mode IN ('account', 'root'));
+CREATE TABLE waf_events_default PARTITION OF waf_events DEFAULT;
+
+CREATE OR REPLACE FUNCTION itso_ensure_waf_partition(p_month date) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE
+  start_d date := date_trunc('month', p_month)::date;
+  end_d date := (date_trunc('month', p_month) + interval '1 month')::date;
+  part text := format('waf_events_%s', to_char(start_d, 'YYYYMM'));
+BEGIN
+  EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF waf_events FOR VALUES FROM (%L) TO (%L)', part, start_d, end_d);
+  RETURN part;
+END $$;

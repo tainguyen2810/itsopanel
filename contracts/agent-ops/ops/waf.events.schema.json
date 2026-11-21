@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/waf.events.schema.json",
+  "title": "waf.events",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{1,20}:[0-9]{1,20}$"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [
+        "cursor",
+        "limit"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "website_uuid": {
+                "$ref": "../defs.schema.json#/$defs/Uuid"
+              },
+              "rule_id": {
+                "$ref": "../defs.schema.json#/$defs/WafRuleId"
+              },
+              "message": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "info",
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ]
+              },
+              "client_ip": {
+                "$ref": "../defs.schema.json#/$defs/IpAddress"
+              },
+              "method": {
+                "type": "string",
+                "maxLength": 16
+              },
+              "uri": {
+                "type": "string",
+                "maxLength": 2048
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "detected",
+                  "blocked"
+                ]
+              },
+              "at": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "website_uuid",
+              "rule_id",
+              "message",
+              "severity",
+              "client_ip",
+              "method",
+              "uri",
+              "action",
+              "at"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 1000
+        },
+        "next_cursor": {
+          "type": "string",
+          "pattern": "^[0-9]{1,20}:[0-9]{1,20}$"
+        }
+      },
+      "required": [
+        "events",
+        "next_cursor"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

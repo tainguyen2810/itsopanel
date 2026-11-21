@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fail2ban.status.schema.json",
+  "title": "fail2ban.status",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "running": {
+          "type": "boolean"
+        },
+        "jails": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "../defs.schema.json#/$defs/Fail2banJail"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "total_banned": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "banned": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "ip": {
+                      "$ref": "../defs.schema.json#/$defs/IpAddress"
+                    },
+                    "banned_at": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "$ref": "../defs.schema.json#/$defs/NullableTime"
+                    }
+                  },
+                  "required": [
+                    "ip",
+                    "banned_at",
+                    "expires_at"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 1000
+              }
+            },
+            "required": [
+              "name",
+              "enabled",
+              "total_banned",
+              "banned"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "running",
+        "jails"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

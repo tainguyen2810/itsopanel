@@ -5,7 +5,7 @@ Contracts viết **trước** code (CLAUDE.md §2). Frontend sinh type TS, Larav
 | Thư mục | Nội dung | Số liệu (Prompt 1.4) |
 |---|---|---|
 | `openapi/` | OpenAPI 3.1: `itso-admin-v1.yaml`, `itso-portal-v1.yaml`, `common.yaml` (Problem, CursorPage, Job, tham số, security, mẫu ràng buộc) | admin 208 operation, portal 90 operation |
-| `agent-ops/` | JSON Schema 2020-12: `envelope`, `result`, `errors`, `defs`, `ops/<op>.schema.json`, `catalog.json` | 60 op có schema (Phase 4–9), 21 op khai báo (Phase 7–10) |
+| `agent-ops/` | JSON Schema 2020-12: `envelope`, `result`, `errors`, `defs`, `ops/<op>.schema.json`, `catalog.json` | 108 op có schema (Phase 1–9), 12 op khai báo (Phase 10) |
 | `test-vectors/` | `evil-inputs.json`: input độc hại + kết quả mong đợi, dùng chung cho test PHP và Go | 93 vector |
 | `examples/` | `demo-dataset.json`: dữ liệu demo dùng cho example và MSW mock ở Phase 2 | |
 | `tools/` | Bộ sinh (`gen_openapi.py`, `gen_agent_ops.py`, `gen_vectors.py`) và bộ kiểm (`check_contracts.py`) | |

@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.1 (ADR + contracts + migration) — nhánh `phase-7`
+
+Phạm vi: ADR 0023–0028; agent-ops Phase 7 (22 op có schema, `would_lock_out`, recipe, ví dụ envelope `firewall.apply` hợp lệ + 1 không hợp lệ); OpenAPI +7 operation; DBML +6 bảng, extras (CHECK, unique một phần "một safe-apply chờ", partition `waf_events`), migration Phase 7. Chưa đổi hành vi Laravel/agent/UI (handler demo cho 7 endpoint mới làm ở 7.6).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` → `make codegen` → `make codegen-check`; `make contracts-check` | PASS (admin 258, portal 113 operation; agent-ops 108 op có schema, 12 khai báo; evil-inputs 190 vector, tầng schema đúng kỳ vọng; 7 envelope hợp lệ, 11 không hợp lệ bị từ chối) |
+| Schema DB | `make db-schema`, `make db-verify` | PASS: 53 test SQL (mới `database/tests/60_security.sql` 12 test); migration Phase 3–7 khớp đặc tả, áp lần lượt = itso.sql + extras.sql |
+| Pest SchemaTest (PG16) | `php vendor/bin/pest --filter=SchemaTest` | 12/12 (thêm kiểm 12 bảng Phase 7 + ràng buộc safe-apply/WAF/FIM) |
+| Go | `go build ./...`, `go test ./internal/contracts/... ./internal/registry/... ./internal/mock/...` | PASS (struct sinh cho 22 op mới) |
+| Vitest | `pnpm exec vitest run` | 525/525 (không đổi) |
+| Cấu trúc / docs | `make structure`, `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.0 (mockup trước khi code) — nhánh `phase-7`
 
 Phạm vi: chỉ bản demo + contract cho màn mới (không đụng Laravel/agent). Contract thêm trước: `GET /auth/captcha` + `LoginRequest.captcha`, `ErrorCode` `captcha_required`/`would_lock_out`, `SshSettingsPatch.rollback_after_sec` + `POST /security/ssh:confirm`, `GET /servers/{id}/terminal/policy`, `GET /terminal/sessions` + `/{id}/recording`, `GET /security/malware/findings` + `:quarantine`, `POST /servers/{id}/fim:baseline`, Portal `/protection`, `/protection/findings` (+ `:quarantine`, `DELETE`), `POST /hosting-accounts/{id}/scans`; op khai báo `sshd.config.confirm`, `malware.quarantine`, `malware.delete`.

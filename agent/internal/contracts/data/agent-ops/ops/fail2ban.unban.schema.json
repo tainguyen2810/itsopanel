@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fail2ban.unban.schema.json",
+  "title": "fail2ban.unban",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "jail": {
+          "$ref": "../defs.schema.json#/$defs/Fail2banJail"
+        },
+        "ip": {
+          "$ref": "../defs.schema.json#/$defs/IpAddress"
+        }
+      },
+      "required": [
+        "jail",
+        "ip"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "unbanned": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "unbanned"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
