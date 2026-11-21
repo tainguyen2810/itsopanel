@@ -26,11 +26,16 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0020](0020-sftp-ftps-ssh-key.md) | SFTP (OpenSSH chroot), FTPS phụ (Pure-FTPd), SSH key | Accepted | D-73 |
 | [0021](0021-cron-systemd-timer.md) | Cron bằng systemd timer trong slice của account | Accepted | D-74 |
 | [0022](0022-terminal-user-jail.md) | Terminal cho USER chạy trong jail qua itso-gateway | Accepted | D-75 |
-| [0023](0023-firewall-nftables-safe-apply.md) | Tường lửa nftables, bảng riêng, safe-apply có hoàn tác | Proposed | D-76 |
-| [0024](0024-ssh-hardening-fail2ban.md) | SSH hardening (safe-apply) và Fail2ban | Proposed | D-77 |
-| [0025](0025-waf-modsecurity-crs.md) | WAF ModSecurity v3 + OWASP CRS theo website | Proposed | D-78 |
-| [0026](0026-malware-quarantine.md) | Quét mã độc dưới uid account và khu cách ly | Proposed | D-79 |
-| [0027](0027-fim-security-score.md) | FIM trong agent, điểm bảo mật và sự kiện | Proposed | D-80 |
-| [0028](0028-portal-protection-terminal-root.md) | Bảo vệ đăng nhập, allowlist không tự khóa, Terminal root theo policy | Proposed | D-81 |
+| [0023](0023-firewall-nftables-safe-apply.md) | Tường lửa nftables, bảng riêng, safe-apply có hoàn tác | Accepted | D-76 |
+| [0024](0024-ssh-hardening-fail2ban.md) | SSH hardening (safe-apply) và Fail2ban | Accepted | D-77 |
+| [0025](0025-waf-modsecurity-crs.md) | WAF ModSecurity v3 + OWASP CRS theo website | Accepted | D-78 |
+| [0026](0026-malware-quarantine.md) | Quét mã độc dưới uid account và khu cách ly | Accepted | D-79 |
+| [0027](0027-fim-security-score.md) | FIM trong agent, điểm bảo mật và sự kiện | Accepted | D-80 |
+| [0028](0028-portal-protection-terminal-root.md) | Bảo vệ đăng nhập, allowlist không tự khóa, Terminal root theo policy | Accepted | D-81 |
+| [0029](0029-backup-repos-restic.md) | Repo restic riêng theo account × đích, bộ khôi phục một lần | Proposed | D-82 |
+| [0030](0030-backup-destinations-immutable.md) | Đích local/SFTP/S3/rest, credential chỉ ghi, forget tắt mặc định | Proposed | D-83 |
+| [0031](0031-backup-content-consistency.md) | Nội dung backup, dump DB nhất quán, backup panel mã hóa age | Proposed | D-84 |
+| [0032](0032-restore-staging.md) | Khôi phục qua staging root rồi helper uid account | Proposed | D-85 |
+| [0033](0033-backup-verify-dr.md) | Lịch, quota, kiểm chứng 3-2-1-1-0, khôi phục thảm họa | Proposed | D-86, D-87 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

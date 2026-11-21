@@ -117,6 +117,10 @@ func Serve(req Request, in io.Reader, out io.Writer, extra *os.File) (any, error
 		return map[string]any{"size": n}, err
 	case "extract":
 		return root.Extract(p.Path, p.Target, p.MaxTotal, p.MaxEntries)
+	case "restore_tar": // khôi phục backup (ADR 0032): luồng tar từ staging của agent trên stdin
+		return root.RestoreTar(p.Target, in, p.MaxTotal, p.MaxEntries)
+	case "exchange":
+		return map[string]any{"exchanged": true}, root.Exchange(p.From, p.To)
 	case "upload_commit":
 		if extra == nil {
 			return nil, fail("invalid_params", "thiếu file staging")

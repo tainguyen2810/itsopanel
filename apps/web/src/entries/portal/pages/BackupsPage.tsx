@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { RestoresList } from '@/shared/hosting/pages/RestoresList';
 import { RestoreWizard } from '@/shared/hosting/pages/RestoreWizard';
 import { SnapshotsTab } from '@/shared/hosting/pages/SnapshotsTab';
+import { BackupQuota } from '@/shared/hosting/pages/backup';
 import { PageHeader } from '@/shared/page/PageHeader';
 import { SectionNav } from '@/shared/page/SectionNav';
 import { useUrlState } from '@/shared/page/useUrlState';
@@ -37,7 +38,12 @@ export default function BackupsPage() {
           />
         }
       />
-      {tab === 'history' && <SnapshotsTab onRestore={(s) => go('restore', { snapshot: s.uuid })} />}
+      {tab === 'history' && (
+        <>
+          <BackupQuota />
+          <SnapshotsTab onRestore={(s) => go('restore', { snapshot: s.uuid })} />
+        </>
+      )}
       {tab === 'restore' && (
         <RestoreWizard
           key={url.snapshot ?? 'none'}

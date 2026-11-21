@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/backup.browse.schema.json",
+  "title": "backup.browse",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "snapshot_id": {
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000
+        }
+      },
+      "required": [
+        "repo",
+        "snapshot_id",
+        "path",
+        "limit"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "path": {
+                "$ref": "../defs.schema.json#/$defs/RelPath"
+              },
+              "type": {
+                "$ref": "../defs.schema.json#/$defs/FileType"
+              },
+              "size": {
+                "$ref": "../defs.schema.json#/$defs/Bytes"
+              },
+              "mtime": {
+                "type": "string"
+              },
+              "mode": {
+                "$ref": "../defs.schema.json#/$defs/Mode"
+              }
+            },
+            "required": [
+              "name",
+              "path",
+              "type",
+              "size",
+              "mtime",
+              "mode"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 5000
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "entries",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

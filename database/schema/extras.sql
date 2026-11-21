@@ -60,6 +60,24 @@ ALTER TABLE acme_accounts ADD CONSTRAINT acme_accounts_key_chk CHECK ((key_locat
 
 ALTER TABLE backup_destinations ADD CONSTRAINT backup_dest_type_chk CHECK (type IN ('local', 'sftp', 's3', 'rest'));
 ALTER TABLE restore_jobs ADD CONSTRAINT restore_mode_chk CHECK (mode IN ('new', 'overwrite'));
+ALTER TABLE backup_repositories ADD CONSTRAINT backup_repo_scope_chk CHECK (
+  (scope_type = 'hosting_account' AND hosting_account_id IS NOT NULL) OR (scope_type = 'server' AND hosting_account_id IS NULL)
+);
+ALTER TABLE backup_repositories ADD CONSTRAINT backup_repo_quota_chk CHECK (quota_state IN ('ok', 'warn', 'paused'));
+ALTER TABLE backup_repositories ADD CONSTRAINT backup_repo_path_chk CHECK (path ~ '^itso/[0-9a-f-]{36}/(acct-[0-9a-f-]{36}|server)$');
+ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_scope_chk
+  CHECK (scope_type IN ('all_accounts', 'hosting_account', 'website', 'database', 'server', 'panel'));
+ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_contents_chk CHECK (contents <@ ARRAY['files', 'databases', 'config']::text[]);
+ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_excludes_chk CHECK (cardinality(excludes) <= 50);
+ALTER TABLE backup_snapshots ADD CONSTRAINT backup_snapshot_scope_chk
+  CHECK (scope_type IN ('hosting_account', 'website', 'database', 'server_config', 'panel'));
+ALTER TABLE backup_snapshots ADD CONSTRAINT backup_snapshot_id_chk CHECK (restic_snapshot_id ~ '^[0-9a-f]{8,64}$');
+ALTER TABLE backup_verifications ADD CONSTRAINT backup_verif_kind_chk CHECK (kind IN ('check', 'restore_test'));
+ALTER TABLE backup_verifications ADD CONSTRAINT backup_verif_state_chk CHECK (state IN ('running', 'succeeded', 'failed'));
+CREATE UNIQUE INDEX backup_repositories_account_uq ON backup_repositories (destination_id, server_id, hosting_account_id)
+  WHERE deleted_at IS NULL AND hosting_account_id IS NOT NULL;
+CREATE UNIQUE INDEX backup_repositories_server_uq ON backup_repositories (destination_id, server_id)
+  WHERE deleted_at IS NULL AND hosting_account_id IS NULL;
 
 ALTER TABLE jobs ADD CONSTRAINT jobs_state_chk CHECK (
   state IN ('queued', 'running', 'succeeded', 'failed', 'cancel_requested', 'cancelled', 'timed_out')

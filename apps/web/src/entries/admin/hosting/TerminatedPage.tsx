@@ -155,6 +155,47 @@ export default function TerminatedPage() {
             </Button>
           );
         }
+        if (st === 'backup') {
+          // D-87: chưa có snapshot cuối đã kiểm chứng khôi phục được → chưa xác nhận purge được.
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+                aria-describedby={`purge-block-${i.a.uuid}`}
+              >
+                <ShieldCheck aria-hidden />
+                {t('terminated.confirm')}
+              </Button>
+              <span id={`purge-block-${i.a.uuid}`} className="max-w-48 text-xs text-muted">
+                {t('terminated.needVerified')}
+              </span>
+            </div>
+          );
+        }
+        // Như API thật: chỉ xác nhận được sau hạn giữ dữ liệu; xác nhận xong purge chạy ngay.
+        const due = [i.purge?.scheduled_for, i.a.purge_after].find(
+          (d) => d && Date.parse(d) > Date.now(),
+        );
+        if (st === 'confirm' && due) {
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+                aria-describedby={`purge-due-${i.a.uuid}`}
+              >
+                <ShieldCheck aria-hidden />
+                {t('terminated.confirm')}
+              </Button>
+              <span id={`purge-due-${i.a.uuid}`} className="max-w-48 text-xs text-muted">
+                {t('terminated.notDue', { date: fmt.opt(due) })}
+              </span>
+            </div>
+          );
+        }
         if (st === 'confirm') {
           return (
             <Button

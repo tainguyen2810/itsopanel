@@ -83,6 +83,7 @@ function status(): S['SetupStatus'] {
       timezone: state.timezone,
       access: null,
       steps_done: [],
+      restore_mode: false,
     };
   }
   const steps: S['SetupStatus']['steps_done'] = [];
@@ -101,6 +102,7 @@ function status(): S['SetupStatus'] {
     timezone: state.timezone,
     access: state.access,
     steps_done: steps,
+    restore_mode: false,
   };
 }
 
@@ -229,6 +231,73 @@ export function registerSetup() {
     });
     state.stackJob = (reply.body as { job: { uuid: string } }).job.uuid;
     return reply;
+  });
+
+  // ---- Khôi phục thảm họa (D-87): mở repo panel bằng bộ khôi phục, chọn bản backup panel, khôi phục.
+  const sourceError = (b: Partial<S['SetupRestoreSource']>): string | null => {
+    if (!b.type || !['local', 'sftp', 's3', 'rest'].includes(b.type)) return 'Chọn loại đích.';
+    if (b.type === 'sftp')
+      return 'Đích SFTP: chạy "sudo itso backup panel-restore --kit <file> --snapshot <id> --ssh-key <khóa>" rồi "sudo itso panel-restore-apply --dir <thư mục in ra>" (runbook DR).';
+    const need: Record<string, string[]> = {
+      local: [],
+      sftp: ['host', 'user', 'path'],
+      s3: ['endpoint', 'bucket'],
+      rest: ['url'],
+    };
+    for (const k of need[b.type] ?? []) if (!b.config?.[k]?.trim()) return `Thiếu cấu hình "${k}".`;
+    if (!/^itso\/[0-9a-f-]{36}\/server$/.test(b.repository_path ?? ''))
+      return 'Đường dẫn repo server dạng itso/<uuid server>/server (dòng "repo:" của mục "server <tên máy>" trong bộ khôi phục).';
+    if ((b.repository_password ?? '').length < 16)
+      return 'Mật khẩu repo từ 16 ký tự (trong bộ khôi phục).';
+    if (!/^AGE-SECRET-KEY-1[0-9A-Z]{58}$/.test(b.panel_private_key ?? ''))
+      return 'Khóa riêng của panel phải có dạng AGE-SECRET-KEY-1… (58 ký tự sau tiền tố).';
+    return null;
+  };
+
+  on('post', P('/setup/restore:inspect'), (ctx) => {
+    if (state.installed) return gone();
+    if (!state.verified) return notVerified();
+    if (state.admin)
+      return problem(
+        409,
+        'conflict',
+        'Đã tạo SUPER_ADMIN',
+        'Khôi phục chỉ chọn được trước khi tạo tài khoản quản trị.',
+      );
+    const b = body<S['SetupRestoreSource']>(ctx);
+    const err = sourceError(b);
+    if (err) return invalid(err);
+    // Demo: mật khẩu repo phải khớp bộ khôi phục mẫu (bản thật: restic mở repo bằng mật khẩu).
+    if (b.repository_password !== ctx.db.data.recovery_kit.repositories[0]?.password)
+      return invalid('Không mở được repo: mật khẩu sai hoặc repo không tồn tại ở đích này.');
+    return ok(ctx.db.data.setup_restore_candidates);
+  });
+
+  on('post', P('/setup/restore'), (ctx) => {
+    if (state.installed) return gone();
+    if (!state.verified) return notVerified();
+    if (state.admin)
+      return problem(
+        409,
+        'conflict',
+        'Đã tạo SUPER_ADMIN',
+        'Khôi phục chỉ chọn được trước khi tạo tài khoản quản trị.',
+      );
+    const b = body<S['SetupRestoreRequest']>(ctx);
+    const err = b.source ? sourceError(b.source) : 'Thiếu nguồn khôi phục.';
+    if (err) return invalid(err);
+    if (!ctx.db.data.setup_restore_candidates.some((c) => c.snapshot_id === b.snapshot_id))
+      return invalid('Chọn một bản backup panel trong danh sách.');
+    const srv = ctx.db.data.servers[0];
+    return startJob(ctx, {
+      type: 'setup.restore',
+      resource: { type: 'server', uuid: srv?.uuid ?? '' },
+      ops: ['panel.restore'],
+      server: srv ? { uuid: srv.uuid, name: srv.name } : null,
+      onDone: () => {
+        state.installed = true;
+      },
+    });
   });
 
   on('post', P('/setup:complete'), () => {

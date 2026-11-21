@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 190,
+  "total": 233,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -1320,6 +1320,388 @@
           "expect": "reject",
           "layer": "schema",
           "note": "Chèn section cấu hình"
+        }
+      ]
+    },
+    "backup_repo_path": {
+      "schema": "agent-ops/defs.schema.json#/$defs/BackupRepoPath",
+      "vectors": [
+        {
+          "input": "itso/0193aa10-0001-7000-8000-000000000001/acct-01938a01-0003-7000-8000-000000000020",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Repo account đúng mẫu"
+        },
+        {
+          "input": "itso/0193aa10-0001-7000-8000-000000000001/server",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Repo server đúng mẫu"
+        },
+        {
+          "input": "itso/0193aa10-0001-7000-8000-000000000001/../acct-01938a01-0003-7000-8000-000000000020",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal trong đường dẫn repo"
+        },
+        {
+          "input": "/var/backups/itso/repos",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đường dẫn tuyệt đối tự do"
+        },
+        {
+          "input": "s3:https://evil.example/bucket",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chuỗi repo restic tự do thay cho đường dẫn kiểu hóa"
+        },
+        {
+          "input": "itso/0193aa10-0001-7000-8000-000000000001/acct-01938a01-0003-7000-8000-000000000020\n--password-command=id",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn tùy chọn restic qua xuống dòng"
+        },
+        {
+          "input": "itso/0193aa10-0001-7000-8000-000000000001/acct-0193aa10-0001-7000-8000-000000000001",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Account không thuộc máy chủ: panel/agent đối chiếu account_uuid với repo"
+        }
+      ]
+    },
+    "backup_tag": {
+      "schema": "agent-ops/defs.schema.json#/$defs/BackupTag",
+      "vectors": [
+        {
+          "input": "type:files",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Tag loại"
+        },
+        {
+          "input": "account:01938a01-0003-7000-8000-000000000020",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Tag account"
+        },
+        {
+          "input": "db:anphat_shop",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Tag DB"
+        },
+        {
+          "input": "--tag=x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn cờ restic"
+        },
+        {
+          "input": "type:files,account:x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Nhiều tag trong một chuỗi (restic tách dấu phẩy)"
+        },
+        {
+          "input": "Anything goes",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tag tự do"
+        }
+      ]
+    },
+    "restic_snapshot_id": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ResticSnapshotId",
+      "vectors": [
+        {
+          "input": "4f2a9c1e",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Id ngắn"
+        },
+        {
+          "input": "latest",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Từ khóa latest bị cấm (chọn snapshot phải tường minh)"
+        },
+        {
+          "input": "4f2a9c1e --target /",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn cờ restic"
+        },
+        {
+          "input": "4F2A9C1E",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "4f2a9c",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Quá ngắn (dễ trùng tiền tố)"
+        }
+      ]
+    },
+    "backup_exclude": {
+      "schema": "agent-ops/defs.schema.json#/$defs/BackupExclude",
+      "vectors": [
+        {
+          "input": "sites/*/cache",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Loại trừ tương đối"
+        },
+        {
+          "input": "*.log",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Mẫu đuôi file"
+        },
+        {
+          "input": "/etc/shadow",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đường dẫn tuyệt đối"
+        },
+        {
+          "input": "../lehoa",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal sang account khác"
+        },
+        {
+          "input": "--exclude-file=/etc/shadow",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Bắt đầu bằng gạch: agent luôn truyền dạng --exclude=<mẫu> nên không thành cờ; tầng nghiệp vụ vẫn từ chối mẫu bắt đầu bằng -"
+        },
+        {
+          "input": "tmp\nsites",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Xuống dòng"
+        }
+      ]
+    },
+    "backup_restore_item": {
+      "schema": "agent-ops/defs.schema.json#/$defs/BackupRestoreItem",
+      "vectors": [
+        {
+          "input": {
+            "kind": "files",
+            "path": "sites/anphat.vn/public/wp-config.php"
+          },
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Một file"
+        },
+        {
+          "input": {
+            "kind": "website",
+            "site_dir": "anphat.vn"
+          },
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Cả website"
+        },
+        {
+          "input": {
+            "kind": "database",
+            "db": {
+              "engine": "mariadb",
+              "name": "anphat_shop"
+            },
+            "target_name": "anphat_shop_r20261121"
+          },
+          "expect": "accept",
+          "layer": "schema",
+          "note": "DB vào DB mới"
+        },
+        {
+          "input": {
+            "kind": "files",
+            "path": "../lehoa/.ssh/authorized_keys"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khôi phục ra ngoài home"
+        },
+        {
+          "input": {
+            "kind": "files",
+            "path": "/etc/cron.d/x"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đường dẫn tuyệt đối"
+        },
+        {
+          "input": {
+            "kind": "website",
+            "site_dir": "../../etc"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "site_dir không phải domain"
+        },
+        {
+          "input": {
+            "kind": "database",
+            "db": {
+              "engine": "mariadb",
+              "name": "anphat_shop; DROP DATABASE x"
+            },
+            "target_name": "anphat_r"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn SQL vào tên DB"
+        },
+        {
+          "input": {
+            "kind": "database",
+            "db": {
+              "engine": "mariadb",
+              "name": "lehoa_main"
+            },
+            "target_name": "lehoa_main"
+          },
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "DB của account khác: panel kiểm sở hữu + tiền tố, agent kiểm chủ DB"
+        },
+        {
+          "input": {
+            "kind": "command",
+            "path": "id"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Loại mục ngoài allowlist"
+        }
+      ]
+    },
+    "backup_destination": {
+      "schema": "agent-ops/defs.schema.json#/$defs/BackupDestination",
+      "vectors": [
+        {
+          "input": {
+            "type": "sftp",
+            "destination_uuid": "0193aa10-0001-7000-8000-000000000001",
+            "host": "backup2.itso.local",
+            "port": 22,
+            "user": "itso-backup",
+            "path": "/srv/backup/itso",
+            "host_key_sha256": null
+          },
+          "expect": "accept",
+          "layer": "schema",
+          "note": "SFTP hợp lệ (host key ghim ở lần kiểm tra đầu)"
+        },
+        {
+          "input": {
+            "type": "sftp",
+            "destination_uuid": "0193aa10-0001-7000-8000-000000000001",
+            "host": "backup2.itso.local -oProxyCommand=id",
+            "port": 22,
+            "user": "itso",
+            "path": "/srv",
+            "host_key_sha256": null
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn tùy chọn ssh qua host"
+        },
+        {
+          "input": {
+            "type": "sftp",
+            "destination_uuid": "0193aa10-0001-7000-8000-000000000001",
+            "host": "backup2.itso.local",
+            "port": 22,
+            "user": "-oProxyCommand=id",
+            "path": "/srv",
+            "host_key_sha256": null
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn tùy chọn ssh qua user"
+        },
+        {
+          "input": {
+            "type": "s3",
+            "destination_uuid": "0193aa10-0001-7000-8000-000000000001",
+            "endpoint": "http://169.254.169.254/latest",
+            "bucket": "itso-backup",
+            "region": null,
+            "access_key_id": "AKIAITSODEMO",
+            "secret_access_key": "demo-secret-key"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Endpoint không HTTPS (metadata cloud)"
+        },
+        {
+          "input": {
+            "type": "s3",
+            "destination_uuid": "0193aa10-0001-7000-8000-000000000001",
+            "endpoint": "https://10.0.0.5",
+            "bucket": "itso-backup",
+            "region": null,
+            "access_key_id": "AKIAITSODEMO",
+            "secret_access_key": "demo-secret-key"
+          },
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Endpoint IP nội bộ: chấp nhận cho MinIO/Garage LAN, panel ghi audit"
+        },
+        {
+          "input": {
+            "type": "rest",
+            "destination_uuid": "0193aa10-0001-7000-8000-000000000001",
+            "url": "https://rest.itso.local/itso",
+            "user": "itso",
+            "password": "x"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Mật khẩu rest quá ngắn"
+        },
+        {
+          "input": {
+            "type": "local",
+            "destination_uuid": "0193aa10-0001-7000-8000-000000000001",
+            "path": "/"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "local không nhận đường dẫn (cố định /var/backups/itso/repos)"
+        }
+      ]
+    },
+    "age_recipient": {
+      "schema": "agent-ops/defs.schema.json#/$defs/AgeRecipient",
+      "vectors": [
+        {
+          "input": "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Khóa công khai age đúng độ dài"
+        },
+        {
+          "input": "age1bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự ngoài bảng bech32"
+        },
+        {
+          "input": "AGE-SECRET-KEY-1QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khóa riêng không bao giờ được gửi tới agent"
         }
       ]
     }

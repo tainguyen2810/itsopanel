@@ -11,7 +11,7 @@ Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations có t�
 | 5 — Website, SSL, DNS | `websites`, `domains`, `website_settings`, `acme_accounts`, `certificates`, `php_versions`, `dns_providers`, `dns_zones`, `dns_records` | 9 |
 | 6 — DB, SFTP, cron, file, terminal | `databases`, `database_users`, `database_grants`, `sftp_accounts`, `ssh_keys`, `cron_jobs`, `cron_runs`, `upload_sessions`, `file_operations`, `terminal_sessions` | 10 |
 | 7 — Bảo mật | `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `fim_baselines`, `firewall_applies`, `security_settings`, `waf_settings`, `waf_events` (partition tháng), `fim_changes`, `terminal_recordings` | 6 |
-| 8 — Backup, purge | `backup_destinations`, `backup_policies`, `backup_jobs`, `backup_snapshots`, `backup_verifications`, `restore_jobs`, `purge_records` | 7 |
+| 8 — Backup, purge | `backup_destinations`, `backup_repositories`, `backup_policies`, `backup_policy_destinations`, `backup_jobs`, `backup_snapshots`, `backup_verifications`, `restore_jobs`, `purge_records` | 7 |
 | 9 — Multi-server, chuyển account | `agent_enrollment_tokens`, `account_migrations` | 2 |
 | 10 — Docker, WordPress | `docker_hosts`, `registries`, `compose_projects`, `compose_revisions`, `containers`, `port_allocations`, `wordpress_sites`, `git_repositories`, `git_deployments` | 9 |
 | 11 — Giám sát, cảnh báo | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `notification_channels`, `notification_preferences` | 6 |

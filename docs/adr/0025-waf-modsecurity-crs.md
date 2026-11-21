@@ -1,6 +1,6 @@
 # ADR 0025: WAF ModSecurity v3 + OWASP CRS theo website
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 7)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 7)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-78, D-67
 

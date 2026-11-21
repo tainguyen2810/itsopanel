@@ -22,6 +22,16 @@ type Rule = S['AlertRule'];
 const P = (p: string) => `/api/v1/admin${p}` as Parameters<typeof on>[1];
 const invalid = (detail: string) =>
   problem(422, 'validation_failed', 'Dữ liệu không hợp lệ', detail);
+/** 422 gắn vào một trường, như ApiProblem::field của API thật. */
+const fieldInvalid = (field: string, message: string): Reply => {
+  const r = problem(
+    422,
+    'validation_failed',
+    'Dữ liệu không hợp lệ',
+    'Một hoặc nhiều trường không hợp lệ.',
+  );
+  return { ...r, body: { ...(r.body as object), errors: { [field]: [message] } } };
+};
 const notFound = (what: string) => problem(404, 'not_found', `Không tìm thấy ${what}`);
 const conflict = (detail: string, code = 'conflict') =>
   problem(409, code, 'Xung đột trạng thái', detail);
@@ -228,7 +238,7 @@ function registerSecurity() {
 
 // ---------------------------------------------------------------- backup & restore
 const REQUIRED_CONFIG: Record<Dest['type'], string[]> = {
-  local: ['path'],
+  local: [],
   sftp: ['host', 'path'],
   s3: ['endpoint', 'bucket'],
   rest: ['url'],
@@ -243,8 +253,9 @@ function destError(b: Partial<S['BackupDestinationInput']>, partial = false): st
     for (const k of REQUIRED_CONFIG[b.type]) {
       if (!b.config[k]?.trim()) return `Thiếu cấu hình "${k}".`;
     }
-    if (b.type === 'local' && !b.config.path?.startsWith('/'))
-      return 'Đường dẫn local phải là đường dẫn tuyệt đối.';
+    // Như BackupSpec::normalize: đích local luôn ở /var/backups/itso (root 0700, ADR 0030).
+    if (b.type === 'local' && (b.config.path ?? '/var/backups/itso') !== '/var/backups/itso')
+      return 'Đích local luôn ở /var/backups/itso (root 0700, ADR 0030).';
     for (const k of ['endpoint', 'url'] as const) {
       if (b.config[k] && !/^https:\/\//.test(b.config[k])) return `"${k}" phải là URL https://.`;
     }
@@ -312,6 +323,144 @@ function snapshotTree(db: DemoDb, s: Snapshot): S['FileEntry'][] {
 
 const RESTORE_ITEM = /^(files:.+|database:[a-z][a-z0-9_]{0,63}|config)$/;
 
+/** Panel tự xóa snapshot theo retention chỉ khi mọi đích của chính sách cho phép forget (D-83). */
+function retentionMode(db: DemoDb, destIds: string[]): Policy['retention_mode'] {
+  return destIds.some((id) => db.data.backup_dests.find((d) => d.uuid === id)?.prune === 'cli')
+    ? 'cli'
+    : 'panel';
+}
+
+/** Dấu thời gian dạng 20261121-1530 cho tên thư mục/DB khôi phục. */
+const stamp = (iso: string) => iso.slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
+
+/** Kết quả khôi phục (D-85): bản mới vào backups/restore-<ts>/, DB mới <tên>_r<ts>; ghi đè có snapshot trước. */
+function restoreResult(
+  db: DemoDb,
+  r: S['Restore'],
+  s: Snapshot,
+): NonNullable<S['Restore']['result']> {
+  const ts = stamp(db.now());
+  const files = r.items.filter((i) => i.startsWith('files:')).map((i) => i.slice(6));
+  const dbs = r.items.filter((i) => i.startsWith('database:')).map((i) => i.slice(9));
+  if (r.mode === 'new')
+    return {
+      restored_paths: files.map((f) => `backups/restore-${ts}/${f}`),
+      databases: dbs.map((d) => `${d}_r${ts.slice(0, 8)}`.slice(0, 64)),
+      pre_restore_snapshot_uuid: null,
+    };
+  const pre = db.newUuid();
+  db.data.snapshots.unshift({
+    ...s,
+    uuid: pre,
+    restic_snapshot_id: (0x7d000000 + db.data.snapshots.length * 7919).toString(16),
+    taken_at: db.now(),
+    verified_at: null,
+    tags: ['pre-restore'],
+    locked_until: null,
+  });
+  return { restored_paths: files, databases: dbs, pre_restore_snapshot_uuid: pre };
+}
+
+/** Tổng quan Backup Center: 3-2-1-1-0 từ dữ kiện thật, job đang chạy, cảnh báo quota (D-86, D-87). */
+export function backupOverview(db: DemoDb): S['BackupOverview'] {
+  const dests = db.data.backup_dests;
+  const healthy = dests.filter((d) => d.last_check_ok !== false);
+  const imm = (d: Dest) => d.append_only || (d.immutable_days ?? 0) > 0;
+  const media = new Set(healthy.map((d) => (d.type === 'rest' ? 'sftp' : d.type)));
+  const offsite = healthy.filter((d) => d.type !== 'local').length;
+  const immutable = healthy.filter(imm).length;
+  const failing = [
+    ...dests.filter((d) => d.last_check_ok === false).map((d) => `${d.name} kiểm tra lỗi`),
+    ...db.data.backup_policies
+      .filter((p) => p.enabled && p.last_status === 'failed')
+      .map((p) => `${p.name} thất bại`),
+  ];
+  const latest = new Map<string, Snapshot>();
+  for (const sn of db.data.snapshots) {
+    if (!sn.hosting_account || sn.tags.includes('final')) continue;
+    const cur = latest.get(sn.hosting_account.uuid);
+    if (!cur || sn.taken_at > cur.taken_at) latest.set(sn.hosting_account.uuid, sn);
+  }
+  const week = Date.now() - 7 * 86_400_000;
+  const unverified = [...latest.values()].filter(
+    (sn) => !sn.verified_at || Date.parse(sn.verified_at) < week,
+  );
+  if (unverified.length) failing.push(`${unverified.length} account chưa kiểm chứng trong 7 ngày`);
+  const rule = (
+    key: S['BackupOverview']['rules'][number]['key'],
+    okv: boolean,
+    value: number,
+    reason: string | null,
+  ) => ({
+    key,
+    ok: okv,
+    value,
+    reason: okv ? null : reason,
+  });
+  const copies = healthy.length + 1;
+  const quota = db.data.accounts
+    .filter((a) => a.lifecycle_state === 'active' || a.lifecycle_state === 'suspended')
+    .flatMap((a) => {
+      const q = a.usage.backup_mb;
+      if (!q.limit || q.used <= q.limit) return [];
+      return [
+        {
+          hosting_account: { uuid: a.uuid, username: a.username },
+          used_mb: q.used,
+          limit_mb: q.limit,
+          state: q.used > q.limit * 1.2 ? ('paused' as const) : ('warn' as const),
+        },
+      ];
+    });
+  const max = (xs: (string | null)[]) =>
+    xs
+      .filter((x): x is string => x !== null)
+      .sort()
+      .at(-1) ?? null;
+  const day = Date.now() - 86_400_000;
+  return {
+    rules: [
+      rule('copies', copies >= 3, copies, 'Cần ít nhất 2 đích khỏe ngoài bản gốc trên máy chủ.'),
+      rule('media', media.size >= 2, media.size, 'Thêm đích khác loại (S3/SFTP) ngoài ổ local.'),
+      rule('offsite', offsite >= 1, offsite, 'Chưa có đích ngoài máy chủ (S3, SFTP, rest-server).'),
+      rule(
+        'immutable',
+        immutable >= 1,
+        immutable,
+        'Chưa có đích bất biến (Object Lock hoặc append-only).',
+      ),
+      rule('errors', failing.length === 0, failing.length, failing.join('; ')),
+    ],
+    last_backup_at: max(db.data.snapshots.map((x) => x.taken_at)),
+    last_verified_at: max(
+      db.data.backup_verifications.filter((v) => v.state === 'succeeded').map((v) => v.finished_at),
+    ),
+    failed_24h:
+      db.data.backup_verifications.filter(
+        (v) => v.state === 'failed' && Date.parse(v.started_at) > day,
+      ).length +
+      db.data.restores.filter((r) => r.state === 'failed' && Date.parse(r.created_at) > day).length,
+    destinations: dests.map((d) => ({
+      uuid: d.uuid,
+      name: d.name,
+      type: d.type,
+      used_mb: d.used_mb,
+      immutable: imm(d),
+      last_check_ok: d.last_check_ok,
+    })),
+    running: db.data.jobs
+      .filter((j) => /^backup/.test(j.type) && (j.state === 'running' || j.state === 'queued'))
+      .map((j) => ({
+        job_uuid: j.uuid,
+        type: j.type,
+        label: j.resource?.uuid ?? j.type,
+        progress: j.progress,
+        started_at: j.started_at ?? j.created_at,
+      })),
+    quota,
+  };
+}
+
 function registerBackups() {
   on('post', P('/backup-destinations'), (ctx) => {
     const deny = saOnly(ctx);
@@ -333,6 +482,17 @@ function registerBackups() {
       used_mb: 0,
       last_check_at: null,
       last_check_ok: null,
+      last_check_error: null,
+      detected: null,
+      // SFTP: agent sinh cặp khóa riêng cho đích, chỉ trả khóa công khai để thêm vào máy đích (D-83).
+      ssh_public_key:
+        b.type === 'sftp'
+          ? `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDemo${ctx.db.newUuid().slice(9, 13)}ItsoBackup itso-backup@srv-hn-01`
+          : null,
+      host_key_sha256: null,
+      repositories: 0,
+      prune: b.append_only || b.immutable_days ? 'cli' : 'panel',
+      recovery_kit_acknowledged_at: null,
       created_at: ctx.db.now(),
       updated_at: ctx.db.now(),
     };
@@ -376,6 +536,7 @@ function registerBackups() {
     if (b.append_only !== undefined) d.append_only = b.append_only;
     if (b.immutable_days !== undefined) d.immutable_days = b.immutable_days;
     if (b.config) d.config = { ...b.config };
+    d.prune = d.append_only || d.immutable_days ? 'cli' : 'panel';
     d.updated_at = ctx.db.now();
     ctx.db.audit({
       actor: actorRef(ctx),
@@ -398,17 +559,70 @@ function registerBackups() {
       onDone: (db) => {
         d.last_check_at = db.now();
         d.last_check_ok = true;
+        d.last_check_error = null;
+        // Phát hiện thật ở lần kiểm tra (không tin cấu hình khai báo): Object Lock của bucket, user append-only.
+        d.detected = {
+          append_only: d.append_only || d.type === 'rest',
+          object_lock_days: d.type === 's3' ? d.immutable_days : null,
+        };
+        if (d.type === 'sftp')
+          d.host_key_sha256 ??= 'SHA256:Zk2pV7wq0YH3dJ8bT5nR1cL9mF4sA6eX2uG0iK7oP3Q';
       },
     });
   });
+
+  // Bộ khôi phục: lần đầu (chưa xác nhận đã lưu) trả ngay; sau đó backend thật bắt step-up (D-82).
+  on('post', P('/backup-destinations/{id}:recovery-kit'), (ctx) => {
+    const deny = saOnly(ctx);
+    if (deny) return deny;
+    const d = ctx.db.data.backup_dests.find((x) => x.uuid === ctx.params.id);
+    if (!d) return notFound('đích backup');
+    ctx.db.audit({
+      actor: actorRef(ctx),
+      action: 'backup_destination.recovery_kit_view',
+      resource: { type: 'backup_destination', uuid: d.uuid },
+    });
+    const kit = ctx.db.data.recovery_kit;
+    const base = d.config.bucket ?? d.config.host ?? d.config.url ?? d.config.path ?? '';
+    return ok({
+      ...kit,
+      destination: { uuid: d.uuid, name: d.name, type: d.type, config: d.config },
+      repositories: kit.repositories.map((r) => ({
+        ...r,
+        path: `${d.type}:${base}/${r.path.split('/').slice(-3).join('/')}`,
+      })),
+      first_view: d.recovery_kit_acknowledged_at === null,
+      generated_at: ctx.db.now(),
+    });
+  });
+
+  on('post', P('/backup-destinations/{id}:recovery-kit-ack'), (ctx) => {
+    const deny = saOnly(ctx);
+    if (deny) return deny;
+    const d = ctx.db.data.backup_dests.find((x) => x.uuid === ctx.params.id);
+    if (!d) return notFound('đích backup');
+    d.recovery_kit_acknowledged_at ??= ctx.db.now();
+    ctx.db.audit({
+      actor: actorRef(ctx),
+      action: 'backup_destination.recovery_kit_ack',
+      resource: { type: 'backup_destination', uuid: d.uuid },
+    });
+    return noContent();
+  });
+
+  on('get', P('/backups/overview'), (ctx) => ok(backupOverview(ctx.db)));
 
   const policyError = (db: DemoDb, b: Partial<S['BackupPolicyInput']>, partial: boolean) => {
     if ((!partial || b.name !== undefined) && (!b.name?.trim() || b.name.length > 80))
       return 'Tên chính sách từ 1 đến 80 ký tự.';
     if (!partial && !b.scope_type) return 'Chọn phạm vi.';
-    if (b.scope_type === 'hosting_account' || b.scope_type === 'server') {
-      const rows: { uuid: string }[] =
-        b.scope_type === 'server' ? db.data.servers : db.data.accounts;
+    if (b.scope_type && b.scope_type !== 'all_accounts' && b.scope_type !== 'panel') {
+      const rows: { uuid: string }[] = {
+        server: db.data.servers,
+        hosting_account: db.data.accounts,
+        website: db.data.websites,
+        database: db.data.databases,
+      }[b.scope_type];
       if (!b.scope_uuid || !rows.some((r) => r.uuid === b.scope_uuid))
         return 'Chọn đối tượng cho phạm vi.';
     }
@@ -419,6 +633,11 @@ function registerBackups() {
       if (ids.length === 0) return 'Chọn ít nhất một đích.';
       if (!ids.every((id) => db.data.backup_dests.some((d) => d.uuid === id)))
         return 'Đích backup không tồn tại.';
+    }
+    if ((b.excludes ?? []).length > 50) return 'Tối đa 50 mẫu loại trừ.';
+    for (const x of b.excludes ?? []) {
+      if (!x.trim() || x.length > 200 || x.startsWith('/') || x.split('/').includes('..'))
+        return `Mẫu loại trừ "${x}" phải là đường dẫn tương đối trong home, không chứa "..".`;
     }
     for (const [k, n] of Object.entries(b.retention ?? {})) {
       if (!['hourly', 'daily', 'weekly', 'monthly', 'yearly'].includes(k))
@@ -440,15 +659,20 @@ function registerBackups() {
       scope_type: b.scope_type as Policy['scope_type'],
       scope_uuid:
         b.scope_type === 'all_accounts' || b.scope_type === 'panel' ? null : (b.scope_uuid ?? null),
+      contents: b.contents ?? ['files', 'databases', 'config'],
+      excludes: b.excludes ?? [],
       schedule: b.schedule as string,
       destination_uuids: b.destination_uuids as string[],
       retention: b.retention ?? { daily: 7 },
+      retention_mode: 'panel',
       enabled: b.enabled ?? true,
       last_run_at: null,
+      next_run_at: null,
       last_status: null,
       created_at: ctx.db.now(),
       updated_at: ctx.db.now(),
     };
+    p.retention_mode = retentionMode(ctx.db, p.destination_uuids);
     ctx.db.data.backup_policies.push(p);
     ctx.db.audit({
       actor: actorRef(ctx),
@@ -481,6 +705,8 @@ function registerBackups() {
       'name',
       'scope_type',
       'scope_uuid',
+      'contents',
+      'excludes',
       'schedule',
       'destination_uuids',
       'retention',
@@ -491,6 +717,7 @@ function registerBackups() {
         Object.assign(p, { [k]: b[k] });
       }
     }
+    p.retention_mode = retentionMode(ctx.db, p.destination_uuids);
     p.updated_at = ctx.db.now();
     ctx.db.audit({
       actor: actorRef(ctx),
@@ -525,7 +752,10 @@ function registerBackups() {
     return startJob(ctx, {
       type: 'backup.policy.run',
       resource: { type: 'backup_policy', uuid: p.uuid },
-      ops: ['backup.run', 'backup.check', 'backup.forget'],
+      ops:
+        p.retention_mode === 'panel'
+          ? ['backup.run', 'backup.check', 'backup.forget']
+          : ['backup.run', 'backup.check'],
       server: SERVER_HN(ctx.db),
       onDone: (db) => {
         p.last_run_at = db.now();
@@ -540,6 +770,12 @@ function registerBackups() {
     const s = snapshotOf(ctx);
     if (isReply(s)) return s;
     const until = lockedUntil(ctx.db, s);
+    const dest = ctx.db.data.backup_dests.find((x) => x.uuid === s.destination.uuid);
+    if (!until && dest?.append_only)
+      return conflict(
+        'Đích append-only: panel không xóa được snapshot. Dọn bằng `itso backup prune` trên máy chủ.',
+        'immutable_locked',
+      );
     if (until)
       return conflict(
         `Snapshot nằm trên đích bất biến, chỉ xóa được sau ${until.slice(0, 10)}.`,
@@ -567,10 +803,24 @@ function registerBackups() {
     return startJob(ctx, {
       type: 'backup.snapshot.verify',
       resource: { type: 'backup_snapshot', uuid: s.uuid },
-      ops: ['backup.restore_test'],
+      ops: ['backup.check', 'backup.restore_test'],
       server: SERVER_HN(ctx.db),
       onDone: (db) => {
         s.verified_at = db.now();
+        db.data.backup_verifications.unshift({
+          uuid: db.newUuid(),
+          kind: 'restore_test',
+          destination: s.destination,
+          hosting_account: s.hosting_account,
+          snapshot_uuid: s.uuid,
+          state: 'succeeded',
+          read_data_percent: null,
+          files_checked: 1200 + Math.round(s.size_mb),
+          mismatches: 0,
+          error: null,
+          started_at: db.now(),
+          finished_at: db.now(),
+        });
       },
     });
   });
@@ -598,6 +848,12 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
     )
       return invalid('Chọn ít nhất một nội dung: files, databases, config.');
     if (b.note && b.note.length > 200) return invalid('Ghi chú tối đa 200 ký tự.');
+    const bq = a.usage.backup_mb;
+    if (bq.limit > 0 && bq.used > bq.limit * 1.2)
+      return conflict(
+        `Dung lượng backup ${Math.round(bq.used / 1024)} GB vượt 120 % quota (${Math.round(bq.limit / 1024)} GB): backup tạm dừng. Xóa bớt bản cũ hoặc nâng gói.`,
+        'quota_exceeded',
+      );
     const dest =
       ctx.db.data.backup_dests.find((d) => d.type === 'local') ?? ctx.db.data.backup_dests[0];
     if (!dest) return conflict('Chưa có đích backup nào.');
@@ -614,12 +870,22 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
           hosting_account: { uuid: a.uuid, username: a.username },
           destination: { uuid: dest.uuid, name: dest.name },
           scope_type: 'hosting_account',
+          repository_uuid:
+            db.data.backup_repos.find(
+              (r) => r.hosting_account?.uuid === a.uuid && r.destination.uuid === dest.uuid,
+            )?.uuid ?? null,
+          website: null,
+          databases: contents.includes('databases')
+            ? db.data.databases.filter((x) => x.hosting_account.uuid === a.uuid).map((x) => x.name)
+            : [],
           restic_snapshot_id: (0x7c000000 + n * 7919).toString(16),
           size_mb: Math.round(a.usage.disk_mb.used * 0.8 * 10) / 10,
           taken_at: db.now(),
-          verified_at: db.now(),
+          verified_at: null,
           contents: contents as Snapshot['contents'],
-          tags: ['manual'],
+          tags: b.note ? ['manual', b.note] : ['manual'],
+          panel_version: '0.1.0-alpha',
+          locked_until: null,
         });
       },
     });
@@ -645,14 +911,25 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
   on('post', R('/backup-snapshots/{id}:download-link'), (ctx) => {
     const s = snapshotOf(ctx);
     if (isReply(s)) return s;
+    const path = body<S['BackupDownloadRequest']>(ctx).path ?? null;
+    if (path !== null) {
+      if (path.startsWith('/') || path.split('/').includes('..'))
+        return invalid('Đường dẫn phải là đường dẫn tương đối, không chứa "..".');
+      if (!snapshotTree(ctx.db, s).some((e) => e.path === path))
+        return notFound('file trong snapshot');
+    }
     ctx.db.audit({
       actor: actorRef(ctx),
       action: 'backup.snapshot.download_link',
       resource: { type: 'backup_snapshot', uuid: s.uuid },
+      ...(path ? { changes: { path } } : {}),
     });
-    const exp = new Date(Date.now() + 3600_000);
+    const exp = new Date(Date.now() + 15 * 60_000);
+    const name = path
+      ? encodeURIComponent(path.split('/').at(-1) ?? 'file')
+      : `${s.restic_snapshot_id}.tar.zst`;
     return ok({
-      url: `https://panel.itso.local/dl/backup/${s.restic_snapshot_id}.tar.zst?sig=demo`,
+      url: `https://panel.itso.local/dl/backup/${s.restic_snapshot_id}/${name}?sig=demo`,
       expires_at: exp.toISOString(),
     });
   });
@@ -684,24 +961,22 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
       if (kind === 'config' && !s.contents.includes('config'))
         return invalid('Snapshot không chứa cấu hình.');
     }
-    let target = a.server;
-    if (b.target_server_uuid) {
-      const sv = ctx.db.data.servers.find((x) => x.uuid === b.target_server_uuid);
-      if (!sv || !canSeeServer(v, sv.uuid)) return invalid('Server đích không nằm trong phạm vi.');
-      if (sv.status !== 'ready' || !sv.agent_connected)
-        return conflict('Server đích chưa sẵn sàng.', 'invalid_state_transition');
-      target = { uuid: sv.uuid, name: sv.name };
-    }
+    // Như API thật (RestoreService): khôi phục trên server hiện tại của account; sang server khác là Phase 9.
+    const target = a.server;
+    if (b.target_server_uuid && b.target_server_uuid !== a.server.uuid)
+      return invalid('Khôi phục sang máy chủ khác: Phase 9 (chuyển account).');
+    if (a.lifecycle_state !== 'active')
+      return conflict(
+        `Account đang ${a.lifecycle_state}: kích hoạt lại trước khi khôi phục.`,
+        'invalid_state_transition',
+      );
+    if (items.includes('config'))
+      return invalid('Khôi phục cấu hình máy chủ: dùng DR ("itso backup panel-restore").');
     if (b.mode === 'overwrite') {
-      if (target.uuid !== a.server.uuid)
-        return invalid('Ghi đè chỉ thực hiện trên server hiện tại của account.');
+      if (items.length !== 1 || !/^(files:sites\/[a-z0-9.-]+|database:.+)$/.test(items[0] ?? ''))
+        return invalid('Ghi đè: mỗi lần đúng một website hoặc một database.');
       if (b.confirm !== a.username)
-        return problem(
-          422,
-          'confirmation_mismatch',
-          'Xác nhận không khớp',
-          `Gõ đúng "${a.username}" để ghi đè.`,
-        );
+        return fieldInvalid('confirm', 'Gõ đúng username account để xác nhận ghi đè.');
     }
     const r: S['Restore'] = {
       uuid: ctx.db.newUuid(),
@@ -715,17 +990,20 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
       requested_by: actorRef(ctx),
       created_at: ctx.db.now(),
       finished_at: null,
+      result: null,
+      error: null,
     };
     ctx.db.data.restores.unshift(r);
     const reply = startJob(ctx, {
       type: 'backup.restore',
       resource: { type: 'restore', uuid: r.uuid },
-      ops: b.mode === 'overwrite' ? ['backup.run', 'backup.restore'] : ['backup.restore'],
+      ops: ['backup.restore'],
       server: target,
       changes: { snapshot: s.restic_snapshot_id, mode: b.mode, items },
       onDone: (db) => {
         r.state = 'succeeded';
         r.finished_at = db.now();
+        r.result = restoreResult(db, r, s);
       },
     });
     r.job_uuid = (reply.body as { job: { uuid: string } }).job.uuid;

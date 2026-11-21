@@ -1,6 +1,6 @@
 # ADR 0024: SSH hardening (safe-apply) và Fail2ban
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 7)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 7)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-77, D-73, D-76
 

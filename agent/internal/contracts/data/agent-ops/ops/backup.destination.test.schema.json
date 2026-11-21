@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/backup.destination.test.schema.json",
+  "title": "backup.destination.test",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "destination": {
+          "$ref": "../defs.schema.json#/$defs/BackupDestination"
+        }
+      },
+      "required": [
+        "destination"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "append_only": {
+          "type": "boolean"
+        },
+        "object_lock_days": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "host_key_sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ssh_public_key": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "ok",
+        "error",
+        "latency_ms",
+        "append_only",
+        "object_lock_days",
+        "host_key_sha256",
+        "ssh_public_key"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

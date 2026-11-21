@@ -1,6 +1,6 @@
 # Báo cáo Phase 7: Security Center
 
-- **Trạng thái:** ✱ **CHỜ DUYỆT**. Hoàn tất phần làm được không cần VM. Nhánh `phase-7`, merge `--no-ff` vào `main` ở Git local (không push, không remote). Tiêu chí cần kernel/systemd/dịch vụ thật được đánh dấu **chờ VM**; bộ script đã sẵn sàng (`tests/vm/phase7.sh`).
+- **Trạng thái:** ✓ **APPROVED** (2026-11-21). Hoàn tất phần làm được không cần VM. Nhánh `phase-7`, merge `--no-ff` vào `main` ở Git local (không push, không remote). Tiêu chí cần kernel/systemd/dịch vụ thật được đánh dấu **chờ VM**; bộ script đã sẵn sàng (`tests/vm/phase7.sh`).
 - **Thời gian:** 2026-11-21.
 - **Cách làm:** từ Phase 7 làm **mockup trước khi code** (7.0, ảnh ở `docs/screenshots/phase-7/`), rồi như Phase 4–6: code và test với runner giả, agent `--sandbox` (nft/sshd/fail2ban/clamdscan/yara mô phỏng ở tầng lệnh, file thật dưới gốc sandbox) và stack cloud thật (PostgreSQL 16 + Redis + Laravel + Vite + itso-gateway).
 - **Phạm vi giữ đúng:** không đổi cấu hình máy chủ thật, không deploy. Laravel không chạy lệnh hệ thống (`check-no-exec` xanh). Agent không có op chạy lệnh tùy ý, không `sh -c`; quét mã độc và cách ly chạy dưới uid account. Billing/WooCommerce/thanh toán: OUT OF SCOPE.

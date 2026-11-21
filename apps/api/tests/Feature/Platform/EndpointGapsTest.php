@@ -10,17 +10,18 @@ use Tests\Support\FakeAgent;
 const GA = 'itso-admin-v1.yaml';
 const GP = 'itso-portal-v1.yaml';
 
-it('purge và chuyển server trả 501 có mã riêng (không giả thành công); account người khác vẫn 404 trước', function () {
+it('chuyển server trả 501 có mã riêng (không giả thành công); purge (Phase 8) chặn account chưa chấm dứt; account người khác vẫn 404 trước', function () {
     $a = new Actors($this);
     $sa = $a->spa('SA');
     $id = $a->account->uuid;
-    foreach (['schedule-purge' => 'purge_not_available', 'confirm-purge' => 'purge_not_available', 'migrate' => 'migration_not_available'] as $action => $code) {
-        $r = $sa->post("/api/v1/admin/hosting-accounts/$id:$action", []);
-        assertMatchesContract(GA, 'post', "/api/v1/admin/hosting-accounts/{id}:$action", 501, $r);
-        expect($r->json('code'))->toBe($code);
-    }
+    $r = $sa->post("/api/v1/admin/hosting-accounts/$id:migrate", []);
+    assertMatchesContract(GA, 'post', '/api/v1/admin/hosting-accounts/{id}:migrate', 501, $r);
+    expect($r->json('code'))->toBe('migration_not_available');
+    $idem = ['Idempotency-Key' => (string) Str::uuid()];
+    assertMatchesContract(GA, 'post', '/api/v1/admin/hosting-accounts/{id}:schedule-purge', 409,
+        $sa->call('POST', "/api/v1/admin/hosting-accounts/$id:schedule-purge", [], $idem));
     expect($sa->post('/api/v1/admin/hosting-accounts/'.Str::uuid().':migrate', [])->getStatusCode())->toBe(404);
-    // ADMIN không có quyền accounts.terminate → 403.
+    // Purge cần backups.manage (SUPER_ADMIN) → ADMIN 403.
     expect($a->spa('AD_IN')->post("/api/v1/admin/hosting-accounts/$id:schedule-purge", [])->getStatusCode())->toBe(403);
 });
 

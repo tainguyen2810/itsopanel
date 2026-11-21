@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 import { Checkbox, Switch } from '@/ui/Checkbox';
 import { FormField } from '@/ui/FormField';
-import { Input } from '@/ui/Input';
+import { Input, Textarea } from '@/ui/Input';
 import { Select, type SelectOption } from '@/ui/Select';
 
 interface Base<T extends FieldValues> {
@@ -39,6 +39,29 @@ export function TextField<T extends FieldValues>({
           {...(inputMode ? { inputMode } : {})}
           value={String(f.value ?? '')}
           onChange={(e) => f.onChange(type === 'number' ? e.target.valueAsNumber : e.target.value)}
+        />
+      )}
+    />
+  );
+}
+
+/** Ô nhập nhiều dòng nối react-hook-form. */
+export function TextareaField<T extends FieldValues>({
+  rows = 3,
+  placeholder,
+  ...base
+}: Base<T> & { rows?: number; placeholder?: string }) {
+  return (
+    <FormField
+      {...base}
+      render={(f) => (
+        <Textarea
+          {...f}
+          rows={rows}
+          {...(placeholder ? { placeholder } : {})}
+          className="font-mono"
+          value={String(f.value ?? '')}
+          onChange={(e) => f.onChange(e.target.value)}
         />
       )}
     />

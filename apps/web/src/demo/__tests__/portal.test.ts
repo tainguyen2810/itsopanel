@@ -10,6 +10,8 @@ const ANPHAT_USER = '01938a01-0003-7000-8000-000001000003';
 const MKT_USER = '01938a01-0004-7000-8000-000001000004';
 const ANPHAT = '01938a05-0001-7000-8000-000005000001';
 const OLDSHOP = '01938a05-0004-7000-8000-000005000004';
+/** Account đã chấm dứt chờ purge (mockup 8.0), cùng chủ với anphat. */
+const HOIDONG = '01938a05-0028-7000-8000-000005000028';
 const MKT = '01938a05-0002-7000-8000-000005000002';
 const PENDING01 = '01938a05-000c-7000-8000-00000500000c';
 const JOB_ANPHAT = '01938a0f-0001-7000-8000-00000f000001';
@@ -40,7 +42,7 @@ afterAll(() => demoServer.close());
 
 describe('Portal: chỉ dữ liệu của user đang đăng nhập', () => {
   it.each([
-    [ANPHAT_USER, [ANPHAT, OLDSHOP]],
+    [ANPHAT_USER, [ANPHAT, OLDSHOP, HOIDONG]],
     [MKT_USER, [MKT, PENDING01]],
   ])('%s chỉ thấy account của mình', async (user, own) => {
     const r = await call('GET', '/hosting-accounts?per_page=100', user);
@@ -62,7 +64,7 @@ describe('Portal: chỉ dữ liệu của user đang đăng nhập', () => {
     '/restores',
   ])('danh sách %s chỉ gồm tài nguyên thuộc account của mình', async (path) => {
     for (const [user, own] of [
-      [ANPHAT_USER, [ANPHAT, OLDSHOP]],
+      [ANPHAT_USER, [ANPHAT, OLDSHOP, HOIDONG]],
       [MKT_USER, [MKT, PENDING01]],
     ] as const) {
       const r = await call('GET', `${path}?per_page=100`, user);

@@ -41,6 +41,7 @@ var Bins = map[string]string{
 	"pg_dropcluster":   "/usr/bin/pg_dropcluster",
 	"pg_dump":          "/usr/bin/pg_dump",
 	"psql":             "/usr/bin/psql",
+	"pg_restore":       "/usr/bin/pg_restore",
 	"frankenphp":       "/opt/itso/current/bin/frankenphp",
 	// Website (Phase 5, D-67…D-69). Chỉ PHP 8.3 (kho Ubuntu 24.04).
 	"nginx":      "/usr/sbin/nginx",
@@ -60,6 +61,8 @@ var Bins = map[string]string{
 	// Chỉ chạy bằng root với --version; quét thật chạy qua systemd-run dưới uid account (ADR 0026).
 	"clamdscan": "/usr/bin/clamdscan",
 	"yara":      "/usr/bin/yara",
+	// Phase 8 (D-82…D-87): restic từ kho Ubuntu; ở máy thật luôn chạy qua systemd-run trong itso-maint.slice.
+	"restic": "/usr/bin/restic",
 }
 
 // allowedEnv là biến môi trường được phép đặt thêm cho một lệnh (ngoài env tối giản cố định).
@@ -188,9 +191,11 @@ type Proc struct {
 	ExtraFiles []*os.File
 	// Dir: thư mục làm việc (mặc định "/").
 	Dir string
+	// Env (tùy chọn): "KEY=VALUE" với KEY trong allowedEnv (không bao giờ qua argv).
+	Env []string
 }
 
-func (p Proc) cmd() Cmd { return Cmd{Bin: p.Bin, Args: p.Args, As: p.As} }
+func (p Proc) cmd() Cmd { return Cmd{Bin: p.Bin, Args: p.Args, As: p.As, Env: p.Env} }
 
 // Streamer chạy Proc và trả mã thoát (exit ≠ 0 không phải lỗi Go).
 type Streamer interface {
@@ -205,6 +210,7 @@ func (ExecRunner) Stream(ctx context.Context, p Proc) (int, error) {
 	}
 	cmd := exec.CommandContext(ctx, path, p.Args...)
 	cmd.Env = []string{"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "LC_ALL=C.UTF-8"}
+	cmd.Env = append(cmd.Env, p.Env...)
 	cmd.Dir = "/"
 	if p.Dir != "" {
 		cmd.Dir = p.Dir

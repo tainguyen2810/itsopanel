@@ -501,35 +501,55 @@ export function registerHosting() {
     });
   });
 
+  // Purge 2 bước (D-46), như PurgeService của API thật: lên lịch = biên bản + backup cuối (hoặc kiểm chứng lại
+  // snapshot sẵn có); xác nhận = Super Admin khác, sau hạn giữ dữ liệu, backup cuối đã kiểm chứng → xóa ngay.
   on('post', '/api/v1/admin/hosting-accounts/{id}:schedule-purge', (ctx) => {
     const deny = SA_ONLY(ctx);
     if (deny) return deny;
     const a = accountOf(ctx);
     if (isReply(a)) return a;
     if (a.lifecycle_state !== 'terminated')
-      return problem(409, 'conflict', 'Chỉ lên lịch purge cho tài khoản đã chấm dứt');
+      return problem(
+        409,
+        'invalid_state_transition',
+        'Chưa chấm dứt account',
+        'Chỉ purge account đã chấm dứt (terminate) và hết thời gian giữ dữ liệu.',
+      );
     if (a.legal_hold)
       return problem(
         409,
-        'conflict',
-        'Tài khoản đang bị giữ pháp lý (legal hold), không được purge',
+        'precondition_failed',
+        'Đang legal hold',
+        'Account đang bị giữ theo yêu cầu pháp lý (legal hold): không purge.',
       );
-    const purges = ctx.db.data.purges;
-    if (purges.some((p) => p.hosting_account.uuid === a.uuid && p.completed_at === null)) {
-      return problem(409, 'conflict', 'Đã có yêu cầu purge cho tài khoản này');
-    }
     const b = (ctx.body ?? {}) as { final_backup?: boolean; note?: string | null };
-    const snap = ctx.db.data.snapshots.find(
-      (s) => s.hosting_account?.uuid === a.uuid && s.verified_at,
+    const final = b.final_backup !== false;
+    const latest = ctx.db.data.snapshots.find(
+      (s) => s.hosting_account?.uuid === a.uuid && s.scope_type === 'hosting_account',
     );
+    if (!final && !latest)
+      return problem(
+        422,
+        'validation_failed',
+        'Dữ liệu không hợp lệ',
+        'Account chưa có snapshot nào: cần backup cuối (final_backup = true).',
+      );
+    // Biên bản cũ chưa xong bị thay.
+    const purges = ctx.db.data.purges;
+    for (let i = purges.length - 1; i >= 0; i--) {
+      const p = purges[i];
+      if (p && p.hosting_account.uuid === a.uuid && p.completed_at === null) purges.splice(i, 1);
+    }
+    const due =
+      a.purge_after && Date.parse(a.purge_after) > Date.now() ? a.purge_after : ctx.db.now();
     const rec = {
       uuid: ctx.db.newUuid(),
       hosting_account: accRef(a),
       requested_by: actorRef(ctx),
       confirmed_by: null,
-      final_backup_snapshot_uuid: snap?.uuid ?? null,
-      backup_verified_at: snap?.verified_at ?? null,
-      scheduled_for: a.purge_after ?? iso(Date.now() + 30 * DAY),
+      final_backup_snapshot_uuid: final ? null : (latest?.uuid ?? null),
+      backup_verified_at: null,
+      scheduled_for: due,
       completed_at: null,
       objects: [],
       created_at: ctx.db.now(),
@@ -537,17 +557,17 @@ export function registerHosting() {
     } as S['PurgeRecord'];
     purges.push(rec);
     return startJob(ctx, {
-      type: 'hosting_account.schedule_purge',
+      type: final ? 'backup.run' : 'backup.verify',
       resource: resource(a),
-      ops:
-        b.final_backup === false
-          ? ['backup.check']
-          : ['backup.run', 'backup.check', 'backup.restore_test'],
+      // Backup cuối (tag final) xong → panel tự kiểm chứng (restic check + restore test).
+      ops: final
+        ? ['backup.run', 'backup.stats', 'backup.check', 'backup.restore_test']
+        : ['backup.check', 'backup.restore_test'],
       server: a.server,
-      changes: { purge_uuid: rec.uuid, note: b.note ?? null },
+      changes: { purge_uuid: rec.uuid, final_backup: final, note: b.note ?? null },
       onDone: (db) => {
         rec.backup_verified_at = db.now();
-        rec.final_backup_snapshot_uuid ??= db.data.snapshots[0]?.uuid ?? null;
+        rec.final_backup_snapshot_uuid ??= latest?.uuid ?? db.data.snapshots[0]?.uuid ?? null;
         rec.updated_at = db.now();
       },
     });
@@ -560,30 +580,72 @@ export function registerHosting() {
     if (isReply(a)) return a;
     const b = (ctx.body ?? {}) as { purge_uuid?: string; confirm_username?: string };
     const rec = ctx.db.data.purges.find(
-      (p) => p.uuid === b.purge_uuid && p.hosting_account.uuid === a.uuid,
+      (p) =>
+        p.uuid === b.purge_uuid && p.hosting_account.uuid === a.uuid && p.completed_at === null,
     );
-    if (!rec) return problem(404, 'not_found', 'Không tìm thấy yêu cầu purge');
-    if (b.confirm_username !== a.username) return invalid('Gõ đúng username để xác nhận.');
-    if (rec.requested_by.uuid === ctx.actor.uuid) {
+    if (!rec)
       return problem(
-        403,
-        'forbidden',
-        'Người xác nhận purge phải là Super Admin khác người yêu cầu (D-46)',
+        422,
+        'validation_failed',
+        'Dữ liệu không hợp lệ',
+        'Không có biên bản purge đang mở cho account này.',
       );
-    }
-    if (rec.confirmed_by) return problem(409, 'conflict', 'Yêu cầu purge đã được xác nhận');
-    if (!rec.backup_verified_at)
-      return problem(409, 'conflict', 'Chưa có bản sao lưu cuối đã kiểm chứng');
-    if (a.legal_hold) return problem(409, 'conflict', 'Tài khoản đang bị giữ pháp lý (legal hold)');
+    if (b.confirm_username !== a.username)
+      return problem(
+        422,
+        'validation_failed',
+        'Dữ liệu không hợp lệ',
+        'Gõ đúng username account để xác nhận purge.',
+      );
+    if (a.lifecycle_state !== 'terminated' || a.legal_hold)
+      return problem(
+        409,
+        'invalid_state_transition',
+        'Không purge được',
+        a.legal_hold ? 'Account đang legal hold.' : `Account đang ${a.lifecycle_state}.`,
+      );
+    if (!rec.backup_verified_at || !rec.final_backup_snapshot_uuid)
+      return problem(
+        409,
+        'precondition_failed',
+        'Chưa có backup cuối đã kiểm chứng',
+        'Purge bị chặn: backup cuối phải qua restic check và restore test trước (D-46). Xem tiến độ ở Jobs.',
+      );
+    const notYet = [rec.scheduled_for, a.purge_after].find((d) => d && Date.parse(d) > Date.now());
+    if (notYet)
+      return problem(
+        409,
+        'precondition_failed',
+        'Chưa tới hạn purge',
+        `Dữ liệu còn được giữ tới ${notYet}.`,
+      );
+    if (rec.requested_by.uuid === ctx.actor.uuid)
+      return problem(
+        409,
+        'precondition_failed',
+        'Cần người xác nhận thứ hai',
+        'Purge 2 bước (D-46): người lên lịch không tự xác nhận; một SUPER_ADMIN khác phải xác nhận.',
+      );
     rec.confirmed_by = actorRef(ctx);
     rec.updated_at = ctx.db.now();
-    // Xác nhận: kiểm tra lại backup ngay; purge tự chạy đúng hạn (scheduled_for).
     return startJob(ctx, {
-      type: 'hosting_account.confirm_purge',
+      type: 'hosting_account.purge',
       resource: resource(a),
-      ops: ['backup.check', 'backup.restore_test'],
+      ops: ['account.remove'],
       server: a.server,
-      changes: { purge_uuid: rec.uuid, scheduled_for: rec.scheduled_for },
+      changes: { purge_uuid: rec.uuid, final_snapshot: rec.final_backup_snapshot_uuid },
+      onDone: (db) => {
+        rec.completed_at = db.now();
+        rec.objects = [
+          { kind: 'home', name: a.home_path, sha256: null },
+          ...db.data.databases
+            .filter((d) => d.hosting_account.uuid === a.uuid)
+            .map((d) => ({ kind: 'database', name: d.name, sha256: null })),
+        ];
+        rec.updated_at = db.now();
+        a.lifecycle_state = 'purged';
+        a.updated_at = db.now();
+      },
     });
   });
 

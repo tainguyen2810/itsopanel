@@ -37,7 +37,7 @@ Khi bảng dưới đây khác đặc tả, **đặc tả DBML + extras.sql là 
 | `server_capacity` (mới) | `server_id` PK, `cpu_cores`, `ram_mb`, `disk_mb`, `allocated_cpu_pct`, `allocated_ram_mb`, `allocated_disk_mb`, `account_count`, `max_accounts`, `accepting_new bool`, `updated_at` | Gợi ý server khi tạo account, khóa khi cấp |
 | `uid_allocations` (mới) | `server_id`, `uid`, `hosting_account_id`, `released_at` — unique(server_id, uid) | Không tái dùng UID trong 90 ngày |
 | `purge_records` (mới) | `hosting_account_id`, `requested_by_user_id`, `confirmed_by_user_id` (khác người yêu cầu), `final_backup_snapshot_id`, `backup_verified_at`, `objects jsonb` (đường dẫn, DB, repo, hash), `scheduled_for`, `completed_at`; trigger `hosting_purge_guard` | Biên bản xóa (D-46) |
-| `backup_destinations` / `backup_snapshots` | Thêm `hosting_account_id` cho repo theo account (D-23) | Backup theo tài khoản |
+| `backup_destinations` / `backup_repositories` (mới, Phase 8) / `backup_snapshots` | Đích chỉ giữ cấu hình + credential ghi, kết quả kiểm tra, host key, xác nhận bộ khôi phục; repo = đích × máy chủ × account (hoặc × máy chủ) với mật khẩu restic riêng mã hóa, đường dẫn cố định `itso/<server>/acct-<account>`; snapshot gắn repo, website, DB, `locked_until`; `backup_policy_destinations` cho policy nhiều đích (D-23, D-82, ADR 0029) | Backup theo tài khoản, xóa sạch một account được |
 | `impersonation_sessions` (mới) | `staff_user_id`, `target_user_id`, `reason`, `started_at`, `ended_at` | Kiểm soát truy cập dữ liệu USER |
 | `tos_acceptances` (tùy chọn) | `user_id`, `version`, `accepted_at` | Quy định sử dụng nội bộ cho USER portal |
 

@@ -11,7 +11,7 @@ Agent gọi binary `restic` (version pin, kèm trong release) với biến môi 
 
 ## 2. Tổ chức repository
 - **Một repo restic cho mỗi (server, destination)**, phân biệt bằng tag: `server:<uuid>`, `account:<uuid>`, `website:<uuid>`, `db:<uuid>`, `type:files|db|config|volume`. Dedupe tốt hơn nhiều repo nhỏ.
-- Mật khẩu repo mã hóa trong `backup_destinations.restic_password_encrypted` **và** in ra cho SA lưu offline khi tạo (wizard bắt buộc xác nhận đã lưu) — mất panel vẫn khôi phục được.
+- (Đã thay bởi ADR 0029: mật khẩu theo repo ở `backup_repositories.password_encrypted`, bộ khôi phục một lần.) Mật khẩu repo mã hóa trong `backup_destinations.restic_password_encrypted` **và** in ra cho SA lưu offline khi tạo (wizard bắt buộc xác nhận đã lưu) — mất panel vẫn khôi phục được.
 - USER chỉ thấy snapshot có tag account của mình (lọc ở panel; restore qua agent kiểm tra tag).
 
 ## 3. Phạm vi backup

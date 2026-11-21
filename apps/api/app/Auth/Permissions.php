@@ -74,7 +74,12 @@ final class Permissions
             'audit.export' => 'Xuất nhật ký kiểm toán',
             'settings.read' => 'Xem cài đặt hệ thống',
             'settings.write' => 'Sửa cài đặt hệ thống',
-            'backups.read' => 'Xem sao lưu (Phase 8)',
+        ],
+        'backups' => [
+            'backups.read' => 'Xem bản backup, repo, kiểm chứng, lịch sử khôi phục (theo phạm vi)',
+            'backups.write' => 'Backup ngay, kiểm chứng snapshot, tải file từ snapshot (theo phạm vi)',
+            'backups.restore' => 'Khôi phục từ snapshot (theo phạm vi; ghi đè cần step-up)',
+            'backups.manage' => 'Đích, chính sách, bộ khôi phục, xóa snapshot, purge account (SUPER_ADMIN)',
         ],
     ];
 
@@ -83,7 +88,7 @@ final class Permissions
         'SUPER_ADMIN' => ['*'],
         'ADMIN' => ['users.read', 'users.write', 'roles.read', 'servers.read', 'packages.read', 'accounts.read',
             'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'files.*', 'ftp.*',
-            'cron.*', 'terminal.account', 'backups.read', 'security.read', 'security.write'],
+            'cron.*', 'terminal.account', 'backups.read', 'backups.write', 'backups.restore', 'security.read', 'security.write'],
         'USER' => ['own.*'],
     ];
 

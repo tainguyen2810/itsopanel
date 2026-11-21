@@ -128,7 +128,11 @@ func (e *Env) Install(ctx context.Context, o Options) error {
 			return err
 		}
 	}
-	code, err := e.NewSetupCode()
+	mode := ""
+	if o.Restore {
+		mode = "restore"
+	}
+	code, err := e.newSetupCode(mode)
 	if err != nil {
 		return err
 	}
@@ -137,6 +141,10 @@ func (e *Env) Install(ctx context.Context, o Options) error {
 	e.printf("Mã thiết lập: %s (hết hạn sau 60 phút, chỉ dùng một lần)\n", code)
 	if fp, err := e.certFingerprint(); err == nil {
 		e.printf("Chứng chỉ:    tự ký, SHA256 %s\n", fp)
+	}
+	if o.Restore {
+		e.printf("Chế độ khôi phục: mở URL, nhập mã thiết lập rồi chọn \"Khôi phục từ backup\" với bộ khôi phục\n")
+		e.printf("              (đích, repo server + mật khẩu, khóa riêng age). Runbook: docs/runbooks/disaster-recovery.md\n")
 	}
 	e.printf("Lệnh quản trị: itso status | itso doctor | itso help\n")
 	return nil

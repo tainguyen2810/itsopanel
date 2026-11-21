@@ -25,7 +25,7 @@ func (f *FakeRunner) Stream(ctx context.Context, p Proc) (int, error) {
 		return -1, err
 	}
 	f.mu.Lock()
-	f.Calls = append(f.Calls, Cmd{Bin: p.Bin, Args: append([]string(nil), p.Args...), As: p.As})
+	f.Calls = append(f.Calls, Cmd{Bin: p.Bin, Args: append([]string(nil), p.Args...), As: p.As, Env: append([]string(nil), p.Env...)})
 	hook := f.StreamHook
 	f.mu.Unlock()
 	if hook != nil {

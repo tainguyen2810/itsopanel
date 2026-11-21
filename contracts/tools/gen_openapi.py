@@ -376,16 +376,32 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
                                  server=None))
     # -- backups
     api.add("get", "/backup-snapshots", oid("listBackupSnapshots"), "Bản backup", "Backups", list_=True,
-            params=acc_filter, ok=cref("BackupSnapshot"), ok_example=page(D.SNAPSHOTS[:1] if realm == "portal" else D.SNAPSHOTS))
+            params=acc_filter + [Api.p("FilterScopeType")] + ([Api.p("FilterDestination")] if realm == "admin" else []),
+            ok=cref("BackupSnapshot"), ok_example=page(D.SNAPSHOTS[:1] if realm == "portal" else D.SNAPSHOTS))
     api.add("post", "/backups", oid("createBackup"), "Backup ngay (trong quota)", "Backups", body=cref("BackupRequest"),
             body_example={"hosting_account_uuid": acc["uuid"], "contents": ["files", "databases"], "note": "Trước khi nâng cấp"},
             job=True, job_example=jobs("backup.run", "hosting_account", acc["uuid"], ["backup.run", "backup.check"], realm=realm))
     api.add("get", "/backup-snapshots/{id}/browse", oid("browseBackupSnapshot"), "Duyệt file trong snapshot", "Backups",
             params=idp + [Api.p("PathQuery")], list_=True, ok=cref("FileEntry"), ok_example=page(D.FILES[:2]))
     api.add("post", "/backup-snapshots/{id}:download-link", oid("backupDownloadLink"), "Link tải bản backup", "Backups",
-            params=idp, ok=cref("SignedUrl"),
-            ok_example=one({"url": "https://portal.itso.local/dl/backup/4f2a9c1e.tar.zst?sig=abc",
+            params=idp, body=cref("BackupDownloadRequest"), body_example={"path": "sites/anphat.vn/public/wp-config.php"},
+            ok=cref("SignedUrl"),
+            desc="Link ký HMAC hết hạn 5 phút tới `/backup-snapshots/{id}/raw`; chỉ tải từng file (`path` bắt buộc, null → 422: "
+                 "lấy cả snapshot bằng khôi phục). File được agent đọc từ snapshot (`restic dump`) khi tải.",
+            ok_example=one({"url": "https://portal.itso.local/api/v1/portal/backup-snapshots/01938a0e-0001-7000-8000-00000e000001/raw"
+                                   "?path=sites%2Fanphat.vn%2Fpublic%2Fwp-config.php&expires=1763605200&signature=abc",
                             "expires_at": "2026-11-20T09:15:00+07:00"}))
+    braw = "/backup-snapshots/{id}/raw"
+    api.add("get", braw, oid("downloadBackupFile"), "Tải một file từ snapshot (URL ký số từ download-link)", "Backups",
+            params=idp + [Api.p("PathQuery"), Api.p("Expires"), Api.p("Signature")], ok=None,
+            desc="Stream file theo khúc 1 MiB qua agent (`backup.file.read`, `restic dump`); tối đa 512 MiB. Cần phiên đăng nhập "
+                 "và chữ ký còn hạn (HMAC, 5 phút).")
+    bfull = api.prefix + braw
+    api.paths[bfull]["get"]["responses"]["200"] = {
+        "description": "Nội dung file",
+        "headers": {"Content-Disposition": {"schema": {"type": "string"}, "description": "attachment; filename=…"}},
+        "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}, "example": "<?php …"}}}
+    api.paths[bfull]["get"]["responses"]["503"] = Api.r("AgentUnavailable")
     api.add("get", "/restores", oid("listRestores"), "Lịch sử khôi phục", "Backups", list_=True, ok=cref("Restore"),
             ok_example=page(D.RESTORES))
     api.add("post", "/restores", oid("createRestore"), "Khôi phục", "Backups", body=cref("RestoreRequest"),
@@ -548,6 +564,28 @@ def setup_paths(api: Api, jobs):
     op = api.add("get", "/setup/quota", "getSetupQuota", "Bước 6: trạng thái disk quota của server panel", "Setup",
                  ok=ref("SetupQuota"), ok_example=one({"mode": "kernel", "server": D.server_ref(0), "facts_at": D.T2}))
     op["responses"]["410"] = gone
+    public("post", "/setup/restore:inspect", "inspectSetupRestore", "Khôi phục thảm họa: mở repo panel, liệt kê bản backup panel",
+           extra=("403", "409", "410"), body=ref("SetupRestoreSource"),
+           body_example={"type": "s3", "config": {"endpoint": "https://s3.ap-southeast-1.example.com", "bucket": "itso-backup"},
+                         "credentials": {"access_key": "AKIA…", "secret_key": "********"},
+                         "repository_path": "itso/" + D.SERVERS[0]["uuid"] + "/server",
+                         "repository_password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw", "panel_private_key": D.RECOVERY_KIT["panel_private_key"]},
+           ok={"type": "array", "items": ref("SetupRestoreCandidate")}, ok_example=one(D.SETUP_RESTORE_CANDIDATES),
+           desc="Cần phiên đã xác minh mã thiết lập (403 nếu chưa). Không lưu credential/mật khẩu/khóa riêng; sai mật khẩu → 422; đích SFTP → 422 (dùng CLI `itso backup panel-restore`, cần khóa SSH + host key của đích); wizard đã tạo SUPER_ADMIN → 409.")
+    op = public("post", "/setup/restore", "startSetupRestore", "Khôi phục thảm họa: khôi phục DB panel + cấu hình rồi `itso repair`",
+                extra=("403", "409", "410"), body=ref("SetupRestoreRequest"),
+                body_example={"source": {"type": "s3", "config": {"endpoint": "https://s3.ap-southeast-1.example.com",
+                                                                  "bucket": "itso-backup"},
+                                         "credentials": {"access_key": "AKIA…", "secret_key": "********"},
+                                         "repository_path": "itso/" + D.SERVERS[0]["uuid"] + "/server",
+                         "repository_password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw", "panel_private_key": D.RECOVERY_KIT["panel_private_key"]},
+                              "snapshot_id": "6b3e91f0"},
+                job=True, job_example=jobs("setup.restore", "server", D.SERVERS[0]["uuid"],
+                                           ["panel.restore"]),
+                desc="Chỉ khi wizard chưa tạo SUPER_ADMIN. Job giải mã backup panel vào staging; vài giây sau "
+                     "`itso panel-restore-apply` thay DB panel + /etc/itso (giữ mật khẩu DB/Redis, TLS của máy mới), migrate, "
+                     "`itso:reconcile` rồi khôi phục dữ liệu account song song có giới hạn (`itso:dr-restore`). Sau đó đăng nhập "
+                     "bằng tài khoản cũ (D-87, docs/runbooks/disaster-recovery.md)."),
     op = api.add("post", "/setup:complete", "completeSetup", "Bước 9: tổng kết và khóa wizard", "Setup",
                  ok=ref("SetupStatus"), ok_example=one({**st, "installed": True, "code_verified": True,
                                                         "admin_created": True, "admin_mfa_enabled": True,
@@ -744,6 +782,20 @@ def admin_paths(api: Api):
     api.add("post", "/backup-policies/{id}:run", "runBackupPolicy", "Chạy chính sách ngay", "Backups", params=idp,
             job=True, job_example=jobs("backup.policy_run", "backup_policy", D.BACKUP_POLICIES[0]["uuid"],
                                        ["backup.run", "backup.check"]))
+    api.add("post", "/backup-destinations/{id}:recovery-kit", "getBackupRecoveryKit", "Bộ khôi phục của đích (hiện một lần)",
+            "Backups", params=idp, ok=ref("RecoveryKit"), ok_example=one(D.RECOVERY_KIT),
+            desc="Chỉ SUPER_ADMIN. Lần đầu (chưa xác nhận đã lưu offline) không cần step-up; sau đó cần step-up MFA "
+                 "(403 `mfa_step_up_required`). Mỗi lượt xem ghi audit.")
+    api.add("post", "/backup-destinations/{id}:recovery-kit-ack", "acknowledgeBackupRecoveryKit",
+            "Xác nhận đã lưu bộ khôi phục offline", "Backups", params=idp, no_content=True)
+    api.add("get", "/backup-repositories", "listBackupRepositories", "Repo backup (đích × account / server)", "Backups",
+            list_=True, params=[Api.p("FilterHostingAccount"), Api.p("FilterDestination")], ok=ref("BackupRepository"),
+            ok_example=page(D.BACKUP_REPOS))
+    api.add("get", "/backup-verifications", "listBackupVerifications", "Lịch sử kiểm chứng (check + restore test)",
+            "Backups", list_=True, params=[Api.p("FilterHostingAccount"), Api.p("FilterDestination")],
+            ok=ref("BackupVerification"), ok_example=page(D.BACKUP_VERIFICATIONS))
+    api.add("get", "/backups/overview", "getBackupOverview", "Tổng quan Backup Center (3-2-1-1-0)", "Backups",
+            ok=ref("BackupOverview"), ok_example=one(D.BACKUP_OVERVIEW))
     api.add("post", "/backup-snapshots/{id}:verify", "verifyBackupSnapshot", "Kiểm chứng khôi phục được", "Backups",
             params=idp, job=True,
             job_example=jobs("backup.verify", "backup_snapshot", D.SNAPSHOTS[0]["uuid"], ["backup.check", "backup.restore_test"]))
@@ -1003,6 +1055,8 @@ def common_components():
         "Offset": qp("offset", {"type": "integer", "minimum": 0, "default": 0}, "Vị trí byte bắt đầu đọc."),
         "PathQuery": qp("path", {"$ref": "#/components/schemas/RelPath"}, "Đường dẫn tương đối với home account.", True),
         "FilterHostingAccount": qp("filter[hosting_account]", {"type": "string", "format": "uuid"}, "Lọc theo account."),
+        "FilterDestination": qp("filter[destination]", {"type": "string", "format": "uuid"}, "Lọc theo đích backup."),
+        "FilterScopeType": qp("filter[scope_type]", {"type": "string", "enum": ["hosting_account", "website", "database", "server_config", "panel"]}, "Lọc theo loại backup."),
         "FilterServer": qp("filter[server]", {"type": "string", "format": "uuid"}, "Lọc theo server."),
         "FilterLifecycle": qp("filter[lifecycle_state]", {"$ref": "#/components/schemas/LifecycleState"}, "Lọc theo trạng thái vòng đời."),
         "FilterRealm": qp("filter[realm]", {"type": "string", "enum": ["admin", "portal"]}, "Lọc theo realm."),

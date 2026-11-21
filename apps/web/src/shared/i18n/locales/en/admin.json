@@ -276,7 +276,43 @@
       "job": "Install web stack",
       "optional": "This step is optional: you can press Continue and install later under Servers → Software."
     },
-    "confirmFirewall": "The default firewall was applied: press \"Keep new configuration\" within 5 minutes or the server rolls it back."
+    "confirmFirewall": "The default firewall was applied: press \"Keep new configuration\" within 5 minutes or the server rolls it back.",
+    "dr": {
+      "pathLegend": "What would you like to do?",
+      "path": {
+        "install": {
+          "title": "Fresh install",
+          "hint": "Create a Super Admin and configure the panel from scratch."
+        },
+        "restore": {
+          "title": "Restore from backup",
+          "hint": "Replacement server after an incident: use the recovery kit to bring back the panel and its accounts."
+        }
+      },
+      "title": "Restore the panel from backup",
+      "sourceHint": "Enter the destination and details from the recovery kit. The panel doesn't store the repository password or private key.",
+      "pickHint": "Choose the panel backup to restore. The newest is usually right.",
+      "runHint": "The agent decrypts the panel backup, then the panel pauses for about a minute to replace its DB and /etc/itso, reapply account config and restore website and database data in the background.",
+      "sftpHint": "SFTP destinations can't be restored from the wizard (the destination's SSH key and host key are needed): on the new server run \"sudo itso backup panel-restore --kit <file> --snapshot <id> --ssh-key <key>\", then \"sudo itso panel-restore-apply --dir <printed folder>\".",
+      "repoPath": "Server repository path",
+      "repoPathHint": "The \"repo:\" line under \"server <hostname>\" in the recovery kit, like itso/<uuid>/server.",
+      "repoPassword": "Server repository password",
+      "privateKey": "Panel private key",
+      "privateKeyHint": "The AGE-SECRET-KEY-1… line from the recovery kit.",
+      "open": "Open repository",
+      "pickLegend": "Panel backup",
+      "latest": "Newest",
+      "version": "version {{v}}",
+      "accounts_one": "{{count}} account",
+      "accounts_other": "{{count}} accounts",
+      "pickWarnTitle": "This overwrites the empty panel on this server",
+      "pickWarn": "Website files and databases of each account are restored automatically in the background (2 accounts at a time) once the panel is back.",
+      "start": "Start restore",
+      "job": "Panel restore",
+      "doneTitle": "Panel restored",
+      "doneHint": "The panel is restarting with the old data (about a minute). Then sign in with your previous account (old MFA required) and follow progress in Backup Center → Restores.",
+      "verify": "Check state after restore"
+    }
   },
   "servers": {
     "title": "Servers",
@@ -962,7 +998,7 @@
     "title": "Terminated accounts",
     "description": "Data is kept at least 30 days. Purging needs a verified final backup and two different Super Admins: one schedules, the other confirms.",
     "policyTitle": "Two-step purge (D-46)",
-    "policy": "1. Super Admin A schedules the purge and the panel runs and verifies a final backup. 2. Super Admin B types the username to confirm. The purge runs when retention ends. Accounts on legal hold cannot be purged.",
+    "policy": "1. Super Admin A schedules the purge: the panel takes a final backup and verifies it (restic check + test restore). 2. Once the retention period ends, Super Admin B types the username to confirm and the purge runs immediately. Accounts under legal hold can't be purged.",
     "terminatedAt": "Terminated",
     "countdown": "Retention",
     "countdownOf": "Retention for {{name}}",
@@ -974,7 +1010,7 @@
       "none": "Not scheduled",
       "backup": "Verifying backup",
       "confirm": "Awaiting second Super Admin",
-      "scheduled": "Confirmed, waiting for date",
+      "scheduled": "Confirmed, purging",
       "done": "Purged",
       "hold": "Legal hold"
     },
@@ -983,14 +1019,16 @@
     "actions": "Actions",
     "schedule": "Schedule purge",
     "scheduleTitle": "Schedule purge for {{name}}?",
-    "scheduleHint": "The panel runs a final backup and a test restore. The purge only runs after {{date}} and once another Super Admin confirms.",
+    "scheduleHint": "The panel takes a final backup and test-restores it to verify. The purge can only be confirmed after {{date}}, by another Super Admin.",
     "confirm": "Confirm purge",
     "confirmTitle": "Confirm purge for {{name}}?",
-    "confirmHint": "Requested by {{name}}. All files, databases, SSL and config will be permanently deleted on {{date}}; only the final backup remains.",
+    "confirmHint": "Requested by {{name}}. All files, databases, SSL and configuration are permanently deleted as soon as you confirm; only the final backup remains.",
     "needOtherTitle": "Another Super Admin is needed",
     "needOther": "You scheduled this purge, so you cannot confirm it yourself (D-46). Ask another Super Admin to confirm; in the demo, switch to \"Nguyễn Hải\" from the account menu.",
     "understood": "Got it",
-    "empty": "No terminated accounts."
+    "empty": "No terminated accounts.",
+    "needVerified": "Waiting for the final snapshot to pass a restore test",
+    "notDue": "Can be confirmed after {{date}} (end of retention)"
   },
   "sites": {
     "title": "Websites",
@@ -1819,7 +1857,8 @@
       "history": "History",
       "policies": "Policies",
       "destinations": "Destinations",
-      "verify": "Verification"
+      "verify": "Verification",
+      "overview": "Overview"
     },
     "rule": {
       "title": "3-2-1-1-0 rule",
@@ -1879,7 +1918,7 @@
     "browse": "Browse",
     "download": "Create download link",
     "verifyNow": "Verify now",
-    "verifyFor": "Verify the latest snapshot of {{name}}",
+    "verifyFor": "Verify now: latest snapshot of {{name}}",
     "delete": "Delete",
     "deleteTitle": "Delete snapshot {{id}}?",
     "deleteHint": "Runs restic forget + prune on the destination. This cannot be undone.",
@@ -1896,8 +1935,10 @@
     "scope": {
       "all_accounts": "All accounts",
       "hosting_account": "One account",
-      "server": "One server",
-      "panel": "Panel config"
+      "server": "One server's config",
+      "panel": "Panel config",
+      "website": "One website",
+      "database": "One database"
     },
     "scopeLabel": "Scope",
     "schedule": "Schedule",
@@ -1967,7 +2008,9 @@
       "url": "URL",
       "password": "Password",
       "access_key": "Access key",
-      "secret_key": "Secret key"
+      "secret_key": "Secret key",
+      "port": "SSH port",
+      "user": "User"
     },
     "keepSecret": "Leave empty to keep the current value",
     "objectLock": "Immutability (Object Lock)",
@@ -1981,8 +2024,121 @@
       "dest": "Choose at least one destination",
       "keep": "Keep at least one snapshot",
       "absPath": "Absolute path starting with /",
-      "https": "URL must start with https://"
-    }
+      "https": "URL must start with https://",
+      "exclude": "One path per line, relative to home (max 200 characters), not starting with / and without ..",
+      "excludeMax": "At most 50 exclude patterns",
+      "port": "Port must be 1 to 65535",
+      "host": "Invalid host name or IP"
+    },
+    "snapScope": {
+      "hosting_account": "Account",
+      "website": "Website",
+      "database": "Database",
+      "server_config": "Server config",
+      "panel": "Panel"
+    },
+    "scopeType": "Backup type",
+    "database": "Database",
+    "pickWebsite": "Choose a website",
+    "pickDatabase": "Choose a database",
+    "excludes": "Excludes",
+    "excludesHint": "One pattern per line, relative to the account home, e.g. tmp/** or **/cache/**.",
+    "nextRun": "Next: {{at}}",
+    "retentionCli": "Panel never deletes snapshots",
+    "retentionCliTitle": "Immutable destination: retention is advisory",
+    "retentionCliHint": "{{names}} doesn't let the panel delete snapshots (Object Lock/append-only). Prune old ones with itso backup prune on the server, entering prune credentials there.",
+    "repoCount_one": "{{count}} repository",
+    "repoCount_other": "{{count}} repositories",
+    "detectedLock_one": "Object Lock detected: {{count}} day",
+    "detectedLock_other": "Object Lock detected: {{count}} days",
+    "detectedAppend": "Detected: append-only",
+    "detectedNone": "Checked: not immutable",
+    "kitPending": "Recovery kit not confirmed",
+    "repos": "View repositories",
+    "kit": "Recovery kit",
+    "reposTitle": "Repositories on {{name}}",
+    "reposHint": "One restic repository per account with its own password; server config and panel live in the server repository.",
+    "repoScope": "Scope",
+    "repoServer": "Server {{name}} (config + panel)",
+    "snapshots": "Snapshots",
+    "quota": {
+      "ok": "Within quota",
+      "warn": "Over quota",
+      "paused": "Scheduled backups paused",
+      "pausedHint": "over 120%, scheduled backups paused (old ones kept)"
+    },
+    "quotaTitle": "Backup quota",
+    "quotaHint": "Account backup repository size against the package. Over quota: warning; over 120%: scheduled backups pause.",
+    "quotaUsed": "{{used}} / {{limit}}",
+    "sftpKeyHint": "The agent generates a dedicated SSH key for this destination. After saving, add the public key to the user's authorized_keys on the target, then press Test (the host key is pinned on first contact).",
+    "sshPublicKey": "Destination public key",
+    "restHint": "Use a rest-server user with append-only rights: the panel can write but never delete backups.",
+    "close": "Close",
+    "kitTitle": "Recovery kit: {{name}}",
+    "kitFirstHint": "Shown once. Store it somewhere safe off the server (safe, password manager) before closing.",
+    "kitAgainHint": "Viewing the recovery kit again. This view is audited.",
+    "kitWarnTitle": "This kit restores backups even if the panel is lost",
+    "kitWarn": "Anyone holding the kit can read every backup. Don't send it over chat or email, and don't keep it on this server.",
+    "kitRepos": "Repositories and passwords",
+    "kitRepoPath": "Repository",
+    "kitRepoPassword": "Repository password",
+    "kitPanelKey": "Panel private key",
+    "kitPanelKeyHint": "Decrypts panel backups (panel DB, /etc/itso) during disaster recovery. The panel only keeps the public key.",
+    "kitPrivateKey": "Private key (age)",
+    "kitGenerated": "Generated {{at}}",
+    "kitDownload": "Download recovery kit",
+    "kitConfirm": "I've stored the recovery kit safely off the server",
+    "kitDone": "Saved, close",
+    "kitSaved": "Recovery kit confirmed",
+    "detail": "Details",
+    "detailTitle": "Snapshot {{id}}",
+    "tags": "Tags",
+    "immutable": "Immutable",
+    "lockedUntil": "Immutable until {{at}}",
+    "panelVersion": "Panel version",
+    "downloadFile": "Download {{name}}",
+    "fileLinkHint": "One-time download link for {{name}}, expires at {{at}}.",
+    "ov": {
+      "lastBackup": "Last backup",
+      "lastVerified": "Last verification",
+      "running": "Running jobs",
+      "failed24h": "Failures in 24 h",
+      "destTitle": "Usage by destination",
+      "destHint": "Repository size on each destination (after restic dedup and compression).",
+      "immutable": "Immutable",
+      "usedOf": "Space used on {{name}}",
+      "runningTitle": "Running now",
+      "noRunning": "No backup jobs running.",
+      "progressOf": "Progress of {{name}}",
+      "quotaTitle": "Quota warnings",
+      "quotaHint": "Accounts whose backups exceed their package.",
+      "noQuota": "Every account is within its backup quota.",
+      "quotaOf": "Backup quota of {{name}}",
+      "jobType": {
+        "backup.manual": "Manual backup",
+        "backup.policy.run": "Policy run",
+        "backup.snapshot.verify": "Snapshot verification",
+        "backup.restore": "Restore"
+      }
+    },
+    "vh": {
+      "title": "Verification history",
+      "hint": "Weekly restic check reads a random 5% of data; the monthly restore test restores into staging and compares sha256 with the manifest.",
+      "kind": "Kind",
+      "kinds": {
+        "check": "Repository check",
+        "restore_test": "Restore test"
+      },
+      "state": "Result",
+      "result": "Details",
+      "readData": "Read {{pct}}% of data",
+      "files_one": "{{count}} file compared",
+      "files_other": "{{count}} files compared",
+      "mismatches_one": "{{count}} mismatch",
+      "mismatches_other": "{{count}} mismatches",
+      "at": "Started"
+    },
+    "localHint": "Repositories live in {{path}} on the server (root only). A local disk is not off-site: add another S3/SFTP/rest-server destination."
   },
   "rs": {
     "title": "Restores",
@@ -2010,7 +2166,7 @@
     "modes": {
       "new": {
         "title": "To a new copy",
-        "hint": "Extracts into a restore-<time> folder and _restore databases; live data is untouched."
+        "hint": "Extracts files into backups/restore-<time>/ and databases into a new <name>_r<time>; running data is untouched."
       },
       "overwrite": {
         "title": "Overwrite live data",
@@ -2038,8 +2194,26 @@
     "errors": {
       "snapshot": "Choose a snapshot",
       "items": "Choose at least one item to restore",
-      "confirm": "Type \"{{name}}\" exactly to overwrite"
-    }
+      "confirm": "Type \"{{name}}\" exactly to overwrite",
+      "overwriteOne": "Overwrite: exactly one website (sites/<domain> folder) or one database at a time. Single files are always restored as a new copy."
+    },
+    "stepUpTitle": "MFA step-up required",
+    "stepUpHint": "Overwriting asks for your MFA code again. The panel dumps/snapshots the current data first; if anything fails midway the live data stays untouched.",
+    "outcome": {
+      "date": "date",
+      "time": "timestamp",
+      "dbNew": "new database {{name}}",
+      "dbOverwrite": "overwrite {{name}} (dumped first)",
+      "config": "reapply account config (vhost, PHP-FPM, cron, SSL)",
+      "filesNew": "new copy at {{path}}",
+      "filesOverwrite": "replace {{path}} with an atomic rename"
+    },
+    "result": "Result",
+    "resultPath": "New copy:",
+    "resultReplaced": "Replaced:",
+    "resultDb": "New DB:",
+    "resultDbReplaced": "Overwrote DB:",
+    "resultPre": "Pre-restore snapshot kept"
   },
   "users": {
     "title": "Users",

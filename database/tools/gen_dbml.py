@@ -211,7 +211,7 @@ t("hosting", "account_migrations", ID + [
     "job_id bigint [ref: > jobs.id]", "cleanup_after timestamptz",
     "requested_by_user_id bigint [not null, ref: > users.id]",
 ] + TS, ["hosting_account_id", "state"], "Chuyển account giữa server (D-48).")
-t("hosting", "purge_records", IDN + [
+t("hosting", "purge_records", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
     "requested_by_user_id bigint [not null, ref: > users.id]",
     "confirmed_by_user_id bigint [ref: > users.id]",
@@ -398,45 +398,95 @@ t("docker", "port_allocations", IDN + [
     "created_at timestamptz [not null, default: `now()`]",
 ], ["(server_id, port) [unique]"])
 
-# ---------------------------------------------------------------- Backup
+# ---------------------------------------------------------------- Backup (D-82…D-87, ADR 0029–0033)
 t("backup", "backup_destinations", ID + [
     "name text [not null]", "type text [not null, note: 'local|sftp|s3|rest']",
-    "config jsonb [not null, default: `'{}'::jsonb`]", "credentials_encrypted bytea",
-    "append_only boolean [not null, default: false]", "immutable_days int",
+    "server_id bigint [ref: > servers.id, note: 'local: máy chủ giữ repo; đích từ xa: null']",
+    "config jsonb [not null, default: `'{}'::jsonb`, note: 'Không bí mật: host, port, user, path, endpoint, bucket, url']",
+    "credentials_encrypted bytea [note: 'Credential GHI (S3 key, mật khẩu rest); không bao giờ là credential prune (D-83)']",
+    "append_only boolean [not null, default: false, note: 'Khai báo của SA']", "immutable_days int",
+    "detected jsonb [note: 'Phát hiện ở lần kiểm tra: {append_only, object_lock_days}']",
+    "ssh_public_key text [note: 'SFTP: khóa công khai; khóa riêng chỉ ở agent /etc/itso/backup/keys']",
+    "host_key_sha256 text [note: 'SFTP: host key ghim ở lần kiểm tra đầu']",
+    "enabled boolean [not null, default: true]",
+    "last_check_at timestamptz", "last_check_ok boolean", "last_check_error text",
+    "recovery_kit_acknowledged_at timestamptz",
+    "recovery_kit_acknowledged_by_user_id bigint [ref: > users.id]",
+] + TS + SOFT, ["type"], "Đích backup (D-83). Mật khẩu restic nằm ở backup_repositories, không ở đích.")
+t("backup", "backup_repositories", ID + [
+    "destination_id bigint [not null, ref: > backup_destinations.id]",
+    "server_id bigint [not null, ref: > servers.id]",
+    "scope_type text [not null, note: 'hosting_account|server']",
     "hosting_account_id bigint [ref: > hosting_accounts.id, note: 'repo riêng theo account (D-23)']",
-    "restic_password_encrypted bytea [not null]",
-] + TS + SOFT, ["hosting_account_id"])
+    "path text [not null, note: 'Do agent dựng: itso/<server_uuid>/acct-<account_uuid> | itso/<server_uuid>/server']",
+    "password_encrypted bytea [not null, note: '32 byte ngẫu nhiên, Crypt; chỉ đi qua tham chiếu bí mật backup_repo_password (D-69)']",
+    "initialized_at timestamptz", "size_bytes bigint [not null, default: 0, note: 'restic stats --mode raw-data']",
+    "snapshots_count int [not null, default: 0]", "last_snapshot_at timestamptz",
+    "last_check_at timestamptz", "last_check_ok boolean",
+    "quota_state text [not null, default: 'ok', note: 'ok|warn|paused (D-86)']",
+] + TS + SOFT, ["(destination_id, path) [unique]", "hosting_account_id", "server_id"],
+  "Repo restic = đích × account hoặc đích × server (D-82).")
 t("backup", "backup_policies", ID + [
-    "name text [not null]", "scope_type text [not null, note: 'server|hosting_account|website|database|compose|panel']",
-    "scope_id bigint", "destination_id bigint [not null, ref: > backup_destinations.id]",
-    "schedule text [not null]", "retention jsonb [not null, default: `'{}'::jsonb`]",
-    "include_exclude jsonb [not null, default: `'{}'::jsonb`]", "enabled boolean [not null, default: true]",
-] + TS + SOFT, ["(scope_type, scope_id)"])
+    "name text [not null]",
+    "scope_type text [not null, note: 'all_accounts|hosting_account|website|database|server|panel']",
+    "scope_id bigint [note: 'id theo scope_type; null cho all_accounts/panel']",
+    "contents text[] [not null, default: `'{files,databases}'`, note: 'files|databases|config']",
+    "excludes text[] [not null, default: `'{}'`, note: 'Mẫu loại trừ tương đối (≤ 50), cộng thêm loại trừ cố định của agent']",
+    "schedule text [not null]", "retention jsonb [not null, default: `'{}'::jsonb`, note: 'Mong muốn: last, hourly, daily, weekly, monthly; chỉ áp khi đích cho phép prune từ panel']",
+    "enabled boolean [not null, default: true]",
+    "last_run_at timestamptz", "next_run_at timestamptz", "last_status text [note: 'succeeded|failed|running']",
+] + TS + SOFT, ["(scope_type, scope_id)", "next_run_at"])
+t("backup", "backup_policy_destinations", [
+    "policy_id bigint [not null, ref: > backup_policies.id]",
+    "destination_id bigint [not null, ref: > backup_destinations.id]",
+], ["(policy_id, destination_id) [pk]", "destination_id"], "Một policy ghi vào nhiều đích (3-2-1).")
 t("backup", "backup_jobs", IDN + [
     "policy_id bigint [ref: > backup_policies.id]", "job_id bigint [ref: > jobs.id]",
+    "repository_id bigint [ref: > backup_repositories.id]",
+    "snapshot_id bigint [ref: > backup_snapshots.id]",
     "started_at timestamptz", "finished_at timestamptz", "status text [not null]",
     "bytes_added bigint", "files_new int",
-], ["policy_id"])
+], ["policy_id", "repository_id"])
 t("backup", "backup_snapshots", IDN + [
+    "uuid uuid [not null, unique, default: `gen_random_uuid()`]",
     "destination_id bigint [not null, ref: > backup_destinations.id]",
-    "restic_snapshot_id text [not null]", "scope_type text [not null]", "scope_id bigint",
+    "repository_id bigint [not null, ref: > backup_repositories.id]",
+    "restic_snapshot_id text [not null]",
+    "scope_type text [not null, note: 'hosting_account|website|database|server_config|panel']", "scope_id bigint",
     "hosting_account_id bigint [ref: > hosting_accounts.id]",
+    "website_id bigint [ref: > websites.id]",
+    "databases text[] [not null, default: `'{}'`]",
+    "contents text[] [not null, default: `'{}'`, note: 'files|databases|config']",
     "tags text[] [not null, default: `'{}'`]", "size_bytes bigint",
+    "panel_version text", "meta jsonb [note: 'itso-meta.json: phiên bản panel, account, website, DB, gói, manifest sha256']",
+    "locked_until timestamptz [note: 'Object Lock/append-only: không xóa được trước mốc này']",
+    "job_id bigint [ref: > jobs.id]",
     "taken_at timestamptz [not null]", "verified_at timestamptz",
-], ["(destination_id, restic_snapshot_id) [unique]", "(hosting_account_id, taken_at)"])
+], ["(repository_id, restic_snapshot_id) [unique]", "(hosting_account_id, taken_at)", "(destination_id, taken_at)"])
 t("backup", "backup_verifications", IDN + [
+    "uuid uuid [not null, unique, default: `gen_random_uuid()`]",
     "destination_id bigint [not null, ref: > backup_destinations.id]",
+    "repository_id bigint [ref: > backup_repositories.id]",
+    "hosting_account_id bigint [ref: > hosting_accounts.id]",
     "snapshot_id bigint [ref: > backup_snapshots.id]",
-    "type text [not null, note: 'check|restore-test']", "status text [not null]",
-    "report jsonb", "at timestamptz [not null, default: `now()`]",
-], ["destination_id"])
+    "kind text [not null, note: 'check|restore_test']",
+    "state text [not null, default: 'running', note: 'running|succeeded|failed']",
+    "read_data_percent int", "files_checked int", "mismatches int [not null, default: 0]",
+    "error text", "job_id bigint [ref: > jobs.id]",
+    "started_at timestamptz [not null, default: `now()`]", "finished_at timestamptz",
+], ["(destination_id, started_at)", "repository_id"])
 t("backup", "restore_jobs", ID + [
-    "snapshot_id bigint [not null, ref: > backup_snapshots.id]", "target_type text [not null]",
+    "snapshot_id bigint [ref: > backup_snapshots.id, note: 'null khi snapshot nguồn đã bị forget sau đó']",
+    "hosting_account_id bigint [ref: > hosting_accounts.id]",
+    "target_type text [not null, note: 'hosting_account (nhân bản: account khác cùng máy)']",
     "target_id bigint", "target_server_id bigint [ref: > servers.id]",
     "mode text [not null, default: 'new', note: 'new|overwrite']",
+    "items text[] [not null, default: `'{}'`, note: 'files:<rel>|database:<name>|config']",
     "job_id bigint [ref: > jobs.id]", "status text [not null, default: 'queued']",
-    "requested_by_user_id bigint [not null, ref: > users.id]",
-] + TS)
+    "result jsonb [note: '{restored_paths, databases, pre_restore_snapshot_uuid}']", "error text",
+    "pre_restore_snapshot_id bigint [ref: > backup_snapshots.id]",
+    "requested_by_user_id bigint [not null, ref: > users.id]", "finished_at timestamptz",
+] + TS, ["hosting_account_id"])
 
 # ---------------------------------------------------------------- Jobs
 t("jobs", "jobs", ID + [

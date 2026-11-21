@@ -2,6 +2,133 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.7 (e2e, VM, review, release v0.1.0-alpha) — nhánh `phase-8`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` dùng **restic 0.16.4 thật** + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.
+
+Sửa theo API thật trong 8.7: đích `local` chỉ nhận `/var/backups/itso` (form bỏ ô đường dẫn, hiện gợi ý; MSW 422 nếu khác); khóa retention lệch (contract/UI `keep_*`, API `last/daily/…`) → sửa contract trước (`schemas.py` `RETENTION`: `last, hourly, daily, weekly, monthly`), `make contracts` + `make codegen`, rồi `PolicyService`/`BackupService::expired`, DBML + migration Phase 8; phiên bản mặc định agent/CLI/`make release` `0.4.0-dev` → `0.1.0-alpha`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 8 | `pnpm exec playwright test -c playwright.real.config.ts --trace off e2e-real/phase8.spec.ts` | Lần đầu 1 lỗi test (wizard mở ở bước 1 với snapshot chọn sẵn, test chưa bấm "Tiếp"), sửa test → **2/2 PASS** (1,2 phút). Admin: website tĩnh + DB mẫu → đích local qua UI (bộ khôi phục phải xác nhận, lần 2 không hiện lại) → policy `retention {last: 5}` → `:run` → snapshot files + DB, repo trên đĩa → duyệt `sites` → phá dữ liệu → khôi phục file ra bản mới → ghi đè website qua wizard (index.html về bản gốc) → ghi đè DB (export có MARK-A, không có MARK-B) → `itso:backup-verify`. Portal: chỉ snapshot của mình, quota, 403 khi chưa MFA → bật TOTP → step-up → khôi phục thành công, snapshot account khác bị từ chối |
+| E2E stack thật toàn bộ | `make test-e2e-real` (stack reset) | **19/19 PASS** (12,6 phút) |
+| API | `bash scripts/pest-pg.sh tests/Feature/Phase8` | 11/11 PASS |
+| Toàn bộ | `make check` | **20 PASS · 1 SKIP (staticcheck) · 2 FAIL** lần đầu (1 533 s): `lint-web` (Prettier `e2e-real/phase8.spec.ts`), `test-e2e` 14/493 (`demo-admin2.spec.ts` 2 test còn chọn "Cấu hình account" + máy chủ khác đã bỏ ở 8.6; ảnh `recovery-kit` còn nhập đường dẫn local; ảnh `snapshot-detail`/`browse-file` tìm snapshot `4f2a9c1e` đã sang trang 2 → tìm bằng ô Tìm kiếm). Chạy lại đúng các mục: `make lint-web` PASS (i18n 2900 key, vi = en), `playwright test e2e/demo-admin2.spec.ts` 3/3, `SCREENSHOT_DIR_P8=… playwright test e2e/screenshots-phase8.spec.ts -g "recovery-kit\|snapshot-detail\|browse-file"` 12/12 (12 ảnh chụp lại). Còn lại xanh: Pest 462, Vitest 559, Playwright demo 479, Go 17 gói, fuzz 76 539 lần, db-verify 78, contracts/codegen/tokens, docs-check, installer, units, git-clean |
+| Go sau đổi phiên bản | `go test ./internal/ops/ ./cmd/... ./internal/install/` | PASS |
+| Script VM | `bash -n tests/vm/phase8.sh` | Cú pháp OK (không có shellcheck trên container). **Chờ VM:** B0 gói, B1 backup → xóa site → restore (sha256 + 200), B2 MariaDB số dòng + CHECKSUM TABLE, B3 rest-server `--append-only` forget thất bại, B4 chặn mạng giữa chừng → không snapshot, lần sau xong, B5 `itso-maint.slice` + site 200 khi backup, B6 DR 2 VM |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase8.sh` (gồm DR 2 VM).
+
+## 2026-11-21 — Phase 8 / Prompt 8.6 (UI Backup & Restore nối API thật) — nhánh `phase-8`
+
+Phạm vi: `apps/web/src` — `shared/hosting/pages/RestoreWizard` (DB theo `snapshot.databases`, ghi đè đúng 1 website/DB, bỏ mục cấu hình), `shared/hosting/backup.ts`, `entries/admin/backups/{RestoreNewPage,RecoveryKitDialog}` (không chọn server khác; dòng `destination_uuid`), `entries/admin/hosting/TerminatedPage` (xác nhận purge chỉ sau hạn giữ), `entries/admin/install/{DrRestore,InstallPage}` (đường dẫn repo server, `restore_mode`, SFTP → CLI); MSW `demo/handlers/{governance,hosting,setup}.ts` theo hành vi API thật; i18n VI/EN; dữ liệu demo (`contracts/tools/demo.py`: oldshop hết hạn giữ, bộ khôi phục mẫu đúng định dạng thật). Contracts: chỉ ví dụ/mô tả.
+
+Đối chiếu UI ↔ API thật tìm ra (mockup 8.0 giả định khác API): DB trong snapshot không nằm ở `databases/<tên>.sql.zst` (agent: `db/<tên>.sql|.dump`) → chọn theo danh sách `databases` của snapshot; ghi đè nhiều mục / sang server khác / mục cấu hình bị API từ chối → chặn ngay ở wizard; bộ khôi phục thiếu `destination_uuid` nên CLI `itso backup panel-restore` không đọc được; purge thật xóa ngay khi xác nhận và chỉ sau hạn giữ (mockup: xác nhận bất kỳ lúc nào, xóa khi tới hạn).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest (toàn bộ) | `pnpm exec vitest run` (apps/web) | PASS 559/559 (37 file). Sửa/mới: `demo/__tests__/backup8.test.ts` (kit có `destination_uuid`; DR: SFTP 422 kèm hướng dẫn CLI, sai đường dẫn repo 422), `governance.test.ts` (ghi đè sai username → 422 trường `confirm`; ghi đè 2 mục 422; server khác 422), `hosting.test.ts` (mới chấm dứt → xác nhận 409 "Chưa tới hạn"; lên lịch lại thay biên bản cũ; tự xác nhận 409; SA khác → job `hosting_account.purge`, account `purged`; xác nhận lại 422), `backups.test.ts` (`restoreItem('database:…')`) |
+| Lint + Prettier + i18n | `pnpm lint` · `pnpm tsc --noEmit` | PASS; `check-i18n: OK — 6 namespace, 2899 key, 0 thiếu (vi = en)` · OK |
+| Playwright demo | `pnpm exec playwright test --trace off e2e/demo-backup8.spec.ts e2e/demo-hosting.spec.ts` | 12/12 PASS (Backup Center 5 tab + Portal + wizard DR: axe 0 lỗi critical/serious; purge 2 bước: SA khác xác nhận → "Xóa vĩnh viễn tài khoản", account rời danh sách) |
+| Playwright hồi quy | `pnpm exec playwright test --trace off e2e/demo-smoke.spec.ts e2e/demo-portal.spec.ts` | 80/80 PASS |
+| Ảnh | `SCREENSHOT_DIR_P8=docs/screenshots/phase-8 playwright test e2e/screenshots-phase8.spec.ts -g "install-dr\|terminated"` | 16/16, chụp lại 12 ảnh (wizard DR có đường dẫn repo server, trang purge) |
+| API (không đổi hành vi) | `bash scripts/pest-pg.sh tests/Feature/Phase8` · `make lint-api` · `make contracts-check` · `make codegen-check` | PASS 11/11 · PASS · PASS · OK |
+
+**Chờ VM:** không (luồng thật kiểm ở 8.7). **Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 8 / Prompt 8.5 (khôi phục thảm họa) — nhánh `phase-8`
+
+Môi trường: PostgreSQL 16 + Redis trong container; agent giả kiểm params/result theo `contracts/agent-ops`; agent thật chạy với restic thật trong test Go. Diễn tập DR trên 2 VM: **chờ VM** (`tests/vm/phase8.sh`, Prompt 8.7).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Phase 8 API | `bash scripts/pest-pg.sh tests/Feature/Phase8` | PASS 11/11. Mới `DisasterRecoveryTest` 4 test (89 assertion): `restore_mode` theo mã thiết lập (mã thường → false); inspect chưa xác minh mã 403, sai trường 422, đích SFTP 422 kèm hướng dẫn CLI, liệt kê bản panel mới nhất trước (`accounts` null), agent báo sai mật khẩu → 422 trên `repository_password`, không tạo job, không lưu bí mật; start → job `setup.restore`/`panel.restore`, agent nhận giá trị thật, `job_steps` chỉ có tham chiếu `$secret`, khóa Cache bị xóa khi job xong, bí mật không có trong job/log/audit/bảng backup; đã tạo SA → 409, đã cài → 410; `itso:dr-restore` chưa bật không làm gì, `--dry-run` không bật, `--start --parallel=1` → một job 2 bước ghi đè (website + DB), restore job gộp kết quả + snapshot pre-restore, lượt sau báo xong (`dr.finished`), lượt nữa không xếp thêm; một bước lỗi → restore job `failed`, giữ kết quả bước đã xong, báo "1 account lỗi" |
+| Pest toàn bộ | `make test-api` | PASS 462/462 (5161 assertion) |
+| Agent | `go test ./internal/install/ ./internal/platform/ ./internal/ops/ ./cmd/...` | PASS. `TestPanelRestoreStagesAndSchedulesApply` (restic thật: backup panel mã hóa age → giải vào staging 0700, hẹn `systemd-run … itso panel-restore-apply`, thiếu `itso.dump` → `precondition_failed` và dọn staging, repo không phải `/server` → từ chối); `TestPanelRestoreApply` (đường dẫn ngoài staging/`..` bị từ chối; `pg_restore` lỗi → dịch vụ bật lại, DB không đổi, kết quả ghi `ok:false`; đúng thứ tự pre-restore → down → stop → pg_restore → migrate → start → reconcile → dr-restore → up; `itso.env` chỉ thay APP_KEY; `agent.key`/TLS giữ bản máy mới; bản rõ trong staging bị xóa); `TestInstallRestoreMode` (mã thiết lập `mode: restore`, gợi ý DR) |
+| Trình cài đặt | `make test-installer` | PASS 9/9 (mới: `--restore` được chuyển nguyên cho `itso install`) |
+| Tĩnh | `vendor/bin/phpstan analyse` · `make lint-api` · `make no-exec` · `make lint-agent` | 0 lỗi · PASS · OK · OK |
+| Contracts/DB | `make contracts && make codegen && make contracts-check && make codegen-check && make db-verify` | PASS (op mới `panel.restore`; `SetupRestoreSource.repository_path`; `SetupStatus.restore_mode`; inspect khai báo 409) |
+| Web | `pnpm lint` · `pnpm tsc --noEmit` · `pnpm vitest run` | OK · OK · PASS 559/559 (37 file). Lần đầu 2 test `portal.test.ts` fail (đã fail từ trước, không do 8.5: account `hoidong` thêm ở mockup 8.0 cùng chủ anphat) → cập nhật danh sách account kỳ vọng |
+
+Lỗi tìm ra nhờ test và đã sửa: test agent gọi `panel.restore` hai lần cùng giây đụng thư mục staging (đổi đồng hồ test); test wizard demo timeout khi demo bật `restore_mode` (demo giữ false, cài mới là luồng mặc định); kết quả gộp nhiều bước trùng đường dẫn (khử trùng).
+
+Giới hạn còn lại: danh sách bản backup panel chưa hiện phiên bản panel/số account (nằm trong bản mã hóa age); đích SFTP không khôi phục qua wizard (cần khóa SSH + host key theo `destination_uuid`), đi đường CLI `itso backup panel-restore` → `itso panel-restore-apply` (runbook).
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 8 / Prompt 8.4 (Panel API Backup & Restore) — nhánh `phase-8`
+
+Môi trường: PostgreSQL 16 + Redis trong container; agent giả (`FakeAgent`) kiểm mọi params/result op backup theo `contracts/agent-ops` (helper `p8schema`, Opis JSON Schema), nên tham số panel gửi đi khớp schema agent thật.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Phase 8 API | `make test-api` (lọc `tests/Feature/Phase8`) | PASS 7/7, 423 assertion: đích (tạo/sửa/kiểm tra, trùng vị trí 409, local sai đường dẫn 422, credential chỉ tới agent qua tham chiếu bí mật, Object Lock phát hiện → prune `cli`), bộ khôi phục (lần đầu 200, sau xác nhận + hết step-up 403); backup ngay (init → files → DB → stats, lần sau không init, snapshot ghi nhận theo loại); Portal chỉ thấy snapshot/khôi phục account mình, USER khác 404/422; duyệt + link tải ký HMAC (chữ ký sai 403, quá 5 phút 403, nội dung stream theo khúc đúng); policy + `itso:backup-due` (chưa đến hạn không chạy, đến hạn chạy, lần kế lệch jitter, `last_status`), retention keep_last 1 → forget, đích append-only → không forget; quota 1 MB đang dùng 5 MB → 409 `quota_exceeded`, policy bỏ qua, tổng quan báo `paused`; verify (check + restore test, lỗi lệch sha256 → failed + lỗi trong 3-2-1-1-0); xóa snapshot (ADMIN 403, đích bất biến 409, SA → forget); khôi phục new (website/file, DB mới `<tên>_r<ts>` sẵn sàng), overwrite (sai username 422, hết step-up 403 `mfa_step_up_required`, đúng → snapshot pre-restore), Portal khôi phục cần MFA/step-up; purge (account chưa chấm dứt 409, ADMIN 403, restore test hỏng → xác nhận 409 D-46, chưa tới hạn 409, người lên lịch tự xác nhận 409, SUPER_ADMIN thứ hai → `account.remove` + biên bản, account `purged`); ma trận quyền; bí mật (mật khẩu repo, credential đích, khóa age riêng) không có trong job_steps/job_logs/audit_logs/jobs/các bảng backup |
+| Pest toàn bộ | `make test-api` | PASS 458/458 (5074 assertion). Lần đầu 3 test cũ fail vì còn kỳ vọng purge trả 501 và `backup-snapshots` chưa có route: đã cập nhật theo hành vi mới (purge chặn account chưa chấm dứt / thiếu biên bản; đường dẫn "chưa có" dùng `/account-migrations` của Phase 9) |
+| Tĩnh | `vendor/bin/phpstan analyse` · `make lint-api` · `make no-exec` | 0 lỗi · PASS · OK (lần đầu `no-exec` bắt dấu backtick trong chuỗi thông báo; đổi sang ngoặc kép) |
+| Contracts/DB | `make contracts && make codegen && make contracts-check && make codegen-check && make db-verify` | PASS (op mới `backup.file.read`; `Restore.snapshot_uuid` nullable + `restore_jobs.snapshot_id` nullable để giữ lịch sử khi snapshot bị forget) |
+| Agent | `go test ./internal/ops/ ./internal/contracts/...` · `make lint-agent` | PASS (`TestBackupFileRead`: đọc khúc giữa file, offset ≥ size → eof, thư mục/symlink bị từ chối) · OK |
+
+Lỗi tìm ra nhờ test và đã sửa: hạn link tải dùng `time()` (không theo đồng hồ test) → `Carbon::now()`; forget snapshot vướng khóa ngoại (`backup_jobs`, `restore_jobs`…) → giữ lịch sử với tham chiếu null; trigger DB `itso_hosting_purge_guard` đòi người xác nhận khác người lên lịch → panel kiểm trước và báo 409 rõ ràng; policy ghi `running` sau khi job đồng bộ đã xong → ghi trước khi dispatch.
+
+Giới hạn còn lại (ghi vào báo cáo Phase 8): agent thật chưa hiện thực `account.remove` (chỉ agent mock) nên bước xóa của purge trên máy thật sẽ báo lỗi op, không giả thành công.
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 8 / Prompt 8.3 (agent: khôi phục, kiểm chứng, forget, backup panel, CLI) — nhánh `phase-8`
+
+Môi trường: restic 0.16.4 (gói Ubuntu) trong container, chạy bằng root; helper File Manager chạy trong tiến trình ở sandbox (uid account kiểm qua argv ghi lại).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| fsx khôi phục | `go test ./internal/fsx/ -run 'TestRestoreTar\|TestExchange'` | PASS 2/2: giải đúng nội dung, symlink/FIFO bị bỏ và báo lý do, setuid gỡ (0755), đích có sẵn → `already_exists`, tên `..` bị từ chối không để rác, vượt kích thước lỗi, đích là symlink ra ngoài không bị ghi xuyên; hoán đổi nguyên tử, từ chối hoán đổi với symlink |
+| Backup panel + bộ khôi phục | `go test ./internal/backup/` | PASS: tar + age round-trip (bản mã không chứa chuỗi bí mật, khóa sai/recipient sai lỗi, vượt giới hạn lỗi, tar độc `..`/symlink bị từ chối, file giải ra không cho group/other đọc); `ParseKit` (CRLF, 2 repo, đường dẫn repo lạ bị từ chối) |
+| restic thật: khôi phục | `go test ./internal/ops/ -run 'TestBackupRestore\|TestBackupCheck\|TestBackupForget\|TestBackupPanel\|TestKitCreds'` | PASS 8/8: file vào `backups/restore-<ts>` khớp nội dung, symlink → `/etc/shadow` không tạo lại, setuid gỡ, giải qua helper `[uid=20001]`, staging được dọn, chạy lại → `already_exists`; symlink đặt sẵn tại đích và thư mục cha symlink → từ chối, thư mục ngoài home trống; website ghi đè trả về bản snapshot, file lạ (`shell.php`) rời bản đang chạy, bản cũ giữ ở `.restore-<ts>`, snapshot pre-restore có hostname = server; DB bản mới/đã tồn tại/sai tên/account khác, ghi đè có pre-restore, nhập dưới uid 20001; `restore_test` DB nạp DB tạm OK; `check` 100% OK, làm hỏng pack → `check` báo lỗi và `restore_test` không ra ok; `backup.forget` bị `op_disabled` theo policy mặc định; backup panel: `pg_dump --cluster 16/itso -Fc itso` dưới uid postgres, staging dọn, `restore_test` kiểm sha256 file `.age`, `KitPanelRestore` giải ra đúng 3 file, khóa riêng sai bị từ chối; prune bằng bộ khôi phục keep-last 1: dry-run 2 mục (snapshot + meta), chạy thật còn đúng snapshot mới nhất |
+| CLI | `go test ./cmd/itso/` | PASS: cú pháp sai → mã 2 + usage; thiếu `--keep-*`, keep âm, snapshot `latest`, bộ khôi phục thiếu khóa riêng → mã 1 với thông báo rõ |
+| Agent toàn bộ | `go vet ./... && go test ./...` · `make lint-agent` · `make no-exec` | PASS · OK · OK (lần đầu `no-exec` bắt chuỗi shebang trong dữ liệu test; đổi nội dung file test) |
+
+Lỗi gặp khi viết test và đã sửa: `os.Chmod(…, 0o4755)` của Go không đặt setuid (phải dùng `os.ModeSetuid`); tag `pre_restore_tags` thử ngoài mẫu schema bị từ chối đúng (đổi dữ liệu test); hai lần khôi phục cùng giây trùng tên `.restore-<ts>` → `already_exists` đúng thiết kế (test đổi giờ).
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 8 / Prompt 8.2 (agent: runner restic, đích, backup) — nhánh `phase-8`
+
+Môi trường: restic 0.16.4 (gói Ubuntu) trong container.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Logic backup | `go test ./internal/backup/` | PASS: URL 4 loại đích, 15 đích/repo độc bị từ chối, argv không chứa mật khẩu repo/credential S3/rest, `sftp.command` cố định, loại trừ neo dưới home, tag/snapshot id độc, đọc `ls --json` chỉ mục con trực tiếp, phân loại lỗi + che credential, manifest bỏ symlink và file đổi; SSH server thật trong tiến trình (ghim host key, lệch → `host_key_mismatch`, khóa chưa thêm → `repo_auth_failed`); S3 SigV4 + Object Lock 30 ngày, rest-server append-only 403/404 |
+| restic thật | `go test ./internal/ops/ -run TestBackup` | PASS 4/4: init idempotent, repo local 0700, backup files (symlink → `/etc/shadow` lưu như symlink, `tmp/` `.cache/` `*.log` bị loại), dump DB dưới uid 20001 qua `--stdin`, snapshots (snapshot meta bị ẩn, hostname = server), browse + truncated, stats, sai mật khẩu → `repo_auth_failed`, repo chưa init → `repo_not_initialized`, thư mục bí mật bị xóa sau op; golden argv máy thật `backup.s3.argv` (EnvironmentFile 0600); 10 tham số độc bị từ chối trước khi chạy restic. Lần đầu golden thiếu bước `init` do hook test so chuỗi sai (" cat config"); sửa hook, ghi lại golden |
+| Fuzz | `go test -run='^$' -fuzz=FuzzParseDest -fuzztime=15s ./internal/backup` | PASS 87 482 lần (lần đầu đếm sai số thành phần `sftp.command` trong chính test: 23, không phải 22); thêm vào `make test-fuzz` |
+| Agent toàn bộ | `go vet ./... && go test ./...` · `make no-exec` | PASS · OK |
+
+**Test bị bỏ qua:** không (test restic thật tự bỏ qua khi máy không có `/usr/bin/restic`; ở đây có).
+
+## 2026-11-21 — Phase 8 / Prompt 8.1 (ADR, contracts, migration) — nhánh `phase-8`
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` | PASS: 113 op có schema, 466 example, 233 vector độc (207 tầng schema đã kiểm, 26 tầng nghiệp vụ) |
+| Codegen | `make codegen` · `make codegen-check` | OK (`types_gen.go`, schema TS, dữ liệu agent đồng bộ) |
+| DB | `make db-schema` · `python3 database/tools/gen_migrations.py 8` · `make db-verify` | Lần đầu lỗi: `50_purge.sql` còn chèn `restic_password_encrypted` (cột đã bỏ). Sửa seed sang `backup_repositories`; thêm `70_backup.sql` (17 kiểm tra). Chạy lại: 78 test PASS, Phase 3 → 11 áp lần lượt = đặc tả |
+| Agent | `cd agent && go build ./... && go test ./...` | PASS |
+| Pest | `make test-api` | 450/451 lần đầu: `SchemaTest` liệt kê bảng theo Phase chưa có Phase 8. Thêm `PHASE8_TABLES`; `pest tests/Feature/Schema/SchemaTest.php` 12/12 PASS |
+| Docs | `make docs-check` · `make structure` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 8 / Prompt 8.0 (mockup Backup & Restore trên bản demo) — nhánh `phase-8`
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Ảnh mockup | `SCREENSHOT_DIR_P8=docs/screenshots/phase-8 npx playwright test e2e/screenshots-phase8.spec.ts --trace off --workers=4` | PASS 84/84 (21 màn × 1440/390 × sáng/tối); `make screenshots` thêm `SCREENSHOT_DIR_P8` |
+| E2E demo Phase 8 | `npx playwright test e2e/demo-backup8.spec.ts --trace off` | Lần đầu 6/8: axe `label-content-name-mismatch` ở nút kiểm chứng (nhãn không chứa chữ hiển thị) và hộp thoại bộ khôi phục đóng được bằng Esc lúc đang tải. Sửa nhãn `bk.verifyFor` + chặn Esc/bấm ngoài khi chưa xác nhận. Chạy lại 8/8 PASS |
+| Unit/demo | `pnpm vitest run` | 37 file, 559 test PASS (mới `backup8.test.ts` 14) |
+| Lint + i18n | `pnpm lint` | PASS; i18n 2895 key, vi = en |
+| Contracts | `make contracts-check` · `make codegen` → `make codegen-check` · `python3 contracts/tools/check_demo.py` | PASS · OK · OK (466 example, độ phủ 100%) |
+| Agent contracts | `cd agent && go test ./internal/contracts/...` | PASS |
+
+**Test bị bỏ qua:** không. Ảnh Phase 2–7 có thể đổi ở lần `make screenshots` sau vì dữ liệu demo thêm account đã chấm dứt, quota và đích SFTP.
+
 ## 2026-11-21 — Phase 7 / Prompt 7.7 (e2e, VM, review, báo cáo) — nhánh `phase-7`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.

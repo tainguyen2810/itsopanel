@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
+import { BackupQuota } from '@/shared/hosting/pages/backup';
+import { SnapshotsTab } from '@/shared/hosting/pages/SnapshotsTab';
 import { ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
@@ -452,33 +455,17 @@ function Cron({ id }: { id: string }) {
 }
 
 function Backups({ id }: { id: string }) {
-  const { t } = useTranslation('admin');
-  const fmt = useFmt();
-  type B = Row<'/api/v1/admin/backup-snapshots'>;
+  const navigate = useNavigate();
   return (
-    <SubList<B>
-      id={id}
-      name="backup"
-      fetch={() => list('/api/v1/admin/backup-snapshots', byAccount(id))}
-      rowId={(b) => b.uuid}
-      columns={[
-        { id: 'taken', header: t('accounts.takenAt'), accessorFn: (b) => fmt.dateTime(b.taken_at) },
-        {
-          id: 'id',
-          header: 'Snapshot',
-          accessorKey: 'restic_snapshot_id',
-          cell: ({ row }) => <span className="font-mono">{row.original.restic_snapshot_id}</span>,
-        },
-        { id: 'size', header: t('accounts.size'), accessorFn: (b) => fmt.mb(b.size_mb) },
-        { id: 'tags', header: t('accounts.tags'), accessorFn: (b) => b.tags.join(', ') },
-        {
-          id: 'verified',
-          header: t('accounts.verified'),
-          accessorFn: (b) => (b.verified_at ? 'verified' : 'pending'),
-          cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
-        },
-      ]}
-    />
+    <>
+      <BackupQuota account={id} />
+      <SnapshotsTab
+        account={id}
+        onRestore={(s) =>
+          void navigate({ to: '/restores/new', search: { snapshot: s.uuid } } as never)
+        }
+      />
+    </>
   );
 }
 

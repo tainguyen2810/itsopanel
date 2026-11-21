@@ -12,15 +12,20 @@
         "snapshot_ids": {
           "type": "array",
           "items": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{8,64}$"
+            "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
           },
-          "minItems": 1
+          "minItems": 1,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "prune": {
+          "type": "boolean"
         }
       },
       "required": [
         "repo",
-        "snapshot_ids"
+        "snapshot_ids",
+        "prune"
       ],
       "additionalProperties": false
     },
@@ -28,11 +33,16 @@
       "type": "object",
       "properties": {
         "forgotten": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
+        },
+        "pruned": {
+          "type": "boolean"
         }
       },
       "required": [
-        "forgotten"
+        "forgotten",
+        "pruned"
       ],
       "additionalProperties": false
     }

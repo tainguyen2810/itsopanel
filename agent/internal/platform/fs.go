@@ -180,6 +180,28 @@ func (f *FS) Remove(p string) (bool, error) {
 	return err == nil, err
 }
 
+// RemoveAll xóa cả cây thư mục p (không theo symlink: os.RemoveAll xóa chính symlink); không xóa "/".
+func (f *FS) RemoveAll(p string) error {
+	if p == "/" {
+		return fmt.Errorf("platform: từ chối xóa /")
+	}
+	rp, err := f.Path(p)
+	if err != nil {
+		return err
+	}
+	if err := os.RemoveAll(rp); err != nil {
+		return err
+	}
+	f.mu.Lock()
+	for k := range f.Owners {
+		if k == p || strings.HasPrefix(k, p+"/") {
+			delete(f.Owners, k)
+		}
+	}
+	f.mu.Unlock()
+	return nil
+}
+
 // OwnerOf trả chủ mong muốn đã ghi (NoChown) hoặc chủ thật.
 func (f *FS) OwnerOf(p string) (Owner, bool) {
 	if f.NoChown {

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/backup.file.read.schema.json",
+  "title": "backup.file.read",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "snapshot_id": {
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2097152
+        }
+      },
+      "required": [
+        "repo",
+        "snapshot_id",
+        "path",
+        "offset",
+        "max_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "content_b64": {
+          "type": "string"
+        },
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "eof": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "content_b64",
+        "size",
+        "eof"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

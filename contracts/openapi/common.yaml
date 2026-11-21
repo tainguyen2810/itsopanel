@@ -2300,6 +2300,11 @@ components:
           - uuid
           - name
           additionalProperties: false
+        repository_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
         scope_type:
           type: string
           enum:
@@ -2308,6 +2313,14 @@ components:
           - database
           - server_config
           - panel
+        website:
+          oneOf:
+          - $ref: '#/components/schemas/WebsiteRef'
+          - type: 'null'
+        databases:
+          type: array
+          items:
+            $ref: '#/components/schemas/DbName'
         restic_snapshot_id:
           type: string
           pattern: ^[0-9a-f]{8,64}$
@@ -2334,17 +2347,32 @@ components:
           type: array
           items:
             type: string
+        panel_version:
+          type:
+          - string
+          - 'null'
+        locked_until:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: 'Còn bất biến (Object Lock/append-only) tới thời điểm này: không xóa được.'
       required:
       - uuid
       - hosting_account
       - destination
+      - repository_uuid
       - scope_type
+      - website
+      - databases
       - restic_snapshot_id
       - size_mb
       - taken_at
       - verified_at
       - contents
       - tags
+      - panel_version
+      - locked_until
       additionalProperties: false
     BackupRequest:
       type: object
@@ -2370,6 +2398,15 @@ components:
       - hosting_account_uuid
       - contents
       additionalProperties: false
+    BackupDownloadRequest:
+      type: object
+      properties:
+        path:
+          oneOf:
+          - $ref: '#/components/schemas/RelPath'
+          - type: 'null'
+      additionalProperties: false
+      description: '`path` = một file thường trong snapshot (≤ 512 MiB); null → 422 (lấy cả snapshot bằng khôi phục).'
     Restore:
       type: object
       properties:
@@ -2377,7 +2414,9 @@ components:
           type: string
           format: uuid
         snapshot_uuid:
-          type: string
+          type:
+          - string
+          - 'null'
           format: uuid
         hosting_account:
           $ref: '#/components/schemas/AccountRef'
@@ -2409,6 +2448,34 @@ components:
           - string
           - 'null'
           format: date-time
+        result:
+          type:
+          - object
+          - 'null'
+          properties:
+            restored_paths:
+              type: array
+              items:
+                $ref: '#/components/schemas/RelPath'
+            databases:
+              type: array
+              items:
+                $ref: '#/components/schemas/DbName'
+            pre_restore_snapshot_uuid:
+              type:
+              - string
+              - 'null'
+              format: uuid
+          required:
+          - restored_paths
+          - databases
+          - pre_restore_snapshot_uuid
+          additionalProperties: false
+          description: 'Kết quả: thư mục bản khôi phục (chế độ new), DB mới hoặc DB đã ghi đè, snapshot trước khi ghi đè.'
+        error:
+          type:
+          - string
+          - 'null'
       required:
       - uuid
       - snapshot_uuid
@@ -2421,6 +2488,8 @@ components:
       - requested_by
       - created_at
       - finished_at
+      - result
+      - error
       additionalProperties: false
     RestoreRequest:
       type: object
@@ -3365,6 +3434,27 @@ components:
         type: string
         format: uuid
       description: Lọc theo account.
+    FilterDestination:
+      name: filter[destination]
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Lọc theo đích backup.
+    FilterScopeType:
+      name: filter[scope_type]
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - hosting_account
+        - website
+        - database
+        - server_config
+        - panel
+      description: Lọc theo loại backup.
     FilterServer:
       name: filter[server]
       in: query

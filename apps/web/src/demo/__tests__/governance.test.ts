@@ -173,7 +173,7 @@ describe('backup & restore', () => {
         await call('POST', A('/backup-destinations'), {
           name: 'x',
           type: 'local',
-          config: { path: 'rel' },
+          config: { path: '/srv/khac' },
         })
       ).status,
     ).toBe(422);
@@ -182,7 +182,7 @@ describe('backup & restore', () => {
         await call('POST', A('/backup-destinations'), {
           name: 'x',
           type: 'local',
-          config: { path: '/b' },
+          config: {},
           immutable_days: 5,
         })
       ).status,
@@ -299,9 +299,29 @@ describe('backup & restore', () => {
     expect(
       (await call('POST', A('/restores'), { ...base, mode: 'new', items: ['shell:rm'] })).status,
     ).toBe(422);
+    const mismatch = await call('POST', A('/restores'), {
+      ...base,
+      mode: 'overwrite',
+      confirm: 'x',
+    });
+    expect(code(mismatch)).toBe('validation_failed');
+    expect(JSON.stringify(mismatch.body)).toContain('"confirm"');
+    // Ghi đè: đúng một website hoặc database (như RestoreService).
     expect(
-      code(await call('POST', A('/restores'), { ...base, mode: 'overwrite', confirm: 'x' })),
-    ).toBe('confirmation_mismatch');
+      (
+        await call('POST', A('/restores'), {
+          ...base,
+          mode: 'overwrite',
+          confirm: 'anphat',
+          items: ['database:anphat_shop', 'files:sites/anphat.vn'],
+        })
+      ).status,
+    ).toBe(422);
+    // Khôi phục sang server khác: Phase 9.
+    expect(
+      (await call('POST', A('/restores'), { ...base, mode: 'new', target_server_uuid: SRV_HN2 }))
+        .status,
+    ).toBe(422);
     expect(
       (
         await call('POST', A('/restores'), {

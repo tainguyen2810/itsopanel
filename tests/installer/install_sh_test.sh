@@ -37,6 +37,11 @@ if run "$T/good" --port 30000 --yes && grep -q "FAKE-ITSO install --release-dir 
   ok "chữ ký + sha đúng → chạy itso install với tham số"
 else ko "trường hợp đúng: $(cat "$T/out")"; fi
 
+mkrel "$T/dr"
+if run "$T/dr" --restore --yes && grep -q "FAKE-ITSO install --release-dir $T/boot-dr --restore --yes" "$T/dr/ran" 2>/dev/null; then
+  ok "--restore (khôi phục thảm họa) được chuyển nguyên cho itso install"
+else ko "--restore: $(cat "$T/out")"; fi
+
 mkrel "$T/badsig"; printf 'x' >> "$T/badsig/manifest.json"
 if ! run "$T/badsig" && grep -q "chữ ký manifest KHÔNG hợp lệ" "$T/out" && [ ! -e "$T/badsig/ran" ]; then ok "manifest bị sửa → từ chối"; else ko "chữ ký sai: $(cat "$T/out")"; fi
 

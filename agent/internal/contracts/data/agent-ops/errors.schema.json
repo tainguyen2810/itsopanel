@@ -24,6 +24,10 @@
         "replay_rejected",
         "unauthorized_caller",
         "would_lock_out",
+        "repo_locked",
+        "repo_not_initialized",
+        "repo_auth_failed",
+        "host_key_mismatch",
         "internal"
       ]
     }

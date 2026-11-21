@@ -1,6 +1,6 @@
 # ADR 0028: Bảo vệ đăng nhập, IP allowlist không tự khóa, Terminal root theo policy máy chủ
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 7)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 7)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-81, D-75, R11
 

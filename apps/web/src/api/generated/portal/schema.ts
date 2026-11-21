@@ -320,6 +320,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal/backup-snapshots/{id}/raw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tải một file từ snapshot (URL ký số từ download-link)
+         * @description Stream file theo khúc 1 MiB qua agent (`backup.file.read`, `restic dump`); tối đa 512 MiB. Cần phiên đăng nhập và chữ ký còn hạn (HMAC, 5 phút).
+         */
+        get: operations["portalDownloadBackupFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portal/backup-snapshots/{id}:download-link": {
         parameters: {
             query?: never;
@@ -329,7 +349,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Link tải bản backup */
+        /**
+         * Link tải bản backup
+         * @description Link ký HMAC hết hạn 5 phút tới `/backup-snapshots/{id}/raw`; chỉ tải từng file (`path` bắt buộc, null → 422: lấy cả snapshot bằng khôi phục). File được agent đọc từ snapshot (`restic dump`) khi tải.
+         */
         post: operations["portalBackupDownloadLink"];
         delete?: never;
         options?: never;
@@ -1829,6 +1852,15 @@ export interface components {
             uuid: string;
             username: components["schemas"]["Username"];
         };
+        /** @description Tên miền chữ thường, đã chuyển punycode. Kiểm thêm ở tầng nghiệp vụ: cấm localhost, IP, tên panel. */
+        Domain: string;
+        WebsiteRef: {
+            /** Format: uuid */
+            uuid: string;
+            primary_domain: components["schemas"]["Domain"];
+        };
+        /** @description Tên database/DB user. Tầng nghiệp vụ bắt buộc tiền tố `<username>_`. */
+        DbName: string;
         BackupSnapshot: {
             /** Format: uuid */
             uuid: string;
@@ -1838,8 +1870,12 @@ export interface components {
                 uuid: string;
                 name: string;
             };
+            /** Format: uuid */
+            repository_uuid: string | null;
             /** @enum {string} */
             scope_type: "hosting_account" | "website" | "database" | "server_config" | "panel";
+            website: components["schemas"]["WebsiteRef"] | null;
+            databases: components["schemas"]["DbName"][];
             restic_snapshot_id: string;
             size_mb: number;
             /** Format: date-time */
@@ -1848,6 +1884,12 @@ export interface components {
             verified_at: string | null;
             contents: ("files" | "databases" | "config")[];
             tags: string[];
+            panel_version: string | null;
+            /**
+             * Format: date-time
+             * @description Còn bất biến (Object Lock/append-only) tới thời điểm này: không xóa được.
+             */
+            locked_until: string | null;
         };
         /** @description Đường dẫn TƯƠNG ĐỐI với home của account. `.` là thư mục gốc. Cấm `..`, ký tự điều khiển, đường dẫn tuyệt đối. */
         RelPath: string & ("." | unknown);
@@ -1861,6 +1903,10 @@ export interface components {
             owner: string;
             /** Format: date-time */
             modified_at: string;
+        };
+        /** @description `path` = một file thường trong snapshot (≤ 512 MiB); null → 422 (lấy cả snapshot bằng khôi phục). */
+        BackupDownloadRequest: {
+            path?: components["schemas"]["RelPath"] | null;
         };
         SignedUrl: {
             /** Format: uri */
@@ -1930,13 +1976,6 @@ export interface components {
             resource?: components["schemas"]["ResourceRef"] | null;
             /** @description Mật khẩu do panel sinh (DB user, FTP): chỉ trả MỘT lần ở đây. */
             secret?: string | null;
-        };
-        /** @description Tên miền chữ thường, đã chuyển punycode. Kiểm thêm ở tầng nghiệp vụ: cấm localhost, IP, tên panel. */
-        Domain: string;
-        WebsiteRef: {
-            /** Format: uuid */
-            uuid: string;
-            primary_domain: components["schemas"]["Domain"];
         };
         Certificate: {
             /** Format: uuid */
@@ -2028,8 +2067,6 @@ export interface components {
             status: "running" | "succeeded" | "failed" | "timed_out";
             output_tail: string;
         };
-        /** @description Tên database/DB user. Tầng nghiệp vụ bắt buộc tiền tố `<username>_`. */
-        DbName: string;
         DatabaseGrant: {
             database: components["schemas"]["DbName"];
             privileges: ("ALL" | "SELECT" | "INSERT" | "UPDATE" | "DELETE" | "CREATE" | "DROP" | "ALTER" | "INDEX")[];
@@ -2409,7 +2446,7 @@ export interface components {
             /** Format: uuid */
             uuid: string;
             /** Format: uuid */
-            snapshot_uuid: string;
+            snapshot_uuid: string | null;
             hosting_account: components["schemas"]["AccountRef"];
             target_server: components["schemas"]["ServerRef"];
             /** @enum {string} */
@@ -2423,6 +2460,14 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             finished_at: string | null;
+            /** @description Kết quả: thư mục bản khôi phục (chế độ new), DB mới hoặc DB đã ghi đè, snapshot trước khi ghi đè. */
+            result: {
+                restored_paths: components["schemas"]["RelPath"][];
+                databases: components["schemas"]["DbName"][];
+                /** Format: uuid */
+                pre_restore_snapshot_uuid: string | null;
+            } | null;
+            error: string | null;
         };
         RestoreRequest: {
             /** Format: uuid */
@@ -2788,25 +2833,6 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Phiên bản đã thay đổi */
-        PreconditionFailed: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "type": "https://docs.itso.local/errors/precondition_failed",
-                 *       "title": "Phiên bản đã thay đổi",
-                 *       "status": 412,
-                 *       "code": "precondition_failed",
-                 *       "detail": "If-Match không khớp ETag hiện tại.",
-                 *       "request_id": "req_01JD8K2M4N"
-                 *     }
-                 */
-                "application/problem+json": components["schemas"]["Problem"];
-            };
-        };
         /** @description Agent không kết nối */
         AgentUnavailable: {
             headers: {
@@ -2820,6 +2846,25 @@ export interface components {
                  *       "status": 503,
                  *       "code": "agent_unavailable",
                  *       "detail": "Không gọi được agent của server; thử lại sau.",
+                 *       "request_id": "req_01JD8K2M4N"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Phiên bản đã thay đổi */
+        PreconditionFailed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "https://docs.itso.local/errors/precondition_failed",
+                 *       "title": "Phiên bản đã thay đổi",
+                 *       "status": 412,
+                 *       "code": "precondition_failed",
+                 *       "detail": "If-Match không khớp ETag hiện tại.",
                  *       "request_id": "req_01JD8K2M4N"
                  *     }
                  */
@@ -2842,16 +2887,18 @@ export interface components {
         Id: string;
         /** @description Lọc theo account. */
         FilterHostingAccount: string;
+        /** @description Lọc theo loại backup. */
+        FilterScopeType: "hosting_account" | "website" | "database" | "server_config" | "panel";
         /** @description Đường dẫn tương đối với home account. */
         PathQuery: components["schemas"]["RelPath"];
-        /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
-        IdempotencyKey: string;
-        /** @description ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412. */
-        IfMatch: string;
         /** @description Hạn chữ ký (Unix giây). */
         Expires: number;
         /** @description Chữ ký HMAC của URL. */
         Signature: string;
+        /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+        IdempotencyKey: string;
+        /** @description ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412. */
+        IfMatch: string;
         /** @description UUID phiên upload. */
         UploadId: string;
         /** @description Vị trí chunk. */
@@ -3578,6 +3625,8 @@ export interface operations {
                 q?: components["parameters"]["Q"];
                 /** @description Lọc theo account. */
                 "filter[hosting_account]"?: components["parameters"]["FilterHostingAccount"];
+                /** @description Lọc theo loại backup. */
+                "filter[scope_type]"?: components["parameters"]["FilterScopeType"];
             };
             header?: never;
             path?: never;
@@ -3616,7 +3665,15 @@ export interface operations {
                      *           ],
                      *           "tags": [
                      *             "daily"
-                     *           ]
+                     *           ],
+                     *           "website": null,
+                     *           "panel_version": "0.1.0-alpha",
+                     *           "repository_uuid": "01938a35-0001-7000-8000-000035000001",
+                     *           "databases": [
+                     *             "anphat_web",
+                     *             "anphat_shop"
+                     *           ],
+                     *           "locked_until": "2026-12-20T01:12:00+07:00"
                      *         }
                      *       ],
                      *       "meta": {
@@ -3705,6 +3762,44 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    portalDownloadBackupFile: {
+        parameters: {
+            query: {
+                /** @description Đường dẫn tương đối với home account. */
+                path: components["parameters"]["PathQuery"];
+                /** @description Hạn chữ ký (Unix giây). */
+                expires: components["parameters"]["Expires"];
+                /** @description Chữ ký HMAC của URL. */
+                signature: components["parameters"]["Signature"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nội dung file */
+            200: {
+                headers: {
+                    /** @description attachment; filename=… */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /** @example <?php … */
+                    "application/octet-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
+        };
+    };
     portalBackupDownloadLink: {
         parameters: {
             query?: never;
@@ -3715,7 +3810,16 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "path": "sites/anphat.vn/public/wp-config.php"
+                 *     }
+                 */
+                "application/json": components["schemas"]["BackupDownloadRequest"];
+            };
+        };
         responses: {
             /** @description Thành công */
             200: {
@@ -3726,7 +3830,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "data": {
-                     *         "url": "https://portal.itso.local/dl/backup/4f2a9c1e.tar.zst?sig=abc",
+                     *         "url": "https://portal.itso.local/api/v1/portal/backup-snapshots/01938a0e-0001-7000-8000-00000e000001/raw?path=sites%2Fanphat.vn%2Fpublic%2Fwp-config.php&expires=1763605200&signature=abc",
                      *         "expires_at": "2026-11-20T09:15:00+07:00"
                      *       }
                      *     }
@@ -8513,7 +8617,15 @@ export interface operations {
                      *             "email": "it@anphat.vn"
                      *           },
                      *           "created_at": "2026-11-19T14:05:00+07:00",
-                     *           "finished_at": "2026-11-19T14:05:00+07:00"
+                     *           "finished_at": "2026-11-19T14:05:00+07:00",
+                     *           "result": {
+                     *             "restored_paths": [
+                     *               "backups/restore-20261119-1405/sites/anphat.vn"
+                     *             ],
+                     *             "databases": [],
+                     *             "pre_restore_snapshot_uuid": null
+                     *           },
+                     *           "error": null
                      *         },
                      *         {
                      *           "uuid": "01938a10-0002-7000-8000-000010000002",
@@ -8538,7 +8650,42 @@ export interface operations {
                      *             "email": "superadmin@itso.local"
                      *           },
                      *           "created_at": "2026-11-18T16:20:00+07:00",
-                     *           "finished_at": "2026-11-18T16:21:10+07:00"
+                     *           "finished_at": "2026-11-18T16:21:10+07:00",
+                     *           "result": null,
+                     *           "error": "Dump trước khi ghi đè anphat_shop thất bại: vượt quota đĩa của account. DB hiện tại không bị thay đổi."
+                     *         },
+                     *         {
+                     *           "uuid": "01938a10-0003-7000-8000-000010000003",
+                     *           "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "target_server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "mode": "new",
+                     *           "items": [
+                     *             "database:anphat_shop"
+                     *           ],
+                     *           "state": "succeeded",
+                     *           "job_uuid": null,
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0002-7000-8000-000001000002",
+                     *             "name": "Trần Minh",
+                     *             "email": "minh.tran@itso.local"
+                     *           },
+                     *           "created_at": "2026-11-19T10:02:00+07:00",
+                     *           "finished_at": "2026-11-19T10:04:30+07:00",
+                     *           "result": {
+                     *             "restored_paths": [],
+                     *             "databases": [
+                     *               "anphat_shop_r20261119"
+                     *             ],
+                     *             "pre_restore_snapshot_uuid": null
+                     *           },
+                     *           "error": null
                      *         }
                      *       ],
                      *       "meta": {
@@ -8692,7 +8839,15 @@ export interface operations {
                      *           "email": "it@anphat.vn"
                      *         },
                      *         "created_at": "2026-11-19T14:05:00+07:00",
-                     *         "finished_at": "2026-11-19T14:05:00+07:00"
+                     *         "finished_at": "2026-11-19T14:05:00+07:00",
+                     *         "result": {
+                     *           "restored_paths": [
+                     *             "backups/restore-20261119-1405/sites/anphat.vn"
+                     *           ],
+                     *           "databases": [],
+                     *           "pre_restore_snapshot_uuid": null
+                     *         },
+                     *         "error": null
                      *       }
                      *     }
                      */

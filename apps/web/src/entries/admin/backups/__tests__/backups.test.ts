@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { destBody, destSchema, normalizeItems, policySchema, restoreItem } from '../forms';
+import {
+  destBody,
+  destSchema,
+  excludeLines,
+  normalizeItems,
+  policySchema,
+  restoreItem,
+} from '../forms';
 import { latestPerAccount, rule32110, verifyState, type DestLike } from '../rules';
 
 const now = Date.parse('2026-11-20T00:00:00+07:00');
@@ -79,6 +86,9 @@ describe('Chọn mục khôi phục', () => {
     expect(restoreItem('sites/anphat.vn/public')).toBe('files:sites/anphat.vn/public');
     expect(restoreItem('databases/anphat_web.sql.zst')).toBe('database:anphat_web');
     expect(restoreItem('config/nginx/anphat.vn.conf')).toBe('config');
+    // DB chọn theo danh sách databases của snapshot (agent lưu dump ở db/<tên>.sql|.dump).
+    expect(restoreItem('database:anphat_web')).toBe('database:anphat_web');
+    expect(restoreItem('database:../x')).toBe('files:database:../x');
   });
   it('bỏ mục con khi đã chọn thư mục cha, gộp config', () => {
     expect(
@@ -105,6 +115,8 @@ describe('Form đích và chính sách sao lưu', () => {
     type: 's3' as const,
     path: '',
     host: '',
+    port: '22',
+    user: '',
     endpoint: 'https://s3.example.vn',
     bucket: 'itso',
     region: '',
@@ -129,7 +141,7 @@ describe('Form đích và chính sách sao lưu', () => {
       credentials: { access_key: 'AK', secret_key: 'SK' },
     });
   });
-  it('local: đường dẫn tuyệt đối; sửa không nhập lại bí mật thì không gửi credentials', () => {
+  it('local: luôn /var/backups/itso (API từ chối đường dẫn khác); không gửi credentials', () => {
     const local = {
       ...base,
       type: 'local' as const,
@@ -137,14 +149,45 @@ describe('Form đích và chính sách sao lưu', () => {
       access_key: '',
       secret_key: '',
     };
-    expect(destSchema.safeParse(local).success).toBe(false);
-    expect(destBody({ ...local, path: '/srv/backup' })).not.toHaveProperty('credentials');
+    expect(destSchema.safeParse(local).success).toBe(true);
+    const body = destBody({ ...local, path: '/srv/backup' });
+    expect(body).not.toHaveProperty('credentials');
+    expect(body.config).toEqual({ path: '/var/backups/itso' });
+  });
+  it('SFTP: không nhập mật khẩu (agent sinh khóa), cổng 1–65535, host hợp lệ', () => {
+    const sftp = {
+      ...base,
+      type: 'sftp' as const,
+      host: 'backup.hcm.itso.local',
+      user: 'itso-backup',
+      path: '/srv/backup',
+      access_key: '',
+      secret_key: '',
+    };
+    expect(destSchema.safeParse(sftp).success).toBe(true);
+    expect(destSchema.safeParse({ ...sftp, port: '70000' }).success).toBe(false);
+    expect(destSchema.safeParse({ ...sftp, host: 'bad host;' }).success).toBe(false);
+    expect(destSchema.safeParse({ ...sftp, user: '' }).success).toBe(false);
+    expect(destBody(sftp)).toEqual({
+      name: 'S3',
+      type: 'sftp',
+      config: {
+        host: 'backup.hcm.itso.local',
+        port: '22',
+        user: 'itso-backup',
+        path: '/srv/backup',
+      },
+      append_only: false,
+      immutable_days: null,
+    });
   });
   it('chính sách: cron hợp lệ, có đích, giữ ít nhất một bản', () => {
     const p = {
       name: 'Hằng ngày',
       scope_type: 'all_accounts' as const,
       scope_uuid: '',
+      contents: ['files', 'databases'] as ('files' | 'databases' | 'config')[],
+      excludes: 'tmp/**\n**/cache/**',
       schedule: '0 2 * * *',
       destination_uuids: ['d'],
       daily: 7,
@@ -157,5 +200,13 @@ describe('Form đích và chính sách sao lưu', () => {
     expect(policySchema.safeParse({ ...p, destination_uuids: [] }).success).toBe(false);
     expect(policySchema.safeParse({ ...p, daily: 0, weekly: 0, monthly: 0 }).success).toBe(false);
     expect(policySchema.safeParse({ ...p, scope_type: 'server' }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, scope_type: 'website' }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, scope_type: 'website', scope_uuid: 'w' }).success).toBe(
+      true,
+    );
+    expect(policySchema.safeParse({ ...p, contents: [] }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, excludes: '/etc/passwd' }).success).toBe(false);
+    expect(policySchema.safeParse({ ...p, excludes: 'sites/../..' }).success).toBe(false);
+    expect(excludeLines(' a/**\n\n b ')).toEqual(['a/**', 'b']);
   });
 });

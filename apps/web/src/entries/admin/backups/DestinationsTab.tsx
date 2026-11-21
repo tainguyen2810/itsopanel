@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import { useSession } from '@/shared/session/SessionContext';
@@ -11,11 +12,21 @@ import { ListPage } from '@/shared/page/ListPage';
 import { Alert } from '@/ui/Alert';
 import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
-import type { ColumnDef } from '@/ui/DataTable';
+import { CodeBlock } from '@/ui/CodeBlock';
+import { DataTable, type ColumnDef } from '@/ui/DataTable';
+import { Dialog, DialogContent } from '@/ui/Dialog';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
 import { Mono, RowMenu } from '@/shared/hosting/pages/common';
-import { DEST_FIELDS, destBody, destSchema, type DestForm, type DestType } from './forms';
+import {
+  LOCAL_PATH,
+  DEST_FIELDS,
+  destBody,
+  destSchema,
+  type DestForm,
+  type DestType,
+} from './forms';
+import { RecoveryKitDialog } from './RecoveryKitDialog';
 
 type Dest = Row<'/api/v1/admin/backup-destinations'>;
 const TYPES = Object.keys(DEST_FIELDS) as DestType[];
@@ -30,6 +41,8 @@ export function DestinationsTab() {
   const { user } = useSession();
   const sa = user.role === 'SUPER_ADMIN';
   const [editing, setEditing] = useState<Dest | 'new' | null>(null);
+  const [kitFor, setKitFor] = useState<Dest | null>(null);
+  const [reposOf, setReposOf] = useState<Dest | null>(null);
   const test = useAction((d: Dest) =>
     send('POST', '/api/v1/admin/backup-destinations/{id}:test', { path: { id: d.uuid } }),
   );
@@ -42,6 +55,9 @@ export function DestinationsTab() {
         <div className="min-w-0">
           <p className="font-medium">{row.original.name}</p>
           <Mono>{summary(row.original)}</Mono>
+          <p className="text-sm text-muted">
+            {t('bk.repoCount', { count: row.original.repositories })}
+          </p>
         </div>
       ),
     },
@@ -71,6 +87,18 @@ export function DestinationsTab() {
           {!row.original.immutable_days && !row.original.append_only && (
             <span className="text-muted">—</span>
           )}
+          {row.original.detected && (
+            <span className="block w-full text-xs text-muted">
+              {row.original.detected.object_lock_days
+                ? t('bk.detectedLock', { count: row.original.detected.object_lock_days })
+                : row.original.detected.append_only
+                  ? t('bk.detectedAppend')
+                  : t('bk.detectedNone')}
+            </span>
+          )}
+          {row.original.recovery_kit_acknowledged_at === null && (
+            <Badge tone="warning">{t('bk.kitPending')}</Badge>
+          )}
         </span>
       ),
     },
@@ -93,6 +121,11 @@ export function DestinationsTab() {
               {row.original.last_check_ok ? t('bk.checkOk') : t('bk.checkFail')}
             </Badge>
             <span className="text-sm text-muted">{fmt.rel(row.original.last_check_at)}</span>
+            {row.original.last_check_error && (
+              <span className="max-w-64 text-sm text-danger-text">
+                {row.original.last_check_error}
+              </span>
+            )}
           </span>
         ),
     },
@@ -106,6 +139,8 @@ export function DestinationsTab() {
             label={t('bk.destActions', { name: row.original.name })}
             actions={[
               { label: t('bk.test'), onSelect: () => test.mutate(row.original) },
+              { label: t('bk.repos'), onSelect: () => setReposOf(row.original) },
+              { label: t('bk.kit'), onSelect: () => setKitFor(row.original) },
               { label: t('bk.edit'), onSelect: () => setEditing(row.original) },
             ]}
           />
@@ -133,13 +168,95 @@ export function DestinationsTab() {
         primaryColumnId="name"
       />
       {editing && (
-        <DestDialog dest={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+        <DestDialog
+          dest={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onCreated={setKitFor}
+        />
       )}
+      {kitFor && <RecoveryKitDialog dest={kitFor} onClose={() => setKitFor(null)} />}
+      {reposOf && <ReposDialog dest={reposOf} onClose={() => setReposOf(null)} />}
     </>
   );
 }
 
-function DestDialog({ dest, onClose }: { dest: Dest | null; onClose: () => void }) {
+type Repo = Row<'/api/v1/admin/backup-repositories'>;
+
+/** Repo trên một đích: mỗi account (và cấu hình/panel của máy chủ) một repo, mật khẩu riêng (D-82). */
+function ReposDialog({ dest, onClose }: { dest: Dest; onClose: () => void }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  const q = useQuery({
+    queryKey: ['admin', 'backups', 'repos', dest.uuid],
+    queryFn: () =>
+      list('/api/v1/admin/backup-repositories', { filters: { destination: dest.uuid } }),
+  });
+  const columns: ColumnDef<Repo, unknown>[] = [
+    {
+      id: 'scope',
+      header: t('bk.repoScope'),
+      accessorFn: (r) => r.hosting_account?.username ?? r.server.name,
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <p className="font-medium">
+            {row.original.hosting_account?.username ??
+              t('bk.repoServer', { name: row.original.server.name })}
+          </p>
+          <Mono>{row.original.path}</Mono>
+        </div>
+      ),
+    },
+    {
+      id: 'size',
+      header: t('bk.size'),
+      accessorKey: 'size_mb',
+      cell: ({ row }) => (
+        <span className="flex flex-col items-start gap-1">
+          <span className="tabular-nums">{fmt.mb(row.original.size_mb)}</span>
+          {row.original.quota_state !== 'ok' && (
+            <Badge tone={row.original.quota_state === 'paused' ? 'danger' : 'warning'}>
+              {t(`bk.quota.${row.original.quota_state}`)}
+            </Badge>
+          )}
+        </span>
+      ),
+    },
+    { id: 'snaps', header: t('bk.snapshots'), accessorKey: 'snapshots' },
+    {
+      id: 'last',
+      header: t('bk.latest'),
+      accessorFn: (r) => r.last_snapshot_at ?? '',
+      cell: ({ row }) => fmt.opt(row.original.last_snapshot_at),
+    },
+  ];
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        title={t('bk.reposTitle', { name: dest.name })}
+        description={t('bk.reposHint')}
+        className="max-w-3xl"
+      >
+        <DataTable
+          data={q.data ?? []}
+          columns={columns}
+          getRowId={(r) => r.uuid}
+          primaryColumnId="scope"
+          caption={t('bk.reposTitle', { name: dest.name })}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DestDialog({
+  dest,
+  onClose,
+  onCreated,
+}: {
+  dest: Dest | null;
+  onClose: () => void;
+  onCreated: (d: Dest) => void;
+}) {
   const { t } = useTranslation('admin');
   const c = dest?.config ?? {};
   const { control, handleSubmit } = useForm<DestForm>({
@@ -149,6 +266,8 @@ function DestDialog({ dest, onClose }: { dest: Dest | null; onClose: () => void 
       type: dest?.type ?? 's3',
       path: c.path ?? '',
       host: c.host ?? '',
+      port: c.port ?? '22',
+      user: c.user ?? '',
       endpoint: c.endpoint ?? '',
       bucket: c.bucket ?? '',
       region: c.region ?? '',
@@ -166,7 +285,7 @@ function DestDialog({ dest, onClose }: { dest: Dest | null; onClose: () => void 
   const save = useAction(
     (v: DestForm) => {
       const body = destBody(v);
-      if (!dest) return send('POST', '/api/v1/admin/backup-destinations', { body });
+      if (!dest) return send<Dest>('POST', '/api/v1/admin/backup-destinations', { body });
       const { type: _type, ...patch } = body;
       void _type;
       return send('PATCH', '/api/v1/admin/backup-destinations/{id}', {
@@ -175,7 +294,15 @@ function DestDialog({ dest, onClose }: { dest: Dest | null; onClose: () => void 
         headers: { 'If-Match': `"${dest.updated_at}"` },
       });
     },
-    { success: t('bk.destSaved'), invalidate: [['admin', 'backups']], onSuccess: onClose },
+    {
+      success: t('bk.destSaved'),
+      invalidate: [['admin', 'backups']],
+      onSuccess: (r) => {
+        onClose();
+        // Đích mới: hiện bộ khôi phục một lần ngay sau khi tạo (D-82).
+        if (!dest && r && typeof r === 'object' && 'uuid' in r) onCreated(r as Dest);
+      },
+    },
   );
   const fields = DEST_FIELDS[type];
   return (
@@ -204,7 +331,7 @@ function DestDialog({ dest, onClose }: { dest: Dest | null; onClose: () => void 
             control={control}
             name={k}
             label={t(`bk.cfg.${k}`)}
-            optional={k === 'region'}
+            optional={k === 'region' || k === 'port'}
             {...(k === 'endpoint' || k === 'url' ? { type: 'url' as const } : {})}
           />
         ))}
@@ -245,6 +372,12 @@ function DestDialog({ dest, onClose }: { dest: Dest | null; onClose: () => void 
           )}
         </>
       )}
+      {type === 'sftp' && !dest && <Alert tone="info" title={t('bk.sftpKeyHint')} />}
+      {type === 'sftp' && dest?.ssh_public_key && (
+        <CodeBlock code={dest.ssh_public_key} label={t('bk.sshPublicKey')} wrap />
+      )}
+      {type === 'rest' && <Alert tone="info" title={t('bk.restHint')} />}
+      {type === 'local' && <Alert tone="info" title={t('bk.localHint', { path: LOCAL_PATH })} />}
       {dest?.immutable_days ? (
         <Alert tone="info" title={t('bk.lockNote', { count: dest.immutable_days })} />
       ) : null}

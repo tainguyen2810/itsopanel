@@ -276,7 +276,43 @@
       "job": "Cài web stack",
       "optional": "Bước này không bắt buộc: có thể bấm Tiếp tục và cài sau ở trang Máy chủ → Phần mềm."
     },
-    "confirmFirewall": "Tường lửa mặc định đã được áp dụng: bấm \"Giữ cấu hình mới\" trong 5 phút, nếu không máy chủ tự hoàn tác."
+    "confirmFirewall": "Tường lửa mặc định đã được áp dụng: bấm \"Giữ cấu hình mới\" trong 5 phút, nếu không máy chủ tự hoàn tác.",
+    "dr": {
+      "pathLegend": "Bạn muốn làm gì?",
+      "path": {
+        "install": {
+          "title": "Cài mới",
+          "hint": "Tạo Super Admin và cấu hình panel từ đầu."
+        },
+        "restore": {
+          "title": "Khôi phục từ backup",
+          "hint": "Máy chủ thay thế sau sự cố: dùng bộ khôi phục để lấy lại panel và tài khoản cũ."
+        }
+      },
+      "title": "Khôi phục panel từ backup",
+      "sourceHint": "Nhập đích và thông tin trong bộ khôi phục. Panel không lưu mật khẩu repo và khóa riêng.",
+      "pickHint": "Chọn bản backup panel để khôi phục. Bản mới nhất thường là lựa chọn đúng.",
+      "runHint": "Agent giải mã bản backup panel, rồi panel tự dừng khoảng một phút để thay DB và /etc/itso, áp lại cấu hình account và khôi phục dữ liệu website, database ở nền.",
+      "sftpHint": "Đích SFTP không khôi phục qua wizard (cần khóa SSH và host key của đích): trên máy mới chạy \"sudo itso backup panel-restore --kit <file> --snapshot <id> --ssh-key <khóa>\" rồi \"sudo itso panel-restore-apply --dir <thư mục in ra>\".",
+      "repoPath": "Đường dẫn repo server",
+      "repoPathHint": "Dòng \"repo:\" của mục \"server <tên máy>\" trong bộ khôi phục, dạng itso/<uuid>/server.",
+      "repoPassword": "Mật khẩu repo server",
+      "privateKey": "Khóa riêng của panel",
+      "privateKeyHint": "Dòng AGE-SECRET-KEY-1… trong bộ khôi phục.",
+      "open": "Mở repo",
+      "pickLegend": "Bản backup panel",
+      "latest": "Mới nhất",
+      "version": "phiên bản {{v}}",
+      "accounts_one": "{{count}} account",
+      "accounts_other": "{{count}} account",
+      "pickWarnTitle": "Khôi phục ghi đè panel trống trên máy này",
+      "pickWarn": "Dữ liệu website và database của từng account được khôi phục tự động ở nền (2 account cùng lúc) sau khi panel chạy lại.",
+      "start": "Bắt đầu khôi phục",
+      "job": "Khôi phục panel",
+      "doneTitle": "Đã khôi phục panel",
+      "doneHint": "Panel đang khởi động lại với dữ liệu cũ (khoảng một phút). Sau đó đăng nhập bằng tài khoản cũ (cần MFA cũ) và theo dõi tiến độ ở Backup Center → Khôi phục.",
+      "verify": "Kiểm tra trạng thái sau khôi phục"
+    }
   },
   "servers": {
     "title": "Máy chủ",
@@ -962,7 +998,7 @@
     "title": "Tài khoản đã chấm dứt",
     "description": "Dữ liệu giữ tối thiểu 30 ngày. Purge cần backup cuối đã kiểm chứng và hai Super Admin khác nhau: một người lên lịch, người kia xác nhận.",
     "policyTitle": "Quy trình purge 2 bước (D-46)",
-    "policy": "1. Super Admin A lên lịch purge, panel chạy và kiểm chứng backup cuối. 2. Super Admin B gõ username để xác nhận. Purge tự chạy khi hết thời hạn giữ dữ liệu. Tài khoản đang giữ pháp lý không purge được.",
+    "policy": "1. Super Admin A lên lịch purge: panel chạy backup cuối rồi tự kiểm chứng (restic check + thử khôi phục). 2. Khi hết thời hạn giữ dữ liệu, Super Admin B gõ username để xác nhận, purge chạy ngay. Tài khoản đang giữ pháp lý không purge được.",
     "terminatedAt": "Chấm dứt lúc",
     "countdown": "Thời hạn giữ",
     "countdownOf": "Thời hạn giữ dữ liệu của {{name}}",
@@ -974,7 +1010,7 @@
       "none": "Chưa lên lịch",
       "backup": "Đang kiểm chứng backup",
       "confirm": "Chờ Super Admin thứ hai",
-      "scheduled": "Đã xác nhận, chờ tới hạn",
+      "scheduled": "Đã xác nhận, đang purge",
       "done": "Đã purge",
       "hold": "Giữ pháp lý"
     },
@@ -983,14 +1019,16 @@
     "actions": "Thao tác",
     "schedule": "Lên lịch purge",
     "scheduleTitle": "Lên lịch purge {{name}}?",
-    "scheduleHint": "Panel chạy backup cuối và thử khôi phục để kiểm chứng. Purge chỉ chạy sau {{date}} và khi một Super Admin khác xác nhận.",
+    "scheduleHint": "Panel chạy backup cuối và thử khôi phục để kiểm chứng. Chỉ xác nhận purge được sau {{date}}, bởi một Super Admin khác.",
     "confirm": "Xác nhận purge",
     "confirmTitle": "Xác nhận purge {{name}}?",
-    "confirmHint": "{{name}} đã yêu cầu. Toàn bộ file, database, SSL và cấu hình sẽ bị xóa vĩnh viễn vào {{date}}; chỉ còn bản backup cuối.",
+    "confirmHint": "{{name}} đã yêu cầu. Toàn bộ file, database, SSL và cấu hình bị xóa vĩnh viễn ngay khi xác nhận; chỉ còn bản backup cuối.",
     "needOtherTitle": "Cần một Super Admin khác",
     "needOther": "Bạn đã lên lịch purge này nên không thể tự xác nhận (D-46). Nhờ một Super Admin khác đăng nhập để xác nhận; ở bản demo, đổi vai trò sang \"Nguyễn Hải\" ở menu tài khoản.",
     "understood": "Đã hiểu",
-    "empty": "Không có tài khoản nào đã chấm dứt."
+    "empty": "Không có tài khoản nào đã chấm dứt.",
+    "needVerified": "Chờ snapshot cuối được kiểm chứng khôi phục được",
+    "notDue": "Chỉ xác nhận được sau {{date}} (hết thời hạn giữ dữ liệu)"
   },
   "sites": {
     "title": "Website",
@@ -1819,7 +1857,8 @@
       "history": "Lịch sử",
       "policies": "Chính sách",
       "destinations": "Đích",
-      "verify": "Kiểm chứng"
+      "verify": "Kiểm chứng",
+      "overview": "Tổng quan"
     },
     "rule": {
       "title": "Quy tắc 3-2-1-1-0",
@@ -1879,7 +1918,7 @@
     "browse": "Xem nội dung",
     "download": "Tạo link tải",
     "verifyNow": "Kiểm chứng ngay",
-    "verifyFor": "Kiểm chứng snapshot mới nhất của {{name}}",
+    "verifyFor": "Kiểm chứng ngay: snapshot mới nhất của {{name}}",
     "delete": "Xóa",
     "deleteTitle": "Xóa snapshot {{id}}?",
     "deleteHint": "restic forget + prune trên đích. Không hoàn tác được.",
@@ -1896,8 +1935,10 @@
     "scope": {
       "all_accounts": "Mọi account",
       "hosting_account": "Một account",
-      "server": "Một máy chủ",
-      "panel": "Cấu hình panel"
+      "server": "Cấu hình một máy chủ",
+      "panel": "Cấu hình panel",
+      "website": "Một website",
+      "database": "Một database"
     },
     "scopeLabel": "Phạm vi",
     "schedule": "Lịch chạy",
@@ -1967,7 +2008,9 @@
       "url": "URL",
       "password": "Mật khẩu",
       "access_key": "Access key",
-      "secret_key": "Secret key"
+      "secret_key": "Secret key",
+      "port": "Cổng SSH",
+      "user": "Người dùng"
     },
     "keepSecret": "Để trống để giữ nguyên",
     "objectLock": "Khóa bất biến (Object Lock)",
@@ -1981,8 +2024,121 @@
       "dest": "Chọn ít nhất một đích",
       "keep": "Giữ ít nhất một bản",
       "absPath": "Đường dẫn tuyệt đối, bắt đầu bằng /",
-      "https": "URL phải bắt đầu bằng https://"
-    }
+      "https": "URL phải bắt đầu bằng https://",
+      "exclude": "Mỗi dòng một đường dẫn tương đối trong home (tối đa 200 ký tự), không bắt đầu bằng / và không chứa ..",
+      "excludeMax": "Tối đa 50 mẫu loại trừ",
+      "port": "Cổng từ 1 đến 65535",
+      "host": "Tên máy hoặc IP không hợp lệ"
+    },
+    "snapScope": {
+      "hosting_account": "Account",
+      "website": "Website",
+      "database": "Database",
+      "server_config": "Cấu hình máy chủ",
+      "panel": "Panel"
+    },
+    "scopeType": "Loại backup",
+    "database": "Database",
+    "pickWebsite": "Chọn website",
+    "pickDatabase": "Chọn database",
+    "excludes": "Loại trừ",
+    "excludesHint": "Mỗi dòng một mẫu, tương đối với home của account, ví dụ tmp/** hoặc **/cache/**.",
+    "nextRun": "Lần tới: {{at}}",
+    "retentionCli": "Panel không xóa snapshot",
+    "retentionCliTitle": "Đích bất biến: số bản giữ chỉ là mong muốn",
+    "retentionCliHint": "{{names}} không cho panel xóa snapshot (Object Lock/append-only). Dọn bản cũ bằng lệnh itso backup prune trên máy chủ, nhập credential prune tại chỗ.",
+    "repoCount_one": "{{count}} repo",
+    "repoCount_other": "{{count}} repo",
+    "detectedLock_one": "Đã phát hiện Object Lock {{count}} ngày",
+    "detectedLock_other": "Đã phát hiện Object Lock {{count}} ngày",
+    "detectedAppend": "Đã phát hiện: chỉ ghi thêm (append-only)",
+    "detectedNone": "Đã kiểm tra: không bất biến",
+    "kitPending": "Chưa xác nhận bộ khôi phục",
+    "repos": "Xem repo",
+    "kit": "Bộ khôi phục",
+    "reposTitle": "Repo trên {{name}}",
+    "reposHint": "Mỗi account một repo restic với mật khẩu riêng; cấu hình máy chủ và panel nằm ở repo của máy chủ.",
+    "repoScope": "Phạm vi",
+    "repoServer": "Máy chủ {{name}} (cấu hình + panel)",
+    "snapshots": "Snapshot",
+    "quota": {
+      "ok": "Trong quota",
+      "warn": "Vượt quota",
+      "paused": "Tạm dừng backup lịch",
+      "pausedHint": "vượt 120 %, backup theo lịch tạm dừng (không xóa bản cũ)"
+    },
+    "quotaTitle": "Quota backup",
+    "quotaHint": "Dung lượng repo backup của account so với gói. Vượt quota: cảnh báo; vượt 120 %: tạm dừng backup lịch.",
+    "quotaUsed": "{{used}} / {{limit}}",
+    "sftpKeyHint": "Agent sinh khóa SSH riêng cho đích này. Sau khi lưu, thêm khóa công khai vào authorized_keys của user trên máy đích rồi bấm Kiểm tra (host key được ghim ở lần đầu).",
+    "sshPublicKey": "Khóa công khai của đích",
+    "restHint": "Dùng user rest-server chỉ có quyền append-only: panel ghi được nhưng không xóa được backup.",
+    "close": "Đóng",
+    "kitTitle": "Bộ khôi phục: {{name}}",
+    "kitFirstHint": "Chỉ hiện một lần. Lưu ra nơi an toàn ngoài máy chủ (két, password manager) trước khi đóng.",
+    "kitAgainHint": "Xem lại bộ khôi phục. Lượt xem này được ghi audit.",
+    "kitWarnTitle": "Mất panel vẫn khôi phục được nhờ bộ này",
+    "kitWarn": "Ai có bộ khôi phục cũng đọc được toàn bộ backup. Không gửi qua chat/email, không lưu trên chính máy chủ này.",
+    "kitRepos": "Repo và mật khẩu",
+    "kitRepoPath": "Repo",
+    "kitRepoPassword": "Mật khẩu repo",
+    "kitPanelKey": "Khóa riêng của panel",
+    "kitPanelKeyHint": "Giải mã bản backup panel (DB panel, /etc/itso) khi khôi phục thảm họa. Panel chỉ giữ khóa công khai.",
+    "kitPrivateKey": "Khóa riêng (age)",
+    "kitGenerated": "Tạo lúc {{at}}",
+    "kitDownload": "Tải tệp bộ khôi phục",
+    "kitConfirm": "Tôi đã lưu bộ khôi phục ở nơi an toàn ngoài máy chủ",
+    "kitDone": "Đã lưu, đóng",
+    "kitSaved": "Đã xác nhận lưu bộ khôi phục",
+    "detail": "Chi tiết",
+    "detailTitle": "Snapshot {{id}}",
+    "tags": "Tag",
+    "immutable": "Bất biến",
+    "lockedUntil": "Bất biến tới {{at}}",
+    "panelVersion": "Phiên bản panel",
+    "downloadFile": "Tải {{name}}",
+    "fileLinkHint": "Link tải {{name}} dùng một lần, hết hạn lúc {{at}}.",
+    "ov": {
+      "lastBackup": "Backup gần nhất",
+      "lastVerified": "Kiểm chứng gần nhất",
+      "running": "Job đang chạy",
+      "failed24h": "Lỗi trong 24 giờ",
+      "destTitle": "Dung lượng theo đích",
+      "destHint": "Dung lượng repo trên từng đích (sau khử trùng lặp và nén của restic).",
+      "immutable": "Bất biến",
+      "usedOf": "Dung lượng đã dùng trên {{name}}",
+      "runningTitle": "Đang chạy",
+      "noRunning": "Không có job backup nào đang chạy.",
+      "progressOf": "Tiến độ {{name}}",
+      "quotaTitle": "Cảnh báo quota",
+      "quotaHint": "Account có dung lượng backup vượt gói.",
+      "noQuota": "Mọi account đều trong quota backup.",
+      "quotaOf": "Quota backup của {{name}}",
+      "jobType": {
+        "backup.manual": "Backup thủ công",
+        "backup.policy.run": "Chạy chính sách",
+        "backup.snapshot.verify": "Kiểm chứng snapshot",
+        "backup.restore": "Khôi phục"
+      }
+    },
+    "vh": {
+      "title": "Lịch sử kiểm chứng",
+      "hint": "restic check hằng tuần đọc ngẫu nhiên 5 % dữ liệu; restore test hằng tháng khôi phục vào vùng tạm và so sha256 với manifest.",
+      "kind": "Loại",
+      "kinds": {
+        "check": "Kiểm tra repo",
+        "restore_test": "Khôi phục thử"
+      },
+      "state": "Kết quả",
+      "result": "Chi tiết",
+      "readData": "Đọc {{pct}} % dữ liệu",
+      "files_one": "{{count}} file đã so khớp",
+      "files_other": "{{count}} file đã so khớp",
+      "mismatches_one": "{{count}} file sai lệch",
+      "mismatches_other": "{{count}} file sai lệch",
+      "at": "Lúc chạy"
+    },
+    "localHint": "Repo lưu ở {{path}} trên máy chủ (chỉ root đọc được). Ổ local không phải off-site: thêm một đích S3/SFTP/rest-server khác."
   },
   "rs": {
     "title": "Khôi phục",
@@ -2010,7 +2166,7 @@
     "modes": {
       "new": {
         "title": "Ra bản mới",
-        "hint": "Giải nén vào thư mục restore-<thời điểm> và database có hậu tố _restore; không đụng dữ liệu đang chạy."
+        "hint": "Giải nén file vào backups/restore-<thời điểm>/ và database ra bản mới <tên>_r<thời điểm>; không đụng dữ liệu đang chạy."
       },
       "overwrite": {
         "title": "Ghi đè bản đang chạy",
@@ -2038,8 +2194,26 @@
     "errors": {
       "snapshot": "Chọn một snapshot",
       "items": "Chọn ít nhất một mục cần khôi phục",
-      "confirm": "Gõ đúng \"{{name}}\" để ghi đè"
-    }
+      "confirm": "Gõ đúng \"{{name}}\" để ghi đè",
+      "overwriteOne": "Ghi đè: mỗi lần đúng một website (thư mục sites/<tên miền>) hoặc một database. File lẻ luôn khôi phục ra bản mới."
+    },
+    "stepUpTitle": "Cần xác thực lại MFA",
+    "stepUpHint": "Ghi đè cần nhập lại mã MFA. Panel dump/chụp snapshot bản hiện tại trước khi ghi đè; lỗi giữa chừng thì bản đang chạy không đổi.",
+    "outcome": {
+      "date": "ngày",
+      "time": "thời điểm",
+      "dbNew": "database mới {{name}}",
+      "dbOverwrite": "ghi đè {{name}} (dump trước)",
+      "config": "áp lại cấu hình account (vhost, PHP-FPM, cron, SSL)",
+      "filesNew": "bản mới tại {{path}}",
+      "filesOverwrite": "thay {{path}} bằng đổi tên nguyên tử"
+    },
+    "result": "Kết quả",
+    "resultPath": "Bản mới:",
+    "resultReplaced": "Đã thay:",
+    "resultDb": "DB mới:",
+    "resultDbReplaced": "Đã ghi đè DB:",
+    "resultPre": "Có snapshot trước khi ghi đè"
   },
   "users": {
     "title": "Người dùng",

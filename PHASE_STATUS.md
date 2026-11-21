@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 7 — Security Center (✓ xong, **chờ duyệt**; merge local vào `main`; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 7.7 ✓ (7.0–7.7 xong). Báo cáo `docs/reports/phase-7.md`
-- **Task đang làm:** không (DỪNG chờ duyệt Phase 7 và D-76 → D-81)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-7`
-- **Bước tiếp theo:** chờ người dùng duyệt Phase 7; chạy `tests/vm/phase4–7.sh` khi có VM. **Không** bắt đầu Phase 8 khi chưa duyệt
+- **Phase:** 8 — Backup & Restore → v0.1.0-alpha (**✓ hoàn tất, chờ duyệt**; merge `--no-ff` vào `main` + tag local `v0.1.0-alpha`; Phase 7 ✓ APPROVED 2026-11-21 cùng D-76 → D-81, kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 8.7 ✓ (8.0 → 8.7 ✓). Prompt chi tiết `docs/planning/seed/PHASE_8_PROMPTS.md`
+- **Task đang làm:** không; DỪNG chờ duyệt Phase 8 (báo cáo `docs/reports/phase-8.md`, release notes `docs/releases/v0.1.0-alpha.md`)
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-8`
+- **Bước tiếp theo:** chờ duyệt Phase 8, D-82 → D-87 và mốc `v0.1.0-alpha`; **không** bắt đầu Phase 9 khi chưa được duyệt; chạy `tests/vm/phase4–8.sh` (gồm DR 2 VM) khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -22,8 +22,8 @@
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ✓ APPROVED (báo cáo `docs/reports/phase-4.md`; tiêu chí cần VM: chờ VM) |
 | 5 | Website / Nginx / PHP / SSL / DNS | ✓ APPROVED (báo cáo `docs/reports/phase-5.md`; tiêu chí cần VM: chờ VM) |
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
-| 7 | Security Center | ✓ chờ duyệt |
-| 8 | Backup & Restore → v0.1.0-alpha | ○ |
+| 7 | Security Center | ✓ APPROVED (báo cáo `docs/reports/phase-7.md`; tiêu chí cần VM: chờ VM) |
+| 8 | Backup & Restore → v0.1.0-alpha | ✓ chờ duyệt (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
 | 9 | Multi-server & chuyển tài khoản | ○ |
 | 10 | Docker Manager, WordPress Toolkit, Software | ○ |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ |
@@ -31,7 +31,18 @@
 
 ## Checklist Phase hiện tại
 
-Phase 7 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.md`
+Phase 8 (✓ hoàn tất, chờ duyệt) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.md`
+
+- ✓ 8.0 Mockup Backup & Restore trên bản demo (`docs/screenshots/phase-8/`, 84 ảnh)
+- ✓ 8.1 ADR backup/restore (D-82…D-87), contracts, migration Phase 8
+- ✓ 8.2 Agent: runner restic, đích, backup file/DB/cấu hình, snapshot, duyệt
+- ✓ 8.3 Agent: khôi phục staging, check, restore test, forget, backup panel, CLI
+- ✓ 8.4 Panel: đích, repo, policy, lịch, job, snapshot, khôi phục, quota, Portal
+- ✓ 8.5 DR: `install.sh --restore`, wizard khôi phục, `itso panel-restore-apply`, `itso:dr-restore`, runbook
+- ✓ 8.6 UI nối API thật
+- ✓ 8.7 e2e, VM Phase 8, review bảo mật, báo cáo, release v0.1.0-alpha, merge
+
+Phase 7: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-7.md`, merge `3887644`). Chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.md`
 
 - ✓ 7.0 Mockup Security Center trên bản demo (`docs/screenshots/phase-7/`, 68 ảnh)
 - ✓ 7.1 ADR firewall/SSH/WAF/malware/FIM/terminal root (D-76…D-81), contracts, migration Phase 7
@@ -138,3 +149,12 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 7 / 7.5 | Agent: policy `record_user` + bí danh `terminal.root`/`terminal.record_user`, `itso policy set` nhận on/off, `itso allowlist reset` (→ `artisan itso:allowlist-reset`); `pty.open.root` (chặn ở registry + handler khi policy tắt, systemd-run root golden), ghi asciicast v2 `/var/lib/itso/recordings/<uuid>.cast` 0600 (chỉ output, giữ rune UTF-8 cắt đôi, 50 MB → marker truncated + đóng phiên `limit`, không ghi được → không mở), `pty.list` (gồm phiên chờ ATTACH), `pty.policy`, `pty.recording.read` theo offset đầu dòng; Panel: `mode=root` chỉ SUPER_ADMIN realm Admin + step-up ≤ 10 phút, `terminal_recordings`, `GET /terminal/sessions` (ADMIN không thấy phiên root), `GET /servers/{id}/terminal/policy`, `GET /terminal/sessions/{id}/recording` (SUPER_ADMIN + step-up, audit một lần mỗi lượt xem), `itso:terminal-reap` 5 phút theo `pty.list` (dự phòng luật 12 giờ); ADR 0028 ghi file policy YAML sẵn có | 9ce6ef9 |
 | 2026-11-21 | 7 / 7.6 | Web nối API thật: tham số `?server=` cho SSH/fail2ban/điểm (bộ chọn máy chủ `useSecurityServer`, nhớ trong sessionStorage, chỉ hiện khi ≥ 2 máy), `send` nhận `query`, `getWith` đọc lại một lần sau step-up; fail2ban danh sách IP bị chặn + gỡ chặn; FIM theo `/security/fim/changes`; tường lửa: xem trước ruleset + chặn áp dụng khi `lockout_risk`, đếm ngược khôi phục từ `firewall/status`; sự kiện WAF trong tab website; terminal root chỉ hiện cho SUPER_ADMIN, phát lại bản ghi phân trang (tối đa 40 trang, cảnh báo cắt/không đủ); wizard xong → trang tường lửa xác nhận; ngưỡng CAPTCHA 0–10 (chỉ Portal); MSW theo hành vi mới | cd3b467 |
 | 2026-11-21 | 7 / 7.7 | e2e stack thật Phase 7 (tường lửa xem trước → giữ / không xác nhận → rolled_back, SSH hardening, WAF chặn + sự kiện, EICAR → cách ly → khôi phục, FIM, CAPTCHA Portal, root bị từ chối khi policy tắt), 17/17; sửa gốc sandbox thiếu user root (SSH luôn lỗi ở dev/e2e); `tests/vm/phase7.sh` S0–S7; review bảo mật `docs/security/security-center-review.md`; runbook Phase 7; bỏ mockup CAPTCHA Admin; `make check`; báo cáo `docs/reports/phase-7.md`; merge `--no-ff` vào `main` | 8821cae, 1c6ce68 |
+| 2026-11-21 | 8 | Phase 7 APPROVED (D-76 → D-81, ADR 0023–0028 Accepted); viết `PHASE_8_PROMPTS.md`, D-82 → D-87 đề xuất; nhánh `phase-8` | 97ce654 |
+| 2026-11-21 | 8 / 8.0 | Mockup Backup & Restore trên bản demo (trước khi code): contracts mở rộng (snapshot repo/website/DB/bất biến, đích SFTP/REST + phát hiện append-only/Object Lock, bộ khôi phục + xác nhận, repo, lịch sử kiểm chứng, tổng quan 3-2-1-1-0, policy website/database + loại trừ + retention_mode, khôi phục DR từ wizard `/setup/restore`); MSW demo cho mọi endpoint mới (quota 120% → 409, đích bất biến không xóa snapshot, khôi phục tạo bản mới, purge chờ kiểm chứng); UI Backup Center 5 tab, bộ khôi phục bắt buộc xác nhận, xem/tải một file, quota, wizard nhánh khôi phục; 84 ảnh `docs/screenshots/phase-8/` | 9c28641 |
+| 2026-11-21 | 8 / 8.1 | ADR 0029–0033 (D-82…D-87, Proposed); agent-ops `backup.*` viết lại theo ADR (đích kiểu hóa local/sftp/s3/rest, `BackupRepo` có đường dẫn cố định + mật khẩu qua tham chiếu bí mật, item khôi phục kiểu hóa) + 5 op mới (`backup.destination.test`, `backup.repo.init`, `backup.snapshots`, `backup.browse`, `backup.stats`), 4 mã lỗi mới, 43 vector độc mới; DBML: `backup_repositories`, `backup_policy_destinations` mới, đích bỏ mật khẩu/account, snapshot/kiểm chứng/khôi phục thêm cột cho API; migration Phase 8 (9 bảng) + `database/tests/70_backup.sql` | 1af5ef4 |
+| 2026-11-21 | 8 / 8.2 | Agent `internal/backup` (đích kiểu hóa → URL repo, file bí mật 0600 `/run/itso/backup/<op>/` qua `--repository-file`/`--password-file`/EnvironmentFile, `systemd-run --wait --pipe` trong `itso-maint.slice`, phân loại lỗi restic, manifest sha256 mẫu, khóa ed25519 + ghim host key SFTP, phát hiện Object Lock S3 (SigV4) và rest-server append-only); op `backup.destination.test`, `backup.repo.init`, `backup.run` (files/db/config + snapshot phụ `itso-meta.json`), `backup.snapshots`, `backup.browse`, `backup.stats`; sandbox dùng restic thật, đích từ xa mô phỏng bằng repo local; thêm `filippo.io/age`, `golang.org/x/crypto` | f658fa3 |
+| 2026-11-21 | 8 / 8.3 | Agent: `backup.restore` (restic → staging root 0700 → tar → helper uid account `restore_tar` vào thư mục chưa tồn tại, `RENAME_NOREPLACE`; symlink/thiết bị bị bỏ, setuid gỡ, báo `skipped[]`; website ghi đè = snapshot pre-restore + `RENAME_EXCHANGE`; DB bản mới/ghi đè, nhập dưới uid account, `pg_restore`), `backup.check`, `backup.restore_test` (sha256 manifest + nạp DB tạm), `backup.forget` (kèm snapshot meta); `kind=panel`: `pg_dump` cluster 16/itso + `/etc/itso` → tar → age → restic `--stdin`; CLI `itso backup prune\|panel-restore --kit` | 5be9317 |
+| 2026-11-21 | 8 / 8.4 | Panel API backup: đích (credential mã hóa, kiểm tra qua job, ghim host key, phát hiện Object Lock), repo theo đích × server × account (mật khẩu ngẫu nhiên, init qua job), bộ khôi phục (lần đầu không step-up, sau xác nhận cần step-up, audit), policy + `itso:backup-due` (khóa Redis, jitter), `BackupJobHandler` → snapshot/verification/restore, snapshot list/browse/tải file (HMAC 5 phút, `backup.file.read` mới), verify + `itso:backup-verify`, khôi phục new/overwrite (step-up, gõ username), quota theo gói, retention (chỉ đích không bất biến), tổng quan 3-2-1-1-0, Portal, quyền `backups.*`, cổng purge D-46 (backup cuối kiểm chứng + người xác nhận thứ hai) | ba32a6d |
+| 2026-11-21 | 8 / 8.5 | Khôi phục thảm họa: `install.sh --restore` (mã thiết lập `mode: restore`, wizard chọn sẵn khôi phục), `POST /setup/restore:inspect` (agent `backup.snapshots` tag `type:panel`, không lưu bí mật) + `POST /setup/restore` (job `setup.restore`, op mới `panel.restore`, bí mật tạm trong Redis Crypt TTL 2 giờ, tham chiếu `setup_restore:…`, xóa khi job xong), `itso panel-restore-apply` (sao lưu máy mới, `pg_restore --single-transaction`, `/etc/itso` giữ file của máy mới + APP_KEY cũ, migrate, `itso:reconcile`, xóa bản rõ), `itso:dr-restore` (mỗi account một job ghi đè nhiều bước, song song 2, scheduler 5 phút), gộp kết quả khôi phục nhiều bước, runbook `docs/runbooks/disaster-recovery.md` | 4050012 |
+| 2026-11-21 | 8 / 8.6 | UI Backup & Restore khớp hành vi API thật: wizard khôi phục chọn DB theo `snapshot.databases` (agent lưu dump `db/<tên>.sql\|.dump`), ghi đè đúng một website/DB, bỏ chọn server khác (Phase 9) và mục cấu hình; bộ khôi phục có `destination_uuid` (CLI `itso backup panel-restore` cần); purge chỉ xác nhận được sau hạn giữ, xác nhận = xóa ngay; wizard DR thêm đường dẫn repo server, SFTP hướng dẫn CLI; MSW purge/khôi phục/DR như API thật; dữ liệu demo oldshop đã hết hạn giữ; ảnh phase-8 chụp lại (purge, DR) | a8ce9bc |
+| 2026-11-21 | 8 / 8.7 | E2E stack thật Phase 8 (`e2e-real/phase8.spec.ts`: đích local → bộ khôi phục một lần → policy → chạy ngay → duyệt → khôi phục file/website/DB đúng nội dung; Portal khôi phục sau MFA + step-up), toàn bộ 19/19; sửa theo API thật: đích local cố định `/var/backups/itso`, khóa retention `last/hourly/daily/weekly/monthly` (contract trước → API → UI → DBML); `tests/vm/phase8.sh` B0–B6 (DR 2 VM `--dr-source/--dr-target`); review `docs/security/backup-review.md`; phiên bản mặc định `0.1.0-alpha`; release notes + hướng dẫn cài `docs/releases/`; báo cáo `docs/reports/phase-8.md`; merge phase-8 → main (local), tag `v0.1.0-alpha` | 78927fb |

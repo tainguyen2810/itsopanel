@@ -74,6 +74,7 @@ export function rule32110(
 
 /** Mục khôi phục từ lựa chọn trên cây snapshot: thư mục/file → files:<path>, dump → database:<tên>, config. */
 export function restoreItem(path: string): string {
+  if (/^database:[a-z][a-z0-9_]{0,63}$/.test(path)) return path;
   const db = /^databases\/([a-z][a-z0-9_]{0,63})\.sql\.zst$/.exec(path);
   if (db) return `database:${db[1]}`;
   if (path === 'config' || path.startsWith('config/')) return 'config';

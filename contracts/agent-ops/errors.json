@@ -92,6 +92,26 @@
       "description": "Thay đổi sẽ chặn cổng SSH/panel của chính người áp dụng (D-76)"
     },
     {
+      "code": "repo_locked",
+      "retryable": true,
+      "description": "Repo restic đang bị khóa bởi tác vụ khác (D-86)"
+    },
+    {
+      "code": "repo_not_initialized",
+      "retryable": false,
+      "description": "Repo restic chưa khởi tạo ở đích"
+    },
+    {
+      "code": "repo_auth_failed",
+      "retryable": false,
+      "description": "Sai mật khẩu repo hoặc credential đích"
+    },
+    {
+      "code": "host_key_mismatch",
+      "retryable": false,
+      "description": "Host key SFTP khác bản đã ghim (D-83)"
+    },
+    {
       "code": "internal",
       "retryable": true,
       "description": "Lỗi nội bộ agent"
