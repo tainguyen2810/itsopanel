@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 5 / Prompt 5.6 — nhánh `phase-5`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox`, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Toàn bộ | `make check` | **22 PASS · 1 SKIP (staticcheck chưa cài) · 0 FAIL**, git-clean PASS, 632 s: Pest 369, Vitest 486, Playwright demo 261, fuzz 308 974 lần, docs-check, contracts/codegen/tokens, units, installer |
+| E2E stack thật | `make test-e2e-real` | PASS 8/8. Mới `phase5.spec.ts`: cài PHP 8.3 qua PHP Manager → tạo website PHP (job layout → pool → vhost) → alias → chứng chỉ (lego sandbox tự ký) → tạm khóa account (website `suspended`) → mở khóa → xóa (gõ domain + step-up TOTP); Portal tự tạo website. 4 luồng Phase 3 + 2 luồng Phase 4 vẫn PASS |
+| Step-up | `vitest src/shared/auth` | PASS 3: 403 `mfa_step_up_required` → hỏi mã → gửi lại một lần với Idempotency-Key mới; hủy / không có hộp thoại → lỗi gốc; request step-up lỗi không hỏi lại |
+| Xóa website gỡ chứng chỉ | `pest tests/Feature/Phase5` | PASS 21 (715 assertion). Mới: xóa website có chứng chỉ → `nginx.vhost.remove` → `php.pool.remove` → `cert.remove`, không còn bản ghi chứng chỉ |
+| Script VM | `bash -n tests/vm/phase5.sh tests/vm/pebble/start.sh` | Cú pháp OK. **Chờ VM:** W0–W5 (stack, 20 site + uid, cô lập A/B, `nginx -t` hoàn tác, Pebble HTTP-01 thật + gia hạn, xóa sạch) |
+
+**Lỗi tìm thấy và sửa:** (1) xóa website / provider DNS cần step-up nhưng UI không có hộp thoại → luôn 403; thêm `StepUpHost` dùng chung. (2) nhãn i18n thiếu cho job Phase 5 (`website.domain.add`, `setup.stack`, `php.version.*`, `certificate.renew`, `nginx.global.update`…). (3) xóa website không gỡ chứng chỉ (`/etc/itso/certs/<uuid>` còn lại).
+
+**Test bị bỏ qua:** không. **Chờ VM/CI:** `tests/vm/phase5.sh`, job CI `pebble`.
+
 ## 2026-11-21 — Phase 5 / Prompt 5.5 — nhánh `phase-5`
 
 Môi trường: Node 22, Chromium Playwright có sẵn, MSW (bản demo) theo OpenAPI.

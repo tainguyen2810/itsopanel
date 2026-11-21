@@ -36,7 +36,17 @@
 
 ## 4. Kết quả test
 
-@@CHECK@@
+`make check` (2026-11-21, PostgreSQL 16 + Redis cục bộ, commit 218b00c): **22 PASS · 1 SKIP (staticcheck) · 0 FAIL**, git-clean PASS (632 s). Chi tiết ở `TEST_REPORT.md` (Prompt 5.5, 5.6).
+
+| Bộ test | Kết quả |
+|---|---|
+| Pest (PostgreSQL 16 + Redis) | 369/369 |
+| Go (race, 12 package) + fuzz | PASS (308 974 lần chạy fuzz) |
+| Vitest | 486/486 |
+| Playwright (demo MSW + Design System, gồm axe) | 261/261 |
+| Playwright stack thật + agent sandbox (`make test-e2e-real`) | 8/8 |
+| Installer · unit systemd | PASS |
+| pint, phpstan, ESLint, Prettier, tsc, i18n (2590 khóa, vi = en), gofmt, go vet, no-exec, docs-check | xanh |
 
 E2E stack thật (itso-agent sandbox):
 
