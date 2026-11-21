@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 6 / Prompt 6.1 — nhánh `phase-6`
+
+Môi trường: như Phase 5 (PostgreSQL 16 + Redis local, container không có systemd).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS: admin 243 operation (+4: `GetUpload`, `CancelUpload`, `DownloadFile` stream ký số, `rotateSftpPassword`), portal 107; agent-ops 87 op có schema (+14: `fs.stat`, `fs.rename`, `fs.upload.commit`, `db.{mysql,pg}.{owner_ensure,lock,inspect}`, `sshd.match.apply`, `ftp.user.ensure/remove`, `cron.inspect`, `pty.open` từ khai báo → đặc tả; sửa `fs.list/read/extract`, `db.*.user_ensure` (mật khẩu `SecretPassword` thay `password_ref`), `db.*.dump/import` chạy dưới uid account, `sftp.user.*` chỉ user chính, `cron.apply/run_once` có `timeout_sec`); recipe `mariadb`, `postgresql`, `pure-ftpd`; 434 example hợp lệ, độ phủ 100%; `JobAccepted.secret` (trả mật khẩu một lần), `UploadSession.status/job_uuid`, `FileOperation` thêm `rename`, `CronJob.timeout_sec`, `TerminalTicket.session_uuid` |
+| Vector độc | `gen_vectors.py` + check_contracts | PASS: 155 vector (+17: `SecretPassword` nháy/gạch chéo ngược/khoảng trắng/xuống dòng/`$()`, `FtpUsername` chèn trường passwd, cron DOM+DOW, bước 0, ngày 31/2) |
+| DB | `make db-schema` · `make db-migrations PHASE=6` · `make db-verify` | PASS: 81 bảng (+`file_operations`); migration Phase 6: 10 bảng, 84 câu lệnh; Phase 3 → 11 áp lần lượt = itso.sql + extras.sql. Thay đổi: `databases.charset`, `database_users` có uuid + desired/observed, `sftp_accounts.password_encrypted/read_only/last_login_at`, `ssh_keys` uuid/type/unique theo account, `cron_jobs.website_id/working_dir/php_version`, `cron_runs` uuid/status/trigger, `upload_sessions` uuid/status/overwrite/job_id, `terminal_sessions` uuid/mode/ended_reason; CHECK tên DB/user, host, trạng thái, op; unique DB user khi chưa xóa |
+| Schema Laravel · Pest toàn bộ | `scripts/pest-pg.sh` | PASS 370/370 (thêm: đủ 10 bảng Phase 6; DB trùng tên/tên độc/upload vượt kích thước/op lạ/trạng thái cron bị CHECK chặn) |
+| Go | `go vet ./...` · `go test -count=1 ./...` | PASS |
+| Web | `npx vitest run` · `tsc --noEmit` | PASS 486/486 · tsc sạch (MSW cập nhật theo schema mới: DB user có desired/observed, upload chunk 8 MiB + status, cron `timeout_sec`) |
+| Tài liệu | `make docs-check` | PASS (ADR 0018–0022) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 5 / Prompt 5.6 — nhánh `phase-5`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox`, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`.

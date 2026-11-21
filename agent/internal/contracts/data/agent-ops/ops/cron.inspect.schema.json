@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cron.inspect.schema.json",
+  "title": "cron.inspect",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "uuids": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Uuid"
+          },
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "account",
+        "uuids"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "$ref": "../defs.schema.json#/$defs/Uuid"
+              },
+              "last_started_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "last_finished_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "exit_code": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "success",
+                  "failed",
+                  "timeout",
+                  "never"
+                ]
+              }
+            },
+            "required": [
+              "uuid",
+              "last_started_at",
+              "last_finished_at",
+              "exit_code",
+              "result"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "jobs"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -811,7 +811,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0147-7000-8000-00000f000147
+                  uuid: 01938a0f-0148-7000-8000-00000f000148
                   type: backup.run
                   state: queued
                   progress: 0
@@ -844,8 +844,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0147-7000-8000-00000f000147
-                    events: /api/v1/portal/jobs/01938a0f-0147-7000-8000-00000f000147/events
+                    self: /api/v1/portal/jobs/01938a0f-0148-7000-8000-00000f000148
+                    events: /api/v1/portal/jobs/01938a0f-0148-7000-8000-00000f000148/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -1088,6 +1088,7 @@ paths:
                   working_dir: sites/anphat.vn
                   php_version: '8.3'
                   enabled: true
+                  timeout_sec: 3600
                   last_run_at: '2026-11-20T08:15:00+07:00'
                   last_status: succeeded
                   status: ready
@@ -1109,6 +1110,7 @@ paths:
                   working_dir: sites/shop.anphat.vn
                   php_version: '8.2'
                   enabled: true
+                  timeout_sec: 3600
                   last_run_at: '2026-11-20T02:00:00+07:00'
                   last_status: failed
                   status: ready
@@ -1128,6 +1130,7 @@ paths:
                   working_dir: .
                   php_version: '8.3'
                   enabled: true
+                  timeout_sec: 3600
                   last_run_at: '2026-11-20T03:00:00+07:00'
                   last_status: succeeded
                   status: ready
@@ -1179,7 +1182,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0143-7000-8000-00000f000143
+                  uuid: 01938a0f-0144-7000-8000-00000f000144
                   type: cron.create
                   state: queued
                   progress: 0
@@ -1207,8 +1210,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0143-7000-8000-00000f000143
-                    events: /api/v1/portal/jobs/01938a0f-0143-7000-8000-00000f000143/events
+                    self: /api/v1/portal/jobs/01938a0f-0144-7000-8000-00000f000144
+                    events: /api/v1/portal/jobs/01938a0f-0144-7000-8000-00000f000144/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -1250,7 +1253,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0144-7000-8000-00000f000144
+                  uuid: 01938a0f-0145-7000-8000-00000f000145
                   type: cron.update
                   state: queued
                   progress: 0
@@ -1278,8 +1281,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0144-7000-8000-00000f000144
-                    events: /api/v1/portal/jobs/01938a0f-0144-7000-8000-00000f000144/events
+                    self: /api/v1/portal/jobs/01938a0f-0145-7000-8000-00000f000145
+                    events: /api/v1/portal/jobs/01938a0f-0145-7000-8000-00000f000145/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -1315,7 +1318,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0145-7000-8000-00000f000145
+                  uuid: 01938a0f-0146-7000-8000-00000f000146
                   type: cron.delete
                   state: queued
                   progress: 0
@@ -1343,8 +1346,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0145-7000-8000-00000f000145
-                    events: /api/v1/portal/jobs/01938a0f-0145-7000-8000-00000f000145/events
+                    self: /api/v1/portal/jobs/01938a0f-0146-7000-8000-00000f000146
+                    events: /api/v1/portal/jobs/01938a0f-0146-7000-8000-00000f000146/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -1426,7 +1429,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0146-7000-8000-00000f000146
+                  uuid: 01938a0f-0147-7000-8000-00000f000147
                   type: cron.run
                   state: queued
                   progress: 0
@@ -1454,8 +1457,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0146-7000-8000-00000f000146
-                    events: /api/v1/portal/jobs/01938a0f-0146-7000-8000-00000f000146/events
+                    self: /api/v1/portal/jobs/01938a0f-0147-7000-8000-00000f000147
+                    events: /api/v1/portal/jobs/01938a0f-0147-7000-8000-00000f000147/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -1508,10 +1511,16 @@ paths:
                   engine: mariadb
                   username: anphat_web
                   host: localhost
+                  max_connections: 10
                   grants:
                   - database: anphat_web
                     privileges:
                     - ALL
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
                 - uuid: 01938a0a-0002-7000-8000-00000a000002
@@ -1521,6 +1530,7 @@ paths:
                   engine: mariadb
                   username: anphat_shop
                   host: localhost
+                  max_connections: 10
                   grants:
                   - database: anphat_shop
                     privileges:
@@ -1528,6 +1538,11 @@ paths:
                     - INSERT
                     - UPDATE
                     - DELETE
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
                 - uuid: 01938a0a-0003-7000-8000-00000a000003
@@ -1537,10 +1552,16 @@ paths:
                   engine: mariadb
                   username: binhminh_web
                   host: localhost
+                  max_connections: 10
                   grants:
                   - database: binhminh_web
                     privileges:
                     - ALL
+                  status: ready
+                  spec_version: 1
+                  observed_version: 1
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-12T09:10:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
@@ -2250,7 +2271,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014e-7000-8000-00000f00014e
+                  uuid: 01938a0f-014f-7000-8000-00000f00014f
                   type: git.rollback
                   state: queued
                   progress: 0
@@ -2278,8 +2299,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e
-                    events: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e/events
+                    self: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f
+                    events: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f/events
                 resource:
                   type: git_repository
                   uuid: 01938a2e-0001-7000-8000-00002e000001
@@ -2695,7 +2716,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014d-7000-8000-00000f00014d
+                  uuid: 01938a0f-014e-7000-8000-00000f00014e
                   type: git.deploy
                   state: queued
                   progress: 0
@@ -2723,8 +2744,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d
-                    events: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d/events
+                    self: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e
+                    events: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e/events
                 resource:
                   type: git_repository
                   uuid: 01938a2e-0001-7000-8000-00002e000001
@@ -2845,7 +2866,7 @@ paths:
                       used: 2
                       limit: 10
                     ftp_accounts:
-                      used: 1
+                      used: 2
                       limit: 5
                     cron_jobs:
                       used: 2
@@ -2936,7 +2957,7 @@ paths:
                       used: 2
                       limit: 10
                     ftp_accounts:
-                      used: 1
+                      used: 2
                       limit: 5
                     cron_jobs:
                       used: 2
@@ -3212,6 +3233,41 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+  /api/v1/portal/hosting-accounts/{id}/files/raw:
+    get:
+      operationId: portalDownloadFile
+      summary: Tải file (URL ký số từ DownloadLink)
+      tags:
+      - Files
+      description: Stream nội dung file theo từng khúc 1 MiB qua agent (`fs.read` có `offset`). Cần phiên đăng nhập và chữ
+        ký còn hạn.
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/PathQuery
+      - $ref: ./common.yaml#/components/parameters/Expires
+      - $ref: ./common.yaml#/components/parameters/Signature
+      responses:
+        '200':
+          description: Nội dung file
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: attachment; filename=…
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+              example: '%PDF-1.7 …'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
   /api/v1/portal/hosting-accounts/{id}/files/uploads:
     post:
       operationId: portalCreateUpload
@@ -3247,9 +3303,11 @@ paths:
                   uuid: 01938a25-0001-7000-8000-000025000001
                   path: sites/anphat.vn/public/brochure.pdf
                   size: 5242880
-                  chunk_size: 1048576
+                  chunk_size: 8388608
                   received: 0
                   expires_at: '2026-11-20T09:15:00+07:00'
+                  status: receiving
+                  job_uuid: null
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -3268,6 +3326,8 @@ paths:
       summary: Gửi một chunk
       tags:
       - Files
+      description: Chunk phải bắt đầu đúng tại `received` (sai → 409 kèm `received` hiện tại); chunk cuối tạo job `file.upload`
+        (agent `fs.upload.commit`, ghi dưới uid account) và trả `status=committing`.
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/UploadId
@@ -3297,9 +3357,11 @@ paths:
                   uuid: 01938a25-0001-7000-8000-000025000001
                   path: sites/anphat.vn/public/brochure.pdf
                   size: 5242880
-                  chunk_size: 1048576
+                  chunk_size: 8388608
                   received: 1048576
                   expires_at: '2026-11-20T09:15:00+07:00'
+                  status: receiving
+                  job_uuid: null
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -3314,6 +3376,68 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
         '412':
           $ref: ./common.yaml#/components/responses/PreconditionFailed
+    get:
+      operationId: portalGetUpload
+      summary: Trạng thái phiên upload (để tiếp tục)
+      tags:
+      - Files
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/UploadId
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/UploadSession
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a25-0001-7000-8000-000025000001
+                  path: sites/anphat.vn/public/brochure.pdf
+                  size: 5242880
+                  chunk_size: 8388608
+                  received: 3145728
+                  expires_at: '2026-11-20T09:15:00+07:00'
+                  status: receiving
+                  job_uuid: null
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+    delete:
+      operationId: portalCancelUpload
+      summary: Hủy phiên upload
+      tags:
+      - Files
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/UploadId
+      responses:
+        '204':
+          description: Thành công, không có nội dung
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/portal/hosting-accounts/{id}/files:operate:
     post:
       operationId: portalOperateFiles
@@ -3432,7 +3556,7 @@ paths:
                     used: 2
                     limit: 10
                   ftp_accounts:
-                    used: 1
+                    used: 2
                     limit: 5
                   cron_jobs:
                     used: 2
@@ -3882,7 +4006,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014f-7000-8000-00000f00014f
+                  uuid: 01938a0f-0150-7000-8000-00000f000150
                   type: website.create
                   state: queued
                   progress: 0
@@ -3925,8 +4049,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f
-                    events: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f/events
+                    self: /api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150
+                    events: /api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150/events
                 resource:
                   type: website
                   uuid: 01938a06-0002-7000-8000-000006000002
@@ -4195,7 +4319,7 @@ paths:
                         used: 2
                         limit: 10
                       ftp_accounts:
-                        used: 1
+                        used: 2
                         limit: 5
                       cron_jobs:
                         used: 2
@@ -4439,7 +4563,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0148-7000-8000-00000f000148
+                  uuid: 01938a0f-0149-7000-8000-00000f000149
                   type: backup.restore
                   state: queued
                   progress: 0
@@ -4467,8 +4591,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0148-7000-8000-00000f000148
-                    events: /api/v1/portal/jobs/01938a0f-0148-7000-8000-00000f000148/events
+                    self: /api/v1/portal/jobs/01938a0f-0149-7000-8000-00000f000149
+                    events: /api/v1/portal/jobs/01938a0f-0149-7000-8000-00000f000149/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -4568,9 +4692,9 @@ paths:
                   hosting_account:
                     uuid: 01938a05-0001-7000-8000-000005000001
                     username: anphat
-                  username: anphat_deploy
+                  username: anphat
                   protocol: sftp
-                  root_path: sites/anphat.vn
+                  root_path: .
                   read_only: false
                   last_login_at: '2026-11-19T14:05:00+07:00'
                   status: ready
@@ -4582,9 +4706,25 @@ paths:
                   updated_at: '2026-11-19T14:05:00+07:00'
                 - uuid: 01938a0b-0002-7000-8000-00000b000002
                   hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  username: anphat_deploy
+                  protocol: ftps
+                  root_path: sites/anphat.vn
+                  read_only: false
+                  last_login_at: null
+                  status: ready
+                  spec_version: 3
+                  observed_version: 3
+                  drift: null
+                  observed_at: '2026-11-20T08:15:00+07:00'
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a0b-0002-7000-8000-00000b000002
+                  hosting_account:
                     uuid: 01938a05-0005-7000-8000-000005000005
                     username: binhminh
-                  username: binhminh_ftp
+                  username: binhminh
                   protocol: sftp
                   root_path: .
                   read_only: false
@@ -4595,22 +4735,6 @@ paths:
                   drift: null
                   observed_at: '2026-11-20T08:15:00+07:00'
                   created_at: '2026-11-12T09:10:00+07:00'
-                  updated_at: '2026-11-19T14:05:00+07:00'
-                - uuid: 01938a0b-0003-7000-8000-00000b000003
-                  hosting_account:
-                    uuid: 01938a05-0006-7000-8000-000005000006
-                    username: saomai
-                  username: saomai_ftp
-                  protocol: sftp
-                  root_path: .
-                  read_only: false
-                  last_login_at: '2026-11-19T14:05:00+07:00'
-                  status: ready
-                  spec_version: 1
-                  observed_version: 1
-                  drift: null
-                  observed_at: '2026-11-20T08:15:00+07:00'
-                  created_at: '2026-11-13T10:20:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
                   next_cursor: null
@@ -4715,7 +4839,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0140-7000-8000-00000f000140
+                  uuid: 01938a0f-0141-7000-8000-00000f000141
                   type: sftp.delete
                   state: queued
                   progress: 0
@@ -4725,6 +4849,68 @@ paths:
                   steps:
                   - seq: 1
                     op: sftp.user.remove
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-0141-7000-8000-00000f000141
+                    events: /api/v1/portal/jobs/01938a0f-0141-7000-8000-00000f000141/events
+                resource:
+                  type: sftp_account
+                  uuid: 01938a0b-0001-7000-8000-00000b000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/sftp-accounts/{id}:rotate-password:
+    post:
+      operationId: portalRotateSftpPassword
+      summary: Đặt mật khẩu mới (trả một lần)
+      tags:
+      - SFTP
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0140-7000-8000-00000f000140
+                  type: sftp.password
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: sftp_account
+                    uuid: 01938a0b-0001-7000-8000-00000b000001
+                  steps:
+                  - seq: 1
+                    op: ftp.user.ensure
                     state: pending
                     started_at: null
                     finished_at: null
@@ -4756,6 +4942,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/portal/ssh-keys:
@@ -4836,7 +5024,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0141-7000-8000-00000f000141
+                  uuid: 01938a0f-0142-7000-8000-00000f000142
                   type: ssh_key.create
                   state: queued
                   progress: 0
@@ -4864,8 +5052,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0141-7000-8000-00000f000141
-                    events: /api/v1/portal/jobs/01938a0f-0141-7000-8000-00000f000141/events
+                    self: /api/v1/portal/jobs/01938a0f-0142-7000-8000-00000f000142
+                    events: /api/v1/portal/jobs/01938a0f-0142-7000-8000-00000f000142/events
                 resource:
                   type: ssh_key
                   uuid: 01938a0c-0001-7000-8000-00000c000001
@@ -4898,7 +5086,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0142-7000-8000-00000f000142
+                  uuid: 01938a0f-0143-7000-8000-00000f000143
                   type: ssh_key.delete
                   state: queued
                   progress: 0
@@ -4926,8 +5114,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0142-7000-8000-00000f000142
-                    events: /api/v1/portal/jobs/01938a0f-0142-7000-8000-00000f000142/events
+                    self: /api/v1/portal/jobs/01938a0f-0143-7000-8000-00000f000143
+                    events: /api/v1/portal/jobs/01938a0f-0143-7000-8000-00000f000143/events
                 resource:
                   type: ssh_key
                   uuid: 01938a0c-0001-7000-8000-00000c000001
@@ -4981,6 +5169,7 @@ paths:
                   expires_at: '2026-11-20T08:15:30+07:00'
                   mode: account
                   unix_user: anphat
+                  session_uuid: 01938a31-0001-7000-8000-000031000001
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -6058,7 +6247,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0149-7000-8000-00000f000149
+                  uuid: 01938a0f-014a-7000-8000-00000f00014a
                   type: wordpress.install
                   state: queued
                   progress: 0
@@ -6091,8 +6280,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0149-7000-8000-00000f000149
-                    events: /api/v1/portal/jobs/01938a0f-0149-7000-8000-00000f000149/events
+                    self: /api/v1/portal/jobs/01938a0f-014a-7000-8000-00000f00014a
+                    events: /api/v1/portal/jobs/01938a0f-014a-7000-8000-00000f00014a/events
                 resource:
                   type: website
                   uuid: 01938a06-0002-7000-8000-000006000002
@@ -6125,7 +6314,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014b-7000-8000-00000f00014b
+                  uuid: 01938a0f-014c-7000-8000-00000f00014c
                   type: wordpress.clone_staging
                   state: queued
                   progress: 0
@@ -6135,70 +6324,6 @@ paths:
                   steps:
                   - seq: 1
                     op: wp.clone
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0003-7000-8000-000002000003
-                    name: srv-hcm-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/portal/jobs/01938a0f-014b-7000-8000-00000f00014b
-                    events: /api/v1/portal/jobs/01938a0f-014b-7000-8000-00000f00014b/events
-                resource:
-                  type: wordpress_site
-                  uuid: 01938a11-0001-7000-8000-000011000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/portal/wordpress/sites/{id}:harden:
-    post:
-      operationId: portalWordPressHarden
-      summary: Áp dụng hardening
-      tags:
-      - WordPress
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-014c-7000-8000-00000f00014c
-                  type: wordpress.harden
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: wordpress_site
-                    uuid: 01938a11-0001-7000-8000-000011000001
-                  steps:
-                  - seq: 1
-                    op: wp.harden
                     state: pending
                     started_at: null
                     finished_at: null
@@ -6234,6 +6359,70 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/wordpress/sites/{id}:harden:
+    post:
+      operationId: portalWordPressHarden
+      summary: Áp dụng hardening
+      tags:
+      - WordPress
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-014d-7000-8000-00000f00014d
+                  type: wordpress.harden
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: wordpress_site
+                    uuid: 01938a11-0001-7000-8000-000011000001
+                  steps:
+                  - seq: 1
+                    op: wp.harden
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d
+                    events: /api/v1/portal/jobs/01938a0f-014d-7000-8000-00000f00014d/events
+                resource:
+                  type: wordpress_site
+                  uuid: 01938a11-0001-7000-8000-000011000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/portal/wordpress/sites/{id}:update:
     post:
       operationId: portalWordPressUpdate
@@ -6253,7 +6442,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014a-7000-8000-00000f00014a
+                  uuid: 01938a0f-014b-7000-8000-00000f00014b
                   type: wordpress.update
                   state: queued
                   progress: 0
@@ -6281,8 +6470,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014a-7000-8000-00000f00014a
-                    events: /api/v1/portal/jobs/01938a0f-014a-7000-8000-00000f00014a/events
+                    self: /api/v1/portal/jobs/01938a0f-014b-7000-8000-00000f00014b
+                    events: /api/v1/portal/jobs/01938a0f-014b-7000-8000-00000f00014b/events
                 resource:
                   type: wordpress_site
                   uuid: 01938a11-0001-7000-8000-000011000001

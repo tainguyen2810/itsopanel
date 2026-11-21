@@ -16,22 +16,7 @@
           "$ref": "../defs.schema.json#/$defs/DbName"
         },
         "privileges": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "ALL",
-              "SELECT",
-              "INSERT",
-              "UPDATE",
-              "DELETE",
-              "CREATE",
-              "DROP",
-              "ALTER",
-              "INDEX"
-            ]
-          },
-          "minItems": 1
+          "$ref": "../defs.schema.json#/$defs/DbPrivileges"
         }
       },
       "required": [

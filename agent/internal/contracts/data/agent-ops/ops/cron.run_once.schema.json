@@ -17,6 +17,11 @@
         },
         "working_dir": {
           "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 900
         }
       },
       "required": [
@@ -36,11 +41,23 @@
         "output_tail": {
           "type": "string",
           "maxLength": 8192
+        },
+        "timed_out": {
+          "type": "boolean"
+        },
+        "started_at": {
+          "type": "string"
+        },
+        "finished_at": {
+          "type": "string"
         }
       },
       "required": [
         "exit_code",
-        "output_tail"
+        "output_tail",
+        "timed_out",
+        "started_at",
+        "finished_at"
       ],
       "additionalProperties": false
     }

@@ -34,7 +34,7 @@ PHASES: dict[int, list[str]] = {
     5: ["websites", "domains", "website_settings", "acme_accounts", "certificates", "php_versions",
         "dns_providers", "dns_zones", "dns_records"],
     6: ["databases", "database_users", "database_grants", "sftp_accounts", "ssh_keys", "cron_jobs",
-        "cron_runs", "upload_sessions", "terminal_sessions"],
+        "cron_runs", "upload_sessions", "file_operations", "terminal_sessions"],
     7: ["security_events", "firewall_rules", "malware_scans", "malware_findings", "quarantine_items",
         "fim_baselines"],
     8: ["backup_destinations", "backup_policies", "backup_jobs", "backup_snapshots",

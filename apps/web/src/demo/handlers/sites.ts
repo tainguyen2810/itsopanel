@@ -872,9 +872,9 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
             engine: b.engine as S['Database']['engine'],
             username: b.name as string,
             host: 'localhost',
+            max_connections: 10,
             grants: [{ database: b.name as string, privileges: ['ALL'] }],
-            created_at: db.now(),
-            updated_at: db.now(),
+            ...fresh(db),
           });
         }
       },
@@ -955,8 +955,8 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       return invalid(`Tên user phải bắt đầu bằng "${a.username}_".`);
     if (ctx.db.data.db_users.some((u) => u.username === b.username))
       return problem(409, 'conflict', 'User database đã tồn tại');
-    if (b.password !== undefined && b.password.length < 16)
-      return invalid('Mật khẩu tối thiểu 16 ký tự (để trống để panel tự sinh).');
+    if (b.password != null && b.password.length < 12)
+      return invalid('Mật khẩu tối thiểu 12 ký tự (để trống để panel tự sinh).');
     const used = ctx.db.data.db_users.filter((u) => u.hosting_account.uuid === a.uuid).length;
     if (L && used >= L.db_user_limit)
       return limit(`Gói cho phép tối đa ${L.db_user_limit} user database.`);
@@ -965,10 +965,10 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       hosting_account: accRef(a),
       engine: b.engine ?? 'mariadb',
       username: b.username,
-      host: 'localhost',
+      host: b.host ?? 'localhost',
+      max_connections: b.max_connections ?? 10,
       grants: [],
-      created_at: ctx.db.now(),
-      updated_at: ctx.db.now(),
+      ...fresh(ctx.db),
     };
     ctx.db.data.db_users.push(u);
     return startJob(ctx, {
@@ -1139,8 +1139,10 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       uuid: ctx.db.newUuid(),
       path: p,
       size: b.size,
-      chunk_size: 1_048_576,
+      chunk_size: 8_388_608,
       received: 0,
+      status: 'receiving',
+      job_uuid: null,
       expires_at: new Date(Date.now() + 3600_000 + 7 * 3600_000)
         .toISOString()
         .replace(/\.\d{3}Z$/, '+07:00'),
@@ -1698,6 +1700,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       working_dir: normalizePath(b.working_dir ?? '.', a.home_path) ?? '.',
       php_version: b.php_version ?? null,
       enabled: b.enabled ?? true,
+      timeout_sec: b.timeout_sec ?? 3600,
       last_run_at: null,
       last_status: null,
       ...fresh(ctx.db),

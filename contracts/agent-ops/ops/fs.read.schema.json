@@ -16,6 +16,10 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 2097152
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "required": [
@@ -36,12 +40,25 @@
         },
         "truncated": {
           "type": "boolean"
+        },
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "file_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 cả file khi đọc trọn (offset 0, không cắt) — dùng làm ETag của editor."
         }
       },
       "required": [
         "content_b64",
         "sha256",
-        "truncated"
+        "truncated",
+        "size",
+        "file_sha256"
       ],
       "additionalProperties": false
     }

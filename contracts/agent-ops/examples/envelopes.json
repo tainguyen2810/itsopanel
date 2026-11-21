@@ -107,7 +107,8 @@
             "schedule": "*/15 * * * *",
             "command": "php artisan schedule:run",
             "working_dir": "sites/anphat.vn",
-            "enabled": true
+            "enabled": true,
+            "timeout_sec": 3600
           }
         ]
       },

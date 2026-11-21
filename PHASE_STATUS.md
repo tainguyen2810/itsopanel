@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 6 — Database / File Manager / FTP-SFTP / Cron / Terminal USER (đang làm; Phase 5 ✓ APPROVED 2026-11-21 cùng D-67 → D-70, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 6.1 ADR + contracts. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
-- **Task đang làm:** 6.1 — bắt đầu
+- **Prompt hiện tại:** 6.2 Agent ops. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
+- **Task đang làm:** 6.2 — bắt đầu
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-6`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_6_PROMPTS.md`; cuối 6.6 báo cáo Phase 6 và DỪNG (không bắt đầu Phase 7)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
@@ -33,8 +33,8 @@
 
 Phase 6 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.md`
 
-- ✱ 6.1 ADR database/file/SFTP/cron/terminal (D-71…D-75), contracts, migration Phase 6
-- ○ 6.2 Agent: File Manager hạ quyền, database, SFTP/FTPS/SSH key, cron
+- ✓ 6.1 ADR database/file/SFTP/cron/terminal (D-71…D-75), contracts, migration Phase 6
+- ✱ 6.2 Agent: File Manager hạ quyền, database, SFTP/FTPS/SSH key, cron
 - ○ 6.3 Panel: databases, files, SFTP/FTP, SSH key, cron, suspend
 - ○ 6.4 Terminal USER: pty.open, itso-gateway, phiên terminal
 - ○ 6.5 UI nối API thật
@@ -111,3 +111,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 5 / 5.3 | Panel: model Website/Domain/WebsiteSetting/PhpVersion/Certificate; `WebsiteService` (tạo: layout → pool → vhost; sửa/nginx/php/domain áp lại đúng op; xóa: vhost.remove → pool.remove; quota website/domain/subdomain/PHP worker 422; domain trùng 409, domain nội bộ/của panel 422; `document_root` chỉ dưới `public/`); `WebsiteJobHandler` (`nginx -t` lỗi khi tạo → failed + thông báo, lỗi khi thêm domain → trả desired state); suspend/unsuspend/terminate áp lại vhost mọi site; PHP Manager + Nginx toàn server + wizard bước 4 (`setup.stack`); route admin (quyền `websites.read/write`) + portal; 9 test Pest mới | 4eb5856 |
 | 2026-11-21 | 5 / 5.2 | Agent: 15 op website thật (`fs.site_layout.ensure`, `nginx.vhost.apply/remove/inspect` với `nginx -t` + hoàn tác, `nginx.global.apply` sinh `nginx.conf`, `php.version.install/remove`, `php.ext.install`, `php.pool.apply/remove` (master itso-php@ dưới uid account, `php-fpm -t` dưới uid account), `cert.issue` (lego HTTP-01, Pebble theo policy `acme_pebble`), `cert.install/inspect/remove`, `log.tail`); template nhúng; Sim mô phỏng nginx/php-fpm/lego; mock agent 15 op; bộ contract chung `WebsiteLifecycle`; unit `itso-php@.service`; log site chuyển ra `/var/log/itso/sites` (ADR 0014 sửa đổi) | f5b9549 |
 | 2026-11-21 | 6 / kế hoạch | Người dùng duyệt Phase 5 (D-67…D-70 APPROVED, ADR 0014–0017 Accepted); kế hoạch Phase 6 (6 prompt, D-71…D-75 đề xuất), mở nhánh phase-6 | (commit kế hoạch) |
+| 2026-11-21 | 6 / 6.1 | ADR 0018–0022 (D-71…D-75 đề xuất); agent-ops +14 op (fs.stat/rename/upload.commit, db owner/lock/inspect, sshd.match.apply, ftp.user.*, cron.inspect, pty.open), sửa fs/db/sftp/cron theo ADR, recipe mariadb/postgresql/pure-ftpd, 17 vector độc mới; OpenAPI upload GET/DELETE, tải file stream, rotate SFTP, JobAccepted.secret; DBML + migration Phase 6 (10 bảng, thêm file_operations) | (commit 6.1) |

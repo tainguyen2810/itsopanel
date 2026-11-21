@@ -28,6 +28,11 @@
               },
               "enabled": {
                 "type": "boolean"
+              },
+              "timeout_sec": {
+                "type": "integer",
+                "minimum": 60,
+                "maximum": 86400
               }
             },
             "required": [
@@ -35,7 +40,8 @@
               "schedule",
               "command",
               "working_dir",
-              "enabled"
+              "enabled",
+              "timeout_sec"
             ],
             "additionalProperties": false
           },
@@ -53,10 +59,18 @@
       "properties": {
         "count": {
           "type": "integer"
+        },
+        "active": {
+          "type": "integer"
+        },
+        "removed": {
+          "type": "integer"
         }
       },
       "required": [
-        "count"
+        "count",
+        "active",
+        "removed"
       ],
       "additionalProperties": false
     }

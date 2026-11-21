@@ -8,15 +8,10 @@
       "properties": {
         "account": {
           "$ref": "../defs.schema.json#/$defs/Account"
-        },
-        "username": {
-          "type": "string",
-          "pattern": "^[a-z][a-z0-9_]{2,31}$"
         }
       },
       "required": [
-        "account",
-        "username"
+        "account"
       ],
       "additionalProperties": false
     },

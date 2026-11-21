@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.rename.schema.json",
+  "title": "fs.rename",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "from": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "to": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        }
+      },
+      "required": [
+        "account",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "renamed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "renamed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

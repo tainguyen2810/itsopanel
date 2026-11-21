@@ -387,6 +387,17 @@
       "status": "specified"
     },
     {
+      "op": "fs.stat",
+      "domain": "fs",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "account",
+      "timeout_sec": 15,
+      "schema": "ops/fs.stat.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "fs.read",
       "domain": "fs",
       "risk": "medium",
@@ -417,6 +428,17 @@
       "runs_as": "account",
       "timeout_sec": 30,
       "schema": "ops/fs.mkdir.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "fs.rename",
+      "domain": "fs",
+      "risk": "medium",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "account",
+      "timeout_sec": 30,
+      "schema": "ops/fs.rename.schema.json",
       "status": "specified"
     },
     {
@@ -486,6 +508,28 @@
       "status": "specified"
     },
     {
+      "op": "fs.upload.commit",
+      "domain": "fs",
+      "risk": "medium",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "account",
+      "timeout_sec": 1800,
+      "schema": "ops/fs.upload.commit.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "db.mysql.owner_ensure",
+      "domain": "db",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/db.mysql.owner_ensure.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "db.mysql.create",
       "domain": "db",
       "risk": "high",
@@ -541,12 +585,34 @@
       "status": "specified"
     },
     {
-      "op": "db.mysql.dump",
+      "op": "db.mysql.lock",
       "domain": "db",
       "risk": "high",
       "default_enabled": true,
       "phase": 6,
       "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/db.mysql.lock.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "db.mysql.inspect",
+      "domain": "db",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/db.mysql.inspect.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "db.mysql.dump",
+      "domain": "db",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "account",
       "timeout_sec": 3600,
       "schema": "ops/db.mysql.dump.schema.json",
       "status": "specified"
@@ -557,9 +623,20 @@
       "risk": "high",
       "default_enabled": true,
       "phase": 6,
-      "runs_as": "root",
+      "runs_as": "account",
       "timeout_sec": 3600,
       "schema": "ops/db.mysql.import.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "db.pg.owner_ensure",
+      "domain": "db",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/db.pg.owner_ensure.schema.json",
       "status": "specified"
     },
     {
@@ -618,12 +695,34 @@
       "status": "specified"
     },
     {
-      "op": "db.pg.dump",
+      "op": "db.pg.lock",
       "domain": "db",
       "risk": "high",
       "default_enabled": true,
       "phase": 6,
       "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/db.pg.lock.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "db.pg.inspect",
+      "domain": "db",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/db.pg.inspect.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "db.pg.dump",
+      "domain": "db",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "account",
       "timeout_sec": 3600,
       "schema": "ops/db.pg.dump.schema.json",
       "status": "specified"
@@ -634,9 +733,20 @@
       "risk": "high",
       "default_enabled": true,
       "phase": 6,
-      "runs_as": "root",
+      "runs_as": "account",
       "timeout_sec": 3600,
       "schema": "ops/db.pg.import.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "sshd.match.apply",
+      "domain": "access",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/sshd.match.apply.schema.json",
       "status": "specified"
     },
     {
@@ -662,6 +772,28 @@
       "status": "specified"
     },
     {
+      "op": "ftp.user.ensure",
+      "domain": "access",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/ftp.user.ensure.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "ftp.user.remove",
+      "domain": "access",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/ftp.user.remove.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "ssh.keys.apply",
       "domain": "access",
       "risk": "high",
@@ -684,6 +816,17 @@
       "status": "specified"
     },
     {
+      "op": "cron.inspect",
+      "domain": "cron",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/cron.inspect.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "cron.run_once",
       "domain": "cron",
       "risk": "medium",
@@ -692,6 +835,17 @@
       "runs_as": "account",
       "timeout_sec": 900,
       "schema": "ops/cron.run_once.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "pty.open",
+      "domain": "pty",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 6,
+      "runs_as": "account",
+      "timeout_sec": 15,
+      "schema": "ops/pty.open.schema.json",
       "status": "specified"
     },
     {
@@ -997,17 +1151,6 @@
       "risk": "medium",
       "default_enabled": true,
       "phase": 10,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
-      "op": "pty.open",
-      "domain": "pty",
-      "risk": "high",
-      "default_enabled": true,
-      "phase": 6,
       "runs_as": "root",
       "timeout_sec": null,
       "schema": null,

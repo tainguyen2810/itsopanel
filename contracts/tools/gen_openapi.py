@@ -149,11 +149,27 @@ def files_paths(api: Api, base: str, tag: str, prefix: str, jobs: JobSeq, realm:
     api.add("patch", f"{base}/{{id}}/files/uploads/{{upload}}", f"{prefix}UploadChunk", "Gửi một chunk", tag,
             params=idp + [Api.p("UploadId"), Api.p("ContentRange")], body={"type": "string", "format": "binary"},
             content_type="application/octet-stream", ok=cref("UploadSession"),
-            ok_example=one(D.UPLOAD | {"received": 1048576}))
+            ok_example=one(D.UPLOAD | {"received": 1048576}),
+            desc="Chunk phải bắt đầu đúng tại `received` (sai → 409 kèm `received` hiện tại); chunk cuối tạo job "
+                 "`file.upload` (agent `fs.upload.commit`, ghi dưới uid account) và trả `status=committing`.")
+    api.add("get", f"{base}/{{id}}/files/uploads/{{upload}}", f"{prefix}GetUpload", "Trạng thái phiên upload (để tiếp tục)",
+            tag, params=idp + [Api.p("UploadId")], ok=cref("UploadSession"), ok_example=one(D.UPLOAD | {"received": 3145728}))
+    api.add("delete", f"{base}/{{id}}/files/uploads/{{upload}}", f"{prefix}CancelUpload", "Hủy phiên upload", tag,
+            params=idp + [Api.p("UploadId")], no_content=True)
     api.add("get", f"{base}/{{id}}/files/download", f"{prefix}DownloadLink", "Tạo URL tải xuống ký số, hạn 5 phút",
             tag, params=idp + path_q, ok=cref("SignedUrl"),
             ok_example=one({"url": "https://portal.itso.local/dl/eyJwIjoic2l0ZXMvYW5waGF0LnZuIn0.sig",
                             "expires_at": "2026-11-20T08:20:00+07:00"}))
+    raw = f"{base}/{{id}}/files/raw"
+    api.add("get", raw, f"{prefix}DownloadFile", "Tải file (URL ký số từ DownloadLink)", tag,
+            params=idp + path_q + [Api.p("Expires"), Api.p("Signature")], ok=None,
+            desc="Stream nội dung file theo từng khúc 1 MiB qua agent (`fs.read` có `offset`). Cần phiên đăng nhập và chữ ký còn hạn.")
+    full = raw if raw.startswith("/api/") else api.prefix + raw
+    api.paths[full]["get"]["responses"]["200"] = {
+        "description": "Nội dung file",
+        "headers": {"Content-Disposition": {"schema": {"type": "string"}, "description": "attachment; filename=…"}},
+        "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"},
+                                                 "example": "%PDF-1.7 …"}}}
 
 
 def resource_paths(api: Api, realm: str, jobs: JobSeq):
@@ -272,6 +288,9 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             body_example={"hosting_account_uuid": acc["uuid"], "username": "anphat_deploy", "protocol": "sftp",
                           "root_path": "sites/anphat.vn", "read_only": False, "password": None},
             job=True, job_example=jobs("sftp.create", "sftp_account", D.SFTP[0]["uuid"], ["sftp.user.ensure"], realm=realm))
+    api.add("post", "/sftp-accounts/{id}:rotate-password", oid("rotateSftpPassword"), "Đặt mật khẩu mới (trả một lần)",
+            "SFTP", params=idp, job=True,
+            job_example=jobs("sftp.password", "sftp_account", D.SFTP[0]["uuid"], ["ftp.user.ensure"], realm=realm))
     api.add("delete", "/sftp-accounts/{id}", oid("deleteSftpAccount"), "Xóa tài khoản SFTP", "SFTP", params=idp,
             job=True, job_example=jobs("sftp.delete", "sftp_account", D.SFTP[0]["uuid"], ["sftp.user.remove"], realm=realm))
     api.add("get", "/ssh-keys", oid("listSshKeys"), "SSH key", "SFTP", list_=True, params=acc_filter, ok=cref("SshKey"),
@@ -932,6 +951,8 @@ def common_components():
         "Realm": qp("X-ITSO-Realm", {"type": "string", "enum": ["admin", "portal"], "default": "portal"},
                     "Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình "
                     "host riêng (production), host quyết định và header bị bỏ qua (D-58).", False, "header"),
+        "Expires": qp("expires", {"type": "integer"}, "Hạn chữ ký (Unix giây).", True),
+        "Signature": qp("signature", {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "Chữ ký HMAC của URL.", True),
         "ContentRange": qp("Content-Range", {"type": "string", "pattern": "^bytes [0-9]+-[0-9]+/[0-9]+$"}, "Vị trí chunk.", True, "header"),
     }
     headers = {"ETag": {"description": "Phiên bản tài nguyên (spec_version).", "schema": {"type": "string"}}}

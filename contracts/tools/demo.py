@@ -10,7 +10,7 @@ user server package package_version account website domain certificate database 
 sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_record migration purge
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
-uptime_check impersonation scope channel git_repository git_deployment dns_provider""".split())}
+uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -234,10 +234,10 @@ DATABASES = [
 
 DB_USERS = [
     {"uuid": u("database_user", 1), "hosting_account": acc_ref(0), "engine": "mariadb", "username": "anphat_web",
-     "host": "localhost", "grants": [{"database": "anphat_web", "privileges": ["ALL"]}], **ts()},
+     "host": "localhost", "max_connections": 10, "grants": [{"database": "anphat_web", "privileges": ["ALL"]}], **do(), **ts()},
     {"uuid": u("database_user", 2), "hosting_account": acc_ref(0), "engine": "mariadb", "username": "anphat_shop",
-     "host": "localhost", "grants": [{"database": "anphat_shop", "privileges": ["SELECT", "INSERT", "UPDATE",
-                                                                                 "DELETE"]}], **ts()},
+     "host": "localhost", "max_connections": 10, "grants": [{"database": "anphat_shop", "privileges": ["SELECT", "INSERT", "UPDATE",
+                                                                                 "DELETE"]}], **do(), **ts()},
 ]
 
 FILES = [
@@ -250,8 +250,10 @@ FILES = [
 ]
 
 SFTP = [
-    {"uuid": u("sftp", 1), "hosting_account": acc_ref(0), "username": "anphat_deploy", "protocol": "sftp",
-     "root_path": "sites/anphat.vn", "read_only": False, "last_login_at": T1, **do(), **ts()},
+    {"uuid": u("sftp", 1), "hosting_account": acc_ref(0), "username": "anphat", "protocol": "sftp",
+     "root_path": ".", "read_only": False, "last_login_at": T1, **do(), **ts()},
+    {"uuid": u("sftp", 2), "hosting_account": acc_ref(0), "username": "anphat_deploy", "protocol": "ftps",
+     "root_path": "sites/anphat.vn", "read_only": False, "last_login_at": None, **do(), **ts()},
 ]
 
 SSH_KEYS = [
@@ -263,10 +265,10 @@ SSH_KEYS = [
 CRON = [
     {"uuid": u("cron", 1), "hosting_account": acc_ref(0), "website": site_ref(0), "schedule": "*/15 * * * *",
      "command": "php artisan schedule:run", "working_dir": "sites/anphat.vn", "php_version": "8.3",
-     "enabled": True, "last_run_at": T2, "last_status": "succeeded", **do(), **ts()},
+     "enabled": True, "timeout_sec": 3600, "last_run_at": T2, "last_status": "succeeded", **do(), **ts()},
     {"uuid": u("cron", 2), "hosting_account": acc_ref(0), "website": site_ref(1), "schedule": "0 2 * * *",
      "command": "php bin/cleanup.php", "working_dir": "sites/shop.anphat.vn", "php_version": "8.2",
-     "enabled": True, "last_run_at": "2026-11-20T02:00:00+07:00", "last_status": "failed", **do(), **ts()},
+     "enabled": True, "timeout_sec": 3600, "last_run_at": "2026-11-20T02:00:00+07:00", "last_status": "failed", **do(), **ts()},
 ]
 
 CRON_RUNS = [
@@ -647,10 +649,12 @@ ME_PORTAL = {"user": USERS[2], "permissions": ["own.*"], "scopes": [], "mfa_veri
              "impersonating": None}
 
 TERMINAL = {"ticket": "tkt_9QwErTy2uIoP", "ws_url": "wss://admin.itso.local/gateway/terminal",
-            "expires_at": "2026-11-20T08:15:30+07:00", "mode": "account", "unix_user": "anphat"}
+            "expires_at": "2026-11-20T08:15:30+07:00", "mode": "account", "unix_user": "anphat",
+            "session_uuid": u("terminal", 1)}
 
 UPLOAD = {"uuid": u("upload", 1), "path": "sites/anphat.vn/public/brochure.pdf", "size": 5242880,
-          "chunk_size": 1048576, "received": 0, "expires_at": "2026-11-20T09:15:00+07:00"}
+          "chunk_size": 8388608, "received": 0, "expires_at": "2026-11-20T09:15:00+07:00", "status": "receiving",
+          "job_uuid": None}
 
 IMPERSONATION = {"uuid": u("impersonation", 1), "staff": user_ref(0), "target": user_ref(2),
                  "reason": "Hỗ trợ cấu hình SSL theo yêu cầu", "started_at": T2,
@@ -764,16 +768,17 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
                           **ts(_DAY[i], T1)})
         DB_USERS.append({"uuid": u("database_user", db_n - 1), "hosting_account": acc_ref(acc_idx),
                          "engine": "mariadb" if i != 5 else "postgresql", "username": db, "host": "localhost",
-                         "grants": [{"database": db, "privileges": ["ALL"]}], **ts(_DAY[i], T1)})
+                         "max_connections": 10, "grants": [{"database": db, "privileges": ["ALL"]}],
+                         **do(spec=1, obs=1), **ts(_DAY[i], T1)})
         db_n += 1
-        SFTP.append({"uuid": u("sftp", sftp_n), "hosting_account": acc_ref(acc_idx), "username": f"{username}_ftp",
+        SFTP.append({"uuid": u("sftp", sftp_n), "hosting_account": acc_ref(acc_idx), "username": username,
                      "protocol": "sftp", "root_path": ".", "read_only": False,
                      "last_login_at": T1 if i % 2 else None, **do(spec=1, obs=1), **ts(_DAY[i], T1)})
         sftp_n += 1
         if i % 2 == 0:
             CRON.append({"uuid": u("cron", cron_n), "hosting_account": acc_ref(acc_idx), "website": None,
                          "schedule": "0 3 * * *", "command": "php wp-cron.php" if domain in _WP else "php artisan backup:clean",
-                         "working_dir": ".", "php_version": "8.3", "enabled": True,
+                         "working_dir": ".", "php_version": "8.3", "enabled": True, "timeout_sec": 3600,
                          "last_run_at": "2026-11-20T03:00:00+07:00", "last_status": "succeeded",
                          **do(spec=1, obs=1), **ts(_DAY[i], T1)})
             cron_n += 1

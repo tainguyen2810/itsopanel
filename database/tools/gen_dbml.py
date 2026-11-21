@@ -258,14 +258,16 @@ t("hosting", "databases", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
     "server_id bigint [not null, ref: > servers.id]",
     "engine text [not null, note: 'mariadb|mysql|postgresql']", "name text [not null]",
-    "size_mb bigint",
+    "charset text [not null, default: 'utf8mb4']", "size_mb bigint",
 ] + DO + TS + SOFT, ["hosting_account_id"])
-t("hosting", "database_users", IDN + [
+t("hosting", "database_users", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
     "server_id bigint [not null, ref: > servers.id]", "engine text [not null]",
-    "username text [not null]", "password_encrypted bytea", "host_pattern text [not null, default: 'localhost']",
+    "username text [not null]",
+    "password_encrypted bytea [note: 'mã hóa; job chỉ mang tham chiếu bí mật (D-71)']",
+    "host_pattern text [not null, default: 'localhost']",
     "max_connections int [not null, default: 10]",
-] + TS + SOFT, ["(server_id, engine, username) [unique]"])
+] + DO + TS + SOFT, ["hosting_account_id"])
 t("hosting", "database_grants", [
     "database_id bigint [not null, ref: > databases.id]",
     "database_user_id bigint [not null, ref: > database_users.id]",
@@ -274,21 +276,28 @@ t("hosting", "database_grants", [
 t("hosting", "sftp_accounts", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
     "username text [not null]", "root_subpath text [not null, default: '']",
-    "protocol text [not null, default: 'sftp', note: 'sftp|ftps']",
-    "password_hash text", "status text [not null, default: 'active']",
-] + TS + SOFT, ["hosting_account_id"])
-t("hosting", "ssh_keys", IDN + [
+    "protocol text [not null, default: 'sftp', note: 'sftp: user Linux của account; ftps: virtual user Pure-FTPd (D-73)']",
+    "password_encrypted bytea [note: 'mã hóa; job chỉ mang tham chiếu bí mật']",
+    "read_only boolean [not null, default: false]", "last_login_at timestamptz",
+] + DO + TS + SOFT, ["hosting_account_id"])
+t("hosting", "ssh_keys", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]", "name text [not null]",
-    "public_key text [not null]", "fingerprint text [not null, unique]",
-] + TS)
+    "type text [not null, note: 'ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa']",
+    "public_key text [not null]", "fingerprint text [not null, note: 'SHA256:… (base64 không padding)']",
+    "last_used_at timestamptz",
+] + TS, ["(hosting_account_id, fingerprint) [unique]"])
 t("hosting", "cron_jobs", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
-    "schedule text [not null]", "command text [not null]", "timeout_sec int [not null, default: 3600]",
+    "website_id bigint [ref: > websites.id]",
+    "schedule text [not null]", "command text [not null]", "working_dir text [not null, default: '.']",
+    "php_version text", "timeout_sec int [not null, default: 3600]",
     "enabled boolean [not null, default: true]", "last_run_at timestamptz", "last_status text",
 ] + DO + TS + SOFT, ["hosting_account_id"])
-t("hosting", "cron_runs", IDN + [
+t("hosting", "cron_runs", ID + [
     "cron_job_id bigint [not null, ref: > cron_jobs.id]", "started_at timestamptz [not null]",
     "finished_at timestamptz", "exit_code int", "output_tail text",
+    "status text [not null, default: 'running', note: 'running|succeeded|failed|timed_out']",
+    "trigger text [not null, default: 'schedule', note: 'schedule|manual']",
 ], ["(cron_job_id, started_at)"])
 t("hosting", "dns_providers", ID + [
     "type text [not null, note: 'cloudflare']", "name text [not null]",
@@ -304,17 +313,31 @@ t("hosting", "dns_records", ID + [
     "content text [not null]", "ttl int [not null, default: 300]", "priority int",
     "proxied boolean [not null, default: false]", "external_id text",
 ] + TS, ["zone_id"])
-t("hosting", "upload_sessions", IDN + [
-    "uid text [not null, unique]", "user_id bigint [not null, ref: > users.id]",
+t("hosting", "upload_sessions", ID + [
+    "user_id bigint [not null, ref: > users.id]",
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
     "target_path text [not null]", "size_bytes bigint [not null]", "received_bytes bigint [not null, default: 0]",
+    "overwrite boolean [not null, default: false]",
+    "status text [not null, default: 'receiving', note: 'receiving|committing|completed|failed|cancelled']",
+    "job_id bigint [ref: > jobs.id]",
     "expires_at timestamptz [not null]",
-] + TS)
-t("hosting", "terminal_sessions", IDN + [
+] + TS, ["hosting_account_id", "expires_at"])
+t("hosting", "file_operations", ID + [
+    "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
+    "user_id bigint [ref: > users.id]",
+    "op text [not null, note: 'write|mkdir|rename|move|copy|delete|chmod|compress|extract|upload']",
+    "paths jsonb [not null, default: `'[]'::jsonb`]", "target text",
+    "status text [not null, default: 'succeeded', note: 'queued|running|succeeded|failed']",
+    "job_id bigint [ref: > jobs.id]", "error_code text",
+    "created_at timestamptz [not null, default: `now()`]",
+], ["(hosting_account_id, created_at)"])
+t("hosting", "terminal_sessions", ID + [
     "user_id bigint [not null, ref: > users.id]", "server_id bigint [not null, ref: > servers.id]",
     "hosting_account_id bigint [ref: > hosting_accounts.id]", "unix_uid int [not null]",
-    "started_at timestamptz [not null, default: `now()`]", "ended_at timestamptz", "recording_ref text",
-], ["user_id"])
+    "mode text [not null, default: 'account', note: 'account|root (root: Phase 7)']",
+    "started_at timestamptz [not null, default: `now()`]", "ended_at timestamptz",
+    "ended_reason text [note: 'closed|idle|expired|error']", "recording_ref text",
+], ["user_id", "hosting_account_id"])
 t("hosting", "wordpress_sites", [
     "website_id bigint [pk, ref: - websites.id]", "version text", "admin_user text",
     "auto_update text [not null, default: 'minor']", "hardened boolean [not null, default: false]",
