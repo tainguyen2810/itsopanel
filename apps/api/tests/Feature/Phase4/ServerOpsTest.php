@@ -90,14 +90,14 @@ it('agent không trả lời: metrics-collect báo lỗi, server degraded, platf
     expect($a->server->status)->toBe('degraded')->and($a->server->observed_facts['platform']['quota_mode'])->toBe('soft');
 });
 
-it('dịch vụ: start/stop/restart qua job service.control; ngoài allowlist hoặc hành động lạ → 422; trùng job → 409', function () {
+it('dịch vụ: start/stop/restart qua job service.<action> (op service.control); ngoài allowlist hoặc hành động lạ → 422; trùng job → 409', function () {
     $a = new Actors($this);
     $agent = p4agent();
     $sa = $a->spa('SA');
     $id = $a->server->uuid;
     $r = p4idem($sa, "/api/v1/admin/servers/$id/services/nginx:restart");
     assertMatchesContract(P4, 'post', '/api/v1/admin/servers/{id}/services/{service}:{action}', 202, $r);
-    expect($r->json('job.type'))->toBe('service.control');
+    expect($r->json('job.type'))->toBe('service.restart');
     $call = collect($agent->calls)->firstWhere('op', 'service.control');
     expect($call['params'])->toBe(['name' => 'nginx', 'action' => 'restart']);
 

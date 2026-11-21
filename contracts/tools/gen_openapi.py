@@ -523,7 +523,7 @@ def admin_paths(api: Api):
     api.add("post", "/servers/{id}/services/{service}:{action}", "controlServerService",
             "start/stop/restart dịch vụ trong allowlist", "Servers",
             params=idp + [Api.p("ServiceName"), Api.p("ServiceAction")], job=True,
-            job_example=jobs("service.control", "server", srv["uuid"], ["service.control"]))
+            job_example=jobs("service.restart", "server", srv["uuid"], ["service.control"]))
     api.add("post", "/servers/{id}:reboot", "rebootServer", "Khởi động lại server", "Servers", params=idp, job=True,
             step_up=True, job_example=jobs("server.reboot", "server", srv["uuid"], ["system.reboot"]))
     api.add("get", "/servers/{id}/software", "listServerSoftware", "Phần mềm trên server", "Software", params=idp,

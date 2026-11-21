@@ -36,7 +36,7 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Sinh schema / ERD / kiểm chứng DB | `make db-schema` · `make db-erd` · `make db-verify` | 1.3 |
 | Sinh / kiểm / dựng docs contracts | `make contracts` · `make contracts-check` · `make contracts-docs` | 1.4 |
 | Cài dependency | `make setup` | 1.5 |
-| Chạy dev (web + api + mock agent) | `make dev` | 1.5 |
+| Chạy dev (web + api + agent sandbox; `ITSO_DEV_AGENT=mock` dùng mock) | `make dev` | 1.5 / 4.6 |
 | Test / Lint / Build | `make test` · `make lint` · `make build` | 1.5 |
 | PostgreSQL + Redis dev (Docker, tùy chọn) · fuzz agent | `make services-up` · `make test-fuzz` | 1.5 |
 | Token màu · Playwright · cập nhật ảnh Design System | `make tokens` / `make tokens-check` · `make test-e2e` · `make screenshots` | 1.6 |
@@ -45,6 +45,7 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Toàn bộ kiểm tra (như CI, in bảng kết quả) | `make check` | 1.7 |
 | Giao diện demo (API giả lập MSW theo OpenAPI, không cần Laravel) · build demo + kiểm build thường không có MSW | `make dev-demo` · `make build-demo` | 2.1 |
 | Đóng gói release ký Ed25519 · kiểm unit systemd · test install.sh | `make release` · `make units-check` · `make test-installer` | 4.4 |
+| Playwright stack thật (agent sandbox) · kiểm thử VM Ubuntu 24.04 (Multipass) | `make test-e2e-real` · `make test-vm` | 4.6 |
 
 ## 5. Tài liệu
 

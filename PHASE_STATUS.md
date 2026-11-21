@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 4 — Go Agent, Installer, CLI, thực thi giới hạn (đang làm; Phase 3 ✓ APPROVED 2026-11-21 cùng D-56 → D-62)
+- **Phase:** 4 — Go Agent, Installer, CLI, thực thi giới hạn (✓ hoàn tất phần không cần VM, chờ duyệt; Phase 3 ✓ APPROVED 2026-11-21 cùng D-56 → D-62)
 - **Prompt hiện tại:** 4.6 Tích hợp, VM harness, báo cáo. Người dùng yêu cầu (2026-11-21) "tiếp tục với Phase 4"; làm hàng loạt 4.1 → 4.6, tự merge local
-- **Task đang làm:** 4.6 — bắt đầu (4.5 ✓)
+- **Task đang làm:** không (4.6 ✓, Phase 4 merge vào `main` local). Chờ người dùng duyệt Phase 4 + D-63 → D-66 và chạy bộ test VM
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-4`
-- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_4_PROMPTS.md`; cuối 4.6 báo cáo Phase 4 và DỪNG (không bắt đầu Phase 5)
+- **Bước tiếp theo:** DỪNG. Chạy `make test-vm` trên máy có Multipass/Vagrant rồi điền mục "chờ VM" trong `docs/reports/phase-4.md`; không bắt đầu Phase 5 khi chưa được duyệt
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -19,7 +19,7 @@
 | 1 | Foundation, Architecture, Database, API Contracts, Design System | ✓ APPROVED |
 | 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ✓ (báo cáo `docs/reports/phase-2.md`) |
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ✓ APPROVED (báo cáo `docs/reports/phase-3.md`) |
-| 4 | Go Agent, Installer, CLI, cách ly và quota | ✱ |
+| 4 | Go Agent, Installer, CLI, cách ly và quota | ✓ chờ duyệt (báo cáo `docs/reports/phase-4.md`; tiêu chí cần VM: chờ VM) |
 | 5 | Website / Nginx / PHP / SSL / DNS | ○ |
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ○ |
 | 7 | Security Center | ○ |
@@ -31,14 +31,14 @@
 
 ## Checklist Phase hiện tại
 
-Phase 4 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_4_PROMPTS.md`
+Phase 4 (✓ chờ duyệt) — prompt chi tiết: `docs/planning/seed/PHASE_4_PROMPTS.md`
 
 - ✓ 4.1 Spike slice/SSH/quota → ADR, contracts op Phase 4
 - ✓ 4.2 Agent core: transport, peercred + HMAC, policy, audit cục bộ, lớp nền tảng
 - ✓ 4.3 Ops system/service/account/quota/metrics/software
 - ✓ 4.4 CLI `itso`, install.sh, release có ký, systemd units
 - ✓ 4.5 Panel: bảng Phase 4, API server/metrics/usage/software, Wizard
-- ✱ 4.6 VM harness, e2e agent thật (sandbox), báo cáo Phase 4
+- ✓ 4.6 VM harness, e2e agent thật (sandbox), báo cáo Phase 4 (kết quả VM: chờ VM)
 
 Phase 3: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-3.md`, merge `97f227e`).
 
@@ -84,3 +84,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 4 / 4.3 | Handler thật (`internal/ops`): account.ensure (groupadd/useradd GID=UID, home 07 §5 + ACL www-data `--x`, slice drop-in), account.limits.apply (drop-in `itso-acct-<uid>.slice` + `user-<uid>.slice` 50%, daemon-reload khi đổi), suspend/unsuspend (group `itso-suspended`, `usermod -L -e 1`, dừng slice), quota.apply/report (kernel `setquota`/`repquota` hoặc soft đo cây thư mục), system.info/hostname.set/reboot, service.status/control (allowlist), metrics.snapshot/cgroup, software.install/remove (recipe, không gỡ recipe lõi), op.cancel; `ops.Sim` cho `--sandbox`; bộ test contract dùng chung mock + agent thật (`internal/contracttest`); golden argv/file; sửa cây slice (cha suy ra từ tên: `itso-acct.slice`, panel `itso-panel.slice`); sửa `ts` ví dụ envelope | c5bffe0 |
 | 2026-11-21 | 4 / 4.4 | CLI `itso` (`cmd/itso` + `internal/install`): preflight 10 §3, install 9 bước có checkpoint (`--dry-run`, `--yes`, `--port`, `--no-firewall`), status/doctor/url/setup-code, update/rollback (chữ ký Ed25519 + sha256, pg_dump, giữ 3 bản, tự rollback khi health lỗi), repair, uninstall giữ /home, policy, logs, admin reset (artisan `itso:admin-reset-password/mfa`); `Cmd.As` hạ quyền không qua su/sudo; `packaging/systemd` (target, agent hardening 06 §4, web FrankenPHP, worker@, scheduler timer, redis, 3 slice) + Caddyfile; `install.sh.in` (openssl verify + sha256); `make release` (tar.gz + manifest ký + SBOM, khóa dev tạm), `make units-check`, `make test-installer`; sửa content-hash composer.lock | 28bb3fc |
 | 2026-11-21 | 4 / 4.5 | Contracts: `Server.platform`, `/system/updates`, wizard `/admin/setup/*` (mã một lần, 409 dùng lại/hết hạn, 410 sau khóa) + mã lỗi `setup_*`; migration Phase 4 (6 bảng), model; `itso:metrics-collect` (system.info → platform/disk, metrics.snapshot → metric_samples, service.status → server_services, server_capacity, dọn partition > 7 ngày) và `itso:usage-refresh` ghi `account_usage_snapshots` + metric theo account, lịch mỗi phút / 5 phút; API services/:control, software (catalog 5 recipe)/:install/:remove, :reboot (step-up), capacity, metrics server/account, system/updates; quyền `software.write`; Wizard bước 0/1/2(SA + TOTP)/3/6/9 nối API, bước 4/5/7/8 "Chưa có ở bản này"; Server detail thẻ Nền tảng; MSW demo cho endpoint mới; sửa `sendWith` mất body lỗi (422 theo trường). Pest 347, Vitest 465 | ab61378 |
+| 2026-11-21 | 4 / 4.6 | Bộ test VM `tests/vm/` (Multipass + Vagrant; `run-all.sh`: cài sạch ≤ 10 phút, cài lần 2, doctor, unit, HTTPS health, recipe stress-ng, enforcement 07 §9 E1–E8, agent từ chối A1–A5, update → rollback, uninstall giữ /home; `lib/agent_call.py` ký HMAC D-66), `make test-vm`; `make dev` chạy itso-agent `--sandbox` (khóa HMAC + gốc riêng ở `.dev/`, `ITSO_DEV_AGENT=mock` giữ mock); job dịch vụ đặt tên `service.<action>`; Playwright stack thật 6/6 với agent sandbox (thêm Server detail, usage; helper dùng chung); sửa e2e demo wizard theo mã demo; báo cáo `docs/reports/phase-4.md`, runbook `phase-4-vm-test.md`; merge phase-4 → main (local) | (commit 4.6) |

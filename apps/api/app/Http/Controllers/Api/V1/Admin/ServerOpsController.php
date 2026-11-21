@@ -30,7 +30,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Prompt 4.5: dịch vụ, phần mềm (recipe), reboot, dung lượng và số liệu của server. Mọi thao tác chạm Linux đi
- * qua Job → typed op của agent (service.control, software.install/remove, system.reboot).
+ * qua Job → typed op của agent (service.control trong job service.<action>, software.install/remove, system.reboot).
  */
 final class ServerOpsController
 {
@@ -76,8 +76,9 @@ final class ServerOpsController
         if (! in_array($action, ['start', 'stop', 'restart', 'reload'], true)) {
             throw ApiProblem::field('action', 'Hành động không hợp lệ.');
         }
-        $this->ensureNoActiveJob($s, 'service.control', 'name', $service);
-        $spec = (new JobSpec('service.control', $s, $s->id, maxAttempts: 1, timeoutSec: 120))
+        // Loại job theo hành động (service.restart…) để nhãn UI/audit rõ; bước luôn là op service.control.
+        $this->ensureNoActiveJob($s, ['service.start', 'service.stop', 'service.restart', 'service.reload'], 'name', $service);
+        $spec = (new JobSpec('service.'.$action, $s, $s->id, maxAttempts: 1, timeoutSec: 120))
             ->step('service.control', ['name' => $service, 'action' => $action]);
 
         return $this->accepted($this->dispatcher->dispatch($spec, $this->actor($request)));
@@ -86,7 +87,7 @@ final class ServerOpsController
     public function reboot(Request $request, string $id): JsonResponse
     {
         $s = $this->find($request, $id);
-        $this->ensureNoActiveJob($s, 'server.reboot');
+        $this->ensureNoActiveJob($s, ['server.reboot']);
         $spec = (new JobSpec('server.reboot', $s, $s->id, maxAttempts: 1, timeoutSec: 60))
             ->step('system.reboot', ['delay_sec' => 60, 'reason' => 'Yêu cầu từ panel (user #'.$this->actor($request)->id.')']);
 
@@ -193,9 +194,10 @@ final class ServerOpsController
             'latest_version' => $latest, 'state' => $state];
     }
 
-    private function ensureNoActiveJob(Server $s, string $type, ?string $param = null, ?string $value = null): void
+    /** @param list<string> $types */
+    private function ensureNoActiveJob(Server $s, array $types, ?string $param = null, ?string $value = null): void
     {
-        $q = Job::query()->where('server_id', $s->id)->where('type', $type)->whereIn('state', ['queued', 'running']);
+        $q = Job::query()->where('server_id', $s->id)->whereIn('type', $types)->whereIn('state', ['queued', 'running']);
         if ($param !== null) {
             $q->whereExists(fn ($w) => $w->from('job_steps')->whereColumn('job_steps.job_id', 'jobs.id')
                 ->whereRaw('job_steps.params_redacted ->> ? = ?', [$param, $value]));

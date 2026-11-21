@@ -46,3 +46,6 @@ dbml-error.log
 # API docs build (make contracts-docs)
 docs/api/*.html
 *.tsbuildinfo
+
+# make dev: sandbox của itso-agent (khóa HMAC dev, socket, audit)
+.dev/

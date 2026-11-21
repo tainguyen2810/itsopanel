@@ -99,12 +99,22 @@ test('wizard cài đặt: chặn bước khi thiếu dữ liệu, sang bước k
   await expect(stepTitle).toHaveText('Mã thiết lập');
   const codeBox = page.getByRole('textbox', { name: 'Mã thiết lập' });
   await expect(codeBox).toHaveAttribute('aria-invalid', 'true');
+  // Mã đúng định dạng nhưng sai → API trả 422, vẫn ở bước 0. Bản demo nhận mã DEMO-2026-ITSO.
   await codeBox.fill('ab12-cd34-ef56');
+  await page.getByRole('button', { name: 'Tiếp tục' }).click();
+  await expect(page.getByText('Mã thiết lập không đúng.')).toBeVisible();
+  await expect(stepTitle).toHaveText('Mã thiết lập');
+  await codeBox.fill('demo-2026-itso');
   await page.getByRole('button', { name: 'Tiếp tục' }).click();
   await expect(stepTitle).toHaveText('Ngôn ngữ');
   await page.getByRole('button', { name: 'Tiếp tục' }).click();
   await expect(stepTitle).toHaveText('Super Admin và MFA');
   await page.getByRole('button', { name: 'Quay lại' }).click();
   await expect(stepTitle).toHaveText('Ngôn ngữ');
-  expect(errors).toEqual([]);
+  // Chỉ chấp nhận đúng một lỗi đã chủ động gây ra: 422 của mã sai (kèm dòng console của trình duyệt).
+  const expected422 = (e: string) =>
+    /^422 .*\/api\/v1\/admin\/setup\/code:verify$/.test(e) ||
+    e.startsWith('console: Failed to load resource: the server responded with a status of 422');
+  expect(errors.filter(expected422)).toHaveLength(2);
+  expect(errors.filter((e) => !expected422(e))).toEqual([]);
 });

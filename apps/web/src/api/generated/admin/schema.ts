@@ -17875,7 +17875,7 @@ export interface operations {
                      * @example {
                      *       "job": {
                      *         "uuid": "01938a0f-0065-7000-8000-00000f000065",
-                     *         "type": "service.control",
+                     *         "type": "service.restart",
                      *         "state": "queued",
                      *         "progress": 0,
                      *         "resource": {
