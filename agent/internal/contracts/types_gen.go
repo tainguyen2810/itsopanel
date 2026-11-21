@@ -8,6 +8,7 @@ import "encoding/json"
 // Tên op trong catalog.json.
 const (
 	OpAccountEnsure          = "account.ensure"
+	OpAccountLimitsApply     = "account.limits.apply"
 	OpAccountRemove          = "account.remove"
 	OpAccountSuspend         = "account.suspend"
 	OpAccountUnsuspend       = "account.unsuspend"
@@ -60,6 +61,7 @@ const (
 	OpGitRollback            = "git.rollback"
 	OpMalwareRestore         = "malware.restore"
 	OpMalwareScan            = "malware.scan"
+	OpMetricsCgroup          = "metrics.cgroup"
 	OpMetricsSnapshot        = "metrics.snapshot"
 	OpMigrateCutover         = "migrate.cutover"
 	OpMigratePreflight       = "migrate.preflight"
@@ -81,8 +83,10 @@ const (
 	OpSFTPUserEnsure         = "sftp.user.ensure"
 	OpSFTPUserRemove         = "sftp.user.remove"
 	OpSoftwareInstall        = "software.install"
+	OpSoftwareRemove         = "software.remove"
 	OpSSHKeysApply           = "ssh.keys.apply"
 	OpSshdConfigApply        = "sshd.config.apply"
+	OpSystemHostnameSet      = "system.hostname.set"
 	OpSystemInfo             = "system.info"
 	OpSystemPing             = "system.ping"
 	OpSystemReboot           = "system.reboot"
@@ -134,6 +138,15 @@ type ServiceName string
 
 // SHA256 — kiểu SHA256 trong contracts/agent-ops.
 type SHA256 string
+
+// Hostname — Hostname máy chủ (RFC 1123, chữ thường).
+type Hostname string
+
+// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng".
+type Recipe string
+
+// QuotaMode — kiểu QuotaMode trong contracts/agent-ops. Giá trị: "kernel", "soft".
+type QuotaMode string
 
 // Mode — kiểu Mode trong contracts/agent-ops.
 type Mode string
@@ -235,6 +248,18 @@ type AccountEnsureResult struct {
 	UID     UID  `json:"uid"`
 }
 
+// AccountLimitsApplyParams — params của op account.limits.apply (ops/account.limits.apply.schema.json).
+type AccountLimitsApplyParams struct {
+	Account Account `json:"account"`
+	Limits  Limits  `json:"limits"`
+}
+
+// AccountLimitsApplyResult — result của op account.limits.apply (ops/account.limits.apply.schema.json).
+type AccountLimitsApplyResult struct {
+	Applied bool   `json:"applied"`
+	Slice   string `json:"slice"`
+}
+
 // AccountRemoveParams — params của op account.remove (ops/account.remove.schema.json).
 type AccountRemoveParams struct {
 	Account         Account  `json:"account"`
@@ -274,6 +299,34 @@ type AccountUnsuspendParams struct {
 // AccountUnsuspendResult — result của op account.unsuspend (ops/account.unsuspend.schema.json).
 type AccountUnsuspendResult struct {
 	Suspended bool `json:"suspended"`
+}
+
+// AuditTailParams — params của op audit.tail (ops/audit.tail.schema.json).
+type AuditTailParams struct {
+	AfterSeq int64 `json:"after_seq"`
+	Limit    int64 `json:"limit"`
+}
+
+// AuditTailResultEntriesItem được sinh từ schema.
+type AuditTailResultEntriesItem struct {
+	Seq       int64  `json:"seq"`
+	Ts        string `json:"ts"`
+	Op        string `json:"op"`
+	OpID      string `json:"op_id"`
+	CallerUID int64  `json:"caller_uid"`
+	// Giá trị: "ok", "error", "rejected".
+	Result     string  `json:"result"`
+	ErrorCode  *string `json:"error_code"`
+	ParamsHash SHA256  `json:"params_hash"`
+	PrevHash   SHA256  `json:"prev_hash"`
+	Hash       SHA256  `json:"hash"`
+}
+
+// AuditTailResult — result của op audit.tail (ops/audit.tail.schema.json).
+type AuditTailResult struct {
+	Entries []AuditTailResultEntriesItem `json:"entries"`
+	ChainOK bool                         `json:"chain_ok"`
+	LastSeq int64                        `json:"last_seq"`
 }
 
 // BackupCheckParams — params của op backup.check (ops/backup.check.schema.json).
@@ -733,6 +786,27 @@ type FsWriteResult struct {
 	Size   Bytes  `json:"size"`
 }
 
+// MetricsCgroupParams — params của op metrics.cgroup (ops/metrics.cgroup.schema.json).
+type MetricsCgroupParams struct {
+	Accounts []Account `json:"accounts"`
+}
+
+// MetricsCgroupResultAccountsItem được sinh từ schema.
+type MetricsCgroupResultAccountsItem struct {
+	Username         Username `json:"username"`
+	CPUUsageUsec     int64    `json:"cpu_usage_usec"`
+	CPUThrottledUsec int64    `json:"cpu_throttled_usec"`
+	MemoryCurrentMB  int64    `json:"memory_current_mb"`
+	MemoryMaxMB      *int64   `json:"memory_max_mb"`
+	PidsCurrent      int64    `json:"pids_current"`
+	OomKills         int64    `json:"oom_kills"`
+}
+
+// MetricsCgroupResult — result của op metrics.cgroup (ops/metrics.cgroup.schema.json).
+type MetricsCgroupResult struct {
+	Accounts []MetricsCgroupResultAccountsItem `json:"accounts"`
+}
+
 // MetricsSnapshotParams — params của op metrics.snapshot (ops/metrics.snapshot.schema.json).
 type MetricsSnapshotParams struct {
 }
@@ -924,7 +998,8 @@ type QuotaApplyParams struct {
 
 // QuotaApplyResult — result của op quota.apply (ops/quota.apply.schema.json).
 type QuotaApplyResult struct {
-	Applied bool `json:"applied"`
+	Applied bool       `json:"applied"`
+	Mode    *QuotaMode `json:"mode,omitempty"`
 }
 
 // QuotaReportParams — params của op quota.report (ops/quota.report.schema.json).
@@ -1003,6 +1078,29 @@ type SFTPUserRemoveResult struct {
 	Removed bool `json:"removed"`
 }
 
+// SoftwareInstallParams — params của op software.install (ops/software.install.schema.json).
+type SoftwareInstallParams struct {
+	Recipe Recipe `json:"recipe"`
+}
+
+// SoftwareInstallResult — result của op software.install (ops/software.install.schema.json).
+type SoftwareInstallResult struct {
+	Installed bool    `json:"installed"`
+	Version   *string `json:"version"`
+	Changed   bool    `json:"changed"`
+}
+
+// SoftwareRemoveParams — params của op software.remove (ops/software.remove.schema.json).
+type SoftwareRemoveParams struct {
+	Recipe Recipe `json:"recipe"`
+}
+
+// SoftwareRemoveResult — result của op software.remove (ops/software.remove.schema.json).
+type SoftwareRemoveResult struct {
+	Installed bool `json:"installed"`
+	Changed   bool `json:"changed"`
+}
+
 // SSHKeysApplyParams — params của op ssh.keys.apply (ops/ssh.keys.apply.schema.json).
 type SSHKeysApplyParams struct {
 	Account Account  `json:"account"`
@@ -1014,18 +1112,35 @@ type SSHKeysApplyResult struct {
 	Count int64 `json:"count"`
 }
 
+// SystemHostnameSetParams — params của op system.hostname.set (ops/system.hostname.set.schema.json).
+type SystemHostnameSetParams struct {
+	Hostname Hostname `json:"hostname"`
+}
+
+// SystemHostnameSetResult — result của op system.hostname.set (ops/system.hostname.set.schema.json).
+type SystemHostnameSetResult struct {
+	Hostname Hostname `json:"hostname"`
+	Changed  bool     `json:"changed"`
+}
+
 // SystemInfoParams — params của op system.info (ops/system.info.schema.json).
 type SystemInfoParams struct {
 }
 
 // SystemInfoResult — result của op system.info (ops/system.info.schema.json).
 type SystemInfoResult struct {
-	OS        string `json:"os"`
-	Kernel    string `json:"kernel"`
-	Hostname  string `json:"hostname"`
-	UptimeSec int64  `json:"uptime_sec"`
-	CPUCores  int64  `json:"cpu_cores"`
-	RAMMB     int64  `json:"ram_mb"`
+	OS          string    `json:"os"`
+	Kernel      string    `json:"kernel"`
+	Hostname    string    `json:"hostname"`
+	UptimeSec   int64     `json:"uptime_sec"`
+	CPUCores    int64     `json:"cpu_cores"`
+	RAMMB       int64     `json:"ram_mb"`
+	DiskTotalMB int64     `json:"disk_total_mb"`
+	DiskFreeMB  int64     `json:"disk_free_mb"`
+	CgroupV2    bool      `json:"cgroup_v2"`
+	Systemd     bool      `json:"systemd"`
+	QuotaMode   QuotaMode `json:"quota_mode"`
+	Arch        string    `json:"arch"`
 }
 
 // SystemPingParams — params của op system.ping (ops/system.ping.schema.json).
@@ -1056,12 +1171,16 @@ func NewParams(op string) any {
 	switch op {
 	case OpAccountEnsure:
 		return new(AccountEnsureParams)
+	case OpAccountLimitsApply:
+		return new(AccountLimitsApplyParams)
 	case OpAccountRemove:
 		return new(AccountRemoveParams)
 	case OpAccountSuspend:
 		return new(AccountSuspendParams)
 	case OpAccountUnsuspend:
 		return new(AccountUnsuspendParams)
+	case OpAuditTail:
+		return new(AuditTailParams)
 	case OpBackupCheck:
 		return new(BackupCheckParams)
 	case OpBackupForget:
@@ -1130,6 +1249,8 @@ func NewParams(op string) any {
 		return new(FsReadParams)
 	case OpFsWrite:
 		return new(FsWriteParams)
+	case OpMetricsCgroup:
+		return new(MetricsCgroupParams)
 	case OpMetricsSnapshot:
 		return new(MetricsSnapshotParams)
 	case OpMigrateCutover:
@@ -1168,8 +1289,14 @@ func NewParams(op string) any {
 		return new(SFTPUserEnsureParams)
 	case OpSFTPUserRemove:
 		return new(SFTPUserRemoveParams)
+	case OpSoftwareInstall:
+		return new(SoftwareInstallParams)
+	case OpSoftwareRemove:
+		return new(SoftwareRemoveParams)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyParams)
+	case OpSystemHostnameSet:
+		return new(SystemHostnameSetParams)
 	case OpSystemInfo:
 		return new(SystemInfoParams)
 	case OpSystemPing:
@@ -1185,12 +1312,16 @@ func NewResult(op string) any {
 	switch op {
 	case OpAccountEnsure:
 		return new(AccountEnsureResult)
+	case OpAccountLimitsApply:
+		return new(AccountLimitsApplyResult)
 	case OpAccountRemove:
 		return new(AccountRemoveResult)
 	case OpAccountSuspend:
 		return new(AccountSuspendResult)
 	case OpAccountUnsuspend:
 		return new(AccountUnsuspendResult)
+	case OpAuditTail:
+		return new(AuditTailResult)
 	case OpBackupCheck:
 		return new(BackupCheckResult)
 	case OpBackupForget:
@@ -1259,6 +1390,8 @@ func NewResult(op string) any {
 		return new(FsReadResult)
 	case OpFsWrite:
 		return new(FsWriteResult)
+	case OpMetricsCgroup:
+		return new(MetricsCgroupResult)
 	case OpMetricsSnapshot:
 		return new(MetricsSnapshotResult)
 	case OpMigrateCutover:
@@ -1297,8 +1430,14 @@ func NewResult(op string) any {
 		return new(SFTPUserEnsureResult)
 	case OpSFTPUserRemove:
 		return new(SFTPUserRemoveResult)
+	case OpSoftwareInstall:
+		return new(SoftwareInstallResult)
+	case OpSoftwareRemove:
+		return new(SoftwareRemoveResult)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyResult)
+	case OpSystemHostnameSet:
+		return new(SystemHostnameSetResult)
 	case OpSystemInfo:
 		return new(SystemInfoResult)
 	case OpSystemPing:

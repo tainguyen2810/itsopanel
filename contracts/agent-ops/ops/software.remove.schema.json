@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/software.remove.schema.json",
+  "title": "software.remove",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "recipe": {
+          "$ref": "../defs.schema.json#/$defs/Recipe"
+        }
+      },
+      "required": [
+        "recipe"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "installed": {
+          "type": "boolean"
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "installed",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

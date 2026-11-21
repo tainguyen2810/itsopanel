@@ -23,15 +23,21 @@
       "enum": [
         "system.ping",
         "system.info",
+        "system.hostname.set",
         "service.status",
         "service.control",
         "system.reboot",
         "metrics.snapshot",
+        "metrics.cgroup",
+        "audit.tail",
+        "software.install",
+        "software.remove",
         "op.cancel",
         "account.ensure",
         "account.suspend",
         "account.unsuspend",
         "account.remove",
+        "account.limits.apply",
         "quota.apply",
         "quota.report",
         "nginx.vhost.apply",
@@ -90,7 +96,6 @@
         "malware.scan",
         "malware.restore",
         "fim.baseline",
-        "software.install",
         "docker.container.control",
         "compose.validate",
         "compose.apply",
@@ -102,7 +107,6 @@
         "wp.clone",
         "wp.harden",
         "pty.open",
-        "audit.tail",
         "git.deploy",
         "git.rollback"
       ]
@@ -200,6 +204,25 @@
       "if": {
         "properties": {
           "op": {
+            "const": "system.hostname.set"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/system.hostname.set.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "service.status"
           }
         },
@@ -268,6 +291,82 @@
         "properties": {
           "params": {
             "$ref": "ops/metrics.snapshot.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "metrics.cgroup"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/metrics.cgroup.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "audit.tail"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/audit.tail.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "software.install"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/software.install.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "software.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/software.remove.schema.json#/$defs/params"
           }
         }
       }
@@ -363,6 +462,25 @@
         "properties": {
           "params": {
             "$ref": "ops/account.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "account.limits.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/account.limits.apply.schema.json#/$defs/params"
           }
         }
       }

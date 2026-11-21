@@ -23,9 +23,11 @@ type demoServer struct {
 	OS        string `json:"os"`
 	Kernel    string `json:"kernel"`
 	Resources struct {
-		CPUCores  int   `json:"cpu_cores"`
-		RAMMB     int   `json:"ram_mb"`
-		UptimeSec int64 `json:"uptime_sec"`
+		CPUCores   int   `json:"cpu_cores"`
+		RAMMB      int   `json:"ram_mb"`
+		UptimeSec  int64 `json:"uptime_sec"`
+		DiskMB     int64 `json:"disk_mb"`
+		DiskUsedMB int64 `json:"disk_used_mb"`
 	} `json:"resources"`
 }
 
@@ -63,6 +65,13 @@ func Register(r *registry.Registry, started time.Time) error {
 			UptimeSec: srv.Resources.UptimeSec + int64(time.Since(started).Seconds()),
 			CPUCores:  int64(srv.Resources.CPUCores),
 			RAMMB:     int64(srv.Resources.RAMMB),
+			// Mock giả lập máy Ubuntu 24.04 có cgroup v2 + systemd; disk theo dataset demo, quota kernel.
+			DiskTotalMB: srv.Resources.DiskMB,
+			DiskFreeMB:  srv.Resources.DiskMB - srv.Resources.DiskUsedMB,
+			CgroupV2:    true,
+			Systemd:     true,
+			QuotaMode:   "kernel",
+			Arch:        "amd64",
 		})
 	})
 }

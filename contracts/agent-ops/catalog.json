@@ -24,6 +24,17 @@
       "status": "specified"
     },
     {
+      "op": "system.hostname.set",
+      "domain": "system",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 4,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/system.hostname.set.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "service.status",
       "domain": "system",
       "risk": "low",
@@ -65,6 +76,50 @@
       "runs_as": "root",
       "timeout_sec": 10,
       "schema": "ops/metrics.snapshot.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "metrics.cgroup",
+      "domain": "system",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 4,
+      "runs_as": "root",
+      "timeout_sec": 15,
+      "schema": "ops/metrics.cgroup.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "audit.tail",
+      "domain": "system",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 4,
+      "runs_as": "root",
+      "timeout_sec": 15,
+      "schema": "ops/audit.tail.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "software.install",
+      "domain": "software",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 4,
+      "runs_as": "root",
+      "timeout_sec": 900,
+      "schema": "ops/software.install.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "software.remove",
+      "domain": "software",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 4,
+      "runs_as": "root",
+      "timeout_sec": 900,
+      "schema": "ops/software.remove.schema.json",
       "status": "specified"
     },
     {
@@ -120,6 +175,17 @@
       "runs_as": "root",
       "timeout_sec": 1800,
       "schema": "ops/account.remove.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "account.limits.apply",
+      "domain": "account",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 4,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/account.limits.apply.schema.json",
       "status": "specified"
     },
     {
@@ -761,17 +827,6 @@
       "status": "declared"
     },
     {
-      "op": "software.install",
-      "domain": "software",
-      "risk": "high",
-      "default_enabled": true,
-      "phase": 10,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
       "op": "docker.container.control",
       "domain": "docker",
       "risk": "critical",
@@ -887,17 +942,6 @@
       "risk": "high",
       "default_enabled": true,
       "phase": 6,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
-      "op": "audit.tail",
-      "domain": "system",
-      "risk": "low",
-      "default_enabled": true,
-      "phase": 4,
       "runs_as": "root",
       "timeout_sec": null,
       "schema": null,

@@ -24,6 +24,9 @@
       "properties": {
         "applied": {
           "type": "boolean"
+        },
+        "mode": {
+          "$ref": "../defs.schema.json#/$defs/QuotaMode"
         }
       },
       "required": [
