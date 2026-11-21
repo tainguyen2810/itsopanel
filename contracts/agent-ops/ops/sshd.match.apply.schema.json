@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/sshd.match.apply.schema.json",
+  "title": "sshd.match.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "password_authentication": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "password_authentication"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "sshd_test": {
+          "type": "string",
+          "enum": [
+            "ok"
+          ]
+        },
+        "reloaded": {
+          "type": "boolean"
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "sshd_test",
+        "reloaded",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -9,6 +9,9 @@ import { defineConfig, type Plugin } from 'vite';
 // Hai entry: /admin/ (Private Admin Panel) và /portal/ (User Hosting Portal).
 // Dev: /api được proxy sang Laravel (php artisan serve, cổng 8000).
 const API = process.env.ITSO_API_URL ?? 'http://127.0.0.1:8000';
+// Dev: /gateway (WebSocket terminal) được proxy sang itso-gateway (D-75).
+const GATEWAY =
+  process.env.ITSO_GATEWAY_URL ?? `http://127.0.0.1:${process.env.GATEWAY_PORT ?? '7811'}`;
 
 // /admin → /admin/, /portal → /portal/, / → /admin/ (dev và preview).
 // Router phía client: /admin/servers/… trả admin/index.html (như try_files của Nginx ở production).
@@ -62,7 +65,14 @@ export default defineConfig(({ mode }) => ({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    ...(mode === 'demo' ? {} : { proxy: { '/api': { target: API, changeOrigin: false } } }),
+    ...(mode === 'demo'
+      ? {}
+      : {
+          proxy: {
+            '/api': { target: API, changeOrigin: false },
+            '/gateway': { target: GATEWAY, changeOrigin: false, ws: true },
+          },
+        }),
   },
   build: {
     // Bản demo gói kèm dữ liệu mẫu và MSW nên chunk demo lớn hơn bình thường.

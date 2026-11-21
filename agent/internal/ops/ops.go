@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"itso.local/agent/internal/envelope"
 	"itso.local/agent/internal/platform"
 	"itso.local/agent/internal/registry"
+	"itso.local/agent/internal/term"
 	"itso.local/agent/internal/validate"
 )
 
@@ -37,6 +39,8 @@ type Deps struct {
 	CPUSample time.Duration
 	// AcmePebble: policy cục bộ cho phép directory ACME "pebble" (D-69).
 	AcmePebble bool
+	// Term: phiên terminal USER (pty.open cấp ticket, socket stream ATTACH). Nil = chưa bật.
+	Term *term.Manager
 
 	mu       sync.Mutex
 	inflight map[string]context.CancelFunc
@@ -183,4 +187,17 @@ func toData(v any) (map[string]any, error) {
 	}
 	var m map[string]any
 	return m, json.Unmarshal(b, &m)
+}
+
+// Phase6Ops là các op dữ liệu hosting (D-71…D-74) — mock agent dùng lại đúng handler thật trên sandbox.
+func Phase6Ops(d *Deps) map[string]registry.Handler {
+	out := map[string]registry.Handler{}
+	for k, v := range extraHandlers(d) {
+		for _, p := range []string{"fs.", "db.", "sshd.", "sftp.", "ftp.", "ssh.keys.", "cron.", "pty."} {
+			if strings.HasPrefix(k, p) && k != contracts.OpFsSiteLayoutEnsure {
+				out[k] = v
+			}
+		}
+	}
+	return out
 }

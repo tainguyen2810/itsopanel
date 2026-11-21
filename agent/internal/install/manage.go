@@ -329,7 +329,7 @@ func (e *Env) PolicySet(ctx context.Context, key, value string) error {
 	return err
 }
 
-var logServices = map[string]string{"agent": "itso-agent.service", "web": "itso-web.service", "worker": "itso-worker@*",
+var logServices = map[string]string{"agent": "itso-agent.service", "gateway": "itso-gateway.service", "web": "itso-web.service", "worker": "itso-worker@*",
 	"scheduler": "itso-scheduler.service", "redis": "itso-redis.service"}
 
 // Logs in journal của một dịch vụ panel (allowlist).

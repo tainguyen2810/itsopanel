@@ -402,3 +402,47 @@ describe('API giả lập gói và tài khoản hosting', () => {
     expect((await account(LEHOA)).server.uuid).toBe(HN2);
   });
 });
+
+describe('Phase 6: dữ liệu hosting trên API giả lập', () => {
+  it('tải lên: lệch offset → 409 kèm errors.received; GET/DELETE phiên', async () => {
+    const base = `/api/v1/admin/hosting-accounts/${ANPHAT}/files/uploads`;
+    const up = data<{ uuid: string }>(await call('POST', base, { path: 'p6.bin', size: 10 }));
+    const chunk = (range: string) =>
+      fetch(`${BASE}${base}/${up.uuid}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/offset+octet-stream',
+          'Content-Range': range,
+          'X-Demo-User': SA,
+        },
+        body: new Uint8Array(5),
+      });
+    expect((await chunk('bytes 0-4/10')).status).toBe(200);
+    const bad = await chunk('bytes 0-4/10');
+    expect(bad.status).toBe(409);
+    expect(((await bad.json()) as { errors: { received: string[] } }).errors.received).toEqual([
+      '5',
+    ]);
+    expect(data<{ received: number }>(await call('GET', `${base}/${up.uuid}`)).received).toBe(5);
+    expect((await call('DELETE', `${base}/${up.uuid}`)).status).toBe(204);
+    expect(data<{ status: string }>(await call('GET', `${base}/${up.uuid}`)).status).toBe(
+      'cancelled',
+    );
+  });
+
+  it('mật khẩu do panel sinh trả MỘT lần trong JobAccepted.secret', async () => {
+    const created = await call('POST', '/api/v1/admin/sftp-accounts', {
+      hosting_account_uuid: ANPHAT,
+      username: 'anphat_p6',
+      protocol: 'sftp',
+      root_path: '.',
+      password: null,
+    });
+    expect(created.status, JSON.stringify(created.body)).toBe(202);
+    expect((created.body as { secret: string }).secret).toMatch(/.{16,}/);
+    const id = (created.body as { resource: { uuid: string } }).resource.uuid;
+    const rot = await call('POST', `/api/v1/admin/sftp-accounts/${id}:rotate-password`, {});
+    expect(rot.status).toBe(202);
+    expect((rot.body as { secret: string }).secret).toMatch(/.{16,}/);
+  });
+});

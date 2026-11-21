@@ -56,34 +56,48 @@
         "cert.inspect",
         "cert.remove",
         "fs.list",
+        "fs.stat",
         "fs.read",
         "fs.write",
         "fs.mkdir",
+        "fs.rename",
         "fs.move",
         "fs.copy",
         "fs.delete",
         "fs.chmod",
         "fs.archive",
         "fs.extract",
+        "fs.upload.commit",
+        "db.mysql.owner_ensure",
         "db.mysql.create",
         "db.mysql.drop",
         "db.mysql.user_ensure",
         "db.mysql.user_drop",
         "db.mysql.grant",
+        "db.mysql.lock",
+        "db.mysql.inspect",
         "db.mysql.dump",
         "db.mysql.import",
+        "db.pg.owner_ensure",
         "db.pg.create",
         "db.pg.drop",
         "db.pg.user_ensure",
         "db.pg.user_drop",
         "db.pg.grant",
+        "db.pg.lock",
+        "db.pg.inspect",
         "db.pg.dump",
         "db.pg.import",
+        "sshd.match.apply",
         "sftp.user.ensure",
         "sftp.user.remove",
+        "ftp.user.ensure",
+        "ftp.user.remove",
         "ssh.keys.apply",
         "cron.apply",
+        "cron.inspect",
         "cron.run_once",
+        "pty.open",
         "backup.run",
         "backup.restore",
         "backup.check",
@@ -112,7 +126,6 @@
         "wp.update",
         "wp.clone",
         "wp.harden",
-        "pty.open",
         "git.deploy",
         "git.rollback"
       ]
@@ -837,6 +850,25 @@
       "if": {
         "properties": {
           "op": {
+            "const": "fs.stat"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.stat.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "fs.read"
           }
         },
@@ -886,6 +918,25 @@
         "properties": {
           "params": {
             "$ref": "ops/fs.mkdir.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "fs.rename"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.rename.schema.json#/$defs/params"
           }
         }
       }
@@ -1008,6 +1059,44 @@
       "if": {
         "properties": {
           "op": {
+            "const": "fs.upload.commit"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.upload.commit.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.owner_ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.owner_ensure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "db.mysql.create"
           }
         },
@@ -1103,6 +1192,44 @@
       "if": {
         "properties": {
           "op": {
+            "const": "db.mysql.lock"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.lock.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.mysql.inspect"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.mysql.inspect.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "db.mysql.dump"
           }
         },
@@ -1133,6 +1260,25 @@
         "properties": {
           "params": {
             "$ref": "ops/db.mysql.import.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.owner_ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.owner_ensure.schema.json#/$defs/params"
           }
         }
       }
@@ -1236,6 +1382,44 @@
       "if": {
         "properties": {
           "op": {
+            "const": "db.pg.lock"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.lock.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "db.pg.inspect"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/db.pg.inspect.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "db.pg.dump"
           }
         },
@@ -1266,6 +1450,25 @@
         "properties": {
           "params": {
             "$ref": "ops/db.pg.import.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "sshd.match.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/sshd.match.apply.schema.json#/$defs/params"
           }
         }
       }
@@ -1312,6 +1515,44 @@
       "if": {
         "properties": {
           "op": {
+            "const": "ftp.user.ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/ftp.user.ensure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "ftp.user.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/ftp.user.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "ssh.keys.apply"
           }
         },
@@ -1350,6 +1591,25 @@
       "if": {
         "properties": {
           "op": {
+            "const": "cron.inspect"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cron.inspect.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "cron.run_once"
           }
         },
@@ -1361,6 +1621,25 @@
         "properties": {
           "params": {
             "$ref": "ops/cron.run_once.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "pty.open"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/pty.open.schema.json#/$defs/params"
           }
         }
       }

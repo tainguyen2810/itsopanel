@@ -1,0 +1,46 @@
+# itso-gateway: cầu WebSocket ↔ socket stream của agent cho terminal USER (D-75, ADR 0022). Không đặc quyền,
+# không đọc DB; chỉ nghe loopback sau Caddy (/gateway/*). Quyền mở phiên do panel + agent quyết (ticket một lần).
+[Unit]
+Description=ITSO Panel terminal gateway
+PartOf=itso.target
+After=network.target itso-agent.service
+
+[Service]
+Type=simple
+User=itso-gw
+Group=itso-gw
+SupplementaryGroups=itso-agent-clients
+Slice=itso-panel.slice
+ExecStart=/opt/itso/current/bin/itso-gateway --listen 127.0.0.1:7811 --agent-stream unix:/run/itso/agent-stream.sock
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+UMask=0077
+
+[Install]
+WantedBy=itso.target

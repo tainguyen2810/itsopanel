@@ -57,6 +57,9 @@ final class QuotaService
         if (DB::getSchemaBuilder()->hasColumn($table, 'deleted_at')) {
             $q->whereNull('deleted_at');
         }
+        if ($resource === 'ftp_accounts') {
+            $q->where('protocol', 'ftps'); // ftp_limit chỉ đếm FTPS phụ, không tính user SFTP chính (ADR 0020 §5)
+        }
 
         return $q->count();
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
 use App\Domain\Hosting\AccountJobHandler;
 use App\Domain\Servers\SoftwareJobHandler;
@@ -44,11 +45,23 @@ return [
       + array_fill_keys(['php.version.install', 'php.version.remove', 'php.extensions.install', 'setup.stack'],
           ServerWebJobHandler::class)
       + array_fill_keys(['certificate.issue', 'certificate.upload', 'certificate.renew', 'certificate.delete'],
-          CertificateJobHandler::class),
+          CertificateJobHandler::class)
+      + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class),
 
     // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
     'panel_steps' => [
         'dns.records.apply' => DnsRecordsStep::class,
+    ],
+
+    // File Manager (D-72): thư mục staging upload (panel ghi chunk, agent đọc khi commit), giới hạn giải nén.
+    // Terminal USER (D-75): URL WebSocket của itso-gateway; rỗng = suy từ host của request (/gateway/terminal).
+    'gateway' => [
+        'ws_url' => env('ITSO_GATEWAY_WS_URL'),
+    ],
+
+    'files' => [
+        'upload_dir' => env('ITSO_UPLOAD_DIR', '/var/lib/itso/uploads'),
+        'extract_max_bytes' => (int) env('ITSO_EXTRACT_MAX_BYTES', 4 * 1024 * 1024 * 1024),
     ],
 
     // ACME (D-69): email nhận thông báo của CA và directory (allowlist; Pebble chỉ cho test/CI).

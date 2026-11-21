@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.mysql.lock.schema.json",
+  "title": "db.mysql.lock",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "locked": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account",
+        "locked"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "changed": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

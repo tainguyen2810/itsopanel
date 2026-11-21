@@ -588,7 +588,7 @@
   },
   "terminal": {
     "title": "Terminal",
-    "description": "Web terminal through the gateway, opened with a one-time ticket. The demo only simulates it and runs no commands.",
+    "description": "Web terminal via itso-gateway, opened with a one-time ticket (30 seconds). The shell runs as the account's uid and only sees the account's home. The demo only simulates it.",
     "open": "Open a terminal session",
     "mode": "Mode",
     "modes": {
@@ -613,7 +613,18 @@
       "p3": "Root terminal is off by default and only enabled via CLI on the server; a compromised panel cannot turn it on.",
       "p4": "Opening a root terminal requires MFA within the last 10 minutes; the session is recorded (asciicast) in the audit log.",
       "p5": "Session tickets are single use and expire in 30 seconds; sessions have a time limit."
-    }
+    },
+    "sessionInfo": "Shell inside the account jail. The session closes after 15 minutes of inactivity or 12 hours at most.",
+    "ended": {
+      "exited": "The session has ended",
+      "closed": "Disconnected",
+      "idle": "Session closed after 15 minutes of inactivity",
+      "expired": "Session reached the 12-hour limit",
+      "ticket": "The ticket is invalid or already used",
+      "ticketExpired": "The ticket has expired (over 30 seconds)",
+      "unavailable": "Could not reach the terminal server"
+    },
+    "endedHint": "Click Disconnect, then open a new session if needed."
   },
   "packages": {
     "title": "Hosting packages",
@@ -1131,7 +1142,7 @@
     "quota": "{{used}}/{{limit}} package databases used",
     "prefixHint": "For example {{prefix}}_app",
     "createUser": "Create a user with the same name",
-    "createUserHint": "The user gets full rights on this database; get its password with \"Rotate password\".",
+    "createUserHint": "The user gets full rights on this database; its password is shown ONCE after creation.",
     "username": "Username",
     "grants": "Grants",
     "noGrants": "No grants",
@@ -1144,7 +1155,7 @@
     "addUserTitle": "Add database user",
     "addUserHint": "After creating, grant access per database with \"Edit grants\".",
     "password": "Password",
-    "passwordHint": "Leave empty to generate one; reveal it with \"Rotate password\".",
+    "passwordHint": "Leave empty to generate one; it is shown ONCE after creation.",
     "newPassword": "New password",
     "grantsTitle": "Grants for {{name}}",
     "grantsHint": "Only databases of the same account and engine. ALL includes every privilege.",
@@ -1235,7 +1246,23 @@
     "content": "File content",
     "close": "Close",
     "save": "Save",
-    "saved": "File saved"
+    "saved": "File saved",
+    "uploads": "Uploads",
+    "uploadProgress": "Upload progress for {{name}}",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancelUpload": "Cancel",
+    "dismiss": "Dismiss",
+    "uploadState": {
+      "idle": "Waiting",
+      "uploading": "Uploading",
+      "committing": "Saving to folder",
+      "paused": "Paused",
+      "done": "Done",
+      "error": "Error",
+      "cancelled": "Cancelled"
+    },
+    "uploadCommitFailed": "Could not save the file to the folder. See the \"Upload file\" job for details."
   },
   "sftp": {
     "title": "SFTP and SSH",
@@ -1272,7 +1299,9 @@
     "publicKeyHint": "For example: ssh-ed25519 AAAA… name@host",
     "removeKey": "Remove key",
     "removeKeyTitle": "Remove SSH key {{name}}?",
-    "removeKeyHint": "Machines using this key can no longer SSH in."
+    "removeKeyHint": "Machines using this key can no longer SSH in.",
+    "rotate": "Rotate password",
+    "newPassword": "New password"
   },
   "ssl": {
     "title": "SSL certificates",

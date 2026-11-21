@@ -1,6 +1,6 @@
 # ADR 0016: Chứng chỉ ACME bằng lego, gia hạn tự động, chứng chỉ tải lên
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 5)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 5)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-69, D-63
 

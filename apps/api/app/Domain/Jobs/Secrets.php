@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Jobs;
 
 use App\Models\Certificate;
+use App\Models\DatabaseUser;
+use App\Models\SftpAccount;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
@@ -51,6 +53,18 @@ final class Secrets
             $c = Certificate::query()->where('uuid', $uuid)->first();
             if ($c instanceof Certificate && is_string($c->private_key_encrypted) && $c->private_key_encrypted !== '') {
                 return Crypt::decryptString($c->private_key_encrypted);
+            }
+        }
+        // Mật khẩu DB user / FTP-SFTP (D-71, D-73): lưu mã hóa trong panel, chỉ giải ngay trước khi gửi agent.
+        $model = match ($kind) {
+            'db_user_password' => DatabaseUser::class,
+            'sftp_password' => SftpAccount::class,
+            default => null,
+        };
+        if ($model !== null && Str::isUuid($uuid)) {
+            $enc = $model::withTrashed()->where('uuid', $uuid)->first()?->password_encrypted;
+            if (is_string($enc) && $enc !== '') {
+                return Crypt::decryptString($enc);
             }
         }
         throw new PanelStepFailed('internal', "Không giải được tham chiếu bí mật $kind (đã xóa hoặc sai loại).");

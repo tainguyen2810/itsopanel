@@ -78,6 +78,20 @@ components:
       not:
         pattern: '[\r\n\x00]'
       description: Lệnh chạy dưới UID của account. Một dòng, không ký tự xuống dòng (chống chèn crontab).
+    SecretPassword:
+      type: string
+      minLength: 12
+      maxLength: 128
+      pattern: ^[A-Za-z0-9._~!@#%^*+=:,-]+$
+      not:
+        pattern: '[\r\n]'
+      writeOnly: true
+      description: Mật khẩu DB/FTP/SFTP. Tới agent chỉ qua tham chiếu bí mật do JobRunner thay (D-69/D-71); không có dấu nháy,
+        gạch chéo ngược, khoảng trắng.
+    FtpUsername:
+      type: string
+      pattern: ^[a-z][a-z0-9_]{2,47}$
+      description: Virtual user Pure-FTPd (D-73). Tầng nghiệp vụ bắt buộc tiền tố `<username>_`.
     NginxSize:
       type: string
       pattern: ^[0-9]{1,5}[kmg]?$
@@ -410,6 +424,11 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ResourceRef'
           - type: 'null'
+        secret:
+          type:
+          - string
+          - 'null'
+          description: 'Mật khẩu do panel sinh (DB user, FTP): chỉ trả MỘT lần ở đây.'
       required:
       - job
       additionalProperties: false
@@ -1384,10 +1403,43 @@ components:
           enum:
           - localhost
           - '%'
+        max_connections:
+          type: integer
+          minimum: 1
         grants:
           type: array
           items:
             $ref: '#/components/schemas/DatabaseGrant'
+        status:
+          type: string
+          enum:
+          - pending
+          - provisioning
+          - ready
+          - degraded
+          - failed
+          - suspended
+          - deleting
+          description: Trạng thái quan sát được (observed).
+        spec_version:
+          type: integer
+          minimum: 1
+          description: 'Desired: tăng mỗi lần đổi cấu hình.'
+        observed_version:
+          type: integer
+          minimum: 0
+          description: Phiên bản agent đã áp dụng.
+        drift:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: string
+        observed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
         created_at:
           type: string
           format: date-time
@@ -1400,7 +1452,13 @@ components:
       - engine
       - username
       - host
+      - max_connections
       - grants
+      - status
+      - spec_version
+      - observed_version
+      - drift
+      - observed_at
       - created_at
       - updated_at
       additionalProperties: false
@@ -1419,9 +1477,18 @@ components:
         username:
           $ref: '#/components/schemas/DbName'
         password:
+          oneOf:
+          - $ref: '#/components/schemas/SecretPassword'
+          - type: 'null'
+        host:
           type: string
-          minLength: 16
-          writeOnly: true
+          enum:
+          - localhost
+          - '%'
+        max_connections:
+          type: integer
+          minimum: 1
+          maximum: 500
       required:
       - hosting_account_uuid
       - engine
@@ -1518,6 +1585,7 @@ components:
           type: string
           enum:
           - mkdir
+          - rename
           - move
           - copy
           - delete
@@ -1572,6 +1640,19 @@ components:
         expires_at:
           type: string
           format: date-time
+        status:
+          type: string
+          enum:
+          - receiving
+          - committing
+          - completed
+          - failed
+          - cancelled
+        job_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
       required:
       - uuid
       - path
@@ -1579,6 +1660,8 @@ components:
       - chunk_size
       - received
       - expires_at
+      - status
+      - job_uuid
       additionalProperties: false
     UploadCreate:
       type: object
@@ -1617,17 +1700,19 @@ components:
         hosting_account:
           $ref: '#/components/schemas/AccountRef'
         username:
-          type: string
-          pattern: ^[a-z][a-z0-9_]{2,31}$
+          $ref: '#/components/schemas/FtpUsername'
         protocol:
           type: string
           enum:
           - sftp
           - ftps
+          description: 'sftp: user Linux chính của account (chroot home); ftps: tài khoản FTP phụ (Pure-FTPd, TLS bắt buộc),
+            giới hạn thư mục con'
         root_path:
           $ref: '#/components/schemas/RelPath'
         read_only:
           type: boolean
+          description: Phase 6 luôn false (Pure-FTPd không hỗ trợ theo user)
         last_login_at:
           type:
           - string
@@ -1692,8 +1777,7 @@ components:
           type: string
           format: uuid
         username:
-          type: string
-          pattern: ^[a-z][a-z0-9_]{2,31}$
+          $ref: '#/components/schemas/FtpUsername'
         protocol:
           type: string
           enum:
@@ -1704,11 +1788,9 @@ components:
         read_only:
           type: boolean
         password:
-          type:
-          - string
-          - 'null'
-          minLength: 16
-          writeOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/SecretPassword'
+          - type: 'null'
       required:
       - hosting_account_uuid
       - username
@@ -1796,6 +1878,10 @@ components:
           - type: 'null'
         enabled:
           type: boolean
+        timeout_sec:
+          type: integer
+          minimum: 60
+          maximum: 86400
         last_run_at:
           type:
           - string
@@ -1855,6 +1941,7 @@ components:
       - working_dir
       - php_version
       - enabled
+      - timeout_sec
       - last_run_at
       - last_status
       - status
@@ -1888,6 +1975,10 @@ components:
           - type: 'null'
         enabled:
           type: boolean
+        timeout_sec:
+          type: integer
+          minimum: 60
+          maximum: 86400
       required:
       - hosting_account_uuid
       - schedule
@@ -1904,6 +1995,10 @@ components:
           $ref: '#/components/schemas/RelPath'
         enabled:
           type: boolean
+        timeout_sec:
+          type: integer
+          minimum: 60
+          maximum: 86400
       additionalProperties: false
     CronRun:
       type: object
@@ -2661,12 +2756,16 @@ components:
           - root
         unix_user:
           type: string
+        session_uuid:
+          type: string
+          format: uuid
       required:
       - ticket
       - ws_url
       - expires_at
       - mode
       - unix_user
+      - session_uuid
       additionalProperties: false
     TerminalRequest:
       type: object
@@ -3278,6 +3377,21 @@ components:
         default: portal
       description: Realm của request /auth/* khi Admin và Portal chung một origin (dev, demo). Khi cấu hình host riêng (production),
         host quyết định và header bị bỏ qua (D-58).
+    Expires:
+      name: expires
+      in: query
+      required: true
+      schema:
+        type: integer
+      description: Hạn chữ ký (Unix giây).
+    Signature:
+      name: signature
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: ^[0-9a-f]{64}$
+      description: Chữ ký HMAC của URL.
     ContentRange:
       name: Content-Range
       in: header

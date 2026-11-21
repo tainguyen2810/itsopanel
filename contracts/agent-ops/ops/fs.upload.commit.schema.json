@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.upload.commit.schema.json",
+  "title": "fs.upload.commit",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "upload_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "target": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10737418240
+        },
+        "overwrite": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "account",
+        "upload_uuid",
+        "target",
+        "size",
+        "overwrite"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "size",
+        "sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

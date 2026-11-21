@@ -28,12 +28,16 @@ const (
 	OpComposeUp              = "compose.up"
 	OpComposeValidate        = "compose.validate"
 	OpCronApply              = "cron.apply"
+	OpCronInspect            = "cron.inspect"
 	OpCronRunOnce            = "cron.run_once"
 	OpDBMysqlCreate          = "db.mysql.create"
 	OpDBMysqlDrop            = "db.mysql.drop"
 	OpDBMysqlDump            = "db.mysql.dump"
 	OpDBMysqlGrant           = "db.mysql.grant"
 	OpDBMysqlImport          = "db.mysql.import"
+	OpDBMysqlInspect         = "db.mysql.inspect"
+	OpDBMysqlLock            = "db.mysql.lock"
+	OpDBMysqlOwnerEnsure     = "db.mysql.owner_ensure"
 	OpDBMysqlUserDrop        = "db.mysql.user_drop"
 	OpDBMysqlUserEnsure      = "db.mysql.user_ensure"
 	OpDBPGCreate             = "db.pg.create"
@@ -41,6 +45,9 @@ const (
 	OpDBPGDump               = "db.pg.dump"
 	OpDBPGGrant              = "db.pg.grant"
 	OpDBPGImport             = "db.pg.import"
+	OpDBPGInspect            = "db.pg.inspect"
+	OpDBPGLock               = "db.pg.lock"
+	OpDBPGOwnerEnsure        = "db.pg.owner_ensure"
 	OpDBPGUserDrop           = "db.pg.user_drop"
 	OpDBPGUserEnsure         = "db.pg.user_ensure"
 	OpDockerContainerControl = "docker.container.control"
@@ -57,8 +64,13 @@ const (
 	OpFsMkdir                = "fs.mkdir"
 	OpFsMove                 = "fs.move"
 	OpFsRead                 = "fs.read"
+	OpFsRename               = "fs.rename"
 	OpFsSiteLayoutEnsure     = "fs.site_layout.ensure"
+	OpFsStat                 = "fs.stat"
+	OpFsUploadCommit         = "fs.upload.commit"
 	OpFsWrite                = "fs.write"
+	OpFTPUserEnsure          = "ftp.user.ensure"
+	OpFTPUserRemove          = "ftp.user.remove"
 	OpGitDeploy              = "git.deploy"
 	OpGitRollback            = "git.rollback"
 	OpLogTail                = "log.tail"
@@ -92,6 +104,7 @@ const (
 	OpSoftwareRemove         = "software.remove"
 	OpSSHKeysApply           = "ssh.keys.apply"
 	OpSshdConfigApply        = "sshd.config.apply"
+	OpSshdMatchApply         = "sshd.match.apply"
 	OpSystemHostnameSet      = "system.hostname.set"
 	OpSystemInfo             = "system.info"
 	OpSystemPing             = "system.ping"
@@ -120,6 +133,12 @@ type CronExpr string
 
 // CronCommand — Lệnh chạy dưới UID của account. Một dòng, không ký tự xuống dòng (chống chèn crontab).
 type CronCommand string
+
+// SecretPassword — Mật khẩu DB/FTP/SFTP. Tới agent chỉ qua tham chiếu bí mật do JobRunner thay (D-69/D-71); không có dấu nháy, gạch chéo ngược, khoảng trắng.
+type SecretPassword string
+
+// FTPUsername — Virtual user Pure-FTPd (D-73). Tầng nghiệp vụ bắt buộc tiền tố `<username>_`.
+type FTPUsername string
 
 // NginxSize — Giá trị kích thước Nginx, ví dụ 64m.
 type NginxSize string
@@ -154,7 +173,7 @@ type SHA256 string
 // Hostname — Hostname máy chủ (RFC 1123, chữ thường).
 type Hostname string
 
-// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng", "nginx", "php8.3", "lego".
+// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng", "nginx", "php8.3", "lego", "mariadb", "postgresql", "pure-ftpd".
 type Recipe string
 
 // QuotaMode — kiểu QuotaMode trong contracts/agent-ops. Giá trị: "kernel", "soft".
@@ -207,6 +226,12 @@ type CertInfo struct {
 
 // DBEngine — kiểu DBEngine trong contracts/agent-ops. Giá trị: "mariadb", "mysql", "postgresql".
 type DBEngine string
+
+// DBPrivileges — kiểu DBPrivileges trong contracts/agent-ops.
+type DBPrivileges []string
+
+// FileType — kiểu FileType trong contracts/agent-ops. Giá trị: "file", "dir", "symlink", "other".
+type FileType string
 
 // BackupRepo — kiểu BackupRepo trong contracts/agent-ops.
 type BackupRepo struct {
@@ -487,6 +512,7 @@ type CronApplyParamsEntriesItem struct {
 	Command    CronCommand `json:"command"`
 	WorkingDir RelPath     `json:"working_dir"`
 	Enabled    bool        `json:"enabled"`
+	TimeoutSec int64       `json:"timeout_sec"`
 }
 
 // CronApplyParams — params của op cron.apply (ops/cron.apply.schema.json).
@@ -497,7 +523,30 @@ type CronApplyParams struct {
 
 // CronApplyResult — result của op cron.apply (ops/cron.apply.schema.json).
 type CronApplyResult struct {
-	Count int64 `json:"count"`
+	Count   int64 `json:"count"`
+	Active  int64 `json:"active"`
+	Removed int64 `json:"removed"`
+}
+
+// CronInspectParams — params của op cron.inspect (ops/cron.inspect.schema.json).
+type CronInspectParams struct {
+	Account Account `json:"account"`
+	Uuids   []UUID  `json:"uuids"`
+}
+
+// CronInspectResultJobsItem được sinh từ schema.
+type CronInspectResultJobsItem struct {
+	UUID           UUID    `json:"uuid"`
+	LastStartedAt  *string `json:"last_started_at"`
+	LastFinishedAt *string `json:"last_finished_at"`
+	ExitCode       *int64  `json:"exit_code"`
+	// Giá trị: "success", "failed", "timeout", "never".
+	Result string `json:"result"`
+}
+
+// CronInspectResult — result của op cron.inspect (ops/cron.inspect.schema.json).
+type CronInspectResult struct {
+	Jobs []CronInspectResultJobsItem `json:"jobs"`
 }
 
 // CronRunOnceParams — params của op cron.run_once (ops/cron.run_once.schema.json).
@@ -506,12 +555,16 @@ type CronRunOnceParams struct {
 	UUID       UUID        `json:"uuid"`
 	Command    CronCommand `json:"command"`
 	WorkingDir RelPath     `json:"working_dir"`
+	TimeoutSec *int64      `json:"timeout_sec,omitempty"`
 }
 
 // CronRunOnceResult — result của op cron.run_once (ops/cron.run_once.schema.json).
 type CronRunOnceResult struct {
 	ExitCode   int64  `json:"exit_code"`
 	OutputTail string `json:"output_tail"`
+	TimedOut   bool   `json:"timed_out"`
+	StartedAt  string `json:"started_at"`
+	FinishedAt string `json:"finished_at"`
 }
 
 // DBMysqlCreateParams — params của op db.mysql.create (ops/db.mysql.create.schema.json).
@@ -554,10 +607,10 @@ type DBMysqlDumpResult struct {
 
 // DBMysqlGrantParams — params của op db.mysql.grant (ops/db.mysql.grant.schema.json).
 type DBMysqlGrantParams struct {
-	Account    Account  `json:"account"`
-	Username   DBName   `json:"username"`
-	Database   DBName   `json:"database"`
-	Privileges []string `json:"privileges"`
+	Account    Account      `json:"account"`
+	Username   DBName       `json:"username"`
+	Database   DBName       `json:"database"`
+	Privileges DBPrivileges `json:"privileges"`
 }
 
 // DBMysqlGrantResult — result của op db.mysql.grant (ops/db.mysql.grant.schema.json).
@@ -574,7 +627,45 @@ type DBMysqlImportParams struct {
 
 // DBMysqlImportResult — result của op db.mysql.import (ops/db.mysql.import.schema.json).
 type DBMysqlImportResult struct {
-	Statements int64 `json:"statements"`
+	Bytes Bytes `json:"bytes"`
+}
+
+// DBMysqlInspectParams — params của op db.mysql.inspect (ops/db.mysql.inspect.schema.json).
+type DBMysqlInspectParams struct {
+	Account Account `json:"account"`
+}
+
+// DBMysqlInspectResultDatabasesItem được sinh từ schema.
+type DBMysqlInspectResultDatabasesItem struct {
+	Name      DBName `json:"name"`
+	SizeBytes Bytes  `json:"size_bytes"`
+}
+
+// DBMysqlInspectResult — result của op db.mysql.inspect (ops/db.mysql.inspect.schema.json).
+type DBMysqlInspectResult struct {
+	Databases []DBMysqlInspectResultDatabasesItem `json:"databases"`
+	Users     []DBName                            `json:"users"`
+}
+
+// DBMysqlLockParams — params của op db.mysql.lock (ops/db.mysql.lock.schema.json).
+type DBMysqlLockParams struct {
+	Account Account `json:"account"`
+	Locked  bool    `json:"locked"`
+}
+
+// DBMysqlLockResult — result của op db.mysql.lock (ops/db.mysql.lock.schema.json).
+type DBMysqlLockResult struct {
+	Changed int64 `json:"changed"`
+}
+
+// DBMysqlOwnerEnsureParams — params của op db.mysql.owner_ensure (ops/db.mysql.owner_ensure.schema.json).
+type DBMysqlOwnerEnsureParams struct {
+	Account Account `json:"account"`
+}
+
+// DBMysqlOwnerEnsureResult — result của op db.mysql.owner_ensure (ops/db.mysql.owner_ensure.schema.json).
+type DBMysqlOwnerEnsureResult struct {
+	Created bool `json:"created"`
 }
 
 // DBMysqlUserDropParams — params của op db.mysql.user_drop (ops/db.mysql.user_drop.schema.json).
@@ -590,16 +681,18 @@ type DBMysqlUserDropResult struct {
 
 // DBMysqlUserEnsureParams — params của op db.mysql.user_ensure (ops/db.mysql.user_ensure.schema.json).
 type DBMysqlUserEnsureParams struct {
-	Account     Account `json:"account"`
-	Username    DBName  `json:"username"`
-	PasswordRef UUID    `json:"password_ref"`
+	Account  Account         `json:"account"`
+	Username DBName          `json:"username"`
+	Password json.RawMessage `json:"password"`
 	// Giá trị: "localhost", "%".
-	Host string `json:"host"`
+	Host           string `json:"host"`
+	MaxConnections int64  `json:"max_connections"`
 }
 
 // DBMysqlUserEnsureResult — result của op db.mysql.user_ensure (ops/db.mysql.user_ensure.schema.json).
 type DBMysqlUserEnsureResult struct {
 	Created bool `json:"created"`
+	Changed bool `json:"changed"`
 }
 
 // DBPGCreateParams — params của op db.pg.create (ops/db.pg.create.schema.json).
@@ -642,10 +735,10 @@ type DBPGDumpResult struct {
 
 // DBPGGrantParams — params của op db.pg.grant (ops/db.pg.grant.schema.json).
 type DBPGGrantParams struct {
-	Account    Account  `json:"account"`
-	Username   DBName   `json:"username"`
-	Database   DBName   `json:"database"`
-	Privileges []string `json:"privileges"`
+	Account    Account      `json:"account"`
+	Username   DBName       `json:"username"`
+	Database   DBName       `json:"database"`
+	Privileges DBPrivileges `json:"privileges"`
 }
 
 // DBPGGrantResult — result của op db.pg.grant (ops/db.pg.grant.schema.json).
@@ -662,7 +755,45 @@ type DBPGImportParams struct {
 
 // DBPGImportResult — result của op db.pg.import (ops/db.pg.import.schema.json).
 type DBPGImportResult struct {
-	Statements int64 `json:"statements"`
+	Bytes Bytes `json:"bytes"`
+}
+
+// DBPGInspectParams — params của op db.pg.inspect (ops/db.pg.inspect.schema.json).
+type DBPGInspectParams struct {
+	Account Account `json:"account"`
+}
+
+// DBPGInspectResultDatabasesItem được sinh từ schema.
+type DBPGInspectResultDatabasesItem struct {
+	Name      DBName `json:"name"`
+	SizeBytes Bytes  `json:"size_bytes"`
+}
+
+// DBPGInspectResult — result của op db.pg.inspect (ops/db.pg.inspect.schema.json).
+type DBPGInspectResult struct {
+	Databases []DBPGInspectResultDatabasesItem `json:"databases"`
+	Users     []DBName                         `json:"users"`
+}
+
+// DBPGLockParams — params của op db.pg.lock (ops/db.pg.lock.schema.json).
+type DBPGLockParams struct {
+	Account Account `json:"account"`
+	Locked  bool    `json:"locked"`
+}
+
+// DBPGLockResult — result của op db.pg.lock (ops/db.pg.lock.schema.json).
+type DBPGLockResult struct {
+	Changed int64 `json:"changed"`
+}
+
+// DBPGOwnerEnsureParams — params của op db.pg.owner_ensure (ops/db.pg.owner_ensure.schema.json).
+type DBPGOwnerEnsureParams struct {
+	Account Account `json:"account"`
+}
+
+// DBPGOwnerEnsureResult — result của op db.pg.owner_ensure (ops/db.pg.owner_ensure.schema.json).
+type DBPGOwnerEnsureResult struct {
+	Created bool `json:"created"`
 }
 
 // DBPGUserDropParams — params của op db.pg.user_drop (ops/db.pg.user_drop.schema.json).
@@ -678,16 +809,18 @@ type DBPGUserDropResult struct {
 
 // DBPGUserEnsureParams — params của op db.pg.user_ensure (ops/db.pg.user_ensure.schema.json).
 type DBPGUserEnsureParams struct {
-	Account     Account `json:"account"`
-	Username    DBName  `json:"username"`
-	PasswordRef UUID    `json:"password_ref"`
+	Account  Account         `json:"account"`
+	Username DBName          `json:"username"`
+	Password json.RawMessage `json:"password"`
 	// Giá trị: "localhost", "%".
-	Host string `json:"host"`
+	Host           string `json:"host"`
+	MaxConnections int64  `json:"max_connections"`
 }
 
 // DBPGUserEnsureResult — result của op db.pg.user_ensure (ops/db.pg.user_ensure.schema.json).
 type DBPGUserEnsureResult struct {
 	Created bool `json:"created"`
+	Changed bool `json:"changed"`
 }
 
 // FsArchiveParams — params của op fs.archive (ops/fs.archive.schema.json).
@@ -753,6 +886,8 @@ type FsExtractParams struct {
 type FsExtractResult struct {
 	Entries int64 `json:"entries"`
 	Size    Bytes `json:"size"`
+	// Mục bị bỏ qua: symlink, hardlink, thiết bị
+	Skipped int64 `json:"skipped"`
 }
 
 // FsListParams — params của op fs.list (ops/fs.list.schema.json).
@@ -760,21 +895,23 @@ type FsListParams struct {
 	Account    Account `json:"account"`
 	Path       RelPath `json:"path"`
 	ShowHidden *bool   `json:"show_hidden,omitempty"`
+	Limit      *int64  `json:"limit,omitempty"`
 }
 
 // FsListResultEntriesItem được sinh từ schema.
 type FsListResultEntriesItem struct {
-	Name string `json:"name"`
-	// Giá trị: "file", "dir", "symlink".
-	Type       string `json:"type"`
-	Size       Bytes  `json:"size"`
-	Mode       Mode   `json:"mode"`
-	ModifiedAt string `json:"modified_at"`
+	Name       string   `json:"name"`
+	Type       FileType `json:"type"`
+	Size       Bytes    `json:"size"`
+	Mode       Mode     `json:"mode"`
+	ModifiedAt string   `json:"modified_at"`
+	Target     *string  `json:"target"`
 }
 
 // FsListResult — result của op fs.list (ops/fs.list.schema.json).
 type FsListResult struct {
-	Entries []FsListResultEntriesItem `json:"entries"`
+	Entries   []FsListResultEntriesItem `json:"entries"`
+	Truncated bool                      `json:"truncated"`
 }
 
 // FsMkdirParams — params của op fs.mkdir (ops/fs.mkdir.schema.json).
@@ -806,6 +943,7 @@ type FsReadParams struct {
 	Account  Account `json:"account"`
 	Path     RelPath `json:"path"`
 	MaxBytes int64   `json:"max_bytes"`
+	Offset   *int64  `json:"offset,omitempty"`
 }
 
 // FsReadResult — result của op fs.read (ops/fs.read.schema.json).
@@ -813,6 +951,21 @@ type FsReadResult struct {
 	ContentB64 string `json:"content_b64"`
 	SHA256     SHA256 `json:"sha256"`
 	Truncated  bool   `json:"truncated"`
+	Size       Bytes  `json:"size"`
+	// sha256 cả file khi đọc trọn (offset 0, không cắt) — dùng làm ETag của editor.
+	FileSHA256 *string `json:"file_sha256"`
+}
+
+// FsRenameParams — params của op fs.rename (ops/fs.rename.schema.json).
+type FsRenameParams struct {
+	Account Account `json:"account"`
+	From    RelPath `json:"from"`
+	To      RelPath `json:"to"`
+}
+
+// FsRenameResult — result của op fs.rename (ops/fs.rename.schema.json).
+type FsRenameResult struct {
+	Renamed bool `json:"renamed"`
 }
 
 // FsSiteLayoutEnsureParams — params của op fs.site_layout.ensure (ops/fs.site_layout.ensure.schema.json).
@@ -825,6 +978,36 @@ type FsSiteLayoutEnsureParams struct {
 type FsSiteLayoutEnsureResult struct {
 	Path    string `json:"path"`
 	Created bool   `json:"created"`
+}
+
+// FsStatParams — params của op fs.stat (ops/fs.stat.schema.json).
+type FsStatParams struct {
+	Account Account `json:"account"`
+	Path    RelPath `json:"path"`
+}
+
+// FsStatResult — result của op fs.stat (ops/fs.stat.schema.json).
+type FsStatResult struct {
+	Exists     bool            `json:"exists"`
+	Type       json.RawMessage `json:"type"`
+	Size       Bytes           `json:"size"`
+	Mode       *string         `json:"mode"`
+	ModifiedAt *string         `json:"modified_at"`
+}
+
+// FsUploadCommitParams — params của op fs.upload.commit (ops/fs.upload.commit.schema.json).
+type FsUploadCommitParams struct {
+	Account    Account `json:"account"`
+	UploadUUID UUID    `json:"upload_uuid"`
+	Target     RelPath `json:"target"`
+	Size       int64   `json:"size"`
+	Overwrite  bool    `json:"overwrite"`
+}
+
+// FsUploadCommitResult — result của op fs.upload.commit (ops/fs.upload.commit.schema.json).
+type FsUploadCommitResult struct {
+	Size   Bytes  `json:"size"`
+	SHA256 SHA256 `json:"sha256"`
 }
 
 // FsWriteParams — params của op fs.write (ops/fs.write.schema.json).
@@ -840,6 +1023,32 @@ type FsWriteParams struct {
 type FsWriteResult struct {
 	SHA256 SHA256 `json:"sha256"`
 	Size   Bytes  `json:"size"`
+}
+
+// FTPUserEnsureParams — params của op ftp.user.ensure (ops/ftp.user.ensure.schema.json).
+type FTPUserEnsureParams struct {
+	Account  Account         `json:"account"`
+	Username FTPUsername     `json:"username"`
+	RootPath RelPath         `json:"root_path"`
+	Enabled  bool            `json:"enabled"`
+	Password json.RawMessage `json:"password"`
+}
+
+// FTPUserEnsureResult — result của op ftp.user.ensure (ops/ftp.user.ensure.schema.json).
+type FTPUserEnsureResult struct {
+	Created bool `json:"created"`
+	Changed bool `json:"changed"`
+}
+
+// FTPUserRemoveParams — params của op ftp.user.remove (ops/ftp.user.remove.schema.json).
+type FTPUserRemoveParams struct {
+	Account  Account     `json:"account"`
+	Username FTPUsername `json:"username"`
+}
+
+// FTPUserRemoveResult — result của op ftp.user.remove (ops/ftp.user.remove.schema.json).
+type FTPUserRemoveResult struct {
+	Removed bool `json:"removed"`
 }
 
 // LogTailParams — params của op log.tail (ops/log.tail.schema.json).
@@ -1116,6 +1325,22 @@ type PHPVersionRemoveResult struct {
 	Removed bool `json:"removed"`
 }
 
+// PtyOpenParams — params của op pty.open (ops/pty.open.schema.json).
+type PtyOpenParams struct {
+	Account        Account `json:"account"`
+	SessionUUID    UUID    `json:"session_uuid"`
+	Cols           int64   `json:"cols"`
+	Rows           int64   `json:"rows"`
+	IdleTimeoutSec int64   `json:"idle_timeout_sec"`
+}
+
+// PtyOpenResult — result của op pty.open (ops/pty.open.schema.json).
+type PtyOpenResult struct {
+	Ticket    string   `json:"ticket"`
+	ExpiresAt string   `json:"expires_at"`
+	UnixUser  Username `json:"unix_user"`
+}
+
 // QuotaApplyParams — params của op quota.apply (ops/quota.apply.schema.json).
 type QuotaApplyParams struct {
 	Account Account `json:"account"`
@@ -1179,24 +1404,21 @@ type ServiceStatusResult struct {
 
 // SFTPUserEnsureParams — params của op sftp.user.ensure (ops/sftp.user.ensure.schema.json).
 type SFTPUserEnsureParams struct {
-	Account  Account `json:"account"`
-	Username string  `json:"username"`
-	// Giá trị: "sftp", "ftps".
-	Protocol    string  `json:"protocol"`
-	RootPath    RelPath `json:"root_path"`
-	ReadOnly    bool    `json:"read_only"`
-	PasswordRef *string `json:"password_ref"`
+	Account   Account         `json:"account"`
+	SSHAccess bool            `json:"ssh_access"`
+	Password  json.RawMessage `json:"password"`
 }
 
 // SFTPUserEnsureResult — result của op sftp.user.ensure (ops/sftp.user.ensure.schema.json).
 type SFTPUserEnsureResult struct {
-	Created bool `json:"created"`
+	// Giá trị: "itso-sftp", "itso-ssh".
+	Group   string `json:"group"`
+	Changed bool   `json:"changed"`
 }
 
 // SFTPUserRemoveParams — params của op sftp.user.remove (ops/sftp.user.remove.schema.json).
 type SFTPUserRemoveParams struct {
-	Account  Account `json:"account"`
-	Username string  `json:"username"`
+	Account Account `json:"account"`
 }
 
 // SFTPUserRemoveResult — result của op sftp.user.remove (ops/sftp.user.remove.schema.json).
@@ -1236,6 +1458,19 @@ type SSHKeysApplyParams struct {
 // SSHKeysApplyResult — result của op ssh.keys.apply (ops/ssh.keys.apply.schema.json).
 type SSHKeysApplyResult struct {
 	Count int64 `json:"count"`
+}
+
+// SshdMatchApplyParams — params của op sshd.match.apply (ops/sshd.match.apply.schema.json).
+type SshdMatchApplyParams struct {
+	PasswordAuthentication bool `json:"password_authentication"`
+}
+
+// SshdMatchApplyResult — result của op sshd.match.apply (ops/sshd.match.apply.schema.json).
+type SshdMatchApplyResult struct {
+	// Giá trị: "ok".
+	SshdTest string `json:"sshd_test"`
+	Reloaded bool   `json:"reloaded"`
+	Changed  bool   `json:"changed"`
 }
 
 // SystemHostnameSetParams — params của op system.hostname.set (ops/system.hostname.set.schema.json).
@@ -1327,6 +1562,8 @@ func NewParams(op string) any {
 		return new(CertRemoveParams)
 	case OpCronApply:
 		return new(CronApplyParams)
+	case OpCronInspect:
+		return new(CronInspectParams)
 	case OpCronRunOnce:
 		return new(CronRunOnceParams)
 	case OpDBMysqlCreate:
@@ -1339,6 +1576,12 @@ func NewParams(op string) any {
 		return new(DBMysqlGrantParams)
 	case OpDBMysqlImport:
 		return new(DBMysqlImportParams)
+	case OpDBMysqlInspect:
+		return new(DBMysqlInspectParams)
+	case OpDBMysqlLock:
+		return new(DBMysqlLockParams)
+	case OpDBMysqlOwnerEnsure:
+		return new(DBMysqlOwnerEnsureParams)
 	case OpDBMysqlUserDrop:
 		return new(DBMysqlUserDropParams)
 	case OpDBMysqlUserEnsure:
@@ -1353,6 +1596,12 @@ func NewParams(op string) any {
 		return new(DBPGGrantParams)
 	case OpDBPGImport:
 		return new(DBPGImportParams)
+	case OpDBPGInspect:
+		return new(DBPGInspectParams)
+	case OpDBPGLock:
+		return new(DBPGLockParams)
+	case OpDBPGOwnerEnsure:
+		return new(DBPGOwnerEnsureParams)
 	case OpDBPGUserDrop:
 		return new(DBPGUserDropParams)
 	case OpDBPGUserEnsure:
@@ -1375,10 +1624,20 @@ func NewParams(op string) any {
 		return new(FsMoveParams)
 	case OpFsRead:
 		return new(FsReadParams)
+	case OpFsRename:
+		return new(FsRenameParams)
 	case OpFsSiteLayoutEnsure:
 		return new(FsSiteLayoutEnsureParams)
+	case OpFsStat:
+		return new(FsStatParams)
+	case OpFsUploadCommit:
+		return new(FsUploadCommitParams)
 	case OpFsWrite:
 		return new(FsWriteParams)
+	case OpFTPUserEnsure:
+		return new(FTPUserEnsureParams)
+	case OpFTPUserRemove:
+		return new(FTPUserRemoveParams)
 	case OpLogTail:
 		return new(LogTailParams)
 	case OpMetricsCgroup:
@@ -1415,6 +1674,8 @@ func NewParams(op string) any {
 		return new(PHPVersionInstallParams)
 	case OpPHPVersionRemove:
 		return new(PHPVersionRemoveParams)
+	case OpPtyOpen:
+		return new(PtyOpenParams)
 	case OpQuotaApply:
 		return new(QuotaApplyParams)
 	case OpQuotaReport:
@@ -1433,6 +1694,8 @@ func NewParams(op string) any {
 		return new(SoftwareRemoveParams)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyParams)
+	case OpSshdMatchApply:
+		return new(SshdMatchApplyParams)
 	case OpSystemHostnameSet:
 		return new(SystemHostnameSetParams)
 	case OpSystemInfo:
@@ -1480,6 +1743,8 @@ func NewResult(op string) any {
 		return new(CertRemoveResult)
 	case OpCronApply:
 		return new(CronApplyResult)
+	case OpCronInspect:
+		return new(CronInspectResult)
 	case OpCronRunOnce:
 		return new(CronRunOnceResult)
 	case OpDBMysqlCreate:
@@ -1492,6 +1757,12 @@ func NewResult(op string) any {
 		return new(DBMysqlGrantResult)
 	case OpDBMysqlImport:
 		return new(DBMysqlImportResult)
+	case OpDBMysqlInspect:
+		return new(DBMysqlInspectResult)
+	case OpDBMysqlLock:
+		return new(DBMysqlLockResult)
+	case OpDBMysqlOwnerEnsure:
+		return new(DBMysqlOwnerEnsureResult)
 	case OpDBMysqlUserDrop:
 		return new(DBMysqlUserDropResult)
 	case OpDBMysqlUserEnsure:
@@ -1506,6 +1777,12 @@ func NewResult(op string) any {
 		return new(DBPGGrantResult)
 	case OpDBPGImport:
 		return new(DBPGImportResult)
+	case OpDBPGInspect:
+		return new(DBPGInspectResult)
+	case OpDBPGLock:
+		return new(DBPGLockResult)
+	case OpDBPGOwnerEnsure:
+		return new(DBPGOwnerEnsureResult)
 	case OpDBPGUserDrop:
 		return new(DBPGUserDropResult)
 	case OpDBPGUserEnsure:
@@ -1528,10 +1805,20 @@ func NewResult(op string) any {
 		return new(FsMoveResult)
 	case OpFsRead:
 		return new(FsReadResult)
+	case OpFsRename:
+		return new(FsRenameResult)
 	case OpFsSiteLayoutEnsure:
 		return new(FsSiteLayoutEnsureResult)
+	case OpFsStat:
+		return new(FsStatResult)
+	case OpFsUploadCommit:
+		return new(FsUploadCommitResult)
 	case OpFsWrite:
 		return new(FsWriteResult)
+	case OpFTPUserEnsure:
+		return new(FTPUserEnsureResult)
+	case OpFTPUserRemove:
+		return new(FTPUserRemoveResult)
 	case OpLogTail:
 		return new(LogTailResult)
 	case OpMetricsCgroup:
@@ -1568,6 +1855,8 @@ func NewResult(op string) any {
 		return new(PHPVersionInstallResult)
 	case OpPHPVersionRemove:
 		return new(PHPVersionRemoveResult)
+	case OpPtyOpen:
+		return new(PtyOpenResult)
 	case OpQuotaApply:
 		return new(QuotaApplyResult)
 	case OpQuotaReport:
@@ -1586,6 +1875,8 @@ func NewResult(op string) any {
 		return new(SoftwareRemoveResult)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyResult)
+	case OpSshdMatchApply:
+		return new(SshdMatchApplyResult)
 	case OpSystemHostnameSet:
 		return new(SystemHostnameSetResult)
 	case OpSystemInfo:

@@ -81,6 +81,22 @@
       },
       "description": "Lệnh chạy dưới UID của account. Một dòng, không ký tự xuống dòng (chống chèn crontab)."
     },
+    "SecretPassword": {
+      "type": "string",
+      "minLength": 12,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._~!@#%^*+=:,-]+$",
+      "not": {
+        "pattern": "[\\r\\n]"
+      },
+      "writeOnly": true,
+      "description": "Mật khẩu DB/FTP/SFTP. Tới agent chỉ qua tham chiếu bí mật do JobRunner thay (D-69/D-71); không có dấu nháy, gạch chéo ngược, khoảng trắng."
+    },
+    "FtpUsername": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{2,47}$",
+      "description": "Virtual user Pure-FTPd (D-73). Tầng nghiệp vụ bắt buộc tiền tố `<username>_`."
+    },
     "NginxSize": {
       "type": "string",
       "pattern": "^[0-9]{1,5}[kmg]?$",
@@ -162,7 +178,10 @@
         "stress-ng",
         "nginx",
         "php8.3",
-        "lego"
+        "lego",
+        "mariadb",
+        "postgresql",
+        "pure-ftpd"
       ]
     },
     "QuotaMode": {
@@ -331,6 +350,34 @@
         "mariadb",
         "mysql",
         "postgresql"
+      ]
+    },
+    "DbPrivileges": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ALL",
+          "SELECT",
+          "INSERT",
+          "UPDATE",
+          "DELETE",
+          "CREATE",
+          "DROP",
+          "ALTER",
+          "INDEX"
+        ]
+      },
+      "maxItems": 9,
+      "uniqueItems": true
+    },
+    "FileType": {
+      "type": "string",
+      "enum": [
+        "file",
+        "dir",
+        "symlink",
+        "other"
       ]
     },
     "BackupRepo": {

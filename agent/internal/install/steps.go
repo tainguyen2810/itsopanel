@@ -213,6 +213,9 @@ func stepRelease(_ context.Context, e *Env, _ Options, r *Release) error {
 	}{
 		{EtcDir, 0o750, e.rootGroup("itso")}, {VarDir, 0o750, e.rootGroup("itso")}, {LogDir, 0o750, e.rootGroup("itso")},
 		{BackupDir, 0o700, platform.Owner{}},
+		// Phase 6: chunk upload do panel (itso) ghi, agent (root) đọc khi commit; cron/SSH key do agent quản lý.
+		{VarDir + "/uploads", 0o700, e.userOwner("itso")},
+		{"/etc/itso-cron", 0o755, platform.Owner{}}, {"/etc/ssh/itso_authorized_keys", 0o755, platform.Owner{}},
 	} {
 		if err := e.FS.MkdirAll(dirOf(d.p)); err != nil {
 			return err

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/db.mysql.owner_ensure.schema.json",
+  "title": "db.mysql.owner_ensure",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        }
+      },
+      "required": [
+        "account"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "created"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

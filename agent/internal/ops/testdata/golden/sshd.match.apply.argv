@@ -1,0 +1,2 @@
+sshd -t
+systemctl try-reload-or-restart ssh.service

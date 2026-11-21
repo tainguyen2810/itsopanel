@@ -54,7 +54,7 @@
     {
       "code": "config_test_failed",
       "retryable": false,
-      "description": "nginx -t / php-fpm -t thất bại, đã hoàn tác"
+      "description": "nginx -t / php-fpm -t / sshd -t thất bại, đã hoàn tác"
     },
     {
       "code": "deadline_exceeded",

@@ -72,7 +72,18 @@ describe('API giả lập (MSW) đúng theo OpenAPI', () => {
   it.each(routes.filter((r) => r.method === 'get').map((r) => [r.path, r] as const))(
     'GET %s trả body hợp lệ theo schema',
     async (_p, r) => {
-      const res = await fetch(`http://demo.local${urlFor(r.path)}${QUERY[r.path] ?? ''}`);
+      let url = urlFor(r.path);
+      if (r.path.endsWith('/files/uploads/{upload}')) {
+        // Phiên tải lên chỉ có sau khi tạo: tạo một phiên rồi đọc lại.
+        const base = urlFor(r.path.replace('/{upload}', ''));
+        const up = await fetch(`http://demo.local${base}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: 'demo-upload.bin', size: 10 }),
+        });
+        url = `${base}/${((await up.json()) as { data: { uuid: string } }).data.uuid}`;
+      }
+      const res = await fetch(`http://demo.local${url}${QUERY[r.path] ?? ''}`);
       if (res.headers.get('Content-Type')?.startsWith('text/csv')) {
         // Xuất CSV (audit log): contract khai báo text/csv, kiểm dòng tiêu đề.
         expect(res.status).toBe(200);

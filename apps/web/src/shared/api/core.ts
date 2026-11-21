@@ -25,6 +25,8 @@ export type Method = 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 export interface JobAccepted {
   job: { uuid: string; type: string; state: string };
   resource?: { type: string; uuid: string } | null;
+  /** Mật khẩu do panel sinh: chỉ có MỘT lần trong phản hồi 202. */
+  secret?: string | null;
 }
 
 export async function getWith(client: AnyClient, path: string, params: Params = {}) {
@@ -78,6 +80,10 @@ async function sendOnce<T>(
     {
       params: { path: opts.path ?? {} },
       ...(opts.body === undefined ? {} : { body: opts.body }),
+      // Blob/ArrayBuffer (chunk upload) gửi nguyên byte, không JSON hóa.
+      ...(opts.body instanceof Blob || opts.body instanceof ArrayBuffer
+        ? { bodySerializer: (b: unknown) => b }
+        : {}),
       headers: { 'Idempotency-Key': crypto.randomUUID(), ...opts.headers },
       parseAs: 'text',
     } as never,

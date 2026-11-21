@@ -40,3 +40,22 @@ bash tests/vm/phase5.sh                          # → /root/itso-vm-phase5.md
 | W3 | Áp vhost khi `nginx -t` lỗi → `config_test_failed`, không còn file vhost mới, 20 site khác vẫn 200 |
 | W4 | Pebble cấp chứng chỉ qua HTTP-01 thật (Nginx phục vụ `/.well-known/acme-challenge`), HTTPS dùng chứng chỉ Pebble, `renew` ra chứng chỉ mới |
 | W5 | Xóa 20 site không để lại vhost, pool, chứng chỉ, unit; `nginx -t` sạch |
+
+## Dữ liệu hosting (Phase 6, Prompt 6.6)
+
+Trong VM đã cài (sau `run-all.sh --release … --no-uninstall`), bằng root:
+
+```bash
+bash tests/vm/phase6.sh                 # → /root/itso-vm-phase6.md (--upload-mb 1024 mặc định)
+```
+
+| Mã | Kiểm |
+|---|---|
+| S0 | Cài `mariadb`, `pure-ftpd` qua recipe; 2 account thử (`itsoe`, `itsof`) |
+| S1 | Tấn công File Manager dưới uid account trên kernel thật: `../`, đường dẫn tuyệt đối, symlink ra `/etc` và sang account khác, ghi qua thư mục symlink, chmod qua symlink, zip slip + symlink trong archive, hardlink tới `/etc/shadow` |
+| S2 | SFTP chroot: `ls /` chỉ thấy home, `cd /etc` lỗi, `cd ../..` không thấy account khác, không có shell |
+| S3 | FTPS: FTP thuần bị từ chối, FTPS upload được, file thuộc uid account |
+| S4 | Cron: `run_once` chạy đúng uid và trong `itso-acct-<uid>.slice`; unit timer có `Slice=`/`User=` đúng |
+| S5 | Upload 1 GB: staging ghi làm 2 lần (ngắt giữa chừng rồi gửi tiếp) → `fs.upload.commit`, sha256 khớp, staging bị xóa |
+| S6 | Database: import + export `.sql.gz` dưới uid account; SQL của A thử `DROP`/`CREATE` trên DB của B bị từ chối |
+| S7 | Terminal: `pty.open` → socket stream bằng uid `itso-gw` (`lib/term_client.py`) → đúng uid, không đọc `/etc/shadow`, không liệt kê home khác; caller khác bị từ chối |

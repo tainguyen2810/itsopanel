@@ -15,3 +15,7 @@ Schedule::command('itso:usage-refresh')->everyFiveMinutes()->withoutOverlapping(
 // Phase 5: gia hạn chứng chỉ ACME (< 30 ngày) và đồng bộ DNS Cloudflare.
 Schedule::command('itso:certs-renew')->dailyAt('03:17')->withoutOverlapping();
 Schedule::command('itso:dns-sync')->hourlyAt(23)->withoutOverlapping();
+
+// Phase 6: ghi lần chạy cron theo lịch (cron.inspect).
+Schedule::command('itso:cron-sync')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('itso:terminal-reap')->hourlyAt(41)->withoutOverlapping();

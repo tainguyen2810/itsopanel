@@ -17,7 +17,8 @@
         },
         "max_total_bytes": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "maximum": 53687091200
         },
         "max_entries": {
           "type": "integer",
@@ -42,11 +43,16 @@
         },
         "size": {
           "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "skipped": {
+          "type": "integer",
+          "description": "Mục bị bỏ qua: symlink, hardlink, thiết bị"
         }
       },
       "required": [
         "entries",
-        "size"
+        "size",
+        "skipped"
       ],
       "additionalProperties": false
     }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 138,
+  "total": 155,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -450,6 +450,24 @@
           "expect": "reject",
           "layer": "semantic",
           "note": "Giá trị ngoài miền (phút 0–59): parser nghiệp vụ kiểm"
+        },
+        {
+          "input": "0 2 1 * 1",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "DOM và DOW cùng giới hạn: systemd OnCalendar không có nghĩa OR (D-74)"
+        },
+        {
+          "input": "*/0 * * * *",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Bước 0"
+        },
+        {
+          "input": "0 2 31 2 *",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Ngày không bao giờ tồn tại (31/2): agent từ chối OnCalendar rỗng"
         }
       ]
     },
@@ -491,6 +509,100 @@
           "expect": "reject",
           "layer": "schema",
           "note": "Quá dài"
+        }
+      ]
+    },
+    "secret_password": {
+      "schema": "agent-ops/defs.schema.json#/$defs/SecretPassword",
+      "vectors": [
+        {
+          "input": "Xk9!vT2#pQ7@wL4z",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Mật khẩu mạnh"
+        },
+        {
+          "input": "short",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngắn hơn 12 ký tự"
+        },
+        {
+          "input": "abc'defghijkl; DROP USER root",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Dấu nháy đơn: chèn SQL"
+        },
+        {
+          "input": "abcdefghijk\\l",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Gạch chéo ngược"
+        },
+        {
+          "input": "abcdef ghijkl",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng"
+        },
+        {
+          "input": "abcdefghijkl\n",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Xuống dòng (stdin pure-pw/chpasswd)"
+        },
+        {
+          "input": "abcdefgh\"ijkl",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Dấu nháy kép"
+        },
+        {
+          "input": "abcdefghijk$(id)",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự $ và ngoặc"
+        }
+      ]
+    },
+    "ftp_username": {
+      "schema": "agent-ops/defs.schema.json#/$defs/FtpUsername",
+      "vectors": [
+        {
+          "input": "anphat_deploy",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "anphat-deploy",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Gạch nối"
+        },
+        {
+          "input": "anphat_deploy:x:0:0",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn trường passwd"
+        },
+        {
+          "input": "Anphat_dev",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "other_deploy",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Không có tiền tố username của account"
+        },
+        {
+          "input": "anphat",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Trùng user Linux chính (dùng SFTP)"
         }
       ]
     },

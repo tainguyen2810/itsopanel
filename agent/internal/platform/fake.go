@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"io"
 	"strings"
 	"sync"
 )
@@ -14,6 +15,26 @@ type FakeRunner struct {
 	Responses map[string]Result
 	// Hook (tùy chọn) mô phỏng tác dụng phụ, ví dụ ghi file /etc/passwd trong gốc giả.
 	Hook func(c Cmd) (Result, bool)
+	// StreamHook (tùy chọn) mô phỏng tiến trình luồng (helper File Manager, dump/import DB). Nil → đọc hết stdin, mã 0.
+	StreamHook func(ctx context.Context, p Proc) (int, error)
+}
+
+// Stream kiểm Proc như runner thật, ghi lại argv rồi gọi StreamHook.
+func (f *FakeRunner) Stream(ctx context.Context, p Proc) (int, error) {
+	if _, err := Check(p.cmd()); err != nil {
+		return -1, err
+	}
+	f.mu.Lock()
+	f.Calls = append(f.Calls, Cmd{Bin: p.Bin, Args: append([]string(nil), p.Args...), As: p.As})
+	hook := f.StreamHook
+	f.mu.Unlock()
+	if hook != nil {
+		return hook(ctx, p)
+	}
+	if p.Stdin != nil {
+		_, _ = io.Copy(io.Discard, p.Stdin)
+	}
+	return 0, nil
 }
 
 // NewFake tạo FakeRunner rỗng.

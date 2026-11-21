@@ -6,6 +6,9 @@ namespace App\Http\Presenters;
 
 use App\Auth\Realm;
 use App\Models\Certificate;
+use App\Models\CronJob;
+use App\Models\Database;
+use App\Models\DatabaseUser;
 use App\Models\DnsZone;
 use App\Models\HostingAccount;
 use App\Models\HostingPackage;
@@ -13,6 +16,8 @@ use App\Models\Job;
 use App\Models\JobLog;
 use App\Models\JobStep;
 use App\Models\Server;
+use App\Models\SftpAccount;
+use App\Models\SshKey;
 use App\Models\User;
 use App\Models\Website;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +35,11 @@ final class JobPresenter
         'website' => Website::class,
         'certificate' => Certificate::class,
         'dns_zone' => DnsZone::class,
+        'database' => Database::class,
+        'database_user' => DatabaseUser::class,
+        'sftp_account' => SftpAccount::class,
+        'ssh_key' => SshKey::class,
+        'cron_job' => CronJob::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */

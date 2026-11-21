@@ -9,49 +9,44 @@
         "account": {
           "$ref": "../defs.schema.json#/$defs/Account"
         },
-        "username": {
-          "type": "string",
-          "pattern": "^[a-z][a-z0-9_]{2,31}$"
-        },
-        "protocol": {
-          "type": "string",
-          "enum": [
-            "sftp",
-            "ftps"
-          ]
-        },
-        "root_path": {
-          "$ref": "../defs.schema.json#/$defs/RelPath"
-        },
-        "read_only": {
+        "ssh_access": {
           "type": "boolean"
         },
-        "password_ref": {
-          "type": [
-            "string",
-            "null"
+        "password": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/SecretPassword"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
       "required": [
         "account",
-        "username",
-        "protocol",
-        "root_path",
-        "read_only",
-        "password_ref"
+        "ssh_access",
+        "password"
       ],
       "additionalProperties": false
     },
     "result": {
       "type": "object",
       "properties": {
-        "created": {
+        "group": {
+          "type": "string",
+          "enum": [
+            "itso-sftp",
+            "itso-ssh"
+          ]
+        },
+        "changed": {
           "type": "boolean"
         }
       },
       "required": [
-        "created"
+        "group",
+        "changed"
       ],
       "additionalProperties": false
     }

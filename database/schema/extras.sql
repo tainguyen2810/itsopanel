@@ -44,6 +44,17 @@ ALTER TABLE domains ADD CONSTRAINT domains_lowercase_chk CHECK (name = lower(nam
 ALTER TABLE domains ADD CONSTRAINT domains_type_chk CHECK (type IN ('primary', 'alias', 'redirect', 'subdomain'));
 ALTER TABLE databases ADD CONSTRAINT databases_engine_chk CHECK (engine IN ('mariadb', 'mysql', 'postgresql'));
 ALTER TABLE sftp_accounts ADD CONSTRAINT sftp_protocol_chk CHECK (protocol IN ('sftp', 'ftps'));
+ALTER TABLE databases ADD CONSTRAINT databases_name_chk CHECK (name ~ '^[a-z][a-z0-9_]{0,63}$');
+ALTER TABLE database_users ADD CONSTRAINT database_users_name_chk CHECK (username ~ '^[a-z][a-z0-9_]{0,63}$');
+ALTER TABLE database_users ADD CONSTRAINT database_users_host_chk CHECK (host_pattern IN ('localhost', '%'));
+ALTER TABLE cron_runs ADD CONSTRAINT cron_runs_status_chk CHECK (status IN ('running', 'succeeded', 'failed', 'timed_out'));
+ALTER TABLE cron_runs ADD CONSTRAINT cron_runs_trigger_chk CHECK (trigger IN ('schedule', 'manual'));
+ALTER TABLE upload_sessions ADD CONSTRAINT upload_sessions_status_chk
+  CHECK (status IN ('receiving', 'committing', 'completed', 'failed', 'cancelled'));
+ALTER TABLE upload_sessions ADD CONSTRAINT upload_sessions_bytes_chk CHECK (received_bytes BETWEEN 0 AND size_bytes);
+ALTER TABLE file_operations ADD CONSTRAINT file_operations_op_chk
+  CHECK (op IN ('write', 'mkdir', 'rename', 'move', 'copy', 'delete', 'chmod', 'compress', 'extract', 'upload'));
+ALTER TABLE terminal_sessions ADD CONSTRAINT terminal_sessions_mode_chk CHECK (mode IN ('account', 'root'));
 ALTER TABLE certificates ADD CONSTRAINT certificates_source_chk CHECK (source IN ('acme', 'upload'));
 ALTER TABLE acme_accounts ADD CONSTRAINT acme_accounts_key_chk CHECK ((key_location = 'agent' AND key_encrypted IS NULL) OR (key_location = 'db' AND key_encrypted IS NOT NULL));
 
@@ -66,6 +77,8 @@ CREATE UNIQUE INDEX domains_name_active_uq ON domains (name) WHERE deleted_at IS
 CREATE UNIQUE INDEX websites_primary_domain_active_uq ON websites (primary_domain) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX databases_name_active_uq ON databases (server_id, engine, name) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX sftp_username_active_uq ON sftp_accounts (username) WHERE deleted_at IS NULL;
+-- Phase 6: DB user duy nhất theo server + engine khi chưa xóa (thay unique toàn phần, cho tạo lại sau khi xóa).
+CREATE UNIQUE INDEX database_users_name_active_uq ON database_users (server_id, engine, username) WHERE deleted_at IS NULL;
 -- Một UID chỉ được cấp cho một account đang giữ (chưa release) trên mỗi server — đã có unique (server_id, uid).
 
 -- Tìm kiếm mờ theo domain

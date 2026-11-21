@@ -13,12 +13,15 @@ case "$ITSO_DEV_AGENT" in
   sandbox)
     ITSO_AGENT_SOCKET="${ITSO_AGENT_SOCKET:-$SBX/agent.sock}"
     ITSO_AGENT_KEY_FILE="${ITSO_AGENT_KEY_FILE:-$SBX/agent.key}"
-    export ITSO_AGENT_KEY_FILE ;;
+    # Staging upload: panel ghi chunk, agent sandbox đọc /var/lib/itso/uploads dưới gốc sandbox (ADR 0019 §5).
+    ITSO_UPLOAD_DIR="${ITSO_UPLOAD_DIR:-$SBX/root/var/lib/itso/uploads}"
+    export ITSO_AGENT_KEY_FILE ITSO_UPLOAD_DIR ;;
   mock)
     ITSO_AGENT_SOCKET="${ITSO_AGENT_SOCKET:-/tmp/itso-mock-agent.sock}" ;;
   *) echo "ITSO_DEV_AGENT phải là sandbox hoặc mock"; exit 1 ;;
 esac
 API_PORT="${API_PORT:-8000}"
+GATEWAY_PORT="${GATEWAY_PORT:-7811}"
 export ITSO_AGENT_SOCKET
 export ITSO_API_URL="http://127.0.0.1:${API_PORT}"
 
@@ -46,8 +49,8 @@ prefix() {
 # Dùng process substitution để $! là PID thật của từng dịch vụ (không phải của bộ lọc prefix).
 if [[ "$ITSO_DEV_AGENT" == sandbox ]]; then
   # Build lại agent nếu mã nguồn đổi (nhanh nhờ cache của Go). Khóa HMAC + policy tạo một lần trong .dev/ (gitignore).
-  ( cd agent && go build -o bin/itso-agent ./cmd/itso-agent )
-  mkdir -p "$SBX/root"
+  ( cd agent && go build -o bin/itso-agent ./cmd/itso-agent && go build -o bin/itso-gateway ./cmd/itso-gateway )
+  mkdir -p "$SBX/root" "$ITSO_UPLOAD_DIR"
   umask 077
   [[ -s "$ITSO_AGENT_KEY_FILE" ]] || od -An -N32 -tx1 /dev/urandom | tr -d ' \n' > "$ITSO_AGENT_KEY_FILE"
   chmod 600 "$ITSO_AGENT_KEY_FILE"
@@ -57,7 +60,10 @@ if [[ "$ITSO_DEV_AGENT" == sandbox ]]; then
   rm -f "$ITSO_AGENT_SOCKET"
   agent/bin/itso-agent --sandbox --root "$SBX/root" --listen "unix:${ITSO_AGENT_SOCKET}" \
     --key-file "$ITSO_AGENT_KEY_FILE" --policy "$SBX/policy.yaml" --audit-log "$SBX/audit.jsonl" \
-    --allow-uid "$(id -u)" > >(prefix agent) 2>&1 &
+    --allow-uid "$(id -u)" --stream-listen "unix:$SBX/agent-stream.sock" --stream-allow-uid "$(id -u)" > >(prefix agent) 2>&1 &
+  pids+=($!)
+  # Terminal USER (D-75): gateway WebSocket ↔ socket stream (shell giả trong sandbox); Vite proxy /gateway.
+  agent/bin/itso-gateway --listen "127.0.0.1:${GATEWAY_PORT}" --agent-stream "unix:$SBX/agent-stream.sock" > >(prefix gateway) 2>&1 &
 else
   ( cd agent && go build -o bin/itso-mock-agent ./cmd/itso-mock-agent )
   agent/bin/itso-mock-agent -listen "unix:${ITSO_AGENT_SOCKET}" > >(prefix agent) 2>&1 &
@@ -87,6 +93,7 @@ cat <<MSG
   Portal: http://127.0.0.1:5173/portal/
   API   : ${ITSO_API_URL}/api/v1/system/health
   Agent : unix:${ITSO_AGENT_SOCKET} (${ITSO_DEV_AGENT}; ITSO_DEV_AGENT=mock để dùng mock agent)
+  Gateway terminal: 127.0.0.1:${GATEWAY_PORT} (/gateway qua Vite; chỉ với agent sandbox)
   Queue : php artisan queue:work (job nghiệp vụ)
   Dữ liệu demo: cd apps/api && php artisan db:seed --class=DemoSeeder (docs/runbooks/phase-3-demo.md)
   Ctrl+C để dừng.

@@ -2,6 +2,110 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 6 / Prompt 6.6 — nhánh `phase-6`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway), DB `migrate:fresh --seed` + `DemoSeeder`. Container không có KVM/systemd: `tests/vm/phase6.sh` **chờ VM**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật | `make test-e2e-real` | PASS 12/12 (4.9 phút). Mới `phase6.spec.ts`: DB + user (mật khẩu một lần) → export → import; FTPS phụ + đổi mật khẩu; khóa SSH ed25519 thật; cron chạy ngay → lịch sử; File Manager (thư mục, upload gửi lặp → 409 `received=5` → gửi tiếp → completed, upload UI, sửa ETag, nén/giải nén, link ký + chữ ký sai 403); terminal (step-up → xterm → `whoami` → `exit` → "Phiên đã kết thúc"); Portal tương tự. Chạy lại `phase5.spec.ts` sau Phase 6: PASS 2/2 |
+| Lỗi e2e tìm thấy | — | (1) `redact` đổi `null` thành `[REDACTED]` gửi agent làm mật khẩu (tạm khóa account có FTPS lỗi); (2) khóa SSH thiếu padding qua Laravel, agent từ chối; (3) gateway gửi 2 khung close → Chrome 1006 (coder/websocket 1.8.12 → 1.8.14 + Close một lần); (4) Uploader báo xong trước commit; (5) `make dev` staging ngoài gốc sandbox. Mỗi lỗi có test hồi quy (Pest kiểm thất bại trước khi sửa với (1), (2)) |
+| Pest liên quan | `pest tests/Feature/Phase6/DataTest.php` | PASS 7/7 (435 assertion) |
+| Vitest | `pnpm test` | PASS 501/501 (thêm: chờ `committing` → `completed`/`failed`) |
+| Go gateway | `go test -race ./internal/gateway` | PASS |
+| Toàn bộ | `make check` | Lần đầu **19 PASS · 1 SKIP (staticcheck) · 3 FAIL** (644 s): Pest 424, Vitest 501, Playwright demo 263, test-agent 15 gói. FAIL: `test-fuzz` — `FuzzCronToOnCalendar`: `"0 27/1 * 1 00"` → OnCalendar hỏng (lỗi thật từ 6.2: `a/n` với a > max cho tập rỗng; Laravel `CronSchedule` cùng lỗi); `docs-check` MD040 ở `file-manager-review.md`; `git-clean` do corpus fuzz + báo cáo chưa commit |
+| Chạy lại mục lỗi | `make test-fuzz` · `make docs-check` · `pest DataTest` · `go test ./internal/ops` | PASS · PASS · PASS (thêm `0 27/1 * * *` → 422) · PASS (seed fuzz mới) |
+| Script VM | `bash -n tests/vm/phase6.sh` · `python3 -m py_compile tests/vm/lib/term_client.py`; params thử với agent sandbox | Cú pháp OK; params khớp schema (fs.read/fs.chmod/cron.run_once). **Chờ VM:** S0–S7 |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase6.sh` (cùng phase4/phase5).
+
+## 2026-11-21 — Phase 6 / Prompt 6.5 — nhánh `phase-6`
+
+Môi trường: Node 22 + pnpm, Chromium Playwright có sẵn; demo MSW (không cần Laravel). Terminal thật (xterm ↔ gateway) chỉ chạy khi không ở demo: kiểm ở 6.6 trên stack thật.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts · demo data | `make contracts` · `make codegen` · `make codegen-check` · `python3 contracts/tools/check_demo.py` | PASS. Sửa lỗi 6.1: hai tài khoản SFTP demo trùng UUID (`anphat_deploy`/`binhminh`) làm React báo trùng key ở `/admin/sftp`; `check_demo.py` nay chặn UUID trùng trong mọi bảng |
+| Lint web | `make lint-web` (tokens, contrast, eslint, prettier, tsc, i18n) | PASS; i18n 2613 key, vi = en |
+| Vitest | `pnpm test` | PASS 500/500 (34 file). Mới: `upload.test.ts` 7 (chunk 8 MiB, Content-Range, 409 → gửi tiếp từ `errors.received`, tạm dừng/tiếp tục đồng bộ trạng thái, hủy → DELETE), `terminal.test.ts` (URL ws từ ticket, khung resize, mã đóng 4403/4410/4408/1000/1011); MSW: PATCH chunk lệch offset → 409 + `errors.received`, GET/DELETE phiên tải lên, `JobAccepted.secret` khi tạo SFTP không nhập mật khẩu và khi đổi mật khẩu; mọi GET handler hợp lệ theo schema |
+| Playwright demo | `pnpm e2e` | 260/261 lần đầu: `/admin/sftp` lỗi console trùng key (dữ liệu demo, đã sửa) → chạy lại `-g sftp` 4/4 PASS. Thêm 2 test (`-g "chunk\|một lần"` PASS 2/2): tải file lên theo chunk → "Xong" → file có trong thư mục; tạo SFTP không mật khẩu → hộp "Mật khẩu mới" hiện một lần. axe-core (demo-audit) PASS cho trang SFTP |
+| Build | `make build` · `make build-demo` | PASS; build thường không chứa MSW |
+| Pest (seeder demo dùng dataset) | `pest tests/Feature/Demo` | PASS 1/1 |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 6 / Prompt 6.4 — nhánh `phase-6`
+
+Môi trường: như 6.3. Agent: shell giả (sandbox) và socket unix thật trong thư mục tạm; không có systemd nên `systemd-run --pty` thật là **chờ VM**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS (`createTerminalSession` thêm 503 agent không kết nối) |
+| Lint agent · no-exec | `make lint-agent` · `make no-exec` | PASS · PASS (cấp pty + `exec` chỉ trong `internal/platform`, bin `systemd-run` trong bảng) |
+| Ticket + phiên | `go test -race ./internal/term` | PASS: ticket 32 byte base64url, dùng lại → từ chối, quá 30 giây → `ticket_expired`, tối đa 2 phiên mỗi account (tính theo account), ticket sai định dạng; shell giả hai chiều (echo ký tự, `whoami`, resize, `exit` → khung exit), nhàn rỗi → `idle`, gõ liên tục vẫn đóng khi quá thời gian sống → `expired`, phiên đóng giải phóng chỗ; khung quá 64 KiB / loại lạ bị từ chối |
+| pty.open | `go test ./internal/ops -run 'TestPtyOpen\|TestTermArgv'` | PASS: chưa bật socket → `dependency_unavailable`; shell nologin (gói không SSH) → `precondition_failed`; user không có → `not_found`; sai uid → `precondition_failed`; uid 0 và 1000 bị chặn trước khi tra passwd; phiên thứ 3 → `quota_exceeded`; golden argv `systemd-run --pty` (uid/gid/slice account, ProtectSystem=strict, ProtectHome=tmpfs + BindPaths home, PrivateTmp/Devices, NoNewPrivileges, ProtectProc=invisible); TermArgv từ chối root/uid hệ thống/uuid hoặc username độc |
+| Gateway | `go test -race ./internal/gateway` | PASS: nối hai chiều qua socket unix thật (resize JSON, dữ liệu nhị phân, exit → đóng 1000 "exited"); ticket dùng lại → 4403, hết hạn → 4410, ticket sai định dạng → HTTP 400, Origin lạ → HTTP 403; caller ngoài allowlist peercred bị agent đóng kết nối → 1011 |
+| Go toàn bộ | `go test -count=1 ./...` | PASS |
+| Laravel | `pint` · `phpstan` · `pest tests/Feature/Phase6/TerminalTest.php` | PASS · 0 lỗi · PASS 3/3: admin + chủ account nhận ticket (201 khớp hợp đồng, `no-store`), ticket không có trong `audit_logs/terminal_sessions/job_*`; chưa bật MFA → 403, quá hạn step-up → 403 `mfa_step_up_required`; gói không SSH → 409 `package_limit_reached` (không gọi agent); account khóa → 409; `mode=root` → 409; account ngoài phạm vi → 422; agent hết chỗ → 409 `resource_locked` + phiên đóng `error`; agent chưa bật terminal → 503; `itso:terminal-reap` đóng phiên quá 12 giờ |
+| Ma trận quyền | `pest tests/Feature/Rbac` | PASS (+1 dòng `POST /admin/terminal/sessions`) |
+| Pest toàn bộ | `scripts/pest-pg.sh` | PASS 424/424 |
+| Unit systemd · installer | `make units-check` · `make test-installer` | PASS 14 unit (thêm `itso-gateway.service`: user `itso-gw`, chỉ loopback, không capability, `IPAddressDeny=any`) · PASS 8/8 |
+| Web | `eslint vite.config.ts` · `tsc -b --noEmit` | PASS (Vite proxy `/gateway` có `ws: true`) |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 6 / Prompt 6.3 — nhánh `phase-6`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ, queue sync; agent giả qua `Tests\Support\FakeAgent` (Http::fake), staging upload `ITSO_UPLOAD_DIR=/tmp/itso-test-uploads` (phpunit.xml).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS (File Manager thêm 503 agent không phản hồi, 422 file > 2 MiB, 412 `if_etag` lệch) |
+| Phân tích tĩnh | `vendor/bin/pint` · `vendor/bin/phpstan analyse` · `make no-exec` | PASS · PASS 0 lỗi · PASS |
+| Phase 6 API | `pest tests/Feature/Phase6` | PASS 7/7: database tạo kèm user (mật khẩu trả một lần, `Cache-Control: no-store`, agent nhận mật khẩu thật, `job_steps/job_logs/audit_logs/jobs` không chứa mật khẩu, chỉ có tham chiếu `$secret`), quyền (diff, quyền ngoài danh sách → 422), đổi mật khẩu, export/import (`../` → 422), xóa cần step-up (portal chưa step-up → 403), ngoài phạm vi → 404; tên không tiền tố/chèn SQL/tên hệ thống/hoa/quá dài → 422, trùng → 409, vượt `database_limit` → 422 `quota_exceeded`, PG host `%` → 422; SFTP (user chính, root `.`, một tài khoản) + FTPS (tiền tố, `root_path` thoát home → 422, `read_only` → 422), đổi mật khẩu 202 + secret; khóa SSH (fingerprint `SHA256:`, trùng → 409, loại lạ/base64 hỏng/nhiều dòng → 422); cron (lịch dày hơn `cron_min_interval_min` → 422, biểu thức sai, lệnh nhiều dòng → 422, If-Match lệch → 412, không thay đổi → 409, chạy ngay ghi `cron_runs` manual, `itso:cron-sync` ghi lần chạy theo lịch không trùng, vượt `cron_limit` → 422); File Manager (liệt kê sắp xếp + phân trang cursor, `../`//etc → 422, đọc có ETag sha256, > 2 MiB → 422, ghi kèm `if_sha256`, agent `precondition_failed` → 412, thao tác nén qua job `file.operate`, op lạ/xóa home/chmod setuid → 422, link tải HMAC 5 phút: tải đúng nội dung, chữ ký sai hoặc người khác dùng link → 403); upload tus (staging 0600, sai offset → 409 kèm `received`, độ dài lệch → 422, đủ byte → job `file.upload` với `fs.upload.commit`, phiên người khác → 404, hủy → 204 xóa staging); tạm khóa account → `db.mysql.lock`, cron tắt, FTPS tắt, mọi tài nguyên `suspended`, không tạo/ghi mới (409); mở khóa → `ready` |
+| Ma trận quyền | `pest tests/Feature/Rbac` | PASS 257/257 (+8 dòng admin, +4 dòng portal cho dữ liệu hosting) |
+| Pest toàn bộ | `scripts/pest-pg.sh` | PASS 417/417 |
+| Web | `npx vitest run` · `tsc -b --noEmit` | PASS 486/486 · tsc sạch |
+
+Ghi chú: `PlatformApiTest` đổi đường dẫn ví dụ "chưa có ở bản này" từ `/admin/databases` (nay đã có) sang `/admin/security/overview` (Phase 7).
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 6 / Prompt 6.2 — nhánh `phase-6`
+
+Môi trường: như 6.1 (container không có systemd, MariaDB, PostgreSQL client thật cho agent, sshd, Pure-FTPd). Agent chạy với runner giả (Sim) trên gốc thư mục tạm; riêng `internal/fsx` chạy trên kernel thật (openat2).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Lint agent | `make lint-agent` (gofmt + `go vet ./...`) · `make no-exec` | PASS · PASS (helper File Manager là chính binary agent qua bảng `Bins`, không có shell) |
+| Go toàn bộ | `go test -count=1 ./...` · `go test -race ./internal/ops ./internal/fsx ./internal/mock` | PASS · PASS |
+| File Manager tấn công (FS thật) | `go test ./internal/fsx` | PASS: `../`, đường dẫn tuyệt đối, symlink ra ngoài home, symlink đổi giữa chừng (34k lần đọc, không thoát), zip slip, zip bomb (tỉ lệ, số entry, tổng dung lượng), symlink/setuid trong zip, tar.gz có hardlink/symlink/device/`../`, helper từ chối chạy bằng root, upload commit theo fd |
+| Op dữ liệu (Sim) | `go test ./internal/ops -run 'TestDB\|TestSshd\|TestSFTP\|TestSSH\|TestFTP\|TestCron\|TestFS'` | PASS: vòng đời DB MariaDB + PostgreSQL (owner, create idempotent, user, grant, inspect, import → dump qua helper dưới uid account, dump lỗi không để lại file, lock, drop); tên DB độc/sai tiền tố/tên hệ thống và mật khẩu có nháy/gạch chéo ngược/khoảng trắng bị từ chối **trước khi chạy lệnh**; mật khẩu không bao giờ nằm trong argv; `sshd -t` lỗi → khôi phục, không reload; SFTP đổi group sftp ↔ ssh, idempotent; SSH key: chặn option `command=`, loại lạ, base64 hỏng, blob khác loại, comment có ký tự điều khiển, trùng → `already_exists`; FTP: tiền tố, root_path không có/thoát home/symlink → từ chối, tắt = mật khẩu ngẫu nhiên, xóa sai account → từ chối; cron: bảng chuyển đổi 13 biểu thức + 13 biểu thức bị từ chối (DOM+DOW, 30/2, ngoài miền, bước 0…), unit/script golden, lệnh nằm nguyên văn trong script `root:<group> 0640`, tắt job → xóa unit, `cron.inspect`, `cron.run_once` trong slice; File Manager qua helper: write/read/sha, staging symlink bị chặn |
+| Golden | `testdata/golden/{db.sql,50-itso.conf,itso-cron.service,itso-cron.timer,cron.apply.argv,sshd.match.apply.argv}` | PASS |
+| Ví dụ contracts | `TestContractExamples` | PASS (thêm `fs.list`, `cron.apply`, `db.mysql.create` chạy qua agent thật) |
+| Fuzz | `go test -fuzz=FuzzCronToOnCalendar -fuzztime=10s` · `-fuzz=FuzzParseSSHKey` · `FuzzCheckPath` | PASS (105k / 279k lần chạy, không lỗi); thêm vào `make test-fuzz` |
+| Installer · unit | `make test-installer` · `make units-check` | PASS 8/8 · PASS 13 unit (thư mục mới `/var/lib/itso/uploads` itso 0700, `/etc/itso-cron`, `/etc/ssh/itso_authorized_keys`) |
+
+Ghi chú: chạy thật MariaDB/PostgreSQL/sshd/Pure-FTPd/systemd-run (chroot SFTP, TLS bắt buộc, slice) là **chờ VM** (`tests/vm/phase6.sh` ở 6.6).
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 6 / Prompt 6.1 — nhánh `phase-6`
+
+Môi trường: như Phase 5 (PostgreSQL 16 + Redis local, container không có systemd).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS: admin 243 operation (+4: `GetUpload`, `CancelUpload`, `DownloadFile` stream ký số, `rotateSftpPassword`), portal 107; agent-ops 87 op có schema (+14: `fs.stat`, `fs.rename`, `fs.upload.commit`, `db.{mysql,pg}.{owner_ensure,lock,inspect}`, `sshd.match.apply`, `ftp.user.ensure/remove`, `cron.inspect`, `pty.open` từ khai báo → đặc tả; sửa `fs.list/read/extract`, `db.*.user_ensure` (mật khẩu `SecretPassword` thay `password_ref`), `db.*.dump/import` chạy dưới uid account, `sftp.user.*` chỉ user chính, `cron.apply/run_once` có `timeout_sec`); recipe `mariadb`, `postgresql`, `pure-ftpd`; 434 example hợp lệ, độ phủ 100%; `JobAccepted.secret` (trả mật khẩu một lần), `UploadSession.status/job_uuid`, `FileOperation` thêm `rename`, `CronJob.timeout_sec`, `TerminalTicket.session_uuid` |
+| Vector độc | `gen_vectors.py` + check_contracts | PASS: 155 vector (+17: `SecretPassword` nháy/gạch chéo ngược/khoảng trắng/xuống dòng/`$()`, `FtpUsername` chèn trường passwd, cron DOM+DOW, bước 0, ngày 31/2) |
+| DB | `make db-schema` · `make db-migrations PHASE=6` · `make db-verify` | PASS: 81 bảng (+`file_operations`); migration Phase 6: 10 bảng, 84 câu lệnh; Phase 3 → 11 áp lần lượt = itso.sql + extras.sql. Thay đổi: `databases.charset`, `database_users` có uuid + desired/observed, `sftp_accounts.password_encrypted/read_only/last_login_at`, `ssh_keys` uuid/type/unique theo account, `cron_jobs.website_id/working_dir/php_version`, `cron_runs` uuid/status/trigger, `upload_sessions` uuid/status/overwrite/job_id, `terminal_sessions` uuid/mode/ended_reason; CHECK tên DB/user, host, trạng thái, op; unique DB user khi chưa xóa |
+| Schema Laravel · Pest toàn bộ | `scripts/pest-pg.sh` | PASS 370/370 (thêm: đủ 10 bảng Phase 6; DB trùng tên/tên độc/upload vượt kích thước/op lạ/trạng thái cron bị CHECK chặn) |
+| Go | `go vet ./...` · `go test -count=1 ./...` | PASS |
+| Web | `npx vitest run` · `tsc --noEmit` | PASS 486/486 · tsc sạch (MSW cập nhật theo schema mới: DB user có desired/observed, upload chunk 8 MiB + status, cron `timeout_sec`) |
+| Tài liệu | `make docs-check` | PASS (ADR 0018–0022) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 5 / Prompt 5.6 — nhánh `phase-5`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox`, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`.

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/ftp.user.ensure.schema.json",
+  "title": "ftp.user.ensure",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "username": {
+          "$ref": "../defs.schema.json#/$defs/FtpUsername"
+        },
+        "root_path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "password": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/SecretPassword"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "account",
+        "username",
+        "root_path",
+        "enabled",
+        "password"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "boolean"
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "created",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

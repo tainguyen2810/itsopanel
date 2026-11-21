@@ -26,12 +26,12 @@
     "result": {
       "type": "object",
       "properties": {
-        "statements": {
-          "type": "integer"
+        "bytes": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
         }
       },
       "required": [
-        "statements"
+        "bytes"
       ],
       "additionalProperties": false
     }

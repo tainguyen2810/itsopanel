@@ -6,7 +6,7 @@
 
 | Nội dung | File |
 |---|---|
-| Schema DBML (80 bảng, nguồn sự thật) | [database/schema/itso.dbml](database/schema/itso.dbml) |
+| Schema DBML (81 bảng, nguồn sự thật) | [database/schema/itso.dbml](database/schema/itso.dbml) |
 | SQL PostgreSQL 16 sinh ra | [database/schema/itso.sql](database/schema/itso.sql) |
 | CHECK, partial unique, trigger, partition | [database/schema/extras.sql](database/schema/extras.sql) |
 | ERD toàn bộ / theo nhóm | [erd-full.svg](database/docs/erd/erd-full.svg) · [erd-hosting.svg](database/docs/erd/erd-hosting.svg) · [các nhóm khác](database/docs/README.md) |
@@ -51,7 +51,7 @@ Khi bảng dưới đây khác đặc tả, **đặc tả DBML + extras.sql là 
 
 ## 5. Migrations theo Phase
 
-Chi tiết đầy đủ 80 bảng và nguyên tắc expand/contract: [database/docs/migration-plan.md](database/docs/migration-plan.md).
+Chi tiết đầy đủ 81 bảng và nguyên tắc expand/contract: [database/docs/migration-plan.md](database/docs/migration-plan.md).
 
 | Phase | Bảng |
 |---|---|

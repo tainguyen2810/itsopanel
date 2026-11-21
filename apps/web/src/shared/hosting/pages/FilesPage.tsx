@@ -32,7 +32,9 @@ import { Label } from '@/ui/Label';
 import { Select } from '@/ui/Select';
 import { get, list, send, type Row } from '@/shared/api/realm';
 import { errorText, useAction } from '@/shared/api/useAction';
+import { DEMO } from '@/shared/demoMode';
 import { AccountSelect, RowMenu, useActiveAccounts } from './common';
+import { UploadList, useUploads } from './Uploads';
 
 type Entry = Row<'/hosting-accounts/{id}/files'>;
 type Op = 'mkdir' | 'move' | 'copy' | 'delete' | 'chmod' | 'compress' | 'extract';
@@ -130,39 +132,28 @@ function Browser({
         path: { id: account },
         query: { path: p },
       });
-      toast.success(t('files.downloadReady', { time: fmt.time(r.expires_at) }), {
-        description: r.url,
-      });
+      // Link ký HMAC 5 phút, gắn với phiên hiện tại: trình duyệt tải trực tiếp (Content-Disposition: attachment).
+      if (DEMO) {
+        toast.success(t('files.downloadReady', { time: fmt.time(r.expires_at) }), {
+          description: r.url,
+        });
+      } else {
+        const a = document.createElement('a');
+        a.href = r.url;
+        a.rel = 'noopener';
+        a.download = baseName(p);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
     } catch (e) {
       toast.error(errorText(e));
     }
   };
 
-  const onUpload = async (f: File | undefined) => {
-    if (!f) return;
-    const target = joinPath(path, f.name);
-    try {
-      const s = await send<{ uuid: string; size: number }>(
-        'POST',
-        '/hosting-accounts/{id}/files/uploads',
-        {
-          path: { id: account },
-          body: { path: target, size: Math.max(1, f.size), overwrite: false },
-        },
-      );
-      await send('PATCH', '/hosting-accounts/{id}/files/uploads/{upload}', {
-        path: { id: account, upload: s.uuid },
-        body: f,
-        headers: {
-          'Content-Range': `bytes 0-${Math.max(0, f.size - 1)}/${Math.max(1, f.size)}`,
-          'Content-Type': 'application/offset+octet-stream',
-        },
-      });
-      toast.success(t('files.uploaded', { name: f.name }));
-      void dir.refetch();
-    } catch (e) {
-      toast.error(errorText(e));
-    }
+  const uploads = useUploads(account, () => void dir.refetch());
+  const onUpload = (files: FileList | null) => {
+    for (const f of Array.from(files ?? [])) uploads.add(f, joinPath(path, f.name));
   };
 
   const rows = dir.data ?? [];
@@ -360,11 +351,12 @@ function Browser({
                   <input
                     ref={upload}
                     type="file"
+                    multiple
                     className="sr-only"
                     tabIndex={-1}
                     aria-hidden
                     onChange={(e) => {
-                      void onUpload(e.target.files?.[0]);
+                      onUpload(e.target.files);
                       e.target.value = '';
                     }}
                   />
@@ -398,6 +390,7 @@ function Browser({
               empty={<p className="p-6 text-center text-base text-muted">{t('files.empty')}</p>}
             />
           )}
+          <UploadList items={uploads.items} onDismiss={uploads.dismiss} />
           {path !== '.' && (
             <button
               type="button"

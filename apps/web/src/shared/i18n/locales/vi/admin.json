@@ -588,7 +588,7 @@
   },
   "terminal": {
     "title": "Terminal",
-    "description": "Terminal web qua gateway, mở bằng ticket một lần. Bản demo chỉ mô phỏng, không chạy lệnh.",
+    "description": "Terminal web qua itso-gateway, mở bằng ticket một lần (30 giây). Shell chạy dưới uid của account, chỉ thấy home của account. Bản demo chỉ mô phỏng.",
     "open": "Mở phiên terminal",
     "mode": "Chế độ",
     "modes": {
@@ -613,7 +613,18 @@
       "p3": "Terminal root tắt mặc định, chỉ bật bằng CLI trên máy chủ; panel bị chiếm cũng không bật được.",
       "p4": "Mở terminal root cần xác thực MFA trong 10 phút gần nhất; phiên được ghi (asciicast) vào audit.",
       "p5": "Ticket mở phiên dùng một lần, hết hạn sau 30 giây; phiên có giới hạn thời lượng."
-    }
+    },
+    "sessionInfo": "Shell trong jail của account. Phiên tự đóng sau 15 phút không thao tác hoặc tối đa 12 giờ.",
+    "ended": {
+      "exited": "Phiên đã kết thúc",
+      "closed": "Đã ngắt kết nối",
+      "idle": "Phiên đóng do 15 phút không thao tác",
+      "expired": "Phiên đã hết thời gian tối đa (12 giờ)",
+      "ticket": "Ticket không hợp lệ hoặc đã dùng",
+      "ticketExpired": "Ticket đã hết hạn (quá 30 giây)",
+      "unavailable": "Không kết nối được máy chủ terminal"
+    },
+    "endedHint": "Bấm Ngắt kết nối rồi mở phiên mới nếu cần."
   },
   "packages": {
     "title": "Gói hosting",
@@ -1131,7 +1142,7 @@
     "quota": "Đã dùng {{used}}/{{limit}} database của gói",
     "prefixHint": "Ví dụ {{prefix}}_app",
     "createUser": "Tạo user cùng tên",
-    "createUserHint": "User được cấp toàn quyền trên database này; lấy mật khẩu bằng \"Đổi mật khẩu\".",
+    "createUserHint": "User được cấp toàn quyền trên database này; mật khẩu hiện MỘT lần sau khi tạo.",
     "username": "Tên user",
     "grants": "Quyền",
     "noGrants": "Chưa cấp quyền",
@@ -1144,7 +1155,7 @@
     "addUserTitle": "Thêm user database",
     "addUserHint": "Sau khi tạo, cấp quyền trên từng database bằng \"Sửa quyền\".",
     "password": "Mật khẩu",
-    "passwordHint": "Để trống để panel tự sinh; xem bằng \"Đổi mật khẩu\".",
+    "passwordHint": "Để trống để panel tự sinh; mật khẩu hiện MỘT lần sau khi tạo.",
     "newPassword": "Mật khẩu mới",
     "grantsTitle": "Quyền của {{name}}",
     "grantsHint": "Chỉ database cùng tài khoản và cùng hệ quản trị. ALL bao gồm mọi quyền.",
@@ -1230,12 +1241,28 @@
       "mode": "Quyền dạng 3 chữ số bát phân, ví dụ 0644",
       "intoSelf": "Không chuyển thư mục vào chính nó"
     },
-    "conflict": "File đã bị người khác sửa sau khi bạn mở. Tải lại để xem bản mới (thay đổi của bạn sẽ mất).",
+    "conflict": "File đã bị sửa ở nơi khác sau khi bạn mở (ETag không khớp). Tải lại để xem bản mới (thay đổi của bạn sẽ mất).",
     "reload": "Tải lại",
     "content": "Nội dung file",
     "close": "Đóng",
     "save": "Lưu",
-    "saved": "Đã lưu file"
+    "saved": "Đã lưu file",
+    "uploads": "Đang tải lên",
+    "uploadProgress": "Tiến độ tải lên {{name}}",
+    "pause": "Tạm dừng",
+    "resume": "Tiếp tục",
+    "cancelUpload": "Hủy",
+    "dismiss": "Ẩn",
+    "uploadState": {
+      "idle": "Chờ",
+      "uploading": "Đang tải",
+      "committing": "Đang ghi vào thư mục",
+      "paused": "Đã tạm dừng",
+      "done": "Xong",
+      "error": "Lỗi",
+      "cancelled": "Đã hủy"
+    },
+    "uploadCommitFailed": "Không ghi được file vào thư mục. Xem chi tiết trong job \"Tải file lên\"."
   },
   "sftp": {
     "title": "SFTP và SSH",
@@ -1272,7 +1299,9 @@
     "publicKeyHint": "Ví dụ: ssh-ed25519 AAAA… ten@may",
     "removeKey": "Gỡ khóa",
     "removeKeyTitle": "Gỡ SSH key {{name}}?",
-    "removeKeyHint": "Máy dùng khóa này sẽ không SSH vào được nữa."
+    "removeKeyHint": "Máy dùng khóa này sẽ không SSH vào được nữa.",
+    "rotate": "Đổi mật khẩu",
+    "newPassword": "Mật khẩu mới"
   },
   "ssl": {
     "title": "Chứng chỉ SSL",

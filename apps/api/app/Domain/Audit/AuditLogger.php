@@ -51,8 +51,10 @@ final class AuditLogger
     public static function redact(array $data): array
     {
         foreach ($data as $k => $v) {
-            if (Secrets::isRef($v)) {
-                continue; // tham chiếu bí mật (JobRunner thay khi gọi agent) không phải giá trị bí mật
+            if (Secrets::isRef($v) || $v === null) {
+                // Tham chiếu bí mật (JobRunner thay khi gọi agent) và null ("không đổi / không có") không phải giá trị
+                // bí mật. Đổi null thành chuỗi '[REDACTED]' sẽ gửi chuỗi đó cho agent như một mật khẩu thật.
+                continue;
             }
             if (is_string($k) && in_array(strtolower($k), self::SECRET_KEYS, true)) {
                 $data[$k] = '[REDACTED]';

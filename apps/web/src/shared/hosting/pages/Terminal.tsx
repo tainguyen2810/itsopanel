@@ -4,14 +4,17 @@ import { Button } from '@/ui/Button';
 import { Card, CardContent, CardHeader } from '@/ui/Card';
 import { Input } from '@/ui/Input';
 import { Label } from '@/ui/Label';
+import { DEMO } from '@/shared/demoMode';
+import { XtermView } from './XtermView';
 
-/** Vé mở terminal (TerminalTicket) — WebSocket thật nối ở Phase 6. */
+/** Vé mở terminal (TerminalTicket): bản thật nối WebSocket tới itso-gateway; bản demo mô phỏng. */
 export interface Ticket {
   ticket: string;
   ws_url: string;
   expires_at: string;
   mode: 'account' | 'root';
   unix_user: string;
+  session_uuid?: string;
 }
 
 /** Phản hồi của terminal mô phỏng: bản demo không bao giờ chạy lệnh. */
@@ -24,8 +27,31 @@ export function simulate(cmd: string, user: string, host: string): string[] {
   return [`demo: "${c}" không được chạy — bản demo chỉ mô phỏng giao diện terminal.`];
 }
 
-/** Khung terminal mô phỏng (Admin: theo server; Portal: account của mình). */
-export function TerminalView({
+/** Khung terminal (Admin: theo server; Portal: account của mình): xterm.js thật, hoặc mô phỏng ở bản demo. */
+export function TerminalView(props: { ticket: Ticket; host: string; onClose: () => void }) {
+  const { t } = useTranslation('admin');
+  if (DEMO) return <SimulatedTerminal {...props} />;
+  const { ticket, host, onClose } = props;
+  return (
+    <Card>
+      <CardHeader
+        title={t('terminal.session', { user: ticket.unix_user, host })}
+        description={t('terminal.sessionInfo')}
+        action={
+          <Button variant="outline" size="sm" onClick={onClose}>
+            {t('terminal.disconnect')}
+          </Button>
+        }
+      />
+      <CardContent>
+        <XtermView wsUrl={ticket.ws_url} ticket={ticket.ticket} />
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Terminal mô phỏng của bản demo: không bao giờ chạy lệnh. */
+function SimulatedTerminal({
   ticket,
   host,
   onClose,

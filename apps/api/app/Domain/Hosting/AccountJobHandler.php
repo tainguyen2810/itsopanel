@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Hosting;
 
+use App\Domain\Data\DataJobHandler;
 use App\Domain\Jobs\JobHandler;
 use App\Models\HostingAccount;
 use App\Models\Job;
@@ -31,6 +32,7 @@ final class AccountJobHandler implements JobHandler
             $live = $a->lifecycle_state === 'active';
             Website::query()->where('hosting_account_id', $a->id)->whereIn('status', $live ? ['suspended'] : ['ready', 'degraded'])
                 ->update(['status' => $live ? 'ready' : 'suspended', 'observed_at' => Carbon::now()]);
+            DataJobHandler::accountSettled($a, $live);
             $a->status = AccountLifecycle::STATUS[$a->lifecycle_state] ?? 'ready';
             $a->observed_version = $a->spec_version;
             $a->observed_at = Carbon::now();

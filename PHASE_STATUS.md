@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 5 — Website / Nginx / PHP / SSL / DNS (✓ hoàn tất, chờ duyệt; merge local vào main; Phase 4 ✓ APPROVED 2026-11-21 cùng D-63 → D-66, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 5.6 xong. Báo cáo `docs/reports/phase-5.md`. Người dùng yêu cầu (2026-11-21) "ok, lên kế hoạch và làm Phase 5"; làm hàng loạt 5.1 → 5.6, tự merge local
-- **Task đang làm:** không — DỪNG chờ duyệt Phase 5 và D-67 → D-70 (không bắt đầu Phase 6)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-5`
-- **Bước tiếp theo:** Chờ người dùng duyệt Phase 5. Việc còn lại: chạy `tests/vm/phase5.sh` trên VM, job CI `pebble` khi có remote
+- **Phase:** 6 — Database / File Manager / FTP-SFTP / Cron / Terminal USER (✓ xong 2026-11-21, chờ duyệt; Phase 5 ✓ APPROVED 2026-11-21 cùng D-67 → D-70, kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** Phase 6 xong (6.1 → 6.6), merge main local; **DỪNG chờ duyệt** Phase 6 + D-71 → D-75. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
+- **Task đang làm:** không (chờ duyệt). Chờ VM: `tests/vm/phase4.sh`…`phase6.sh`
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-6`
+- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_6_PROMPTS.md`; cuối 6.6 báo cáo Phase 6 và DỪNG (không bắt đầu Phase 7)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -20,8 +20,8 @@
 | 2 | Complete UI Demo (Admin Panel + User Hosting Portal) | ✓ (báo cáo `docs/reports/phase-2.md`) |
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ✓ APPROVED (báo cáo `docs/reports/phase-3.md`) |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ✓ APPROVED (báo cáo `docs/reports/phase-4.md`; tiêu chí cần VM: chờ VM) |
-| 5 | Website / Nginx / PHP / SSL / DNS | ✱ |
-| 6 | Database / File / FTP-SFTP / Cron / Terminal | ○ |
+| 5 | Website / Nginx / PHP / SSL / DNS | ✓ APPROVED (báo cáo `docs/reports/phase-5.md`; tiêu chí cần VM: chờ VM) |
+| 6 | Database / File / FTP-SFTP / Cron / Terminal | ✱ |
 | 7 | Security Center | ○ |
 | 8 | Backup & Restore → v0.1.0-alpha | ○ |
 | 9 | Multi-server & chuyển tài khoản | ○ |
@@ -31,7 +31,16 @@
 
 ## Checklist Phase hiện tại
 
-Phase 5 (✓ chờ duyệt) — prompt chi tiết: `docs/planning/seed/PHASE_5_PROMPTS.md`
+Phase 6 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.md`
+
+- ✓ 6.1 ADR database/file/SFTP/cron/terminal (D-71…D-75), contracts, migration Phase 6
+- ✓ 6.2 Agent: File Manager hạ quyền, database, SFTP/FTPS/SSH key, cron
+- ✓ 6.3 Panel: databases, files, SFTP/FTP, SSH key, cron, suspend
+- ✓ 6.4 Terminal USER: pty.open, itso-gateway, phiên terminal
+- ✓ 6.5 UI nối API thật
+- ✓ 6.6 e2e, VM Phase 6, review bảo mật, báo cáo, merge
+
+Phase 5: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-5.md`, merge `e347b0c`). Chi tiết: `docs/planning/seed/PHASE_5_PROMPTS.md`
 
 - ✓ 5.1 ADR vhost/PHP-FPM/ACME/DNS (D-67…D-70), contracts, migration Phase 5
 - ✓ 5.2 Agent: vhost + rollback, site layout, PHP-FPM, chứng chỉ, log
@@ -101,3 +110,10 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 5 / 5.4 | Chứng chỉ: `CertificateService` (ACME: cert.issue → vhost tls → gỡ bản cũ; tải lên: kiểm PEM/khóa khớp/còn hạn/SAN, khóa Crypt, job chỉ mang `{"$secret"}`; gia hạn `itso:certs-renew` hằng ngày, lỗi → thông báo + audit; xóa: bỏ tls rồi cert.remove), `/certificates` admin + portal, website tạo/sửa với `ssl_mode=acme`; `JobRunner` thay bí mật khi gọi agent + bước panel (`PanelStep`); agent reload Nginx khi thay chứng chỉ đang dùng. DNS Cloudflare: provider (kiểm token), zone, record qua bước panel `dns.records.apply` (ghi Cloudflare trước), `itso:dns-sync`; quyền `dns.*`. Sửa lỗi cast `Bytea` đọc stream lần hai ra rỗng. Job CI `pebble` | 36d69db |
 | 2026-11-21 | 5 / 5.3 | Panel: model Website/Domain/WebsiteSetting/PhpVersion/Certificate; `WebsiteService` (tạo: layout → pool → vhost; sửa/nginx/php/domain áp lại đúng op; xóa: vhost.remove → pool.remove; quota website/domain/subdomain/PHP worker 422; domain trùng 409, domain nội bộ/của panel 422; `document_root` chỉ dưới `public/`); `WebsiteJobHandler` (`nginx -t` lỗi khi tạo → failed + thông báo, lỗi khi thêm domain → trả desired state); suspend/unsuspend/terminate áp lại vhost mọi site; PHP Manager + Nginx toàn server + wizard bước 4 (`setup.stack`); route admin (quyền `websites.read/write`) + portal; 9 test Pest mới | 4eb5856 |
 | 2026-11-21 | 5 / 5.2 | Agent: 15 op website thật (`fs.site_layout.ensure`, `nginx.vhost.apply/remove/inspect` với `nginx -t` + hoàn tác, `nginx.global.apply` sinh `nginx.conf`, `php.version.install/remove`, `php.ext.install`, `php.pool.apply/remove` (master itso-php@ dưới uid account, `php-fpm -t` dưới uid account), `cert.issue` (lego HTTP-01, Pebble theo policy `acme_pebble`), `cert.install/inspect/remove`, `log.tail`); template nhúng; Sim mô phỏng nginx/php-fpm/lego; mock agent 15 op; bộ contract chung `WebsiteLifecycle`; unit `itso-php@.service`; log site chuyển ra `/var/log/itso/sites` (ADR 0014 sửa đổi) | f5b9549 |
+| 2026-11-21 | 6 / kế hoạch | Người dùng duyệt Phase 5 (D-67…D-70 APPROVED, ADR 0014–0017 Accepted); kế hoạch Phase 6 (6 prompt, D-71…D-75 đề xuất), mở nhánh phase-6 | (commit kế hoạch) |
+| 2026-11-21 | 6 / 6.1 | ADR 0018–0022 (D-71…D-75 đề xuất); agent-ops +14 op (fs.stat/rename/upload.commit, db owner/lock/inspect, sshd.match.apply, ftp.user.*, cron.inspect, pty.open), sửa fs/db/sftp/cron theo ADR, recipe mariadb/postgresql/pure-ftpd, 17 vector độc mới; OpenAPI upload GET/DELETE, tải file stream, rotate SFTP, JobAccepted.secret; DBML + migration Phase 6 (10 bảng, thêm file_operations) | fa49a30 |
+| 2026-11-21 | 6 / 6.2 | Agent: internal/fsx (openat2 RESOLVE_BENEATH, helper `itso-agent fs-helper` hạ quyền + no_new_privs, zip/tar.gz an toàn, upload theo fd); 13 op fs.*; db.{mysql,pg}.* 20 op (SQL qua stdin, dump/import dưới uid account); sshd.match.apply, sftp/ftp user, ssh.keys.apply; cron.apply/inspect/run_once (OnCalendar, unit + script root:group 0640); Sim + mock dùng lại handler thật; fuzz cron/SSH key/đường dẫn | 2edbc0c |
+| 2026-11-21 | 6 / 6.3 | Panel API dữ liệu hosting (admin + portal): database/user/quyền/export/import, SFTP/FTPS + khóa SSH, cron (+ `itso:cron-sync` 5 phút), File Manager (đọc/sửa ETag, thao tác qua job, upload tus 8 MiB, link tải HMAC 5 phút); mật khẩu sinh trả một lần, job chỉ giữ tham chiếu; tạm khóa account khóa DB/cron/FTPS; quyền `files.* ftp.* cron.*` | 95d2e4c |
+| 2026-11-21 | 6 / 6.4 | Terminal USER: agent `pty.open` (ticket 32 byte, 30 giây, một lần, ≤ 2 phiên/account, shell /bin/bash), socket stream `/run/itso/agent-stream.sock` (peercred itso-gw), jail `systemd-run --pty`, nhàn rỗi 15 phút / tối đa 12 giờ, shell giả ở sandbox; `cmd/itso-gateway` (WebSocket ↔ khung, kiểm Origin) + unit hardening; Laravel `/terminal/sessions` (step-up, gói SSH, audit, không lưu ticket), `itso:terminal-reap`; make dev chạy gateway, Vite proxy `/gateway` | f7f654a |
+| 2026-11-21 | 6 / 6.5 | UI nối API thật: tải lên tiếp tục được (chunk 8 MiB, tạm dừng/tiếp tục/hủy, tự đồng bộ khi 409), terminal xterm.js qua WebSocket gateway (theme theo token, tự fit, thông báo lý do đóng), mật khẩu DB/SFTP do panel sinh hiện một lần + đổi mật khẩu SFTP, tải file bằng link ký; MSW demo khớp hành vi mới; sửa UUID SFTP demo trùng | 612a8e6 |
+| 2026-11-21 | 6 / 6.6 | Playwright stack thật Phase 6 (12/12 cùng Phase 3–5); sửa 6 lỗi: `redact` đổi null thành `[REDACTED]` gửi agent, khóa SSH thiếu padding, gateway 2 khung close (coder/websocket 1.8.14), Uploader báo xong trước commit, staging `make dev`, cron `a/n` vượt miền (fuzz); `tests/vm/phase6.sh` S0–S7 + `term_client.py`; review bảo mật File Manager; runbook; báo cáo `docs/reports/phase-6.md`; merge phase-6 → main (local) | 12a9266 |

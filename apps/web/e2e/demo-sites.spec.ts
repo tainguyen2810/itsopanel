@@ -177,3 +177,34 @@ test('SSL: tải chứng chỉ riêng kiểm tra PEM trước khi gửi', async 
   await page.keyboard.press('Escape');
   expect(errors).toEqual([]);
 });
+
+// Prompt 6.5: tải lên theo chunk có tiến độ; mật khẩu do panel sinh chỉ hiện một lần.
+test('File Manager: tải file lên theo chunk, xong thì file có trong thư mục', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`/admin/files?account=${ANPHAT}`);
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'p6-upload.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('xin chao phase 6\n'),
+  });
+  const panel = page.getByRole('region', { name: 'Đang tải lên' });
+  await expect(panel.getByText('p6-upload.txt')).toBeVisible();
+  await expect(panel.getByText('Xong')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: 'p6-upload.txt', exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('SFTP: tạo tài khoản không nhập mật khẩu → mật khẩu hiện một lần', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/admin/sftp');
+  await page.getByRole('button', { name: 'Thêm tài khoản SFTP' }).click();
+  const dlg = page.getByRole('dialog', { name: 'Thêm tài khoản SFTP' });
+  await dlg.getByRole('combobox', { name: 'Tài khoản' }).click();
+  await page.getByRole('option', { name: /^anphat/ }).click();
+  await dlg.getByLabel('Username').fill('anphat_e2e');
+  await dlg.getByRole('button', { name: 'Tạo' }).click();
+  const secret = page.getByRole('dialog', { name: 'Mật khẩu mới' });
+  await expect(secret).toBeVisible({ timeout: 15_000 });
+  await expect(secret.getByRole('alert')).toBeVisible();
+  expect(errors).toEqual([]);
+});

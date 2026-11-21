@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -44,6 +46,14 @@ var Bins = map[string]string{
 	"nginx":      "/usr/sbin/nginx",
 	"php-fpm8.3": "/usr/sbin/php-fpm8.3",
 	"lego":       "/usr/bin/lego",
+	// Phase 6 (D-71…D-74). itso-fs-helper: chính binary agent, chạy lại dưới uid account (ADR 0019).
+	"itso-fs-helper": "/proc/self/exe",
+	"mariadb":        "/usr/bin/mariadb",
+	"mariadb-dump":   "/usr/bin/mariadb-dump",
+	"chpasswd":       "/usr/sbin/chpasswd",
+	"pure-pw":        "/usr/bin/pure-pw",
+	"sshd":           "/usr/sbin/sshd",
+	"systemd-run":    "/usr/bin/systemd-run",
 }
 
 // allowedEnv là biến môi trường được phép đặt thêm cho một lệnh (ngoài env tối giản cố định).
@@ -157,5 +167,61 @@ func (ExecRunner) Run(ctx context.Context, c Cmd) (Result, error) {
 	default:
 		res.ExitCode = -1
 		return res, err
+	}
+}
+
+// Proc là một tiến trình chạy theo luồng (dump/import DB, helper File Manager): stdin/stdout là luồng thay vì
+// buffer, có thể nhận fd bổ sung (fd 3…) do agent mở sẵn. Kiểm như Cmd (bin trong bảng, argv không NUL/xuống dòng).
+type Proc struct {
+	Bin        string
+	Args       []string
+	As         *Cred
+	Stdin      io.Reader
+	Stdout     io.Writer
+	Stderr     io.Writer
+	ExtraFiles []*os.File
+	// Dir: thư mục làm việc (mặc định "/").
+	Dir string
+}
+
+func (p Proc) cmd() Cmd { return Cmd{Bin: p.Bin, Args: p.Args, As: p.As} }
+
+// Streamer chạy Proc và trả mã thoát (exit ≠ 0 không phải lỗi Go).
+type Streamer interface {
+	Stream(ctx context.Context, p Proc) (int, error)
+}
+
+// Stream chạy tiến trình thật với luồng vào/ra. As: setresuid/setresgid về uid/gid, không group phụ (Groups rỗng).
+func (ExecRunner) Stream(ctx context.Context, p Proc) (int, error) {
+	path, err := Check(p.cmd())
+	if err != nil {
+		return -1, err
+	}
+	cmd := exec.CommandContext(ctx, path, p.Args...)
+	cmd.Env = []string{"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "LC_ALL=C.UTF-8"}
+	cmd.Dir = "/"
+	if p.Dir != "" {
+		cmd.Dir = p.Dir
+	}
+	attr := &syscall.SysProcAttr{Setsid: true}
+	if p.As != nil {
+		attr.Credential = &syscall.Credential{Uid: p.As.UID, Gid: p.As.GID, Groups: []uint32{}}
+	}
+	cmd.SysProcAttr = attr
+	cmd.Stdin, cmd.Stdout, cmd.ExtraFiles = p.Stdin, p.Stdout, p.ExtraFiles
+	var errb capped
+	cmd.Stderr = &errb
+	if p.Stderr != nil {
+		cmd.Stderr = io.MultiWriter(p.Stderr, &errb)
+	}
+	err = cmd.Run()
+	var ee *exec.ExitError
+	switch {
+	case err == nil:
+		return 0, nil
+	case errors.As(err, &ee):
+		return ee.ExitCode(), nil
+	default:
+		return -1, err
 	}
 }

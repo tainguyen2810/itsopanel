@@ -567,6 +567,7 @@ Table databases {
   server_id bigint [not null, ref: > servers.id]
   engine text [not null, note: 'mariadb|mysql|postgresql']
   name text [not null]
+  charset text [not null, default: 'utf8mb4']
   size_mb bigint
   spec_version int [not null, default: 1, note: 'Desired: tăng mỗi lần đổi cấu hình']
   observed_version int [not null, default: 0, note: 'Observed: phiên bản agent đã áp dụng']
@@ -585,18 +586,26 @@ Table databases {
 
 Table database_users {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   hosting_account_id bigint [not null, ref: > hosting_accounts.id]
   server_id bigint [not null, ref: > servers.id]
   engine text [not null]
   username text [not null]
-  password_encrypted bytea
+  password_encrypted bytea [note: 'mã hóa; job chỉ mang tham chiếu bí mật (D-71)']
   host_pattern text [not null, default: 'localhost']
   max_connections int [not null, default: 10]
+  spec_version int [not null, default: 1, note: 'Desired: tăng mỗi lần đổi cấu hình']
+  observed_version int [not null, default: 0, note: 'Observed: phiên bản agent đã áp dụng']
+  status text [not null, default: 'pending', note: 'pending|provisioning|ready|degraded|failed|suspended|deleting']
+  observed_facts jsonb [not null, default: `'{}'::jsonb`]
+  drift jsonb
+  observed_at timestamptz
+  last_job_id bigint [ref: > jobs.id]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
   deleted_at timestamptz
   indexes {
-    (server_id, engine, username) [unique]
+    hosting_account_id
   }
 }
 
@@ -615,9 +624,17 @@ Table sftp_accounts {
   hosting_account_id bigint [not null, ref: > hosting_accounts.id]
   username text [not null]
   root_subpath text [not null, default: '']
-  protocol text [not null, default: 'sftp', note: 'sftp|ftps']
-  password_hash text
-  status text [not null, default: 'active']
+  protocol text [not null, default: 'sftp', note: 'sftp: user Linux của account; ftps: virtual user Pure-FTPd (D-73)']
+  password_encrypted bytea [note: 'mã hóa; job chỉ mang tham chiếu bí mật']
+  read_only boolean [not null, default: false]
+  last_login_at timestamptz
+  spec_version int [not null, default: 1, note: 'Desired: tăng mỗi lần đổi cấu hình']
+  observed_version int [not null, default: 0, note: 'Observed: phiên bản agent đã áp dụng']
+  status text [not null, default: 'pending', note: 'pending|provisioning|ready|degraded|failed|suspended|deleting']
+  observed_facts jsonb [not null, default: `'{}'::jsonb`]
+  drift jsonb
+  observed_at timestamptz
+  last_job_id bigint [ref: > jobs.id]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
   deleted_at timestamptz
@@ -628,20 +645,29 @@ Table sftp_accounts {
 
 Table ssh_keys {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   hosting_account_id bigint [not null, ref: > hosting_accounts.id]
   name text [not null]
+  type text [not null, note: 'ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa']
   public_key text [not null]
-  fingerprint text [not null, unique]
+  fingerprint text [not null, note: 'SHA256:… (base64 không padding)']
+  last_used_at timestamptz
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
+  indexes {
+    (hosting_account_id, fingerprint) [unique]
+  }
 }
 
 Table cron_jobs {
   id bigint [pk, increment]
   uuid uuid [not null, unique, default: `gen_random_uuid()`]
   hosting_account_id bigint [not null, ref: > hosting_accounts.id]
+  website_id bigint [ref: > websites.id]
   schedule text [not null]
   command text [not null]
+  working_dir text [not null, default: '.']
+  php_version text
   timeout_sec int [not null, default: 3600]
   enabled boolean [not null, default: true]
   last_run_at timestamptz
@@ -663,11 +689,14 @@ Table cron_jobs {
 
 Table cron_runs {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   cron_job_id bigint [not null, ref: > cron_jobs.id]
   started_at timestamptz [not null]
   finished_at timestamptz
   exit_code int
   output_tail text
+  status text [not null, default: 'running', note: 'running|succeeded|failed|timed_out']
+  trigger text [not null, default: 'schedule', note: 'schedule|manual']
   indexes {
     (cron_job_id, started_at)
   }
@@ -719,28 +748,56 @@ Table dns_records {
 
 Table upload_sessions {
   id bigint [pk, increment]
-  uid text [not null, unique]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   user_id bigint [not null, ref: > users.id]
   hosting_account_id bigint [not null, ref: > hosting_accounts.id]
   target_path text [not null]
   size_bytes bigint [not null]
   received_bytes bigint [not null, default: 0]
+  overwrite boolean [not null, default: false]
+  status text [not null, default: 'receiving', note: 'receiving|committing|completed|failed|cancelled']
+  job_id bigint [ref: > jobs.id]
   expires_at timestamptz [not null]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
+  indexes {
+    hosting_account_id
+    expires_at
+  }
+}
+
+Table file_operations {
+  id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
+  hosting_account_id bigint [not null, ref: > hosting_accounts.id]
+  user_id bigint [ref: > users.id]
+  op text [not null, note: 'write|mkdir|rename|move|copy|delete|chmod|compress|extract|upload']
+  paths jsonb [not null, default: `'[]'::jsonb`]
+  target text
+  status text [not null, default: 'succeeded', note: 'queued|running|succeeded|failed']
+  job_id bigint [ref: > jobs.id]
+  error_code text
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (hosting_account_id, created_at)
+  }
 }
 
 Table terminal_sessions {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   user_id bigint [not null, ref: > users.id]
   server_id bigint [not null, ref: > servers.id]
   hosting_account_id bigint [ref: > hosting_accounts.id]
   unix_uid int [not null]
+  mode text [not null, default: 'account', note: 'account|root (root: Phase 7)']
   started_at timestamptz [not null, default: `now()`]
   ended_at timestamptz
+  ended_reason text [note: 'closed|idle|expired|error']
   recording_ref text
   indexes {
     user_id
+    hosting_account_id
   }
 }
 
@@ -1309,6 +1366,7 @@ TableGroup hosting [note: 'Hosting'] {
   dns_zones
   dns_records
   upload_sessions
+  file_operations
   terminal_sessions
   wordpress_sites
   git_repositories

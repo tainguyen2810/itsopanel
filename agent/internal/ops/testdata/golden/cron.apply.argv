@@ -1,0 +1,5 @@
+systemctl daemon-reload
+systemctl enable --now itso-cron-01938a0d-0001-7000-8000-00000d000001.timer
+systemctl restart itso-cron-01938a0d-0001-7000-8000-00000d000001.timer
+systemctl enable --now itso-cron-01938a0d-0001-7000-8000-00000d000002.timer
+systemctl restart itso-cron-01938a0d-0001-7000-8000-00000d000002.timer

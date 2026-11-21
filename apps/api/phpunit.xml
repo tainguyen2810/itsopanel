@@ -39,6 +39,7 @@
         <env name="ITSO_AGENT_SOCKET" value="/nonexistent/itso-test-agent.sock"/>
         <env name="ITSO_AGENT_URL" value=""/>
         <env name="ITSO_LOCAL_SERVER" value="false"/>
+        <env name="ITSO_UPLOAD_DIR" value="/tmp/itso-test-uploads"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

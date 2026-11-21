@@ -26,8 +26,9 @@ final class Spa
     /**
      * @param  array<string, mixed>  $data
      * @param  array<string, string>  $headers
+     * @param  string|null  $raw  body nhị phân (application/octet-stream) thay cho JSON
      */
-    public function call(string $method, string $uri, array $data = [], array $headers = []): TestResponse
+    public function call(string $method, string $uri, array $data = [], array $headers = [], ?string $raw = null): TestResponse
     {
         app('session')->forgetDrivers();
         app()->forgetInstance('session.store');
@@ -46,6 +47,11 @@ final class Spa
             $server['HTTP_'.strtoupper(str_replace('-', '_', $k))] = $v;
         }
         $content = $method === 'GET' ? null : json_encode($data, JSON_THROW_ON_ERROR);
+        if ($raw !== null) {
+            $server['CONTENT_TYPE'] = 'application/octet-stream';
+            $server['CONTENT_LENGTH'] = (string) strlen($raw);
+            $content = $raw;
+        }
         $res = $this->t->call($method, $uri, [], $this->jar, [], $server, $content);
         foreach ($res->headers->getCookies() as $c) {
             if ($c->isCleared() || $c->getValue() === null || $c->getValue() === '') {

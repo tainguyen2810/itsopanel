@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Hosting;
 
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Data\DataSpec;
 use App\Domain\Jobs\JobDispatcher;
 use App\Domain\Jobs\JobSpec;
 use App\Domain\Web\WebsiteSpec;
@@ -15,6 +16,7 @@ use App\Models\HostingPackage;
 use App\Models\HostingPackageVersion;
 use App\Models\Job;
 use App\Models\Server;
+use App\Models\SshKey;
 use App\Models\User;
 use App\Models\Website;
 use Illuminate\Support\Carbon;
@@ -220,6 +222,11 @@ final class ProvisioningService
             foreach (Website::query()->where('hosting_account_id', $a->id)->whereIn('status', ['ready', 'degraded', 'suspended'])->orderBy('id')->get() as $w) {
                 WebsiteSpec::provision($spec, $w, $a);
             }
+            // Dữ liệu (Phase 6): khóa SSH, cron, FTP phụ, khóa DB theo trạng thái account.
+            if (SshKey::query()->where('hosting_account_id', $a->id)->exists()) {
+                $spec->step('ssh.keys.apply', ['account' => self::ref($a), 'keys' => DataSpec::sshKeys($a)]);
+            }
+            DataSpec::reapplyAccount($spec, $a, $a->lifecycle_state !== 'active');
             $job = $this->dispatch($spec, $actor, [$a]);
 
             return $job;

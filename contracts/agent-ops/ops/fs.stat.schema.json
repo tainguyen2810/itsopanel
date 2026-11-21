@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/fs.stat.schema.json",
+  "title": "fs.stat",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        }
+      },
+      "required": [
+        "account",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "exists": {
+          "type": "boolean"
+        },
+        "type": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/FileType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^0[0-7]{3}$"
+        },
+        "modified_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "exists",
+        "type",
+        "size",
+        "mode",
+        "modified_at"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

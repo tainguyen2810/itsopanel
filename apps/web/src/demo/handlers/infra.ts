@@ -618,6 +618,7 @@ export function registerInfra() {
     return created({
       ...tpl,
       ticket: `tkt_${ctx.db.newUuid().slice(-12)}`,
+      session_uuid: ctx.db.newUuid(),
       mode: b.mode,
       unix_user: b.mode === 'root' ? 'root' : (acc?.username ?? 'user'),
       expires_at: new Date(Date.now() + 30_000 + 7 * 3600_000)

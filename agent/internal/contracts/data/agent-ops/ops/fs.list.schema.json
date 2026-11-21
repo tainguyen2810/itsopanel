@@ -14,6 +14,11 @@
         },
         "show_hidden": {
           "type": "boolean"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000
         }
       },
       "required": [
@@ -31,15 +36,11 @@
             "type": "object",
             "properties": {
               "name": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               "type": {
-                "type": "string",
-                "enum": [
-                  "file",
-                  "dir",
-                  "symlink"
-                ]
+                "$ref": "../defs.schema.json#/$defs/FileType"
               },
               "size": {
                 "$ref": "../defs.schema.json#/$defs/Bytes"
@@ -49,6 +50,13 @@
               },
               "modified_at": {
                 "type": "string"
+              },
+              "target": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 4096
               }
             },
             "required": [
@@ -56,14 +64,20 @@
               "type",
               "size",
               "mode",
-              "modified_at"
+              "modified_at",
+              "target"
             ],
             "additionalProperties": false
-          }
+          },
+          "maxItems": 5000
+        },
+        "truncated": {
+          "type": "boolean"
         }
       },
       "required": [
-        "entries"
+        "entries",
+        "truncated"
       ],
       "additionalProperties": false
     }
