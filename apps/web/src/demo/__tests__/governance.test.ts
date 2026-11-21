@@ -99,7 +99,11 @@ describe('bảo mật', () => {
     });
     expect(stale.status).toBe(412);
     const job = await finish(
-      await call('PATCH', A('/security/ssh'), { port: 2222, max_auth_tries: 4 }),
+      await call('PATCH', A('/security/ssh'), {
+        port: 2222,
+        max_auth_tries: 4,
+        rollback_after_sec: 60,
+      }),
     );
     expect(
       data<{ steps: { op: string }[] }>(await call('GET', A(`/jobs/${job.uuid}`))).steps[0]?.op,

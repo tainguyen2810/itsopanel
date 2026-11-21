@@ -71,6 +71,10 @@ def auth_paths(api: Api, realm: str):
             ok_example=one({"mfa_required": True, "mfa_methods": ["totp", "recovery"]}),
             desc="Origin admin chỉ chấp nhận user realm `admin`, origin portal chỉ chấp nhận realm `portal` "
                  "(một origin: theo header `X-ITSO-Realm`, D-58). Sai realm trả cùng lỗi như sai mật khẩu.")
+    api.add("get", "/api/v1/auth/captcha", "getCaptcha", "Thử thách CAPTCHA proof-of-work (dùng một lần, 5 phút)",
+            "Auth", public=True, ok=cref("CaptchaChallenge"), ok_example=one(D.CAPTCHA),
+            desc="Tự host, không gọi dịch vụ ngoài (D-81). Đăng nhập/quên mật khẩu trả 422 `captcha_required` khi "
+                 "IP hoặc email đã sai quá ngưỡng (`portal_captcha_after_failures`); khi đó gửi kèm `captcha`.")
     api.add("post", "/api/v1/auth/mfa/verify", "verifyMfa", "Xác minh MFA sau đăng nhập", "Auth", public=True,
             security=csrf_only, body=cref("MfaVerifyRequest"), body_example={"code": "492817", "method": "totp"},
             ok=cref("Me"), ok_example=one(me))
@@ -771,8 +775,30 @@ def admin_paths(api: Api):
     api.add("get", "/security/ssh", "getSshSettings", "Cấu hình SSH", "Security", params=[Api.p("ServerQuery")],
             ok=ref("SshSettings"), ok_example=one(D.SSH_SETTINGS))
     api.add("patch", "/security/ssh", "updateSshSettings", "Đổi cấu hình SSH (safe-apply)", "Security",
-            params=[Api.p("ServerQuery")], body=partial(ADMIN, "SshSettings", ref), body_example={"max_auth_tries": 3}, job=True,
-            step_up=True, job_example=jobs("sshd.update", "server", srv["uuid"], ["sshd.config.apply"]))
+            params=[Api.p("ServerQuery")], body=ref("SshSettingsPatch"),
+            body_example={"max_auth_tries": 3, "rollback_after_sec": 120}, job=True, step_up=True,
+            desc="Safe-apply như tường lửa: `sshd -t` → reload → tự hoàn tác nếu không gọi `:confirm` trong "
+                 "`rollback_after_sec`. Tắt mật khẩu khi `admin_keys = 0` trả 422.",
+            job_example=jobs("sshd.update", "server", srv["uuid"], ["sshd.config.apply"]))
+    api.add("post", "/security/ssh:confirm", "confirmSsh", "Xác nhận giữ cấu hình SSH vừa áp dụng", "Security",
+            params=[Api.p("ServerQuery")], job=True,
+            job_example=jobs("sshd.confirm", "server", srv["uuid"], ["sshd.config.confirm"]))
+    api.add("post", "/servers/{id}/fim:baseline", "rebaselineFim", "Chụp lại baseline toàn vẹn file", "Security",
+            params=idp, job=True, step_up=True,
+            job_example=jobs("fim.baseline", "server", srv["uuid"], ["fim.baseline"]))
+    api.add("get", "/security/malware/findings", "listMalwareFindings", "File nghi nhiễm", "Malware", list_=True,
+            params=[Api.p("FilterHostingAccount")], ok=cref("MalwareFinding"), ok_example=page(D.MALWARE_FINDINGS))
+    api.add("post", "/security/malware/findings/{id}:quarantine", "quarantineMalwareFinding", "Cách ly file nghi nhiễm",
+            "Malware", params=idp, job=True,
+            job_example=jobs("malware.quarantine", "malware_finding", D.MALWARE_FINDINGS[1]["uuid"], ["malware.quarantine"]))
+    api.add("get", "/servers/{id}/terminal/policy", "getTerminalPolicy", "Policy terminal của máy chủ (chỉ đọc)",
+            "Terminal", params=idp, ok=ref("TerminalPolicy"), ok_example=one(D.TERMINAL_POLICY),
+            desc="Đọc từ agent; chỉ bật/tắt được bằng `itso policy set` trên máy chủ (D-81).")
+    api.add("get", "/terminal/sessions", "listTerminalSessions", "Phiên terminal", "Terminal", list_=True,
+            params=[Api.p("FilterServer")], ok=ref("TerminalSession"), ok_example=page(D.TERMINAL_SESSIONS))
+    api.add("get", "/terminal/sessions/{id}/recording", "getTerminalRecording", "Bản ghi phiên (asciicast)", "Terminal",
+            params=idp + [Api.p("Offset")], ok=ref("TerminalRecording"), ok_example=one(D.TERMINAL_RECORDING),
+            step_up=True)
     api.add("get", "/security/fail2ban", "getFail2ban", "Fail2ban", "Security", params=[Api.p("ServerQuery")],
             ok=ref("Fail2banSettings"), ok_example=one(D.FAIL2BAN))
     api.add("patch", "/security/fail2ban", "updateFail2ban", "Đổi cấu hình fail2ban", "Security",
@@ -885,6 +911,20 @@ def portal_paths(api: Api):
             "Tính năng theo gói (PHP, SSH, cron, backup)", "Accounts", params=idp, ok=cref("AccountFeatures"),
             ok_example=one(features_of(D.ACCOUNTS[0])))
     resource_paths(api, "portal", jobs)
+    api.add("get", "/protection", "portalGetSecurity", "Bảo mật account của tôi: WAF, mã độc", "Protection",
+            ok=cref("PortalSecurity"), ok_example=one(D.PORTAL_SECURITY))
+    api.add("get", "/protection/findings", "portalListMalwareFindings", "File nghi nhiễm của tôi", "Protection",
+            list_=True, params=[Api.p("FilterHostingAccount")], ok=cref("MalwareFinding"),
+            ok_example=page(D.MALWARE_FINDINGS[1:]))
+    api.add("post", "/hosting-accounts/{id}/scans", "portalScanAccount", "Quét mã độc account", "Protection",
+            params=idp, job=True,
+            job_example=jobs("malware.scan", "hosting_account", D.ACCOUNTS[0]["uuid"], ["malware.scan"]))
+    api.add("post", "/protection/findings/{id}:quarantine", "portalQuarantineFinding", "Cách ly file nghi nhiễm",
+            "Protection", params=idp, job=True,
+            job_example=jobs("malware.quarantine", "malware_finding", D.MALWARE_FINDINGS[1]["uuid"], ["malware.quarantine"]))
+    api.add("delete", "/protection/findings/{id}", "portalDeleteFinding", "Xóa file nghi nhiễm", "Protection",
+            params=idp, job=True, step_up=True,
+            job_example=jobs("malware.delete", "malware_finding", D.MALWARE_FINDINGS[1]["uuid"], ["malware.delete"]))
     api.add("get", "/profile", "portalGetProfile", "Hồ sơ", "Profile", ok=cref("User"), ok_example=one(D.USERS[2]))
     api.add("patch", "/profile", "portalUpdateProfile", "Đổi hồ sơ", "Profile",
             body=obj({"name": s(maxLength=120), "locale": enum("vi", "en"), "timezone": s()}, required=[]),
@@ -941,6 +981,7 @@ def common_components():
         "Limit": qp("limit", {"type": "integer", "minimum": 1, "maximum": 200, "default": 50}, "Số bản ghi mỗi trang."),
         "Sort": qp("sort", {"type": "string", "pattern": "^-?[a-z_]+(,-?[a-z_]+)*$"}, "Sắp xếp, ví dụ `-created_at`."),
         "Q": qp("q", {"type": "string", "maxLength": 200}, "Tìm kiếm tự do."),
+        "Offset": qp("offset", {"type": "integer", "minimum": 0, "default": 0}, "Vị trí byte bắt đầu đọc."),
         "PathQuery": qp("path", {"$ref": "#/components/schemas/RelPath"}, "Đường dẫn tương đối với home account.", True),
         "FilterHostingAccount": qp("filter[hosting_account]", {"type": "string", "format": "uuid"}, "Lọc theo account."),
         "FilterServer": qp("filter[server]", {"type": "string", "format": "uuid"}, "Lọc theo server."),

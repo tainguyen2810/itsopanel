@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 7 — Security Center (✱ đang làm; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 7.0 Mockup. Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
-- **Task đang làm:** 7.0 Mockup Security Center trên bản demo
+- **Prompt hiện tại:** 7.1 ADR + contracts (7.0 mockup ✓). Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
+- **Task đang làm:** 7.1 ADR 0023–0028, contracts agent-ops, migration Phase 7
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-7`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_7_PROMPTS.md`; cuối 7.7 báo cáo Phase 7 và DỪNG (không bắt đầu Phase 8)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -33,8 +33,8 @@
 
 Phase 7 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.md`
 
-- ✱ 7.0 Mockup Security Center trên bản demo (`docs/screenshots/phase-7/`)
-- ○ 7.1 ADR firewall/SSH/WAF/malware/FIM/terminal root (D-76…D-81), contracts, migration Phase 7
+- ✓ 7.0 Mockup Security Center trên bản demo (`docs/screenshots/phase-7/`, 68 ảnh)
+- ✱ 7.1 ADR firewall/SSH/WAF/malware/FIM/terminal root (D-76…D-81), contracts, migration Phase 7
 - ○ 7.2 Agent: firewall nftables safe-apply, SSH hardening, Fail2ban
 - ○ 7.3 Agent: WAF, mã độc + cách ly, FIM, security.audit
 - ○ 7.4 Panel: Security Center API, CAPTCHA, IP allowlist chống tự khóa
@@ -130,3 +130,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 6 / 6.6 | Playwright stack thật Phase 6 (12/12 cùng Phase 3–5); sửa 6 lỗi: `redact` đổi null thành `[REDACTED]` gửi agent, khóa SSH thiếu padding, gateway 2 khung close (coder/websocket 1.8.14), Uploader báo xong trước commit, staging `make dev`, cron `a/n` vượt miền (fuzz); `tests/vm/phase6.sh` S0–S7 + `term_client.py`; review bảo mật File Manager; runbook; báo cáo `docs/reports/phase-6.md`; merge phase-6 → main (local) | 12a9266 |
 | 2026-11-21 | 6 / mockup | Mockup bù Phase 6: 17 màn × 1440/390 × sáng/tối (`docs/screenshots/phase-6/`, `make screenshots`) | c70997a |
 | 2026-11-21 | 7 | Phase 6 APPROVED (D-71 → D-75, ADR 0018–0022 Accepted); viết `PHASE_7_PROMPTS.md` (7.0 mockup trước khi code), D-76 → D-81 đề xuất | 38950e7 |
+| 2026-11-21 | 7 / 7.0 | Mockup Security Center (68 ảnh `docs/screenshots/phase-7/`): CAPTCHA PoW đăng nhập, SSH safe-apply có xác nhận, chống tự khóa tường lửa, policy root + phiên terminal + phát lại, file nghi nhiễm + cách ly, FIM baseline, Portal › Bảo mật; contract cho màn mới trước | (commit 7.0) |

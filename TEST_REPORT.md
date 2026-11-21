@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 7 / Prompt 7.0 (mockup trước khi code) — nhánh `phase-7`
+
+Phạm vi: chỉ bản demo + contract cho màn mới (không đụng Laravel/agent). Contract thêm trước: `GET /auth/captcha` + `LoginRequest.captcha`, `ErrorCode` `captcha_required`/`would_lock_out`, `SshSettingsPatch.rollback_after_sec` + `POST /security/ssh:confirm`, `GET /servers/{id}/terminal/policy`, `GET /terminal/sessions` + `/{id}/recording`, `GET /security/malware/findings` + `:quarantine`, `POST /servers/{id}/fim:baseline`, Portal `/protection`, `/protection/findings` (+ `:quarantine`, `DELETE`), `POST /hosting-accounts/{id}/scans`; op khai báo `sshd.config.confirm`, `malware.quarantine`, `malware.delete`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` → `make codegen` → `make codegen-check`, `make contracts-check` | PASS (admin 251, portal 113 operation; lần đầu contracts-check báo Portal dùng tài nguyên/tag admin-only `security` → đổi sang `/protection`, tag `Protection`; op job chưa có trong catalog → khai báo) |
+| Dữ liệu demo | `python3 contracts/tools/check_demo.py` | PASS |
+| Vitest | `pnpm exec vitest run` | 525/525 (mới: `demo/__tests__/security.test.ts` 16 test: PoW, CAPTCHA ngưỡng + dùng một lần, SSH safe-apply xác nhận/tự hoàn tác/would_lock_out, chống tự khóa tường lửa, policy root, phiên + bản ghi, mã độc Admin/Portal). Lần đầu 4 test cũ lỗi do đổi hành vi có chủ đích (PATCH SSH cần `rollback_after_sec`, root mặc định bị policy chặn, route `/recording` cần id phiên có ghi) → cập nhật test |
+| Playwright demo (gồm axe) | `pnpm exec playwright test --grep-invert "screenshots…"` | 211/211 |
+| Mockup | `SCREENSHOT_DIR_P7=docs/screenshots/phase-7 playwright test e2e/screenshots-phase7.spec.ts` | 68/68 ảnh (17 màn × 1440/390 × sáng/tối) |
+| Lint web | `make lint-web` (ESLint, Prettier, tsc, i18n 2716 khóa vi = en, tokens) | PASS |
+| Go | `go build ./...`, `go test ./internal/contracts/...` | PASS |
+| Pest (PG16 + Redis) | `php vendor/bin/pest` | 424/424 (không đổi hành vi Laravel) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 6 / Prompt 6.6 — nhánh `phase-6`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` + itso-gateway), DB `migrate:fresh --seed` + `DemoSeeder`. Container không có KVM/systemd: `tests/vm/phase6.sh` **chờ VM**.

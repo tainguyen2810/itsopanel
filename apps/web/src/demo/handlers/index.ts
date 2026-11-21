@@ -7,6 +7,7 @@ import { registerGovernance } from './governance';
 import { registerHosting } from './hosting';
 import { registerInfra } from './infra';
 import { registerFeatures, registerPortal } from './portal';
+import { registerSecurity } from './security';
 import { registerSetup } from './setup';
 import { registerSites } from './sites';
 import { jobActions, registerAuthWrites } from './writes';
@@ -27,6 +28,7 @@ export function registerAll() {
   registerPortal();
   registerAuthWrites(on);
   registerSetup();
+  registerSecurity();
 
   // Hủy / chạy lại job: ADMIN chỉ job thuộc server hoặc account trong phạm vi.
   for (const action of ['cancel', 'retry'] as const) {

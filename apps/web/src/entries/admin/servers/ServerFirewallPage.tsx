@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ApiError } from '@/api/http';
 import { SelectField, TextField } from '@/shared/page/fields';
 import { FormDialog } from '@/shared/page/FormDialog';
 import { ListPage } from '@/shared/page/ListPage';
@@ -401,6 +402,11 @@ function AddRule({
       pending={add.isPending}
       onSubmit={() => void handleSubmit((v) => add.mutate(v))()}
     >
+      {add.error instanceof ApiError && add.error.problem.code === 'would_lock_out' && (
+        <Alert tone="danger" title={t('firewall.lockoutTitle')}>
+          {add.error.problem.detail}
+        </Alert>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
           control={control}

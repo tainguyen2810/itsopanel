@@ -22,6 +22,11 @@ export const sshSchema = z.object({
     .int()
     .min(1, 'admin:packages.errors.min|1')
     .max(10, 'admin:packages.errors.max|10'),
+  rollback_after_sec: z
+    .number({ error: 'admin:packages.errors.number' })
+    .int()
+    .min(30, 'admin:packages.errors.min|30')
+    .max(600, 'admin:packages.errors.max|600'),
 });
 export type SshForm = z.infer<typeof sshSchema>;
 

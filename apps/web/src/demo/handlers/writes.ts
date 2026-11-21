@@ -1,5 +1,6 @@
 import type { DemoDb, Job, ResourceType } from '../db';
 import { noContent, ok, problem, type Ctx, type Reply } from '../router';
+import { checkLogin } from './security';
 
 /** Người thực hiện (dạng UserRef) từ actor của request. */
 export const actorRef = (ctx: Ctx) => ({
@@ -87,11 +88,20 @@ export function registerAuthWrites(on: typeof import('../router').on) {
     return { user, mfaEnabled: user?.mfa_enabled ?? false };
   };
 
-  on('post', '/api/v1/auth/login', (ctx) => {
-    const body = ctx.body as { email?: string; password?: string } | undefined;
+  on('post', '/api/v1/auth/login', async (ctx) => {
+    const body = ctx.body as
+      | { email?: string; password?: string; captcha?: { challenge?: string; nonce?: string } }
+      | undefined;
     if (!body?.email || !body.password) {
       return problem(422, 'validation_failed', 'Dữ liệu không hợp lệ', 'Cần email và mật khẩu.');
     }
+    // Phase 7: mật khẩu `wrong-password` coi là sai; sai quá ngưỡng thì cần CAPTCHA (D-81).
+    const deny = await checkLogin(ctx, {
+      email: body.email,
+      password: body.password,
+      captcha: body.captcha,
+    });
+    if (deny) return deny;
     const { mfaEnabled } = meOf(ctx);
     return ok({ mfa_required: mfaEnabled, mfa_methods: mfaEnabled ? ['totp', 'recovery'] : [] });
   });

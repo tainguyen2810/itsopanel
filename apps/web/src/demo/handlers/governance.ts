@@ -5,6 +5,7 @@ import type { DemoDb } from '../db';
 import { get as pick, page } from '../list';
 import { created, noContent, ok, on, problem, type Ctx, type Reply } from '../router';
 import { canSeeAccount, canSeeServer, scopeRows, visibility } from '../scope';
+import { sshState } from './security';
 import { actorRef, startJob } from './writes';
 
 /**
@@ -79,6 +80,18 @@ function registerSecurity() {
     const pre = precondition(ctx, cur.updated_at);
     if (pre) return pre;
     const b = body<S['SshSettingsPatch']>(ctx);
+    const sec = b.rollback_after_sec;
+    if (sec === undefined || sec < 30 || sec > 600)
+      return invalid('rollback_after_sec từ 30 đến 600 giây.');
+    if (sshState(ctx.db).deadline)
+      return problem(409, 'conflict', 'Đang chờ xác nhận lần áp dụng SSH trước');
+    if (b.password_authentication === false && (cur.admin_keys ?? 0) === 0)
+      return problem(
+        422,
+        'would_lock_out',
+        'Sẽ tự khóa mình',
+        'Chưa có khóa SSH nào cho user quản trị; thêm khóa trước khi tắt đăng nhập bằng mật khẩu.',
+      );
     if (b.port !== undefined && (!Number.isInteger(b.port) || b.port < 1 || b.port > 65535))
       return invalid('Cổng SSH từ 1 đến 65535.');
     if (b.max_auth_tries !== undefined && (b.max_auth_tries < 1 || b.max_auth_tries > 10))
@@ -112,7 +125,12 @@ function registerSecurity() {
       changes,
       onDone: (db) => {
         const s = db.data.ssh_settings as S['SshSettings'];
-        Object.assign(s, b, { updated_at: db.now() });
+        const st = sshState(db);
+        st.previous = structuredClone(s);
+        st.deadline = Date.now() + sec * 1000;
+        const { rollback_after_sec: _r, ...rest } = b;
+        void _r;
+        Object.assign(s, rest, { updated_at: db.now() });
       },
     });
   });

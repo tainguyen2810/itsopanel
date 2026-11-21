@@ -2290,7 +2290,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00aa-7000-8000-00000f0000aa
+                  uuid: 01938a0f-00ad-7000-8000-00000f0000ad
                   type: compose.create
                   state: queued
                   progress: 0
@@ -2323,8 +2323,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa
-                    events: /api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events
+                    self: /api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad
+                    events: /api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad/events
                 resource:
                   type: compose_project
                   uuid: 01938a1e-0001-7000-8000-00001e000001
@@ -2414,7 +2414,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00ab-7000-8000-00000f0000ab
+                  uuid: 01938a0f-00ae-7000-8000-00000f0000ae
                   type: compose.update
                   state: queued
                   progress: 0
@@ -2429,266 +2429,6 @@ paths:
                     finished_at: null
                   - seq: 2
                     op: compose.apply
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab
-                    events: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-        '412':
-          $ref: ./common.yaml#/components/responses/PreconditionFailed
-    delete:
-      operationId: deleteComposeProject
-      summary: Xóa composeProject
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00ac-7000-8000-00000f0000ac
-                  type: compose.delete
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.validate
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  - seq: 2
-                    op: compose.apply
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac
-                    events: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:down:
-    post:
-      operationId: downComposeProject
-      summary: Compose down
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00af-7000-8000-00000f0000af
-                  type: compose.down
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.down
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af
-                    events: /api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:pull:
-    post:
-      operationId: pullComposeProject
-      summary: Compose pull
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00b0-7000-8000-00000f0000b0
-                  type: compose.pull
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.pull
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0
-                    events: /api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:up:
-    post:
-      operationId: upComposeProject
-      summary: Compose up
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00ae-7000-8000-00000f0000ae
-                  type: compose.up
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.up
                     state: pending
                     started_at: null
                     finished_at: null
@@ -2724,6 +2464,266 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: deleteComposeProject
+      summary: Xóa composeProject
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00af-7000-8000-00000f0000af
+                  type: compose.delete
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.validate
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: compose.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af
+                    events: /api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:down:
+    post:
+      operationId: downComposeProject
+      summary: Compose down
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00b2-7000-8000-00000f0000b2
+                  type: compose.down
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.down
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2
+                    events: /api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:pull:
+    post:
+      operationId: pullComposeProject
+      summary: Compose pull
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00b3-7000-8000-00000f0000b3
+                  type: compose.pull
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.pull
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3
+                    events: /api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:up:
+    post:
+      operationId: upComposeProject
+      summary: Compose up
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00b1-7000-8000-00000f0000b1
+                  type: compose.up
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.up
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00b1-7000-8000-00000f0000b1
+                    events: /api/v1/admin/jobs/01938a0f-00b1-7000-8000-00000f0000b1/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/compose-projects/{id}:validate:
     post:
       operationId: validateComposeProject
@@ -2743,7 +2743,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00ad-7000-8000-00000f0000ad
+                  uuid: 01938a0f-00b0-7000-8000-00000f0000b0
                   type: compose.validate
                   state: queued
                   progress: 0
@@ -2771,8 +2771,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad
-                    events: /api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad/events
+                    self: /api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0
+                    events: /api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0/events
                 resource:
                   type: compose_project
                   uuid: 01938a1e-0001-7000-8000-00001e000001
@@ -9140,7 +9140,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a5-7000-8000-00000f0000a5
+                  uuid: 01938a0f-00a8-7000-8000-00000f0000a8
                   type: fail2ban.update
                   state: queued
                   progress: 0
@@ -9168,8 +9168,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5
-                    events: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events
+                    self: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8
+                    events: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -9263,6 +9263,135 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/security/malware/findings:
+    get:
+      operationId: listMalwareFindings
+      summary: File nghi nhiễm
+      tags:
+      - Malware
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/FilterHostingAccount
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/MalwareFinding
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a32-0001-7000-8000-000032000001
+                  hosting_account:
+                    uuid: 01938a05-0003-7000-8000-000005000003
+                    username: lehoa
+                  website:
+                    uuid: 01938a06-0004-7000-8000-000006000004
+                    primary_domain: lehoa.blog
+                  path: sites/lehoa.blog/public/wp-content/uploads/2026/11/x.php
+                  signature: PHP.Webshell.Generic
+                  engine: yara
+                  action: quarantined
+                  found_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a32-0002-7000-8000-000032000002
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  website:
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                    primary_domain: shop.anphat.vn
+                  path: sites/shop.anphat.vn/public/tmp/eicar.com
+                  signature: Eicar-Signature
+                  engine: clamav
+                  action: none
+                  found_at: '2026-11-20T08:15:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/security/malware/findings/{id}:quarantine:
+    post:
+      operationId: quarantineMalwareFinding
+      summary: Cách ly file nghi nhiễm
+      tags:
+      - Malware
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00a7-7000-8000-00000f0000a7
+                  type: malware.quarantine
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: malware_finding
+                    uuid: 01938a32-0002-7000-8000-000032000002
+                  steps:
+                  - seq: 1
+                    op: malware.quarantine
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7
+                    events: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events
+                resource:
+                  type: malware_finding
+                  uuid: 01938a32-0002-7000-8000-000032000002
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
@@ -9478,7 +9607,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a8-7000-8000-00000f0000a8
+                  uuid: 01938a0f-00ab-7000-8000-00000f0000ab
                   type: malware.restore
                   state: queued
                   progress: 0
@@ -9506,8 +9635,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8
-                    events: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events
+                    self: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab
+                    events: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events
                 resource:
                   type: quarantine_item
                   uuid: 01938a1c-0001-7000-8000-00001c000001
@@ -9551,6 +9680,7 @@ paths:
                   allow_groups:
                   - itso-ssh
                   max_auth_tries: 3
+                  admin_keys: 2
                   updated_at: '2026-11-18T09:30:00+07:00'
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
@@ -9564,7 +9694,11 @@ paths:
       tags:
       - Security
       x-itso-step-up: true
-      description: 'Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+      description: 'Safe-apply như tường lửa: `sshd -t` → reload → tự hoàn tác nếu không gọi `:confirm` trong `rollback_after_sec`.
+        Tắt mật khẩu khi `admin_keys = 0` trả 422.
+
+
+        Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
 
 
         Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
@@ -9580,6 +9714,7 @@ paths:
               $ref: '#/components/schemas/SshSettingsPatch'
             example:
               max_auth_tries: 3
+              rollback_after_sec: 120
       responses:
         '202':
           description: Đã nhận, Job được tạo
@@ -9634,6 +9769,68 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
         '412':
           $ref: ./common.yaml#/components/responses/PreconditionFailed
+  /api/v1/admin/security/ssh:confirm:
+    post:
+      operationId: confirmSsh
+      summary: Xác nhận giữ cấu hình SSH vừa áp dụng
+      tags:
+      - Security
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/ServerQuery
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00a5-7000-8000-00000f0000a5
+                  type: sshd.confirm
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: server
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                  steps:
+                  - seq: 1
+                    op: sshd.config.confirm
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5
+                    events: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events
+                resource:
+                  type: server
+                  uuid: 01938a02-0001-7000-8000-000002000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/servers:
     get:
       operationId: listServers
@@ -10150,7 +10347,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a9-7000-8000-00000f0000a9
+                  uuid: 01938a0f-00ac-7000-8000-00000f0000ac
                   type: docker.container_control
                   state: queued
                   progress: 0
@@ -10178,8 +10375,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9
-                    events: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events
+                    self: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac
+                    events: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -10337,6 +10534,74 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/servers/{id}/fim:baseline:
+    post:
+      operationId: rebaselineFim
+      summary: Chụp lại baseline toàn vẹn file
+      tags:
+      - Security
+      x-itso-step-up: true
+      description: 'Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00a6-7000-8000-00000f0000a6
+                  type: fim.baseline
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: server
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                  steps:
+                  - seq: 1
+                    op: fim.baseline
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6
+                    events: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events
+                resource:
+                  type: server
+                  uuid: 01938a02-0001-7000-8000-000002000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/servers/{id}/firewall/rules:
     get:
       operationId: listFirewallRules
@@ -11204,6 +11469,48 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/servers/{id}/terminal/policy:
+    get:
+      operationId: getTerminalPolicy
+      summary: Policy terminal của máy chủ (chỉ đọc)
+      tags:
+      - Terminal
+      description: Đọc từ agent; chỉ bật/tắt được bằng `itso policy set` trên máy chủ (D-81).
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TerminalPolicy'
+                required:
+                - data
+              example:
+                data:
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  root_enabled: false
+                  record_root: true
+                  record_user: false
+                  max_sessions_per_account: 2
+                  idle_timeout_sec: 900
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
   /api/v1/admin/servers/{id}:reboot:
     post:
       operationId: rebootServer
@@ -12460,6 +12767,161 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
         '503':
           $ref: ./common.yaml#/components/responses/AgentUnavailable
+    get:
+      operationId: listTerminalSessions
+      summary: Phiên terminal
+      tags:
+      - Terminal
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/FilterServer
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/TerminalSession'
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a31-0001-7000-8000-000031000001
+                  mode: account
+                  unix_user: anphat
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  opened_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  client_ip: 10.10.5.20
+                  started_at: '2026-11-20T08:15:00+07:00'
+                  ended_at: null
+                  ended_reason: null
+                  recorded: false
+                  recording_bytes: 0
+                - uuid: 01938a31-0002-7000-8000-000031000002
+                  mode: root
+                  unix_user: root
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  hosting_account: null
+                  opened_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  client_ip: 10.10.5.20
+                  started_at: '2026-11-19T16:02:00+07:00'
+                  ended_at: '2026-11-19T16:09:41+07:00'
+                  ended_reason: exit
+                  recorded: true
+                  recording_bytes: 1843
+                - uuid: 01938a31-0003-7000-8000-000031000003
+                  mode: account
+                  unix_user: lehoa
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  hosting_account:
+                    uuid: 01938a05-0003-7000-8000-000005000003
+                    username: lehoa
+                  opened_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  client_ip: 10.10.5.31
+                  started_at: '2026-11-19T14:05:00+07:00'
+                  ended_at: '2026-11-19T14:22:10+07:00'
+                  ended_reason: idle
+                  recorded: false
+                  recording_bytes: 0
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/terminal/sessions/{id}/recording:
+    get:
+      operationId: getTerminalRecording
+      summary: Bản ghi phiên (asciicast)
+      tags:
+      - Terminal
+      x-itso-step-up: true
+      description: Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/Offset
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TerminalRecording'
+                required:
+                - data
+              example:
+                data:
+                  session_uuid: 01938a31-0002-7000-8000-000031000002
+                  width: 100
+                  height: 24
+                  truncated: false
+                  next_offset: null
+                  events:
+                  - t: 0.0
+                    data: 'root@srv-hn-01:~# '
+                  - t: 1.4
+                    data: "systemctl status nginx --no-pager | head -3\r\n"
+                  - t: 1.6
+                    data: "● nginx.service - A high performance web server\r\n     Loaded: loaded\r\n     Active: active (running)\
+                      \ since Wed 2026-11-19 09:12:04 +07\r\n"
+                  - t: 1.7
+                    data: 'root@srv-hn-01:~# '
+                  - t: 4.9
+                    data: "nft list table inet itso | head -4\r\n"
+                  - t: 5.0
+                    data: "table inet itso {\r\n\tchain input {\r\n\t\ttype filter hook input priority filter; policy drop;\r\
+                      \n\t\tct state established,related accept\r\n"
+                  - t: 5.1
+                    data: 'root@srv-hn-01:~# '
+                  - t: 8.3
+                    data: "exit\r\n"
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
   /api/v1/admin/uptime-checks:
     get:
       operationId: listUptimeChecks
@@ -14042,7 +14504,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a7-7000-8000-00000f0000a7
+                  uuid: 01938a0f-00aa-7000-8000-00000f0000aa
                   type: malware.scan
                   state: queued
                   progress: 0
@@ -14070,8 +14532,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7
-                    events: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events
+                    self: /api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa
+                    events: /api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events
                 resource:
                   type: website
                   uuid: 01938a06-0004-7000-8000-000006000004
@@ -14158,7 +14620,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a6-7000-8000-00000f0000a6
+                  uuid: 01938a0f-00a9-7000-8000-00000f0000a9
                   type: waf.update
                   state: queued
                   progress: 0
@@ -14191,8 +14653,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6
-                    events: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events
+                    self: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9
+                    events: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -14573,6 +15035,36 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/auth/captcha:
+    get:
+      operationId: getCaptcha
+      summary: Thử thách CAPTCHA proof-of-work (dùng một lần, 5 phút)
+      tags:
+      - Auth
+      description: Tự host, không gọi dịch vụ ngoài (D-81). Đăng nhập/quên mật khẩu trả 422 `captcha_required` khi IP hoặc
+        email đã sai quá ngưỡng (`portal_captcha_after_failures`); khi đó gửi kèm `captcha`.
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/CaptchaChallenge
+                required:
+                - data
+              example:
+                data:
+                  challenge: v1.1763601300.4f9a2c.b1e0d7c3a95f4e21
+                  difficulty: 12
+                  expires_at: '2026-11-20T08:20:00+07:00'
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+      security: []
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Realm
   /api/v1/auth/csrf:
     get:
       operationId: getCsrfCookie
@@ -16950,6 +17442,11 @@ components:
           type: integer
           minimum: 1
           maximum: 10
+        admin_keys:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Số khóa SSH của user quản trị; 0 thì không tắt được mật khẩu.
         updated_at:
           type: string
           format: date-time
@@ -16960,6 +17457,167 @@ components:
       - allow_groups
       - max_auth_tries
       - updated_at
+      additionalProperties: false
+    SshSettingsPatch:
+      type: object
+      properties:
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        password_authentication:
+          type: boolean
+        permit_root_login:
+          type: string
+          enum:
+          - 'no'
+          - prohibit-password
+        allow_groups:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][a-z0-9-]{0,31}$
+        max_auth_tries:
+          type: integer
+          minimum: 1
+          maximum: 10
+        rollback_after_sec:
+          type: integer
+          minimum: 30
+          maximum: 600
+          description: 'Safe-apply: tự hoàn tác nếu không xác nhận.'
+      required:
+      - rollback_after_sec
+      additionalProperties: false
+    TerminalPolicy:
+      type: object
+      properties:
+        server:
+          $ref: ./common.yaml#/components/schemas/ServerRef
+        root_enabled:
+          type: boolean
+        record_root:
+          type: boolean
+        record_user:
+          type: boolean
+        max_sessions_per_account:
+          type: integer
+          minimum: 1
+        idle_timeout_sec:
+          type: integer
+          minimum: 60
+      required:
+      - server
+      - root_enabled
+      - record_root
+      - record_user
+      - max_sessions_per_account
+      - idle_timeout_sec
+      additionalProperties: false
+    TerminalSession:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum:
+          - account
+          - root
+        unix_user:
+          type: string
+        server:
+          $ref: ./common.yaml#/components/schemas/ServerRef
+        hosting_account:
+          oneOf:
+          - $ref: ./common.yaml#/components/schemas/AccountRef
+          - type: 'null'
+        opened_by:
+          $ref: ./common.yaml#/components/schemas/UserRef
+        client_ip:
+          type:
+          - string
+          - 'null'
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        ended_reason:
+          type:
+          - string
+          - 'null'
+          enum:
+          - exit
+          - idle
+          - closed
+          - killed
+          - expired
+          - limit
+          - null
+        recorded:
+          type: boolean
+        recording_bytes:
+          type: integer
+          minimum: 0
+      required:
+      - uuid
+      - mode
+      - unix_user
+      - server
+      - hosting_account
+      - opened_by
+      - client_ip
+      - started_at
+      - ended_at
+      - ended_reason
+      - recorded
+      - recording_bytes
+      additionalProperties: false
+    TerminalRecording:
+      type: object
+      properties:
+        session_uuid:
+          type: string
+          format: uuid
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              t:
+                type: number
+                minimum: 0
+              data:
+                type: string
+            required:
+            - t
+            - data
+            additionalProperties: false
+        next_offset:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        truncated:
+          type: boolean
+      required:
+      - session_uuid
+      - width
+      - height
+      - events
+      - next_offset
+      - truncated
       additionalProperties: false
     Fail2banSettings:
       type: object
@@ -18077,34 +18735,6 @@ components:
           type: boolean
       additionalProperties: false
       description: 'Cập nhật một phần BackupPolicyInput: chỉ gửi trường cần đổi.'
-    SshSettingsPatch:
-      type: object
-      properties:
-        port:
-          type: integer
-          minimum: 1
-          maximum: 65535
-        password_authentication:
-          type: boolean
-        permit_root_login:
-          type: string
-          enum:
-          - 'no'
-          - prohibit-password
-        allow_groups:
-          type: array
-          items:
-            type: string
-            pattern: ^[a-z][a-z0-9-]{0,31}$
-        max_auth_tries:
-          type: integer
-          minimum: 1
-          maximum: 10
-        updated_at:
-          type: string
-          format: date-time
-      additionalProperties: false
-      description: 'Cập nhật một phần SshSettings: chỉ gửi trường cần đổi.'
     Fail2banSettingsPatch:
       type: object
       properties:

@@ -308,6 +308,8 @@ DECLARED = [
     ("sshd.config.apply", "security", "critical", True, 7), ("fail2ban.apply", "security", "high", True, 7),
     ("waf.apply", "security", "high", True, 7), ("malware.scan", "security", "medium", True, 7),
     ("malware.restore", "security", "high", True, 7), ("fim.baseline", "security", "medium", True, 7),
+    ("sshd.config.confirm", "security", "high", True, 7), ("malware.quarantine", "security", "high", True, 7),
+    ("malware.delete", "security", "high", True, 7),
     ("docker.container.control", "docker", "critical", False, 10),
     ("compose.validate", "docker", "medium", False, 10), ("compose.apply", "docker", "critical", False, 10),
     ("compose.up", "docker", "critical", False, 10), ("compose.down", "docker", "high", False, 10),

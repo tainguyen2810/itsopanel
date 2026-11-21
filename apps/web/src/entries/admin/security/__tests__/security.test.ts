@@ -41,6 +41,7 @@ describe('SSH', () => {
     permit_root_login: 'no' as const,
     allow_groups: 'itso-admin, sftp',
     max_auth_tries: 3,
+    rollback_after_sec: 120,
   };
   it('không cho để trống nhóm được SSH (tự khóa mình ra ngoài)', () => {
     expect(sshSchema.safeParse(ok).success).toBe(true);

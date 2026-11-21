@@ -31,7 +31,7 @@ Giữ nguyên: Laravel không chạy lệnh hệ thống; agent không có op ch
 
 | Prompt | Nội dung | Ước lượng |
 |---|---|---|
-| 7.0 | **Mockup:** dựng màn hình/trạng thái Phase 7 trên bản demo (MSW, theo OpenAPI hiện có + phần sẽ thêm ở 7.1), chụp `docs/screenshots/phase-7/` 1440/390 × sáng/tối | 0,5 ngày |
+| 7.0 | **Mockup:** dựng màn hình/trạng thái Phase 7 trên bản demo (MSW), chụp `docs/screenshots/phase-7/` 1440/390 × sáng/tối. Contract trước: phần OpenAPI mà màn mới gọi (CAPTCHA, SSH confirm, terminal policy/phiên/bản ghi, file nghi nhiễm, FIM baseline, Portal `/protection`) thêm ngay ở 7.0; 7.1 làm phần còn lại | 0,5 ngày |
 | 7.1 | ADR 0023–0028 (D-76…D-81); contracts agent-ops (firewall, sshd hardening, fail2ban, waf, malware, quarantine, fim, security.audit, pty root/list/recording); OpenAPI rà lại; DBML + migration Phase 7 | 0,5 ngày |
 | 7.2 | Agent: firewall nftables + rollback timer, sshd hardening, fail2ban; validator chống tự khóa; sandbox | 1,5 ngày |
 | 7.3 | Agent: WAF (template vhost + file waf, sự kiện), malware (clamdscan/yara dưới uid), cách ly/khôi phục, FIM, security.audit | 1,5 ngày |

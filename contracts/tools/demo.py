@@ -10,7 +10,7 @@ user server package package_version account website domain certificate database 
 sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_record migration purge
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
-uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal""".split())}
+uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal malware_finding""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -419,7 +419,7 @@ WAF = {"website": site_ref(0), "enabled": True, "mode": "block", "paranoia_level
        "rule_exclusions": ["942100"], "blocked_24h": 37, "updated_at": T1}
 
 SSH_SETTINGS = {"port": 22, "password_authentication": False, "permit_root_login": "no",
-                "allow_groups": ["itso-ssh"], "max_auth_tries": 3, "updated_at": T0}
+                "allow_groups": ["itso-ssh"], "max_auth_tries": 3, "admin_keys": 2, "updated_at": T0}
 
 FAIL2BAN = {"enabled": True, "jails": [
     {"name": "sshd", "enabled": True, "bantime_sec": 3600, "findtime_sec": 600, "maxretry": 5, "banned_count": 12},
@@ -544,7 +544,8 @@ AUDIT = [
 
 SETTINGS = {
     "general": {"panel_name": "ITSO Panel", "default_locale": "vi", "timezone": "Asia/Ho_Chi_Minh"},
-    "security": {"admin_mfa_required": True, "session_lifetime_min": 120, "portal_captcha_after_failures": 3},
+    "security": {"admin_mfa_required": True, "session_lifetime_min": 120, "portal_captcha_after_failures": 3,
+                 "portal_mfa_required": False},
     "smtp": {"host": "smtp.itso.local", "port": 587, "username": "panel@itso.local", "from": "ITSO Panel <panel@itso.local>",
              "encryption": "starttls"},
 }
@@ -651,6 +652,54 @@ ME_PORTAL = {"user": USERS[2], "permissions": ["own.*"], "scopes": [], "mfa_veri
 TERMINAL = {"ticket": "tkt_9QwErTy2uIoP", "ws_url": "wss://admin.itso.local/gateway/terminal",
             "expires_at": "2026-11-20T08:15:30+07:00", "mode": "account", "unix_user": "anphat",
             "session_uuid": u("terminal", 1)}
+
+# ---- Phase 7: CAPTCHA, terminal root + ghi phiên, mã độc theo file, bảo mật Portal
+CAPTCHA = {"challenge": "v1.1763601300.4f9a2c.b1e0d7c3a95f4e21", "difficulty": 12,
+           "expires_at": "2026-11-20T08:20:00+07:00"}
+
+TERMINAL_POLICY = {"server": server_ref(0), "root_enabled": False, "record_root": True, "record_user": False,
+                   "max_sessions_per_account": 2, "idle_timeout_sec": 900}
+
+TERMINAL_SESSIONS = [
+    {"uuid": u("terminal", 1), "mode": "account", "unix_user": "anphat", "server": server_ref(0),
+     "hosting_account": acc_ref(0), "opened_by": user_ref(0), "client_ip": "10.10.5.20",
+     "started_at": T2, "ended_at": None, "ended_reason": None, "recorded": False, "recording_bytes": 0},
+    {"uuid": u("terminal", 2), "mode": "root", "unix_user": "root", "server": server_ref(0),
+     "hosting_account": None, "opened_by": user_ref(0), "client_ip": "10.10.5.20",
+     "started_at": "2026-11-19T16:02:00+07:00", "ended_at": "2026-11-19T16:09:41+07:00", "ended_reason": "exit",
+     "recorded": True, "recording_bytes": 1843},
+    {"uuid": u("terminal", 3), "mode": "account", "unix_user": "lehoa", "server": server_ref(2),
+     "hosting_account": acc_ref(2), "opened_by": user_ref(0), "client_ip": "10.10.5.31",
+     "started_at": T1, "ended_at": "2026-11-19T14:22:10+07:00", "ended_reason": "idle",
+     "recorded": False, "recording_bytes": 0},
+]
+
+TERMINAL_RECORDING = {"session_uuid": u("terminal", 2), "width": 100, "height": 24, "truncated": False,
+                      "next_offset": None, "events": [
+    {"t": 0.0, "data": "root@srv-hn-01:~# "},
+    {"t": 1.4, "data": "systemctl status nginx --no-pager | head -3\r\n"},
+    {"t": 1.6, "data": "\u25cf nginx.service - A high performance web server\r\n     Loaded: loaded\r\n     Active: active (running) since Wed 2026-11-19 09:12:04 +07\r\n"},
+    {"t": 1.7, "data": "root@srv-hn-01:~# "},
+    {"t": 4.9, "data": "nft list table inet itso | head -4\r\n"},
+    {"t": 5.0, "data": "table inet itso {\r\n\tchain input {\r\n\t\ttype filter hook input priority filter; policy drop;\r\n\t\tct state established,related accept\r\n"},
+    {"t": 5.1, "data": "root@srv-hn-01:~# "},
+    {"t": 8.3, "data": "exit\r\n"},
+]}
+
+MALWARE_FINDINGS = [
+    {"uuid": u("malware_finding", 1), "hosting_account": acc_ref(2), "website": site_ref(3),
+     "path": "sites/lehoa.blog/public/wp-content/uploads/2026/11/x.php", "signature": "PHP.Webshell.Generic",
+     "engine": "yara", "action": "quarantined", "found_at": T1},
+    {"uuid": u("malware_finding", 2), "hosting_account": acc_ref(0), "website": site_ref(1),
+     "path": "sites/shop.anphat.vn/public/tmp/eicar.com", "signature": "Eicar-Signature",
+     "engine": "clamav", "action": "none", "found_at": T2},
+]
+
+PORTAL_SECURITY = {"accounts": [{
+    "hosting_account": acc_ref(0),
+    "websites": [{"website": site_ref(0), "waf_enabled": True, "waf_mode": "block", "blocked_24h": 37},
+                 {"website": site_ref(1), "waf_enabled": True, "waf_mode": "detect", "blocked_24h": 0}],
+    "findings_open": 1, "last_scan_at": T2, "scan_running": False}]}
 
 UPLOAD = {"uuid": u("upload", 1), "path": "sites/anphat.vn/public/brochure.pdf", "size": 5242880,
           "chunk_size": 8388608, "received": 0, "expires_at": "2026-11-20T09:15:00+07:00", "status": "receiving",

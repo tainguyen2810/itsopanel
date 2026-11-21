@@ -38,6 +38,7 @@ export const securitySchema = z.object({
   admin_mfa_required: z.literal(true, { error: 'admin:settings.errors.mfa' }),
   session_lifetime_min: num(15, 720),
   portal_captcha_after_failures: num(1, 10),
+  portal_mfa_required: z.boolean(),
 });
 export const smtpSchema = z.object({
   host: z.string().trim().min(1, 'form.required'),
@@ -133,8 +134,15 @@ export default function SettingsPage() {
                       type="number"
                       inputMode="numeric"
                       label={t('settings.captcha')}
+                      description={t('settings.captchaHint')}
                     />
                   </div>
+                  <SwitchField
+                    control={c}
+                    name="portal_mfa_required"
+                    label={t('settings.portalMfa')}
+                    description={t('settings.portalMfaHint')}
+                  />
                 </>
               )}
             </GroupForm>

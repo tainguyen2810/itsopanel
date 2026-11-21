@@ -12,6 +12,8 @@ const first = (k: string) => D[k]?.[0]?.uuid ?? 'missing';
 /** Tham số mẫu cho {id} theo đoạn đường dẫn đứng trước. */
 const ID_BY_SEGMENT: Record<string, string> = {
   servers: first('servers'),
+  // Phiên terminal có bản ghi (root) để đọc được /recording.
+  sessions: '01938a31-0002-7000-8000-000031000002',
   'hosting-accounts': first('accounts'),
   'hosting-packages': first('packages'),
   websites: first('websites'),

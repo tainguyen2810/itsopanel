@@ -1047,6 +1047,39 @@
       "status": "declared"
     },
     {
+      "op": "sshd.config.confirm",
+      "domain": "security",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 7,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "malware.quarantine",
+      "domain": "security",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 7,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "malware.delete",
+      "domain": "security",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 7,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
       "op": "docker.container.control",
       "domain": "docker",
       "risk": "critical",

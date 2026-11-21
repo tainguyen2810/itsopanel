@@ -322,6 +322,8 @@ export function registerInfra() {
     if (isReply(s)) return s;
     const b = (ctx.body ?? {}) as Partial<S['FirewallRule']>;
     const err = firewallError(b);
+    const lock = err ? null : lockoutError(b, s);
+    if (lock) return problem(422, 'would_lock_out', 'Sẽ tự khóa mình', lock);
     if (err) return invalid(err);
     fw(ctx.db, s.uuid);
     const rule = {
@@ -605,7 +607,38 @@ export function registerInfra() {
     if (b.mode === 'account' && (!acc || !(v.all || v.accounts.has(acc.uuid)))) {
       return invalid('Chọn tài khoản hosting.');
     }
+    // Root chỉ khi policy cục bộ của máy chủ cho phép (bật bằng `itso policy set`, D-81).
+    const policy = ctx.db.data.terminal_policy as S['TerminalPolicy'] | undefined;
+    if (b.mode === 'root' && !policy?.root_enabled) {
+      return problem(
+        403,
+        'forbidden',
+        'Policy máy chủ đang tắt terminal root',
+        'Bật bằng lệnh `itso policy set terminal.root on` trên máy chủ.',
+      );
+    }
     const tpl = ctx.db.data.terminal as S['TerminalTicket'];
+    const session = ctx.db.newUuid();
+    const srv =
+      b.mode === 'root'
+        ? ctx.db.data.servers.find((x) => x.uuid === b.server_uuid)
+        : ctx.db.data.servers.find((x) => x.uuid === acc?.server.uuid);
+    const me = ctx.db.data.users.find((u) => u.uuid === ctx.actor.uuid);
+    (ctx.db.data.terminal_sessions as S['TerminalSession'][]).unshift({
+      uuid: session,
+      mode: b.mode,
+      unix_user: b.mode === 'root' ? 'root' : (acc?.username ?? 'user'),
+      server: { uuid: srv?.uuid ?? '', name: srv?.name ?? '' },
+      hosting_account:
+        b.mode === 'root' || !acc ? null : { uuid: acc.uuid, username: acc.username },
+      opened_by: { uuid: ctx.actor.uuid, name: me?.name ?? '', email: me?.email ?? '' },
+      client_ip: '10.10.5.20',
+      started_at: ctx.db.now(),
+      ended_at: null,
+      ended_reason: null,
+      recorded: b.mode === 'root' ? (policy?.record_root ?? true) : (policy?.record_user ?? false),
+      recording_bytes: 0,
+    });
     ctx.db.audit({
       actor: actorRef(ctx),
       action: 'terminal.open',
@@ -618,7 +651,7 @@ export function registerInfra() {
     return created({
       ...tpl,
       ticket: `tkt_${ctx.db.newUuid().slice(-12)}`,
-      session_uuid: ctx.db.newUuid(),
+      session_uuid: session,
       mode: b.mode,
       unix_user: b.mode === 'root' ? 'root' : (acc?.username ?? 'user'),
       expires_at: new Date(Date.now() + 30_000 + 7 * 3600_000)
@@ -645,6 +678,43 @@ export function firewallError(b: Partial<S['FirewallRule']>): string | null {
   if (!b.source || !CIDR.test(b.source)) return 'source phải là IP hoặc CIDR.';
   if ((b.protocol === 'tcp' || b.protocol === 'udp') && (!b.ports || !PORTS.test(b.ports))) {
     return 'ports dạng 80,443 hoặc 8000-8100.';
+  }
+  return null;
+}
+
+/** IP của phiên hiện tại ở bản demo (khớp `sessions[current]`). */
+export const DEMO_CLIENT_IP = '10.10.5.20';
+const ipNum = (ip: string) => ip.split('.').reduce((a, x) => a * 256 + Number(x), 0);
+function inCidr(ip: string, cidr: string): boolean {
+  if (!/^[0-9.]+(\/\d+)?$/.test(cidr)) return false;
+  const [base = '', bits = '32'] = cidr.split('/');
+  const n = Number(bits);
+  const mask = n === 0 ? 0 : 2 ** 32 - 2 ** (32 - n);
+  return (ipNum(ip) & mask) >>> 0 === (ipNum(base) & mask) >>> 0;
+}
+function hitsPort(ports: string | null | undefined, port: number): boolean {
+  if (!ports) return true;
+  return ports.split(',').some((p) => {
+    const [a, b = a] = p.split('-').map(Number) as [number, number?];
+    return port >= a && port <= (b ?? a);
+  });
+}
+/**
+ * Bất biến chống tự khóa (D-76): rule chặn vào cổng SSH (22) hoặc cổng panel (8443) với nguồn chứa IP của người
+ * đang thao tác bị từ chối. Backend và agent kiểm lại cùng quy tắc.
+ */
+export function lockoutError(b: Partial<S['FirewallRule']>, _s: { uuid: string }): string | null {
+  void _s;
+  if (b.direction !== 'in' || b.action === 'accept' || b.enabled === false) return null;
+  if (b.protocol !== 'tcp' && b.protocol !== 'any') return null;
+  if (!b.source || !inCidr(DEMO_CLIENT_IP, b.source)) return null;
+  for (const [port, name] of [
+    [22, 'SSH'],
+    [8443, 'Admin Panel'],
+  ] as const) {
+    if (hitsPort(b.ports, port)) {
+      return `Rule này chặn cổng ${port} (${name}) từ IP hiện tại của bạn (${DEMO_CLIENT_IP}). Thu hẹp nguồn hoặc thêm rule cho phép IP của bạn trước.`;
+    }
   }
   return null;
 }

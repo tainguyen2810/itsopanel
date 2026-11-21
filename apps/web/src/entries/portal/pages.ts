@@ -20,6 +20,7 @@ export const PORTAL_PAGES: PageLoaders = {
   backups: () => import('./pages/BackupsPage'),
   wordpress: () => import('@/shared/hosting/pages/WordPressPage'),
   terminal: () => import('./pages/TerminalPage'),
+  security: () => import('./pages/SecurityPage'),
   jobDetail: () => import('@/shared/pages/JobDetailPage'),
   notifications: () => import('@/shared/pages/NotificationsPage'),
   profile: () => import('@/shared/pages/ProfilePage'),
