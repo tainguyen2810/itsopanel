@@ -40,7 +40,7 @@ Phase 9 (kế hoạch ✓ duyệt 2026-11-21, đang làm) — prompt chi tiết:
 - ✓ 9.4 Panel API nhiều server: enroll, năng lực, job theo server, gợi ý
 - ✓ 9.5 Agent: `migrate.*`, `http.check`, `account.remove`, khôi phục chéo server
 - ✓ 9.6 Panel: điều phối chuyển account, cutover, rollback — 8dfa8c2
-- ✓ 9.7 UI nối API thật — (commit 9.7)
+- ✓ 9.7 UI nối API thật — b2ef24d
 - ✱ 9.8 e2e, VM Phase 9 (3 VM), review bảo mật, báo cáo, merge
 
 Phase 8: ✓ APPROVED 2026-11-21 (merge `7ec1afb`, tag `v0.1.0-alpha`) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.md`
