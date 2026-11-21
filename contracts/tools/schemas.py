@@ -347,6 +347,10 @@ LIMITS = obj({
     "retention_days_after_terminate": i(minimum=30, description="D-46: tối thiểu 30 ngày."),
 })
 
+# Retention mong muốn của policy (D-86): giữ N bản mới nhất / theo giờ / ngày / tuần / tháng (như backup_retention của gói).
+RETENTION = obj({k: i(minimum=0, maximum=1000) for k in ("last", "hourly", "daily", "weekly", "monthly")}, required=[],
+                desc="Số bản giữ theo nhóm; bản có tag final/pre-restore không bị xóa.")
+
 ADMIN = {
     "AdminUser": obj(with_({
         "uuid": UUID, "realm": enum("admin", "portal"), "name": s(maxLength=120), "email": s("email"),
@@ -484,7 +488,7 @@ ADMIN = {
                                "scope_uuid": nullable(UUID), "contents": arr(enum("files", "databases", "config")),
                                "excludes": arr(s(maxLength=200)),
                                "schedule": cref("CronExpr"), "destination_uuids": arr(UUID),
-                               "retention": map_of(i(minimum=0)),
+                               "retention": RETENTION,
                                "retention_mode": enum("panel", "cli", description="`cli`: có đích bất biến/forget tắt, panel không xóa snapshot."),
                                "enabled": b(), "last_run_at": NDT, "next_run_at": NDT,
                                "last_status": nullable(enum("succeeded", "failed", "running"))}, TS)),
@@ -493,7 +497,7 @@ ADMIN = {
                               "scope_uuid": nullable(UUID), "contents": arr(enum("files", "databases", "config")),
                               "excludes": arr(s(maxLength=200), maxItems=50),
                               "schedule": cref("CronExpr"), "destination_uuids": arr(UUID, minItems=1),
-                              "retention": map_of(i(minimum=0)), "enabled": b()},
+                              "retention": RETENTION, "enabled": b()},
                              required=["name", "scope_type", "schedule", "destination_uuids"]),
     "BackupVerification": obj({"uuid": UUID, "kind": enum("check", "restore_test"),
                                "destination": obj({"uuid": UUID, "name": s()}),

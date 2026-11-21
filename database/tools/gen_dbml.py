@@ -432,7 +432,7 @@ t("backup", "backup_policies", ID + [
     "scope_id bigint [note: 'id theo scope_type; null cho all_accounts/panel']",
     "contents text[] [not null, default: `'{files,databases}'`, note: 'files|databases|config']",
     "excludes text[] [not null, default: `'{}'`, note: 'Mẫu loại trừ tương đối (≤ 50), cộng thêm loại trừ cố định của agent']",
-    "schedule text [not null]", "retention jsonb [not null, default: `'{}'::jsonb`, note: 'Mong muốn: keep_daily…; chỉ áp khi đích cho phép prune từ panel']",
+    "schedule text [not null]", "retention jsonb [not null, default: `'{}'::jsonb`, note: 'Mong muốn: last, hourly, daily, weekly, monthly; chỉ áp khi đích cho phép prune từ panel']",
     "enabled boolean [not null, default: true]",
     "last_run_at timestamptz", "next_run_at timestamptz", "last_status text [note: 'succeeded|failed|running']",
 ] + TS + SOFT, ["(scope_type, scope_id)", "next_run_at"])

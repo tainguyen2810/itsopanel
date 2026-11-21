@@ -47,7 +47,7 @@ const PAGES: readonly Shot[] = [
       await dlg.getByRole('combobox', { name: 'Loại' }).click();
       await p.getByRole('option', { name: 'Ổ đĩa máy chủ' }).click();
       await dlg.getByLabel('Tên đích').fill('Ổ phụ srv-hn-01');
-      await dlg.getByLabel('Đường dẫn').fill('/mnt/backup2/itso');
+      await expect(dlg.getByText('/var/backups/itso')).toBeVisible();
       await dlg.getByRole('button', { name: 'Lưu' }).click();
       await expect(p.getByRole('dialog', { name: /Bộ khôi phục/ })).toBeVisible();
       await p.getByRole('checkbox', { name: /Tôi đã lưu bộ khôi phục/ }).check();
@@ -86,6 +86,7 @@ const PAGES: readonly Shot[] = [
     'admin-backups-snapshot-detail',
     '/admin/backups?tab=history',
     async (p) => {
+      await p.getByRole('searchbox', { name: 'Tìm kiếm' }).fill('4f2a9c1e');
       await menu(p, /Thao tác cho snapshot 4f2a9c1e/, 'Chi tiết');
       await expect(p.getByRole('dialog').getByText(/Bất biến tới/)).toBeVisible();
     },
@@ -94,6 +95,7 @@ const PAGES: readonly Shot[] = [
     'admin-backups-browse-file',
     '/admin/backups?tab=history',
     async (p) => {
+      await p.getByRole('searchbox', { name: 'Tìm kiếm' }).fill('4f2a9c1e');
       await menu(p, /Thao tác cho snapshot 4f2a9c1e/, 'Xem nội dung');
       const dlg = p.getByRole('dialog');
       await dlg.getByRole('button', { name: 'sites', exact: true }).click();

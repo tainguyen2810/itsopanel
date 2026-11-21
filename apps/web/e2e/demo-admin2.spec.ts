@@ -24,15 +24,14 @@ test('wizard khôi phục: kiểm từng bước, ghi đè cần gõ username �
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Tiếp' }).click();
 
-  // Bước 2: chọn database + cấu hình.
+  // Bước 2: chọn database (ghi đè chỉ một website hoặc một DB mỗi lần).
   await expect(page.getByRole('heading', { name: 'Chọn nội dung' })).toBeVisible();
   await page.getByRole('button', { name: 'Tiếp' }).click();
   await expect(
     page.getByRole('alert').filter({ hasText: 'Chọn ít nhất một mục cần khôi phục' }),
   ).toBeVisible();
   await page.getByRole('checkbox', { name: /anphat_shop/ }).check();
-  await page.getByRole('checkbox', { name: /Cấu hình account/ }).check();
-  await expect(page.getByText('Đã chọn 2 mục')).toBeVisible();
+  await expect(page.getByText('Đã chọn 1 mục')).toBeVisible();
   await page.getByRole('button', { name: 'Tiếp' }).click();
 
   // Bước 3: ghi đè phải gõ đúng username.
@@ -47,7 +46,7 @@ test('wizard khôi phục: kiểm từng bước, ghi đè cần gõ username �
   await page.getByRole('button', { name: 'Tiếp' }).click();
 
   // Bước 4: xem lại rồi bắt đầu.
-  await expect(page.getByText('config, database:anphat_shop').first()).toBeVisible();
+  await expect(page.getByText('database:anphat_shop').first()).toBeVisible();
   await page.getByRole('button', { name: 'Bắt đầu khôi phục' }).click();
   await expect(page.getByText('Đã xong: Khôi phục từ bản sao lưu')).toBeVisible({
     timeout: 15_000,
@@ -60,22 +59,25 @@ test('wizard khôi phục: kiểm từng bước, ghi đè cần gõ username �
   expect(errors).toEqual([]);
 });
 
-test('khôi phục ra bản mới từ nút trên snapshot, sang máy chủ khác', async ({ page }) => {
+test('khôi phục ra bản mới từ nút trên snapshot', async ({ page }) => {
   const errors = watchErrors(page);
-  await page.goto('/admin/backups');
-  const row = page.getByRole('row', { name: /^anphat/ }).first();
-  await row.getByRole('button', { name: /Thao tác/ }).click();
+  await page.goto('/admin/backups?tab=history');
+  await page.getByRole('searchbox', { name: 'Tìm kiếm' }).fill('4f2a9c1e');
+  await page
+    .getByRole('button', { name: /Thao tác cho snapshot 4f2a9c1e/ })
+    .first()
+    .click();
   await page.getByRole('menuitem', { name: 'Khôi phục…' }).click();
   await expect(page).toHaveURL(/\/admin\/restores\/new\?snapshot=/);
-  // Snapshot đã được chọn sẵn → vào thẳng bước chọn nội dung.
-  await expect(page.getByRole('radio').first()).toBeChecked();
+  // Snapshot đã được chọn sẵn.
+  await expect(page.getByRole('radio', { name: /4f2a9c1e/ })).toBeChecked();
   await page.getByRole('button', { name: 'Tiếp' }).click();
   await page.getByRole('checkbox', { name: /Toàn bộ thư mục sites/ }).check();
   await page.getByRole('button', { name: 'Tiếp' }).click();
-  await page.getByRole('combobox', { name: 'Máy chủ đích' }).click();
-  await page.getByRole('option', { name: 'srv-hn-02' }).click();
+  // Mặc định khôi phục ra bản mới; không có lựa chọn máy chủ khác (Phase 9).
+  await expect(page.getByRole('radio', { name: /^Ra bản mới/ })).toBeChecked();
+  await expect(page.getByRole('combobox', { name: 'Máy chủ đích' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Tiếp' }).click();
-  await expect(page.getByText('srv-hn-02').first()).toBeVisible();
   await page.getByRole('button', { name: 'Bắt đầu khôi phục' }).click();
   await expect(page.getByText('Đã xong: Khôi phục từ bản sao lưu')).toBeVisible({
     timeout: 15_000,

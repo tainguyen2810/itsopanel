@@ -1006,7 +1006,7 @@ Table backup_policies {
   contents text[] [not null, default: `'{files,databases}'`, note: 'files|databases|config']
   excludes text[] [not null, default: `'{}'`, note: 'Mẫu loại trừ tương đối (≤ 50), cộng thêm loại trừ cố định của agent']
   schedule text [not null]
-  retention jsonb [not null, default: `'{}'::jsonb`, note: 'Mong muốn: keep_daily…; chỉ áp khi đích cho phép prune từ panel']
+  retention jsonb [not null, default: `'{}'::jsonb`, note: 'Mong muốn: last, hourly, daily, weekly, monthly; chỉ áp khi đích cho phép prune từ panel']
   enabled boolean [not null, default: true]
   last_run_at timestamptz
   next_run_at timestamptz

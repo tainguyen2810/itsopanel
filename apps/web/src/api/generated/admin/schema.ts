@@ -4545,8 +4545,13 @@ export interface components {
             excludes: string[];
             schedule: components["schemas"]["CronExpr"];
             destination_uuids: string[];
+            /** @description Số bản giữ theo nhóm; bản có tag final/pre-restore không bị xóa. */
             retention: {
-                [key: string]: number;
+                last?: number;
+                hourly?: number;
+                daily?: number;
+                weekly?: number;
+                monthly?: number;
             };
             /**
              * @description `cli`: có đích bất biến/forget tắt, panel không xóa snapshot.
@@ -4575,8 +4580,13 @@ export interface components {
             excludes?: string[];
             schedule: components["schemas"]["CronExpr"];
             destination_uuids: string[];
+            /** @description Số bản giữ theo nhóm; bản có tag final/pre-restore không bị xóa. */
             retention?: {
-                [key: string]: number;
+                last?: number;
+                hourly?: number;
+                daily?: number;
+                weekly?: number;
+                monthly?: number;
             };
             enabled?: boolean;
         };
@@ -5298,8 +5308,13 @@ export interface components {
             excludes?: string[];
             schedule?: components["schemas"]["CronExpr"];
             destination_uuids?: string[];
+            /** @description Số bản giữ theo nhóm; bản có tag final/pre-restore không bị xóa. */
             retention?: {
-                [key: string]: number;
+                last?: number;
+                hourly?: number;
+                daily?: number;
+                weekly?: number;
+                monthly?: number;
             };
             enabled?: boolean;
         };

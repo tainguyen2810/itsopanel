@@ -2137,7 +2137,8 @@
       "mismatches_one": "{{count}} mismatch",
       "mismatches_other": "{{count}} mismatches",
       "at": "Started"
-    }
+    },
+    "localHint": "Repositories live in {{path}} on the server (root only). A local disk is not off-site: add another S3/SFTP/rest-server destination."
   },
   "rs": {
     "title": "Restores",
@@ -2165,7 +2166,7 @@
     "modes": {
       "new": {
         "title": "To a new copy",
-        "hint": "Extracts into a restore-<time> folder and _restore databases; live data is untouched."
+        "hint": "Extracts files into backups/restore-<time>/ and databases into a new <name>_r<time>; running data is untouched."
       },
       "overwrite": {
         "title": "Overwrite live data",

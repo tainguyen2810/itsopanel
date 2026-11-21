@@ -141,7 +141,7 @@ describe('Form đích và chính sách sao lưu', () => {
       credentials: { access_key: 'AK', secret_key: 'SK' },
     });
   });
-  it('local: đường dẫn tuyệt đối; sửa không nhập lại bí mật thì không gửi credentials', () => {
+  it('local: luôn /var/backups/itso (API từ chối đường dẫn khác); không gửi credentials', () => {
     const local = {
       ...base,
       type: 'local' as const,
@@ -149,8 +149,10 @@ describe('Form đích và chính sách sao lưu', () => {
       access_key: '',
       secret_key: '',
     };
-    expect(destSchema.safeParse(local).success).toBe(false);
-    expect(destBody({ ...local, path: '/srv/backup' })).not.toHaveProperty('credentials');
+    expect(destSchema.safeParse(local).success).toBe(true);
+    const body = destBody({ ...local, path: '/srv/backup' });
+    expect(body).not.toHaveProperty('credentials');
+    expect(body.config).toEqual({ path: '/var/backups/itso' });
   });
   it('SFTP: không nhập mật khẩu (agent sinh khóa), cổng 1–65535, host hợp lệ', () => {
     const sftp = {

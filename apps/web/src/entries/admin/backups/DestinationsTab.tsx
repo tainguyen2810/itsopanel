@@ -18,7 +18,14 @@ import { Dialog, DialogContent } from '@/ui/Dialog';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
 import { Mono, RowMenu } from '@/shared/hosting/pages/common';
-import { DEST_FIELDS, destBody, destSchema, type DestForm, type DestType } from './forms';
+import {
+  LOCAL_PATH,
+  DEST_FIELDS,
+  destBody,
+  destSchema,
+  type DestForm,
+  type DestType,
+} from './forms';
 import { RecoveryKitDialog } from './RecoveryKitDialog';
 
 type Dest = Row<'/api/v1/admin/backup-destinations'>;
@@ -370,6 +377,7 @@ function DestDialog({
         <CodeBlock code={dest.ssh_public_key} label={t('bk.sshPublicKey')} wrap />
       )}
       {type === 'rest' && <Alert tone="info" title={t('bk.restHint')} />}
+      {type === 'local' && <Alert tone="info" title={t('bk.localHint', { path: LOCAL_PATH })} />}
       {dest?.immutable_days ? (
         <Alert tone="info" title={t('bk.lockNote', { count: dest.immutable_days })} />
       ) : null}

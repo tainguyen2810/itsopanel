@@ -24,7 +24,7 @@ final class PolicyService
 {
     public const SCOPES = ['all_accounts', 'hosting_account', 'website', 'database', 'server', 'panel'];
 
-    public const RETENTION_KEYS = ['keep_last', 'keep_daily', 'keep_weekly', 'keep_monthly'];
+    public const RETENTION_KEYS = ['last', 'hourly', 'daily', 'weekly', 'monthly'];
 
     public function __construct(private readonly AuditLogger $audit) {}
 
@@ -133,7 +133,7 @@ final class PolicyService
         $retention = (array) ($in['retention'] ?? $p->retention ?? []);
         foreach ($retention as $k => $v) {
             if (! in_array($k, self::RETENTION_KEYS, true) || ! is_int($v) || $v < 0 || $v > 1000) {
-                throw ApiProblem::field("retention.$k", 'retention: keep_last|keep_daily|keep_weekly|keep_monthly, số nguyên 0–1000.');
+                throw ApiProblem::field("retention.$k", 'retention: last|hourly|daily|weekly|monthly, số nguyên 0–1000.');
             }
         }
         $enabled = (bool) ($in['enabled'] ?? $p->enabled ?? true);

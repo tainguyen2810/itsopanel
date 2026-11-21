@@ -33,7 +33,7 @@ test('tạo đích → bộ khôi phục chỉ đóng được sau khi xác nh�
   await dlg.getByRole('combobox', { name: 'Loại' }).click();
   await page.getByRole('option', { name: 'Ổ đĩa máy chủ' }).click();
   await dlg.getByLabel('Tên đích').fill('Ổ phụ');
-  await dlg.getByLabel('Đường dẫn').fill('/mnt/b2');
+  await expect(dlg.getByText('/var/backups/itso')).toBeVisible();
   await dlg.getByRole('button', { name: 'Lưu' }).click();
   const kit = page.getByRole('dialog', { name: /Bộ khôi phục/ });
   await expect(kit).toBeVisible();

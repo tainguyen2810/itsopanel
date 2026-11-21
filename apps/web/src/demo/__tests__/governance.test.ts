@@ -173,7 +173,7 @@ describe('backup & restore', () => {
         await call('POST', A('/backup-destinations'), {
           name: 'x',
           type: 'local',
-          config: { path: 'rel' },
+          config: { path: '/srv/khac' },
         })
       ).status,
     ).toBe(422);
@@ -182,7 +182,7 @@ describe('backup & restore', () => {
         await call('POST', A('/backup-destinations'), {
           name: 'x',
           type: 'local',
-          config: { path: '/b' },
+          config: {},
           immutable_days: 5,
         })
       ).status,

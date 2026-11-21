@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.7 (e2e, VM, review, release v0.1.0-alpha) — nhánh `phase-8`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` dùng **restic 0.16.4 thật** + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.
+
+Sửa theo API thật trong 8.7: đích `local` chỉ nhận `/var/backups/itso` (form bỏ ô đường dẫn, hiện gợi ý; MSW 422 nếu khác); khóa retention lệch (contract/UI `keep_*`, API `last/daily/…`) → sửa contract trước (`schemas.py` `RETENTION`: `last, hourly, daily, weekly, monthly`), `make contracts` + `make codegen`, rồi `PolicyService`/`BackupService::expired`, DBML + migration Phase 8; phiên bản mặc định agent/CLI/`make release` `0.4.0-dev` → `0.1.0-alpha`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 8 | `pnpm exec playwright test -c playwright.real.config.ts --trace off e2e-real/phase8.spec.ts` | Lần đầu 1 lỗi test (wizard mở ở bước 1 với snapshot chọn sẵn, test chưa bấm "Tiếp"), sửa test → **2/2 PASS** (1,2 phút). Admin: website tĩnh + DB mẫu → đích local qua UI (bộ khôi phục phải xác nhận, lần 2 không hiện lại) → policy `retention {last: 5}` → `:run` → snapshot files + DB, repo trên đĩa → duyệt `sites` → phá dữ liệu → khôi phục file ra bản mới → ghi đè website qua wizard (index.html về bản gốc) → ghi đè DB (export có MARK-A, không có MARK-B) → `itso:backup-verify`. Portal: chỉ snapshot của mình, quota, 403 khi chưa MFA → bật TOTP → step-up → khôi phục thành công, snapshot account khác bị từ chối |
+| E2E stack thật toàn bộ | `make test-e2e-real` (stack reset) | **19/19 PASS** (12,6 phút) |
+| API | `bash scripts/pest-pg.sh tests/Feature/Phase8` | 11/11 PASS |
+| Toàn bộ | `make check` | **20 PASS · 1 SKIP (staticcheck) · 2 FAIL** lần đầu (1 533 s): `lint-web` (Prettier `e2e-real/phase8.spec.ts`), `test-e2e` 14/493 (`demo-admin2.spec.ts` 2 test còn chọn "Cấu hình account" + máy chủ khác đã bỏ ở 8.6; ảnh `recovery-kit` còn nhập đường dẫn local; ảnh `snapshot-detail`/`browse-file` tìm snapshot `4f2a9c1e` đã sang trang 2 → tìm bằng ô Tìm kiếm). Chạy lại đúng các mục: `make lint-web` PASS (i18n 2900 key, vi = en), `playwright test e2e/demo-admin2.spec.ts` 3/3, `SCREENSHOT_DIR_P8=… playwright test e2e/screenshots-phase8.spec.ts -g "recovery-kit\|snapshot-detail\|browse-file"` 12/12 (12 ảnh chụp lại). Còn lại xanh: Pest 462, Vitest 559, Playwright demo 479, Go 17 gói, fuzz 76 539 lần, db-verify 78, contracts/codegen/tokens, docs-check, installer, units, git-clean |
+| Go sau đổi phiên bản | `go test ./internal/ops/ ./cmd/... ./internal/install/` | PASS |
+| Script VM | `bash -n tests/vm/phase8.sh` | Cú pháp OK (không có shellcheck trên container). **Chờ VM:** B0 gói, B1 backup → xóa site → restore (sha256 + 200), B2 MariaDB số dòng + CHECKSUM TABLE, B3 rest-server `--append-only` forget thất bại, B4 chặn mạng giữa chừng → không snapshot, lần sau xong, B5 `itso-maint.slice` + site 200 khi backup, B6 DR 2 VM |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase8.sh` (gồm DR 2 VM).
+
 ## 2026-11-21 — Phase 8 / Prompt 8.6 (UI Backup & Restore nối API thật) — nhánh `phase-8`
 
 Phạm vi: `apps/web/src` — `shared/hosting/pages/RestoreWizard` (DB theo `snapshot.databases`, ghi đè đúng 1 website/DB, bỏ mục cấu hình), `shared/hosting/backup.ts`, `entries/admin/backups/{RestoreNewPage,RecoveryKitDialog}` (không chọn server khác; dòng `destination_uuid`), `entries/admin/hosting/TerminatedPage` (xác nhận purge chỉ sau hạn giữ), `entries/admin/install/{DrRestore,InstallPage}` (đường dẫn repo server, `restore_mode`, SFTP → CLI); MSW `demo/handlers/{governance,hosting,setup}.ts` theo hành vi API thật; i18n VI/EN; dữ liệu demo (`contracts/tools/demo.py`: oldshop hết hạn giữ, bộ khôi phục mẫu đúng định dạng thật). Contracts: chỉ ví dụ/mô tả.

@@ -384,7 +384,7 @@ final class BackupService
     }
 
     /**
-     * Snapshot cần forget theo retention mong muốn (keep_last/daily/weekly/monthly; cùng nhóm phạm vi + tag policy).
+     * Snapshot cần forget theo retention mong muốn (last/hourly/daily/weekly/monthly; cùng nhóm phạm vi + tag policy).
      *
      * @param  Collection<int, BackupSnapshot>  $snaps  mới nhất trước
      * @param  array<string, int>  $keep
@@ -393,11 +393,11 @@ final class BackupService
     public static function expired(Collection $snaps, array $keep): Collection
     {
         $keepIds = [];
-        $last = (int) ($keep['keep_last'] ?? 0);
+        $last = (int) ($keep['last'] ?? 0);
         foreach ($snaps->take($last) as $s) {
             $keepIds[$s->id] = true;
         }
-        foreach (['keep_daily' => 'Y-m-d', 'keep_weekly' => 'o-W', 'keep_monthly' => 'Y-m'] as $k => $fmt) {
+        foreach (['hourly' => 'Y-m-d H', 'daily' => 'Y-m-d', 'weekly' => 'o-W', 'monthly' => 'Y-m'] as $k => $fmt) {
             $n = (int) ($keep[$k] ?? 0);
             $seen = [];
             foreach ($snaps as $s) {

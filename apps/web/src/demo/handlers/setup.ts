@@ -239,7 +239,7 @@ export function registerSetup() {
     if (b.type === 'sftp')
       return 'Đích SFTP: chạy "sudo itso backup panel-restore --kit <file> --snapshot <id> --ssh-key <khóa>" rồi "sudo itso panel-restore-apply --dir <thư mục in ra>" (runbook DR).';
     const need: Record<string, string[]> = {
-      local: ['path'],
+      local: [],
       sftp: ['host', 'user', 'path'],
       s3: ['endpoint', 'bucket'],
       rest: ['url'],

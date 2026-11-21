@@ -13,7 +13,7 @@
 | 5 | Website / Nginx / PHP / SSL / DNS | DNS provider API (Cloudflare) đưa vào đây. Chi tiết: `PHASE_5_PROMPTS.md` | **✓ APPROVED** (2026-11-21) · báo cáo `docs/reports/phase-5.md` (kết quả VM: chờ VM) |
 | 6 | Database / File Manager / FTP-SFTP / Cron / Terminal USER | Terminal cho USER (jail) đưa vào đây. Chi tiết: `PHASE_6_PROMPTS.md` | **✓ APPROVED** (2026-11-21) · báo cáo `docs/reports/phase-6.md` (kết quả VM: chờ VM) |
 | 7 | Security Center | Firewall nftables, Fail2ban, WAF, Malware, FIM, SSH hardening, bảo vệ User Portal, Terminal root + ghi phiên. Chi tiết: `PHASE_7_PROMPTS.md` (mockup trước khi code) | **✓ APPROVED** (2026-11-21) · báo cáo `docs/reports/phase-7.md` (kết quả VM: chờ VM) |
-| 8 | Backup & Restore theo tài khoản | Repo restic riêng cho mỗi account, offsite immutable, DR all-in-one. Chi tiết: `PHASE_8_PROMPTS.md` (mockup trước khi code) | **v0.1.0-alpha** (1 server, nội bộ) · ✱ đang làm |
+| 8 | Backup & Restore theo tài khoản | Repo restic riêng cho mỗi account, offsite immutable, DR all-in-one. Chi tiết: `PHASE_8_PROMPTS.md` (mockup trước khi code) | **v0.1.0-alpha** (1 server, nội bộ) · **✓ Hoàn tất, chờ duyệt** (2026-11-21) · tag local `v0.1.0-alpha` · báo cáo `docs/reports/phase-8.md` (kết quả VM: chờ VM) |
 | 9 | Multi-server & chuyển tài khoản | Node join, mTLS, CA nội bộ, chọn server có gợi ý, `account.migrate`, restore chéo server | |
 | 10 | Docker Manager, WordPress Toolkit, Software Manager | Docker chỉ cho SUPER_ADMIN/ADMIN; USER không có Docker | |
 | 11 | Monitoring, Alerts, Notifications | Metrics per server và per account, kênh email/Telegram/webhook | **v0.5.0-beta** (multi-server nội bộ) |

@@ -238,7 +238,7 @@ function registerSecurity() {
 
 // ---------------------------------------------------------------- backup & restore
 const REQUIRED_CONFIG: Record<Dest['type'], string[]> = {
-  local: ['path'],
+  local: [],
   sftp: ['host', 'path'],
   s3: ['endpoint', 'bucket'],
   rest: ['url'],
@@ -253,8 +253,9 @@ function destError(b: Partial<S['BackupDestinationInput']>, partial = false): st
     for (const k of REQUIRED_CONFIG[b.type]) {
       if (!b.config[k]?.trim()) return `Thiếu cấu hình "${k}".`;
     }
-    if (b.type === 'local' && !b.config.path?.startsWith('/'))
-      return 'Đường dẫn local phải là đường dẫn tuyệt đối.';
+    // Như BackupSpec::normalize: đích local luôn ở /var/backups/itso (root 0700, ADR 0030).
+    if (b.type === 'local' && (b.config.path ?? '/var/backups/itso') !== '/var/backups/itso')
+      return 'Đích local luôn ở /var/backups/itso (root 0700, ADR 0030).';
     for (const k of ['endpoint', 'url'] as const) {
       if (b.config[k] && !/^https:\/\//.test(b.config[k])) return `"${k}" phải là URL https://.`;
     }

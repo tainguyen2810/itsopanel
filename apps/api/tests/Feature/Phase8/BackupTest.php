@@ -166,7 +166,7 @@ it('policy + itso:backup-due: lịch đến hạn chạy (jitter, khóa), retent
     $sa = $a->spa('SA');
 
     $r = $sa->post('/api/v1/admin/backup-policies', ['name' => 'Hằng đêm', 'scope_type' => 'hosting_account', 'scope_uuid' => $a->account->uuid,
-        'contents' => ['files'], 'schedule' => '0 2 * * *', 'destination_uuids' => [$d->uuid], 'retention' => ['keep_last' => 1]]);
+        'contents' => ['files'], 'schedule' => '0 2 * * *', 'destination_uuids' => [$d->uuid], 'retention' => ['last' => 1]]);
     assertMatchesContract(P8A, 'post', '/api/v1/admin/backup-policies', 201, $r);
     expect($r->json('data.scope_uuid'))->toBe($a->account->uuid)->and($r->json('data.retention_mode'))->toBe('panel')
         ->and($r->json('data.next_run_at'))->not->toBeNull();

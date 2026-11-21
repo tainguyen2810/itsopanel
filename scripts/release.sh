@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
-VER="${VERSION:-0.4.0-dev}"
+VER="${VERSION:-0.1.0-alpha}"
 ARCH="${ARCH:-amd64}"
 PNPM="${PNPM:-corepack pnpm}"
 [[ "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "VERSION không hợp lệ: $VER" >&2; exit 1; }

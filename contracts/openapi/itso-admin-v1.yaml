@@ -18423,9 +18423,29 @@ components:
             format: uuid
         retention:
           type: object
-          additionalProperties:
-            type: integer
-            minimum: 0
+          properties:
+            last:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            hourly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            daily:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            weekly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            monthly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+          additionalProperties: false
+          description: Số bản giữ theo nhóm; bản có tag final/pre-restore không bị xóa.
         retention_mode:
           type: string
           enum:
@@ -18521,9 +18541,29 @@ components:
           minItems: 1
         retention:
           type: object
-          additionalProperties:
-            type: integer
-            minimum: 0
+          properties:
+            last:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            hourly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            daily:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            weekly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            monthly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+          additionalProperties: false
+          description: Số bản giữ theo nhóm; bản có tag final/pre-restore không bị xóa.
         enabled:
           type: boolean
       required:
@@ -20788,9 +20828,29 @@ components:
           minItems: 1
         retention:
           type: object
-          additionalProperties:
-            type: integer
-            minimum: 0
+          properties:
+            last:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            hourly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            daily:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            weekly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            monthly:
+              type: integer
+              minimum: 0
+              maximum: 1000
+          additionalProperties: false
+          description: Số bản giữ theo nhóm; bản có tag final/pre-restore không bị xóa.
         enabled:
           type: boolean
       additionalProperties: false

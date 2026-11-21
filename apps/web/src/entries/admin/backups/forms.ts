@@ -62,8 +62,11 @@ export const policySchema = z
 export type PolicyForm = z.infer<typeof policySchema>;
 
 /** Trường cấu hình (config) và bí mật (credentials) theo loại đích. */
+/** Đích local luôn ở thư mục này trên máy chủ (root 0700, ADR 0030); API từ chối đường dẫn khác. */
+export const LOCAL_PATH = '/var/backups/itso';
+
 export const DEST_FIELDS = {
-  local: { config: ['path'], secret: [] },
+  local: { config: [], secret: [] },
   // SFTP: agent sinh khóa SSH riêng cho đích (không nhập mật khẩu), host key ghim ở lần kiểm tra đầu.
   sftp: { config: ['host', 'port', 'user', 'path'], secret: [] },
   s3: { config: ['endpoint', 'bucket', 'region'], secret: ['access_key', 'secret_key'] },
@@ -96,7 +99,7 @@ export const destSchema = z
       if (k !== 'region' && k !== 'port' && !v[k])
         ctx.addIssue({ code: 'custom', path: [k], message: 'form.required' });
     }
-    if ((v.type === 'local' || v.type === 'sftp') && v.path && !v.path.startsWith('/'))
+    if (v.type === 'sftp' && v.path && !v.path.startsWith('/'))
       ctx.addIssue({ code: 'custom', path: ['path'], message: 'admin:bk.errors.absPath' });
     if (
       v.type === 'sftp' &&
@@ -124,6 +127,7 @@ export function destBody(v: DestForm) {
   const f = DEST_FIELDS[v.type];
   const config: Record<string, string> = {};
   for (const k of f.config) if (v[k]) config[k] = v[k];
+  if (v.type === 'local') config.path = LOCAL_PATH;
   const credentials: Record<string, string> = {};
   for (const k of f.secret) if (v[k]) credentials[k] = v[k];
   return {

@@ -1674,7 +1674,7 @@ COMMENT ON COLUMN "backup_policies"."contents" IS 'files|databases|config';
 
 COMMENT ON COLUMN "backup_policies"."excludes" IS 'Mẫu loại trừ tương đối (≤ 50), cộng thêm loại trừ cố định của agent';
 
-COMMENT ON COLUMN "backup_policies"."retention" IS 'Mong muốn: keep_daily…; chỉ áp khi đích cho phép prune từ panel';
+COMMENT ON COLUMN "backup_policies"."retention" IS 'Mong muốn: last, hourly, daily, weekly, monthly; chỉ áp khi đích cho phép prune từ panel';
 
 COMMENT ON COLUMN "backup_policies"."last_status" IS 'succeeded|failed|running';
 

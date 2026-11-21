@@ -2137,7 +2137,8 @@
       "mismatches_one": "{{count}} file sai lệch",
       "mismatches_other": "{{count}} file sai lệch",
       "at": "Lúc chạy"
-    }
+    },
+    "localHint": "Repo lưu ở {{path}} trên máy chủ (chỉ root đọc được). Ổ local không phải off-site: thêm một đích S3/SFTP/rest-server khác."
   },
   "rs": {
     "title": "Khôi phục",
@@ -2165,7 +2166,7 @@
     "modes": {
       "new": {
         "title": "Ra bản mới",
-        "hint": "Giải nén vào thư mục restore-<thời điểm> và database có hậu tố _restore; không đụng dữ liệu đang chạy."
+        "hint": "Giải nén file vào backups/restore-<thời điểm>/ và database ra bản mới <tên>_r<thời điểm>; không đụng dữ liệu đang chạy."
       },
       "overwrite": {
         "title": "Ghi đè bản đang chạy",
