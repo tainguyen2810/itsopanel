@@ -15,7 +15,7 @@
 | 5.3 API | Website, domain, PHP Manager, Nginx toàn server, tạm khóa áp lại vhost, wizard bước 4 (stack), quota theo gói | 4eb5856 |
 | 5.4 SSL + DNS | ACME (cấp, gia hạn hằng ngày, thông báo khi lỗi), chứng chỉ tải lên (khóa mã hóa, job chỉ mang tham chiếu bí mật), agent reload Nginx khi thay chứng chỉ đang dùng; DNS Cloudflare (provider, zone, record qua bước panel, `itso:dns-sync`) | 36d69db |
 | 5.5 UI | Lỗi job dễ hiểu theo mã (`nginx -t` → "đã hoàn tác" + dòng lỗi), quota theo gói, wizard stack, tải chứng chỉ riêng, quản lý provider/zone DNS, MSW theo contract | 0a1e58e |
-| 5.6 Tích hợp | Playwright stack thật Phase 5; hộp thoại step-up MFA dùng chung (xóa website/provider trước đây không làm được trên UI); tên job Phase 5 thiếu i18n; `tests/vm/phase5.sh` + Pebble HTTP-01 thật; runbook | 29c04ae |
+| 5.6 Tích hợp | Playwright stack thật Phase 5; hộp thoại step-up MFA dùng chung (xóa website/provider trước đây không làm được trên UI); tên job Phase 5 thiếu i18n; `tests/vm/phase5.sh` + Pebble HTTP-01 thật; runbook | 218b00c, 29c04ae |
 
 ## 2. File chính
 
