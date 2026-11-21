@@ -2478,7 +2478,10 @@ export interface components {
             /** @enum {string} */
             mode: "new" | "overwrite";
             items: string[];
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Chỉ Admin, chỉ mode=new (Phase 9, D-93): khôi phục sang server khác đọc cùng repo; account được tạo ở đích nếu chưa có. Đích phải trực tuyến, nếu không 409 `agent_unreachable`.
+             */
             target_server_uuid?: string | null;
             confirm?: string | null;
         };

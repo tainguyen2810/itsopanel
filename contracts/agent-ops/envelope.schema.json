@@ -131,8 +131,10 @@
         "backup.check",
         "backup.restore_test",
         "backup.forget",
+        "pki.sign_csr",
+        "agent.cert.rotate",
+        "http.check",
         "migrate.preflight",
-        "migrate.sync",
         "migrate.verify",
         "migrate.cutover",
         "migrate.rollback",
@@ -2295,6 +2297,63 @@
       "if": {
         "properties": {
           "op": {
+            "const": "pki.sign_csr"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/pki.sign_csr.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "agent.cert.rotate"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/agent.cert.rotate.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "http.check"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/http.check.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "migrate.preflight"
           }
         },
@@ -2306,25 +2365,6 @@
         "properties": {
           "params": {
             "$ref": "ops/migrate.preflight.schema.json#/$defs/params"
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "op": {
-            "const": "migrate.sync"
-          }
-        },
-        "required": [
-          "op"
-        ]
-      },
-      "then": {
-        "properties": {
-          "params": {
-            "$ref": "ops/migrate.sync.schema.json#/$defs/params"
           }
         }
       }

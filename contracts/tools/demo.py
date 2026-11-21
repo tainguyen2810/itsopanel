@@ -1346,3 +1346,17 @@ def _recompute() -> None:
 
 
 _expand()
+
+NODE_ENROLL_REQUEST = {
+    "token": "itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga",
+    "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\n-----END CERTIFICATE REQUEST-----\n",
+    "hostname": "srv-hn-03.itso.local", "ip_addresses": ["10.10.1.13"],
+    "facts": {"os": "Ubuntu 24.04.1 LTS", "kernel": "6.8.0-48-generic", "arch": "amd64", "agent_version": "0.2.0-dev"},
+}
+NODE_ENROLLMENT = {
+    "server_uuid": "01938a02-0004-7000-8000-000002000004",
+    "cert_pem": "-----BEGIN CERTIFICATE-----\nMIIBkTCCATegAwIBAgIUQ2hhcmdl\n-----END CERTIFICATE-----\n",
+    "chain_pem": "-----BEGIN CERTIFICATE-----\nMIIBnDCCAUKgAwIBAgIUSVRTTy1DQQ\n-----END CERTIFICATE-----\n",
+    "ca_sha256": CA_SHA256, "hmac_key": "q3Vx9-Lm2Pz7Rt4Kc8Wn1Ys6Hd0Bf5Ga3Je9Ui2Oa7E",
+    "relay_url": "https://admin.itso.local:28444", "cert_not_after": "2026-12-21T09:00:00+07:00",
+}

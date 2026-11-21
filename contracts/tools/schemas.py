@@ -285,7 +285,8 @@ COMMON = {
                     "error": NS}),
     "RestoreRequest": obj({"snapshot_uuid": UUID, "mode": enum("new", "overwrite"),
                            "items": arr(s(pattern="^(files:.+|database:[a-z][a-z0-9_]{0,63}|config)$"), minItems=1),
-                           "target_server_uuid": nullable(UUID), "confirm": nullable(s())},
+                           "target_server_uuid": {**nullable(UUID), "description": "Chỉ Admin, chỉ mode=new (Phase 9, D-93): khôi phục sang server khác đọc cùng repo; account được tạo ở đích nếu chưa có. Đích phải trực tuyến, nếu không 409 `agent_unreachable`."},
+                           "confirm": nullable(s())},
                           required=["snapshot_uuid", "mode", "items"]),
     # -- WordPress
     "WordPressSite": obj({"uuid": UUID, "website": cref("WebsiteRef"), "hosting_account": cref("AccountRef"),
@@ -397,6 +398,18 @@ ADMIN = {
     "EnrollmentToken": obj({"uuid": UUID, "token": s(), "command": s(), "ca_sha256": s(pattern="^[0-9a-f]{64}$"),
                              "expires_at": DT, "created_at": DT},
                             desc="Token chỉ trả một lần, dùng một lần (D-90); lệnh join ghim `ca_sha256`."),
+    "NodeEnrollRequest": obj({
+        "token": s(pattern="^itso_enr_[A-Za-z0-9_-]{32,64}$", writeOnly=True),
+        "csr": s(maxLength=8192, pattern="^-----BEGIN CERTIFICATE REQUEST-----\n[A-Za-z0-9+/=\n]+-----END CERTIFICATE REQUEST-----\n?$"),
+        "hostname": s(minLength=1, maxLength=253), "ip_addresses": arr(s(), maxItems=16),
+        "facts": obj({"os": s(maxLength=200), "kernel": s(maxLength=200), "arch": enum("amd64", "arm64"),
+                      "agent_version": s(maxLength=50)})},
+        desc="Node gửi khi join (qua itso-relay, TLS ghim CA). Token 32 byte dùng một lần, hạn 1 giờ (D-90)."),
+    "NodeEnrollment": obj({
+        "server_uuid": UUID, "cert_pem": s(), "chain_pem": s(), "ca_sha256": s(pattern="^[0-9a-f]{64}$"),
+        "hmac_key": s(pattern="^[A-Za-z0-9_-]{43}$", description="Khóa HMAC riêng của server (base64url 32 byte). Chỉ trả MỘT lần."),
+        "relay_url": s("uri"), "cert_not_after": DT},
+        desc="Chứng chỉ mTLS 30 ngày + khóa HMAC riêng; node ghi vào /etc/itso (0600) rồi kết nối relay."),
     "EnrollmentRequest": obj({"name": s(pattern="^[a-z0-9][a-z0-9-]{1,62}$"), "role_tags": arr(enum("web", "db", "backup", "docker")),
                               "ttl_min": i(minimum=5, maximum=1440)}, required=["name"]),
     "ServerCapacity": obj({"server": cref("ServerRef"), "cpu_cores": i(), "ram_mb": i(), "disk_mb": i(),

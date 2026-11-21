@@ -213,13 +213,36 @@ Table agents {
 
 Table agent_enrollment_tokens {
   id bigint [pk, increment]
-  token_hash text [not null, unique]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
+  token_hash text [not null, unique, note: 'sha256 của token 32 byte; token chỉ hiện một lần (D-90)']
+  server_name text [not null, note: 'Tên server sẽ tạo khi node join']
+  role_tags text[] [not null, default: `'{}'`]
   created_by_user_id bigint [not null, ref: > users.id]
-  expires_at timestamptz [not null]
+  expires_at timestamptz [not null, note: 'Mặc định 1 giờ']
   used_at timestamptz
   used_by_server_id bigint [ref: > servers.id]
+  used_from_ip inet
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
+  Note: 'Token join node dùng một lần (D-90).'
+}
+
+Table agent_certificates {
+  id bigint [pk, increment]
+  server_id bigint [not null, ref: > servers.id]
+  serial text [not null, unique, note: 'Số serial hex do CA nội bộ cấp']
+  fingerprint_sha256 text [not null, unique]
+  not_before timestamptz [not null]
+  not_after timestamptz [not null]
+  issued_reason text [not null, note: 'enroll|rotate|rejoin']
+  revoked_at timestamptz
+  revoked_reason text [note: 'revoke|superseded|rejoin']
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    server_id
+    revoked_at
+  }
+  Note: 'Lịch sử chứng chỉ mTLS của node + danh sách thu hồi cho itso-relay (D-89, D-90).'
 }
 
 Table server_services {
@@ -430,12 +453,21 @@ Table account_migrations {
   source_server_id bigint [not null, ref: > servers.id]
   target_server_id bigint [not null, ref: > servers.id]
   target_account_id bigint [ref: > hosting_accounts.id]
-  state text [not null, default: 'preflight', note: 'preflight|syncing|verifying|cutover|completed|rolled_back|failed']
-  verification jsonb [not null, default: `'{}'::jsonb`, note: 'checksum file, row count, HTTP check']
+  state text [not null, default: 'preflight', note: 'preflight|syncing|verifying|cutover|holding|completed|rolled_back|failed']
+  keep_source_days int [not null, default: 7]
+  verification jsonb [not null, default: `'[]'::jsonb`, note: 'Danh sách {kind, name, ok, detail}: file sha256, DB, HTTP, SSL, cron, UID']
+  preflight jsonb [note: 'Kết quả kiểm tra trước lúc bắt đầu']
+  dns jsonb [note: '{mode auto|manual, zone, records[]}']
+  sync_snapshot_id text [note: 'Snapshot restic dùng để đồng bộ lượt đầu']
+  final_snapshot_id text [note: 'Snapshot lượt cuối lúc cutover']
   bytes_synced bigint [not null, default: 0]
+  downtime_estimate_sec int
   downtime_sec int
   job_id bigint [ref: > jobs.id]
+  cutover_at timestamptz
   cleanup_after timestamptz
+  cleaned_at timestamptz
+  error text
   requested_by_user_id bigint [not null, ref: > users.id]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
@@ -443,7 +475,7 @@ Table account_migrations {
     hosting_account_id
     state
   }
-  Note: 'Chuyển account giữa server (D-48).'
+  Note: 'Chuyển account giữa server qua repo restic (D-93): preflight → syncing → verifying → cutover → holding → completed; rollback tới trước dọn dẹp.'
 }
 
 Table purge_records {
@@ -1533,6 +1565,7 @@ TableGroup infra [note: 'Hạ tầng'] {
   servers
   agents
   agent_enrollment_tokens
+  agent_certificates
   server_services
   server_capacity
   software_catalog

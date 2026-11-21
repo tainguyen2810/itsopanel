@@ -38,6 +38,12 @@ return [
         'connected_window_sec' => (int) env('ITSO_AGENT_CONNECTED_WINDOW', 300),
     ],
 
+    // Kênh node từ xa qua itso-relay (Phase 9, D-89/D-91): heartbeat 20 giây.
+    'relay' => [
+        'degraded_after_sec' => (int) env('ITSO_RELAY_DEGRADED_AFTER', 60),
+        'unreachable_after_sec' => (int) env('ITSO_RELAY_UNREACHABLE_AFTER', 300),
+    ],
+
     // Hook theo loại job (App\Domain\Jobs\JobHandler): cập nhật observed state khi job kết thúc.
     'job_handlers' => array_fill_keys([
         'hosting_account.create', 'hosting_account.suspend', 'hosting_account.unsuspend', 'hosting_account.restore',

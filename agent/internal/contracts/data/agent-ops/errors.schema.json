@@ -28,6 +28,9 @@
         "repo_not_initialized",
         "repo_auth_failed",
         "host_key_mismatch",
+        "agent_unreachable",
+        "cert_expired",
+        "enrollment_invalid",
         "internal"
       ]
     }

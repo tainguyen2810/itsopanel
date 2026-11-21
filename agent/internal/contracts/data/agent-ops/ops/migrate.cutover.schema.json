@@ -9,25 +9,34 @@
         "account": {
           "$ref": "../defs.schema.json#/$defs/Account"
         },
-        "target_server_uuid": {
+        "migration_uuid": {
           "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "role": {
+          "$ref": "../defs.schema.json#/$defs/MigrationRole"
         }
       },
       "required": [
         "account",
-        "target_server_uuid"
+        "migration_uuid",
+        "role"
       ],
       "additionalProperties": false
     },
     "result": {
       "type": "object",
       "properties": {
-        "downtime_sec": {
-          "type": "integer"
+        "done": {
+          "type": "boolean"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
-        "downtime_sec"
+        "done",
+        "at"
       ],
       "additionalProperties": false
     }

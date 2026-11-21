@@ -31,6 +31,17 @@ final class ServerPresenter
             'agent_version' => $agent?->version,
             'agent_connected' => self::connected($agent),
             'accepting_new_accounts' => $s->accepting_new_accounts,
+            'node_role' => in_array($s->node_role, ['all_in_one', 'control_plane', 'node'], true) ? $s->node_role : 'all_in_one',
+            'transport' => $agent?->transport === 'mtls' ? 'mtls' : 'local',
+            'connection' => self::connection($agent),
+            'last_seen_at' => $agent?->last_seen_at?->toIso8601String(),
+            'cert' => $agent !== null && $agent->transport === 'mtls' && is_string($agent->cert_fingerprint)
+                && $agent->cert_not_before !== null && $agent->cert_expires_at !== null ? [
+                    'fingerprint_sha256' => $agent->cert_fingerprint,
+                    'not_before' => $agent->cert_not_before->toIso8601String(),
+                    'not_after' => $agent->cert_expires_at->toIso8601String(),
+                    'rotated_at' => $agent->cert_rotated_at?->toIso8601String(),
+                ] : null,
             'resources' => [
                 'cpu_cores' => $int('cpu_cores'), 'ram_mb' => $int('ram_mb'), 'disk_mb' => $int('disk_mb'),
                 'cpu_pct' => $num('cpu_pct'), 'ram_used_mb' => $int('ram_used_mb'), 'disk_used_mb' => $int('disk_used_mb'),
@@ -70,6 +81,30 @@ final class ServerPresenter
             'agent_mode' => in_array($mode, ['real', 'sandbox', 'mock'], true) ? $mode : 'real',
             'facts_at' => is_string($p['facts_at'] ?? null) ? $p['facts_at'] : null,
         ];
+    }
+
+    /**
+     * Trạng thái kênh agent (D-91). Node mTLS: heartbeat 20 giây, lỡ 3 nhịp → degraded, 5 phút → unreachable.
+     * Agent local: trong cửa sổ connected_window_sec → online, quá → unreachable.
+     */
+    public static function connection(?Agent $agent): string
+    {
+        if ($agent === null) {
+            return 'pending';
+        }
+        if ($agent->connection === 'revoked' || $agent->revoked_at !== null) {
+            return 'revoked';
+        }
+        if (! $agent->last_seen_at instanceof Carbon) {
+            return 'pending';
+        }
+        $age = $agent->last_seen_at->diffInSeconds(Carbon::now(), true);
+        if ($agent->transport !== 'mtls') {
+            return $age <= (int) config('itso.agent.connected_window_sec', 300) ? 'online' : 'unreachable';
+        }
+
+        return $age <= (int) config('itso.relay.degraded_after_sec', 60) ? 'online'
+            : ($age <= (int) config('itso.relay.unreachable_after_sec', 300) ? 'degraded' : 'unreachable');
     }
 
     public static function connected(?Agent $agent): bool

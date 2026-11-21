@@ -12,6 +12,7 @@ const (
 	OpAccountRemove          = "account.remove"
 	OpAccountSuspend         = "account.suspend"
 	OpAccountUnsuspend       = "account.unsuspend"
+	OpAgentCertRotate        = "agent.cert.rotate"
 	OpAuditTail              = "audit.tail"
 	OpBackupBrowse           = "backup.browse"
 	OpBackupCheck            = "backup.check"
@@ -83,6 +84,7 @@ const (
 	OpFTPUserRemove          = "ftp.user.remove"
 	OpGitDeploy              = "git.deploy"
 	OpGitRollback            = "git.rollback"
+	OpHTTPCheck              = "http.check"
 	OpLogTail                = "log.tail"
 	OpMalwareDelete          = "malware.delete"
 	OpMalwareQuarantine      = "malware.quarantine"
@@ -93,7 +95,6 @@ const (
 	OpMigrateCutover         = "migrate.cutover"
 	OpMigratePreflight       = "migrate.preflight"
 	OpMigrateRollback        = "migrate.rollback"
-	OpMigrateSync            = "migrate.sync"
 	OpMigrateVerify          = "migrate.verify"
 	OpNginxGlobalApply       = "nginx.global.apply"
 	OpNginxVhostApply        = "nginx.vhost.apply"
@@ -106,6 +107,7 @@ const (
 	OpPHPPoolRemove          = "php.pool.remove"
 	OpPHPVersionInstall      = "php.version.install"
 	OpPHPVersionRemove       = "php.version.remove"
+	OpPkiSignCsr             = "pki.sign_csr"
 	OpPtyList                = "pty.list"
 	OpPtyOpen                = "pty.open"
 	OpPtyOpenRoot            = "pty.open.root"
@@ -324,6 +326,27 @@ type RemoteUser string
 // BackupDestination — Đích kiểu hóa (D-83): agent dựng URL repo (local:/var/backups/itso/repos/…, sftp:user@host:path/…, s3:endpoint/bucket/…, rest:https://user@host/…); credential chỉ là credential GHI, tới agent qua tham chiếu bí mật.
 type BackupDestination json.RawMessage
 
+// CsrPem — CSR PEM (ECDSA P-256) do node tự sinh; khóa riêng không rời node (D-90).
+type CsrPem string
+
+// CertPem — Chứng chỉ PEM (có thể kèm chuỗi CA).
+type CertPem string
+
+// HTTPCheckPath — Đường dẫn tương đối gửi tới 127.0.0.1 của node (http.check); cấm traversal, mã hóa %2e/%2f, //.
+type HTTPCheckPath string
+
+// MigrationRole — kiểu MigrationRole trong contracts/agent-ops. Giá trị: "source", "target".
+type MigrationRole string
+
+// MigrationCheck — kiểu MigrationCheck trong contracts/agent-ops.
+type MigrationCheck struct {
+	// Giá trị: "files", "database", "http", "ssl", "cron", "ownership".
+	Kind   string `json:"kind"`
+	Name   string `json:"name"`
+	OK     bool   `json:"ok"`
+	Detail string `json:"detail"`
+}
+
 // BackupRepo — kiểu BackupRepo trong contracts/agent-ops.
 type BackupRepo struct {
 	RepoUUID    UUID              `json:"repo_uuid"`
@@ -341,7 +364,7 @@ type BackupDB struct {
 // BackupRestoreItem — kiểu BackupRestoreItem trong contracts/agent-ops.
 type BackupRestoreItem json.RawMessage
 
-// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "would_lock_out", "repo_locked", "repo_not_initialized", "repo_auth_failed", "host_key_mismatch", "internal".
+// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "would_lock_out", "repo_locked", "repo_not_initialized", "repo_auth_failed", "host_key_mismatch", "agent_unreachable", "cert_expired", "enrollment_invalid", "internal".
 type ErrorCode string
 
 // EnvelopeRequestedBy được sinh từ schema.
@@ -420,10 +443,13 @@ type AccountLimitsApplyResult struct {
 
 // AccountRemoveParams — params của op account.remove (ops/account.remove.schema.json).
 type AccountRemoveParams struct {
-	Account         Account  `json:"account"`
-	PurgeUUID       UUID     `json:"purge_uuid"`
-	FinalSnapshotID string   `json:"final_snapshot_id"`
-	ConfirmUsername Username `json:"confirm_username"`
+	Account Account `json:"account"`
+	// Giá trị: "purge", "migrated".
+	Reason          string           `json:"reason"`
+	RefUUID         UUID             `json:"ref_uuid"`
+	FinalSnapshotID ResticSnapshotID `json:"final_snapshot_id"`
+	ConfirmUsername Username         `json:"confirm_username"`
+	Confirm         bool             `json:"confirm"`
 }
 
 // AccountRemoveResultRemovedObjectsItem được sinh từ schema.
@@ -457,6 +483,19 @@ type AccountUnsuspendParams struct {
 // AccountUnsuspendResult — result của op account.unsuspend (ops/account.unsuspend.schema.json).
 type AccountUnsuspendResult struct {
 	Suspended bool `json:"suspended"`
+}
+
+// AgentCertRotateParams — params của op agent.cert.rotate (ops/agent.cert.rotate.schema.json).
+type AgentCertRotateParams struct {
+	ServerUUID UUID            `json:"server_uuid"`
+	CertPem    json.RawMessage `json:"cert_pem"`
+}
+
+// AgentCertRotateResult — result của op agent.cert.rotate (ops/agent.cert.rotate.schema.json).
+type AgentCertRotateResult struct {
+	Csr               json.RawMessage `json:"csr"`
+	Installed         bool            `json:"installed"`
+	FingerprintSHA256 json.RawMessage `json:"fingerprint_sha256"`
 }
 
 // AuditTailParams — params của op audit.tail (ops/audit.tail.schema.json).
@@ -1439,6 +1478,23 @@ type FTPUserRemoveResult struct {
 	Removed bool `json:"removed"`
 }
 
+// HTTPCheckParams — params của op http.check (ops/http.check.schema.json).
+type HTTPCheckParams struct {
+	Host Domain        `json:"host"`
+	Path HTTPCheckPath `json:"path"`
+	// Giá trị: "http", "https".
+	Scheme       string  `json:"scheme"`
+	ExpectStatus []int64 `json:"expect_status"`
+}
+
+// HTTPCheckResult — result của op http.check (ops/http.check.schema.json).
+type HTTPCheckResult struct {
+	Status     int64           `json:"status"`
+	OK         bool            `json:"ok"`
+	DurationMs int64           `json:"duration_ms"`
+	BodySHA256 json.RawMessage `json:"body_sha256"`
+}
+
 // LogTailParams — params của op log.tail (ops/log.tail.schema.json).
 type LogTailParams struct {
 	Account Account `json:"account"`
@@ -1556,26 +1612,34 @@ type MetricsSnapshotResult struct {
 
 // MigrateCutoverParams — params của op migrate.cutover (ops/migrate.cutover.schema.json).
 type MigrateCutoverParams struct {
-	Account          Account `json:"account"`
-	TargetServerUUID UUID    `json:"target_server_uuid"`
+	Account       Account       `json:"account"`
+	MigrationUUID UUID          `json:"migration_uuid"`
+	Role          MigrationRole `json:"role"`
 }
 
 // MigrateCutoverResult — result của op migrate.cutover (ops/migrate.cutover.schema.json).
 type MigrateCutoverResult struct {
-	DowntimeSec int64 `json:"downtime_sec"`
+	Done bool   `json:"done"`
+	At   string `json:"at"`
 }
 
 // MigratePreflightParams — params của op migrate.preflight (ops/migrate.preflight.schema.json).
 type MigratePreflightParams struct {
-	Account          Account `json:"account"`
-	TargetServerUUID UUID    `json:"target_server_uuid"`
+	Account       Account      `json:"account"`
+	MigrationUUID UUID         `json:"migration_uuid"`
+	Repo          BackupRepo   `json:"repo"`
+	NeedBytes     Bytes        `json:"need_bytes"`
+	PHPVersions   []PHPVersion `json:"php_versions"`
+	Databases     []BackupDB   `json:"databases"`
+	Sites         []Domain     `json:"sites"`
 }
 
 // MigratePreflightResultChecksItem được sinh từ schema.
 type MigratePreflightResultChecksItem struct {
-	Key    string `json:"key"`
-	OK     bool   `json:"ok"`
-	Detail string `json:"detail"`
+	Key string `json:"key"`
+	// Giá trị: "ok", "warn", "block".
+	Level   string `json:"level"`
+	Message string `json:"message"`
 }
 
 // MigratePreflightResult — result của op migrate.preflight (ops/migrate.preflight.schema.json).
@@ -1586,8 +1650,9 @@ type MigratePreflightResult struct {
 
 // MigrateRollbackParams — params của op migrate.rollback (ops/migrate.rollback.schema.json).
 type MigrateRollbackParams struct {
-	Account          Account `json:"account"`
-	SourceServerUUID UUID    `json:"source_server_uuid"`
+	Account       Account       `json:"account"`
+	MigrationUUID UUID          `json:"migration_uuid"`
+	Role          MigrationRole `json:"role"`
 }
 
 // MigrateRollbackResult — result của op migrate.rollback (ops/migrate.rollback.schema.json).
@@ -1595,29 +1660,20 @@ type MigrateRollbackResult struct {
 	RolledBack bool `json:"rolled_back"`
 }
 
-// MigrateSyncParams — params của op migrate.sync (ops/migrate.sync.schema.json).
-type MigrateSyncParams struct {
-	Account          Account `json:"account"`
-	TargetServerUUID UUID    `json:"target_server_uuid"`
-	Pass             int64   `json:"pass"`
-}
-
-// MigrateSyncResult — result của op migrate.sync (ops/migrate.sync.schema.json).
-type MigrateSyncResult struct {
-	Bytes Bytes `json:"bytes"`
-}
-
 // MigrateVerifyParams — params của op migrate.verify (ops/migrate.verify.schema.json).
 type MigrateVerifyParams struct {
-	Account          Account `json:"account"`
-	TargetServerUUID UUID    `json:"target_server_uuid"`
+	Account       Account          `json:"account"`
+	MigrationUUID UUID             `json:"migration_uuid"`
+	Repo          BackupRepo       `json:"repo"`
+	SnapshotID    ResticSnapshotID `json:"snapshot_id"`
+	Databases     []BackupDB       `json:"databases"`
+	Sites         []Domain         `json:"sites"`
 }
 
 // MigrateVerifyResult — result của op migrate.verify (ops/migrate.verify.schema.json).
 type MigrateVerifyResult struct {
-	FilesChecked int64             `json:"files_checked"`
-	Mismatched   int64             `json:"mismatched"`
-	Databases    map[string]string `json:"databases"`
+	OK     bool             `json:"ok"`
+	Checks []MigrationCheck `json:"checks"`
 }
 
 // NginxGlobalApplyParams — params của op nginx.global.apply (ops/nginx.global.apply.schema.json).
@@ -1793,6 +1849,24 @@ type PHPVersionRemoveParams struct {
 // PHPVersionRemoveResult — result của op php.version.remove (ops/php.version.remove.schema.json).
 type PHPVersionRemoveResult struct {
 	Removed bool `json:"removed"`
+}
+
+// PkiSignCsrParams — params của op pki.sign_csr (ops/pki.sign_csr.schema.json).
+type PkiSignCsrParams struct {
+	ServerUUID UUID    `json:"server_uuid"`
+	Csr        CsrPem  `json:"csr"`
+	TTLDays    int64   `json:"ttl_days"`
+	SerialHint *string `json:"serial_hint,omitempty"`
+}
+
+// PkiSignCsrResult — result của op pki.sign_csr (ops/pki.sign_csr.schema.json).
+type PkiSignCsrResult struct {
+	CertPem           CertPem `json:"cert_pem"`
+	ChainPem          CertPem `json:"chain_pem"`
+	Serial            string  `json:"serial"`
+	FingerprintSHA256 SHA256  `json:"fingerprint_sha256"`
+	NotBefore         string  `json:"not_before"`
+	NotAfter          string  `json:"not_after"`
 }
 
 // PtyListParams — params của op pty.list (ops/pty.list.schema.json).
@@ -2224,6 +2298,8 @@ func NewParams(op string) any {
 		return new(AccountSuspendParams)
 	case OpAccountUnsuspend:
 		return new(AccountUnsuspendParams)
+	case OpAgentCertRotate:
+		return new(AgentCertRotateParams)
 	case OpAuditTail:
 		return new(AuditTailParams)
 	case OpBackupBrowse:
@@ -2350,6 +2426,8 @@ func NewParams(op string) any {
 		return new(FTPUserEnsureParams)
 	case OpFTPUserRemove:
 		return new(FTPUserRemoveParams)
+	case OpHTTPCheck:
+		return new(HTTPCheckParams)
 	case OpLogTail:
 		return new(LogTailParams)
 	case OpMalwareDelete:
@@ -2370,8 +2448,6 @@ func NewParams(op string) any {
 		return new(MigratePreflightParams)
 	case OpMigrateRollback:
 		return new(MigrateRollbackParams)
-	case OpMigrateSync:
-		return new(MigrateSyncParams)
 	case OpMigrateVerify:
 		return new(MigrateVerifyParams)
 	case OpNginxGlobalApply:
@@ -2396,6 +2472,8 @@ func NewParams(op string) any {
 		return new(PHPVersionInstallParams)
 	case OpPHPVersionRemove:
 		return new(PHPVersionRemoveParams)
+	case OpPkiSignCsr:
+		return new(PkiSignCsrParams)
 	case OpPtyList:
 		return new(PtyListParams)
 	case OpPtyOpen:
@@ -2461,6 +2539,8 @@ func NewResult(op string) any {
 		return new(AccountSuspendResult)
 	case OpAccountUnsuspend:
 		return new(AccountUnsuspendResult)
+	case OpAgentCertRotate:
+		return new(AgentCertRotateResult)
 	case OpAuditTail:
 		return new(AuditTailResult)
 	case OpBackupBrowse:
@@ -2587,6 +2667,8 @@ func NewResult(op string) any {
 		return new(FTPUserEnsureResult)
 	case OpFTPUserRemove:
 		return new(FTPUserRemoveResult)
+	case OpHTTPCheck:
+		return new(HTTPCheckResult)
 	case OpLogTail:
 		return new(LogTailResult)
 	case OpMalwareDelete:
@@ -2607,8 +2689,6 @@ func NewResult(op string) any {
 		return new(MigratePreflightResult)
 	case OpMigrateRollback:
 		return new(MigrateRollbackResult)
-	case OpMigrateSync:
-		return new(MigrateSyncResult)
 	case OpMigrateVerify:
 		return new(MigrateVerifyResult)
 	case OpNginxGlobalApply:
@@ -2633,6 +2713,8 @@ func NewResult(op string) any {
 		return new(PHPVersionInstallResult)
 	case OpPHPVersionRemove:
 		return new(PHPVersionRemoveResult)
+	case OpPkiSignCsr:
+		return new(PkiSignCsrResult)
 	case OpPtyList:
 		return new(PtyListResult)
 	case OpPtyOpen:

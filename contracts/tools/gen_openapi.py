@@ -624,6 +624,13 @@ def admin_paths(api: Api):
     api.add("post", "/servers/enrollment-tokens", "createEnrollmentToken", "Tạo token thêm server (một lần)", "Servers",
             body=ref("EnrollmentRequest"), body_example={"name": "srv-hn-03", "role_tags": ["web"], "ttl_min": 60},
             ok=ref("EnrollmentToken"), ok_example=one(D.ENROLLMENT), status="201", step_up=True)
+    api.add("post", "/api/v1/internal/nodes:enroll", "enrollNode",
+            "Node join bằng token: ký CSR, tạo server + khóa HMAC (chỉ itso-relay gọi qua loopback)", "Servers",
+            public=True, security=[], body=ref("NodeEnrollRequest"), body_example=D.NODE_ENROLL_REQUEST,
+            ok=ref("NodeEnrollment"), ok_example=one(D.NODE_ENROLLMENT), status="201",
+            desc="itso-relay nhận yêu cầu của node trên cổng 28444 (TLS, node ghim `ca_sha256`) rồi chuyển tiếp tới route này "
+                 "qua 127.0.0.1 kèm header `X-Itso-Relay-Signature` (HMAC bằng khóa relay). Token sai/hết hạn/đã dùng → 422 "
+                 "`enrollment_invalid` (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256, CN = `server_uuid` được cấp.")
     api.add("post", "/servers/{id}:revoke", "revokeServer",
             "Thu hồi node: chặn chứng chỉ ngay, agent không kết nối lại được (chỉ khi không còn account)", "Servers",
             params=idp, body=obj({"confirm_name": s(pattern="^[a-z0-9][a-z0-9-]{1,62}$")}),

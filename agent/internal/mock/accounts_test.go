@@ -26,8 +26,15 @@ func TestAccountLifecycle(t *testing.T) {
 		t.Fatalf("mock trả mức dùng giả > 0: %v", u)
 	}
 
-	rm := map[string]any{"account": ct.Acct("lehoa", 20001), "purge_uuid": "0193a000-0000-7000-8000-000000000001",
-		"final_snapshot_id": "abcdef12", "confirm_username": "khac"}
+	rm := map[string]any{"account": ct.Acct("lehoa", 20001), "reason": "purge", "ref_uuid": "0193a000-0000-7000-8000-000000000001",
+		"final_snapshot_id": "abcdef12", "confirm_username": "khac", "confirm": true}
+	// Thiếu cờ xác nhận → schema từ chối trước khi tới handler.
+	noConfirm := map[string]any{}
+	for k, v := range rm {
+		noConfirm[k] = v
+	}
+	noConfirm["confirm"] = false
+	h.Fail(contracts.OpAccountRemove, noConfirm, "invalid_params")
 	h.Fail(contracts.OpAccountRemove, rm, "precondition_failed")
 	rm["confirm_username"] = "lehoa"
 	d := h.OK(contracts.OpAccountRemove, rm)

@@ -9,13 +9,17 @@
         "account": {
           "$ref": "../defs.schema.json#/$defs/Account"
         },
-        "source_server_uuid": {
+        "migration_uuid": {
           "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "role": {
+          "$ref": "../defs.schema.json#/$defs/MigrationRole"
         }
       },
       "required": [
         "account",
-        "source_server_uuid"
+        "migration_uuid",
+        "role"
       ],
       "additionalProperties": false
     },

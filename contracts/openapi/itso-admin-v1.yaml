@@ -17155,6 +17155,76 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
       parameters:
       - $ref: ./common.yaml#/components/parameters/Realm
+  /api/v1/internal/nodes:enroll:
+    post:
+      operationId: enrollNode
+      summary: 'Node join bằng token: ký CSR, tạo server + khóa HMAC (chỉ itso-relay gọi qua loopback)'
+      tags:
+      - Servers
+      description: itso-relay nhận yêu cầu của node trên cổng 28444 (TLS, node ghim `ca_sha256`) rồi chuyển tiếp tới route
+        này qua 127.0.0.1 kèm header `X-Itso-Relay-Signature` (HMAC bằng khóa relay). Token sai/hết hạn/đã dùng → 422 `enrollment_invalid`
+        (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256, CN = `server_uuid` được cấp.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeEnrollRequest'
+            example:
+              token: itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga
+              csr: '-----BEGIN CERTIFICATE REQUEST-----
+
+                MIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw
+
+                -----END CERTIFICATE REQUEST-----
+
+                '
+              hostname: srv-hn-03.itso.local
+              ip_addresses:
+              - 10.10.1.13
+              facts:
+                os: Ubuntu 24.04.1 LTS
+                kernel: 6.8.0-48-generic
+                arch: amd64
+                agent_version: 0.2.0-dev
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NodeEnrollment'
+                required:
+                - data
+              example:
+                data:
+                  server_uuid: 01938a02-0004-7000-8000-000002000004
+                  cert_pem: '-----BEGIN CERTIFICATE-----
+
+                    MIIBkTCCATegAwIBAgIUQ2hhcmdl
+
+                    -----END CERTIFICATE-----
+
+                    '
+                  chain_pem: '-----BEGIN CERTIFICATE-----
+
+                    MIIBnDCCAUKgAwIBAgIUSVRTTy1DQQ
+
+                    -----END CERTIFICATE-----
+
+                    '
+                  ca_sha256: e3b7c1d04f9a26b85c71e0d3a4f6b29c8d15e7a03b6c94f21d8e5a7c0b3f9e61
+                  hmac_key: q3Vx9-Lm2Pz7Rt4Kc8Wn1Ys6Hd0Bf5Ga3Je9Ui2Oa7E
+                  relay_url: https://admin.itso.local:28444
+                  cert_not_after: '2026-12-21T09:00:00+07:00'
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+      security: []
   /api/v1/system/health:
     get:
       operationId: getHealth
@@ -17749,6 +17819,96 @@ components:
       - created_at
       additionalProperties: false
       description: Token chỉ trả một lần, dùng một lần (D-90); lệnh join ghim `ca_sha256`.
+    NodeEnrollRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          pattern: ^itso_enr_[A-Za-z0-9_-]{32,64}$
+          writeOnly: true
+        csr:
+          type: string
+          maxLength: 8192
+          pattern: '^-----BEGIN CERTIFICATE REQUEST-----
+
+            [A-Za-z0-9+/=
+
+            ]+-----END CERTIFICATE REQUEST-----
+
+            ?$'
+        hostname:
+          type: string
+          minLength: 1
+          maxLength: 253
+        ip_addresses:
+          type: array
+          items:
+            type: string
+          maxItems: 16
+        facts:
+          type: object
+          properties:
+            os:
+              type: string
+              maxLength: 200
+            kernel:
+              type: string
+              maxLength: 200
+            arch:
+              type: string
+              enum:
+              - amd64
+              - arm64
+            agent_version:
+              type: string
+              maxLength: 50
+          required:
+          - os
+          - kernel
+          - arch
+          - agent_version
+          additionalProperties: false
+      required:
+      - token
+      - csr
+      - hostname
+      - ip_addresses
+      - facts
+      additionalProperties: false
+      description: Node gửi khi join (qua itso-relay, TLS ghim CA). Token 32 byte dùng một lần, hạn 1 giờ (D-90).
+    NodeEnrollment:
+      type: object
+      properties:
+        server_uuid:
+          type: string
+          format: uuid
+        cert_pem:
+          type: string
+        chain_pem:
+          type: string
+        ca_sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        hmac_key:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{43}$
+          description: Khóa HMAC riêng của server (base64url 32 byte). Chỉ trả MỘT lần.
+        relay_url:
+          type: string
+          format: uri
+        cert_not_after:
+          type: string
+          format: date-time
+      required:
+      - server_uuid
+      - cert_pem
+      - chain_pem
+      - ca_sha256
+      - hmac_key
+      - relay_url
+      - cert_not_after
+      additionalProperties: false
+      description: Chứng chỉ mTLS 30 ngày + khóa HMAC riêng; node ghi vào /etc/itso (0600) rồi kết nối relay.
     EnrollmentRequest:
       type: object
       properties:

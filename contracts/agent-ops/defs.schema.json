@@ -699,6 +699,68 @@
       ],
       "description": "Đích kiểu hóa (D-83): agent dựng URL repo (local:/var/backups/itso/repos/…, sftp:user@host:path/…, s3:endpoint/bucket/…, rest:https://user@host/…); credential chỉ là credential GHI, tới agent qua tham chiếu bí mật."
     },
+    "CsrPem": {
+      "type": "string",
+      "maxLength": 8192,
+      "pattern": "^-----BEGIN CERTIFICATE REQUEST-----\\n[A-Za-z0-9+/=\\n]+-----END CERTIFICATE REQUEST-----\\n?$",
+      "description": "CSR PEM (ECDSA P-256) do node tự sinh; khóa riêng không rời node (D-90)."
+    },
+    "CertPem": {
+      "type": "string",
+      "maxLength": 16384,
+      "pattern": "^(-----BEGIN CERTIFICATE-----\\n[A-Za-z0-9+/=\\n]+-----END CERTIFICATE-----\\n?)+$",
+      "description": "Chứng chỉ PEM (có thể kèm chuỗi CA)."
+    },
+    "HttpCheckPath": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^/[A-Za-z0-9._~%/-]*$",
+      "not": {
+        "pattern": "(^|/)\\.{1,2}(/|$)|%2[eEfF]|//"
+      },
+      "description": "Đường dẫn tương đối gửi tới 127.0.0.1 của node (http.check); cấm traversal, mã hóa %2e/%2f, //."
+    },
+    "MigrationRole": {
+      "type": "string",
+      "enum": [
+        "source",
+        "target"
+      ]
+    },
+    "MigrationCheck": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "files",
+            "database",
+            "http",
+            "ssl",
+            "cron",
+            "ownership"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "ok",
+        "detail"
+      ],
+      "additionalProperties": false
+    },
     "BackupRepo": {
       "type": "object",
       "properties": {

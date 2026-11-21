@@ -115,10 +115,25 @@ t("infra", "agents", IDN + [
     "capabilities jsonb [not null, default: `'{}'::jsonb`]", "last_seen_at timestamptz",
 ] + TS)
 t("infra", "agent_enrollment_tokens", IDN + [
-    "token_hash text [not null, unique]", "created_by_user_id bigint [not null, ref: > users.id]",
-    "expires_at timestamptz [not null]", "used_at timestamptz",
+    "uuid uuid [not null, unique, default: `gen_random_uuid()`]",
+    "token_hash text [not null, unique, note: 'sha256 của token 32 byte; token chỉ hiện một lần (D-90)']",
+    "server_name text [not null, note: 'Tên server sẽ tạo khi node join']",
+    "role_tags text[] [not null, default: `'{}'`]",
+    "created_by_user_id bigint [not null, ref: > users.id]",
+    "expires_at timestamptz [not null, note: 'Mặc định 1 giờ']", "used_at timestamptz",
     "used_by_server_id bigint [ref: > servers.id]",
-] + TS)
+    "used_from_ip inet",
+] + TS, [], "Token join node dùng một lần (D-90).")
+t("infra", "agent_certificates", IDN + [
+    "server_id bigint [not null, ref: > servers.id]",
+    "serial text [not null, unique, note: 'Số serial hex do CA nội bộ cấp']",
+    "fingerprint_sha256 text [not null, unique]",
+    "not_before timestamptz [not null]", "not_after timestamptz [not null]",
+    "issued_reason text [not null, note: 'enroll|rotate|rejoin']",
+    "revoked_at timestamptz", "revoked_reason text [note: 'revoke|superseded|rejoin']",
+    "created_at timestamptz [not null, default: `now()`]",
+], ["server_id", "revoked_at"],
+  "Lịch sử chứng chỉ mTLS của node + danh sách thu hồi cho itso-relay (D-89, D-90).")
 t("infra", "server_services", IDN + [
     "server_id bigint [not null, ref: > servers.id]", "name text [not null]",
     "observed_state text", "enabled boolean", "observed_at timestamptz",
@@ -205,12 +220,19 @@ t("hosting", "account_migrations", ID + [
     "source_server_id bigint [not null, ref: > servers.id]",
     "target_server_id bigint [not null, ref: > servers.id]",
     "target_account_id bigint [ref: > hosting_accounts.id]",
-    "state text [not null, default: 'preflight', note: 'preflight|syncing|verifying|cutover|completed|rolled_back|failed']",
-    "verification jsonb [not null, default: `'{}'::jsonb`, note: 'checksum file, row count, HTTP check']",
-    "bytes_synced bigint [not null, default: 0]", "downtime_sec int",
-    "job_id bigint [ref: > jobs.id]", "cleanup_after timestamptz",
+    "state text [not null, default: 'preflight', note: 'preflight|syncing|verifying|cutover|holding|completed|rolled_back|failed']",
+    "keep_source_days int [not null, default: 7]",
+    "verification jsonb [not null, default: `'[]'::jsonb`, note: 'Danh sách {kind, name, ok, detail}: file sha256, DB, HTTP, SSL, cron, UID']",
+    "preflight jsonb [note: 'Kết quả kiểm tra trước lúc bắt đầu']",
+    "dns jsonb [note: '{mode auto|manual, zone, records[]}']",
+    "sync_snapshot_id text [note: 'Snapshot restic dùng để đồng bộ lượt đầu']",
+    "final_snapshot_id text [note: 'Snapshot lượt cuối lúc cutover']",
+    "bytes_synced bigint [not null, default: 0]", "downtime_estimate_sec int", "downtime_sec int",
+    "job_id bigint [ref: > jobs.id]", "cutover_at timestamptz", "cleanup_after timestamptz",
+    "cleaned_at timestamptz", "error text",
     "requested_by_user_id bigint [not null, ref: > users.id]",
-] + TS, ["hosting_account_id", "state"], "Chuyển account giữa server (D-48).")
+] + TS, ["hosting_account_id", "state"],
+  "Chuyển account giữa server qua repo restic (D-93): preflight → syncing → verifying → cutover → holding → completed; rollback tới trước dọn dẹp.")
 t("hosting", "purge_records", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
     "requested_by_user_id bigint [not null, ref: > users.id]",

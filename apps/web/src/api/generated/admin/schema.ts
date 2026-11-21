@@ -4042,6 +4042,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/internal/nodes:enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Node join bằng token: ký CSR, tạo server + khóa HMAC (chỉ itso-relay gọi qua loopback)
+         * @description itso-relay nhận yêu cầu của node trên cổng 28444 (TLS, node ghim `ca_sha256`) rồi chuyển tiếp tới route này qua 127.0.0.1 kèm header `X-Itso-Relay-Signature` (HMAC bằng khóa relay). Token sai/hết hạn/đã dùng → 422 `enrollment_invalid` (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256, CN = `server_uuid` được cấp.
+         */
+        post: operations["enrollNode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/health": {
         parameters: {
             query?: never;
@@ -4257,6 +4277,34 @@ export interface components {
             expires_at: string;
             /** Format: date-time */
             created_at: string;
+        };
+        /** @description Node gửi khi join (qua itso-relay, TLS ghim CA). Token 32 byte dùng một lần, hạn 1 giờ (D-90). */
+        NodeEnrollRequest: {
+            token: string;
+            csr: string;
+            hostname: string;
+            ip_addresses: string[];
+            facts: {
+                os: string;
+                kernel: string;
+                /** @enum {string} */
+                arch: "amd64" | "arm64";
+                agent_version: string;
+            };
+        };
+        /** @description Chứng chỉ mTLS 30 ngày + khóa HMAC riêng; node ghi vào /etc/itso (0600) rồi kết nối relay. */
+        NodeEnrollment: {
+            /** Format: uuid */
+            server_uuid: string;
+            cert_pem: string;
+            chain_pem: string;
+            ca_sha256: string;
+            /** @description Khóa HMAC riêng của server (base64url 32 byte). Chỉ trả MỘT lần. */
+            hmac_key: string;
+            /** Format: uri */
+            relay_url: string;
+            /** Format: date-time */
+            cert_not_after: string;
         };
         EnrollmentRequest: {
             name: string;
@@ -6143,7 +6191,10 @@ export interface components {
             /** @enum {string} */
             mode: "new" | "overwrite";
             items: string[];
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Chỉ Admin, chỉ mode=new (Phase 9, D-93): khôi phục sang server khác đọc cùng repo; account được tạo ở đích nếu chưa có. Đích phải trực tuyến, nếu không 409 `agent_unreachable`.
+             */
             target_server_uuid?: string | null;
             confirm?: string | null;
         };
@@ -26949,6 +27000,63 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    enrollNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "token": "itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga",
+                 *       "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\n-----END CERTIFICATE REQUEST-----\n",
+                 *       "hostname": "srv-hn-03.itso.local",
+                 *       "ip_addresses": [
+                 *         "10.10.1.13"
+                 *       ],
+                 *       "facts": {
+                 *         "os": "Ubuntu 24.04.1 LTS",
+                 *         "kernel": "6.8.0-48-generic",
+                 *         "arch": "amd64",
+                 *         "agent_version": "0.2.0-dev"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["NodeEnrollRequest"];
+            };
+        };
+        responses: {
+            /** @description Đã tạo */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "server_uuid": "01938a02-0004-7000-8000-000002000004",
+                     *         "cert_pem": "-----BEGIN CERTIFICATE-----\nMIIBkTCCATegAwIBAgIUQ2hhcmdl\n-----END CERTIFICATE-----\n",
+                     *         "chain_pem": "-----BEGIN CERTIFICATE-----\nMIIBnDCCAUKgAwIBAgIUSVRTTy1DQQ\n-----END CERTIFICATE-----\n",
+                     *         "ca_sha256": "e3b7c1d04f9a26b85c71e0d3a4f6b29c8d15e7a03b6c94f21d8e5a7c0b3f9e61",
+                     *         "hmac_key": "q3Vx9-Lm2Pz7Rt4Kc8Wn1Ys6Hd0Bf5Ga3Je9Ui2Oa7E",
+                     *         "relay_url": "https://admin.itso.local:28444",
+                     *         "cert_not_after": "2026-12-21T09:00:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["NodeEnrollment"];
+                    };
+                };
+            };
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };

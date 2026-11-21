@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.1 (ADR, contracts, migration) — nhánh `phase-9`
+
+Phạm vi: `docs/adr/0034–0038`; `contracts/tools/{gen_agent_ops,gen_vectors,schemas,gen_openapi,demo,check_contracts}.py`; `database/tools/{gen_dbml,gen_migrations}.py` (hỗ trợ đánh dấu `/* phase:N */` cho ALTER bảng Phase trước), `database/schema/extras.sql`, migration `2026_11_20_000009_phase_9_schema.php` (sinh), `database/tests/80_multiserver.sql`; Laravel: `PurgeService`/`BackupJobHandler` theo tham số `account.remove` mới, `ServerPresenter` (`node_role`, `transport`, `connection`, `last_seen_at`, `cert`), gợi ý server (`eligible`, `excluded_reasons`, `commit_pct`), `config/itso.php` (`relay.*`); mock agent theo `account.remove` mới.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | Lần đầu 1 lỗi (`/api/v1/internal/nodes:enroll` ngoài prefix admin cho phép) → thêm prefix `internal` vào kiểm tra → **PASS** (admin 270 operation, 117 op agent có schema, 251 vector độc, RE2 90 pattern) · OK |
+| Schema | `make db-schema` · `gen_migrations.py 3…8 --check` · `make db-verify` | Lần đầu lỗi trùng `agents_transport_chk` (đã có từ Phase 3) → bỏ câu trùng → migration Phase 3–8 khớp đặc tả (không sửa), Phase 3 → 11 áp lần lượt = itso.sql + extras.sql; **98 test SQL PASS** (mới 20: vai trò node, kết nối, chứng chỉ trùng/sai định dạng, token lưu rõ bị chặn, job `waiting_agent`, một lần chuyển mở mỗi account, `holding`, giữ nguồn ≤ 30 ngày) |
+| Pest | `bash scripts/pest-pg.sh --parallel` | Lần đầu 4 lỗi (bảng Phase 9 mới; Server/gợi ý thiếu trường contract mới) → cập nhật `SchemaTest` + presenter + gợi ý → **462/462 PASS** |
+| Lint API | `make lint-api` | Pint PASS · PHPStan 0 lỗi |
+| Go | `go vet ./...` · `go test ./...` | PASS (mock: `account.remove` thiếu `confirm` → `invalid_params`, sai username → `precondition_failed`) |
+| Docs | `make docs-check` | 0 lỗi markdownlint, link, mermaid |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 9 / Prompt 9.0 (mockup multi-server & chuyển tài khoản) — nhánh `phase-9`
 
 Phạm vi: chỉ bản demo. Contracts (`schemas.py`, `gen_openapi.py`, `demo.py`): `JobState` thêm `waiting_agent`; `Server` thêm `node_role`, `transport`, `connection` (`online/degraded/unreachable/pending/revoked`), `last_seen_at`, `cert`; `EnrollmentToken.ca_sha256`; `PlacementSuggestion` thêm `eligible`, `excluded_reasons`, `commit_pct`; `MigrateRequest` bỏ `strategy`/`dry_run`; mới `MigrationPreflight`, `POST /hosting-accounts/{id}:migrate-preflight`, `POST /account-migrations/{id}:cleanup`, `POST /servers/{id}:revoke`; `AccountMigration` thêm `holding`, `verification` dạng danh sách, `dns`, `downtime_estimate_sec`, `cutover_at`, `error`; demo có 2 job trên node mất kết nối. UI: `servers/*` (vai trò/kênh/kết nối/chứng chỉ, banner offline, thẻ Kênh, thu hồi), `hosting/Placement` (dùng ở tạo account và chuyển account), `AccountMigratePage` (6 bước, giữ nguồn + dọn nguồn), `backups/RestoreNewPage` (chọn server đích), `pages/JobsPage` (lọc `waiting_agent`); MSW `admin.ts` (gợi ý D-92), `hosting.ts` (preflight/migrate/cutover → holding/rollback/cleanup), `infra.ts` (node join mTLS, revoke), `governance.ts` (khôi phục sang server khác: chỉ ra bản mới, đích phải online, `account.ensure` + `backup.restore`).

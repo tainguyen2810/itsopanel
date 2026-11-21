@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/pki.sign_csr.schema.json",
+  "title": "pki.sign_csr",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "server_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "csr": {
+          "$ref": "../defs.schema.json#/$defs/CsrPem"
+        },
+        "ttl_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "serial_hint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16,40}$"
+        }
+      },
+      "required": [
+        "server_uuid",
+        "csr",
+        "ttl_days"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "cert_pem": {
+          "$ref": "../defs.schema.json#/$defs/CertPem"
+        },
+        "chain_pem": {
+          "$ref": "../defs.schema.json#/$defs/CertPem"
+        },
+        "serial": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16,40}$"
+        },
+        "fingerprint_sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        },
+        "not_before": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "not_after": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "cert_pem",
+        "chain_pem",
+        "serial",
+        "fingerprint_sha256",
+        "not_before",
+        "not_after"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

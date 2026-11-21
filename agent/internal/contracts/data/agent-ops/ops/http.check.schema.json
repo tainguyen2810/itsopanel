@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/http.check.schema.json",
+  "title": "http.check",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "$ref": "../defs.schema.json#/$defs/Domain"
+        },
+        "path": {
+          "$ref": "../defs.schema.json#/$defs/HttpCheckPath"
+        },
+        "scheme": {
+          "type": "string",
+          "enum": [
+            "http",
+            "https"
+          ]
+        },
+        "expect_status": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "host",
+        "path",
+        "scheme",
+        "expect_status"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 599
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "body_sha256": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "ok",
+        "duration_ms",
+        "body_sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -40,7 +40,7 @@ PHASES: dict[int, list[str]] = {
         "terminal_recordings"],
     8: ["backup_destinations", "backup_repositories", "backup_policies", "backup_policy_destinations", "backup_jobs", "backup_snapshots",
         "backup_verifications", "restore_jobs", "purge_records"],
-    9: ["agent_enrollment_tokens", "account_migrations"],
+    9: ["agent_enrollment_tokens", "agent_certificates", "account_migrations"],
     10: ["docker_hosts", "registries", "compose_projects", "compose_revisions", "containers",
          "port_allocations", "wordpress_sites", "git_repositories", "git_deployments"],
     11: ["metric_rollups", "alert_rules", "alerts", "uptime_checks", "notification_channels",
@@ -124,6 +124,11 @@ def select(phase: int) -> tuple[list[str], list[str]]:
             lv = min(PHASES)
         else:
             lv = level(s)
+        # Thay đổi bảng của Phase trước (ALTER thêm cột/ràng buộc) đánh dấu `/* phase:N */` ở đầu câu lệnh
+        # trong extras.sql, để không sửa migration đã phát hành.
+        pm = re.match(r"/\* phase:(\d+) \*/", s)
+        if pm:
+            lv = max(lv, int(pm.group(1)))
         m = re.match(r"CREATE OR REPLACE FUNCTION (\w+)\(", s)
         if m:
             # Hàm dùng chung (vd. itso_reject_modify) không nhắc bảng nào → Phase đầu tiên.
