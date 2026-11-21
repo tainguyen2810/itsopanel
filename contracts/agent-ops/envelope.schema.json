@@ -40,14 +40,20 @@
         "account.limits.apply",
         "quota.apply",
         "quota.report",
+        "fs.site_layout.ensure",
         "nginx.vhost.apply",
         "nginx.vhost.remove",
+        "nginx.vhost.inspect",
         "nginx.global.apply",
         "php.pool.apply",
         "php.pool.remove",
         "php.version.install",
+        "php.version.remove",
+        "php.ext.install",
+        "log.tail",
         "cert.issue",
         "cert.install",
+        "cert.inspect",
         "cert.remove",
         "fs.list",
         "fs.read",
@@ -527,6 +533,25 @@
       "if": {
         "properties": {
           "op": {
+            "const": "fs.site_layout.ensure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/fs.site_layout.ensure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "nginx.vhost.apply"
           }
         },
@@ -557,6 +582,25 @@
         "properties": {
           "params": {
             "$ref": "ops/nginx.vhost.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "nginx.vhost.inspect"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/nginx.vhost.inspect.schema.json#/$defs/params"
           }
         }
       }
@@ -641,6 +685,63 @@
       "if": {
         "properties": {
           "op": {
+            "const": "php.version.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/php.version.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "php.ext.install"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/php.ext.install.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "log.tail"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/log.tail.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
             "const": "cert.issue"
           }
         },
@@ -671,6 +772,25 @@
         "properties": {
           "params": {
             "$ref": "ops/cert.install.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "cert.inspect"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cert.inspect.schema.json#/$defs/params"
           }
         }
       }

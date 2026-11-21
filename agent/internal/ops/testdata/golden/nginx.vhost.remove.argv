@@ -1,0 +1,2 @@
+nginx -t -q
+systemctl reload nginx.service

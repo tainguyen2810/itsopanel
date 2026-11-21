@@ -211,6 +211,17 @@
       "status": "specified"
     },
     {
+      "op": "fs.site_layout.ensure",
+      "domain": "web",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 5,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/fs.site_layout.ensure.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "nginx.vhost.apply",
       "domain": "web",
       "risk": "high",
@@ -230,6 +241,17 @@
       "runs_as": "root",
       "timeout_sec": 60,
       "schema": "ops/nginx.vhost.remove.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "nginx.vhost.inspect",
+      "domain": "web",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 5,
+      "runs_as": "root",
+      "timeout_sec": 15,
+      "schema": "ops/nginx.vhost.inspect.schema.json",
       "status": "specified"
     },
     {
@@ -277,6 +299,39 @@
       "status": "specified"
     },
     {
+      "op": "php.version.remove",
+      "domain": "web",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 5,
+      "runs_as": "root",
+      "timeout_sec": 900,
+      "schema": "ops/php.version.remove.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "php.ext.install",
+      "domain": "web",
+      "risk": "medium",
+      "default_enabled": true,
+      "phase": 5,
+      "runs_as": "root",
+      "timeout_sec": 900,
+      "schema": "ops/php.ext.install.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "log.tail",
+      "domain": "web",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 5,
+      "runs_as": "root",
+      "timeout_sec": 15,
+      "schema": "ops/log.tail.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "cert.issue",
       "domain": "cert",
       "risk": "medium",
@@ -296,6 +351,17 @@
       "runs_as": "root",
       "timeout_sec": 60,
       "schema": "ops/cert.install.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "cert.inspect",
+      "domain": "cert",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 5,
+      "runs_as": "root",
+      "timeout_sec": 15,
+      "schema": "ops/cert.inspect.schema.json",
       "status": "specified"
     },
     {

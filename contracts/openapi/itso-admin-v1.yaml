@@ -234,7 +234,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0072-7000-8000-00000f000072
+                  uuid: 01938a0f-0075-7000-8000-00000f000075
                   type: migration.cutover
                   state: queued
                   progress: 0
@@ -262,8 +262,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0072-7000-8000-00000f000072
-                    events: /api/v1/admin/jobs/01938a0f-0072-7000-8000-00000f000072/events
+                    self: /api/v1/admin/jobs/01938a0f-0075-7000-8000-00000f000075
+                    events: /api/v1/admin/jobs/01938a0f-0075-7000-8000-00000f000075/events
                 resource:
                   type: account_migration
                   uuid: 01938a15-0001-7000-8000-000015000001
@@ -298,7 +298,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0073-7000-8000-00000f000073
+                  uuid: 01938a0f-0076-7000-8000-00000f000076
                   type: migration.rollback
                   state: queued
                   progress: 0
@@ -326,8 +326,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0073-7000-8000-00000f000073
-                    events: /api/v1/admin/jobs/01938a0f-0073-7000-8000-00000f000073/events
+                    self: /api/v1/admin/jobs/01938a0f-0076-7000-8000-00000f000076
+                    events: /api/v1/admin/jobs/01938a0f-0076-7000-8000-00000f000076/events
                 resource:
                   type: account_migration
                   uuid: 01938a15-0001-7000-8000-000015000001
@@ -1191,7 +1191,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009a-7000-8000-00000f00009a
+                  uuid: 01938a0f-009d-7000-8000-00000f00009d
                   type: backup.destination_test
                   state: queued
                   progress: 0
@@ -1219,8 +1219,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a
-                    events: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events
+                    self: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d
+                    events: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events
                 resource:
                   type: backup_destination
                   uuid: 01938a17-0002-7000-8000-000017000002
@@ -1522,7 +1522,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009b-7000-8000-00000f00009b
+                  uuid: 01938a0f-009e-7000-8000-00000f00009e
                   type: backup.policy_run
                   state: queued
                   progress: 0
@@ -1555,8 +1555,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b
-                    events: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b/events
+                    self: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e
+                    events: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events
                 resource:
                   type: backup_policy
                   uuid: 01938a18-0001-7000-8000-000018000001
@@ -1691,7 +1691,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009d-7000-8000-00000f00009d
+                  uuid: 01938a0f-00a0-7000-8000-00000f0000a0
                   type: backup.forget
                   state: queued
                   progress: 0
@@ -1719,8 +1719,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d
-                    events: /api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events
+                    self: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0
+                    events: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events
                 resource:
                   type: backup_snapshot
                   uuid: 01938a0e-0001-7000-8000-00000e000001
@@ -1847,7 +1847,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009c-7000-8000-00000f00009c
+                  uuid: 01938a0f-009f-7000-8000-00000f00009f
                   type: backup.verify
                   state: queued
                   progress: 0
@@ -1880,8 +1880,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c
-                    events: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events
+                    self: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f
+                    events: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events
                 resource:
                   type: backup_snapshot
                   uuid: 01938a0e-0001-7000-8000-00000e000001
@@ -1927,7 +1927,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0091-7000-8000-00000f000091
+                  uuid: 01938a0f-0094-7000-8000-00000f000094
                   type: backup.run
                   state: queued
                   progress: 0
@@ -1960,8 +1960,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091
-                    events: /api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091/events
+                    self: /api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094
+                    events: /api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -2078,7 +2078,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-007d-7000-8000-00000f00007d
+                  uuid: 01938a0f-0080-7000-8000-00000f000080
                   type: certificate.delete
                   state: queued
                   progress: 0
@@ -2111,8 +2111,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d
-                    events: /api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d/events
+                    self: /api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080
+                    events: /api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080/events
                 resource:
                   type: certificate
                   uuid: 01938a08-0001-7000-8000-000008000001
@@ -2145,7 +2145,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-007c-7000-8000-00000f00007c
+                  uuid: 01938a0f-007f-7000-8000-00000f00007f
                   type: certificate.renew
                   state: queued
                   progress: 0
@@ -2173,8 +2173,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c
-                    events: /api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c/events
+                    self: /api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f
+                    events: /api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f/events
                 resource:
                   type: certificate
                   uuid: 01938a08-0001-7000-8000-000008000001
@@ -2290,7 +2290,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a6-7000-8000-00000f0000a6
+                  uuid: 01938a0f-00a9-7000-8000-00000f0000a9
                   type: compose.create
                   state: queued
                   progress: 0
@@ -2323,8 +2323,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6
-                    events: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events
+                    self: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9
+                    events: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events
                 resource:
                   type: compose_project
                   uuid: 01938a1e-0001-7000-8000-00001e000001
@@ -2414,7 +2414,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a7-7000-8000-00000f0000a7
+                  uuid: 01938a0f-00aa-7000-8000-00000f0000aa
                   type: compose.update
                   state: queued
                   progress: 0
@@ -2429,266 +2429,6 @@ paths:
                     finished_at: null
                   - seq: 2
                     op: compose.apply
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7
-                    events: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-        '412':
-          $ref: ./common.yaml#/components/responses/PreconditionFailed
-    delete:
-      operationId: deleteComposeProject
-      summary: Xóa composeProject
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00a8-7000-8000-00000f0000a8
-                  type: compose.delete
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.validate
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  - seq: 2
-                    op: compose.apply
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8
-                    events: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:down:
-    post:
-      operationId: downComposeProject
-      summary: Compose down
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00ab-7000-8000-00000f0000ab
-                  type: compose.down
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.down
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab
-                    events: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:pull:
-    post:
-      operationId: pullComposeProject
-      summary: Compose pull
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00ac-7000-8000-00000f0000ac
-                  type: compose.pull
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.pull
-                    state: pending
-                    started_at: null
-                    finished_at: null
-                  attempts: 0
-                  max_attempts: 3
-                  timeout_sec: 600
-                  error: null
-                  server:
-                    uuid: 01938a02-0001-7000-8000-000002000001
-                    name: srv-hn-01
-                  requested_by:
-                    uuid: 01938a01-0001-7000-8000-000001000001
-                    name: Quản trị hệ thống
-                    email: superadmin@itso.local
-                  created_at: '2026-11-20T08:15:00+07:00'
-                  started_at: null
-                  finished_at: null
-                  links:
-                    self: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac
-                    events: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events
-                resource:
-                  type: compose_project
-                  uuid: 01938a1e-0001-7000-8000-00001e000001
-        '401':
-          $ref: ./common.yaml#/components/responses/Unauthorized
-        '403':
-          $ref: ./common.yaml#/components/responses/Forbidden
-        '429':
-          $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
-        '422':
-          $ref: ./common.yaml#/components/responses/ValidationFailed
-        '409':
-          $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/admin/compose-projects/{id}:up:
-    post:
-      operationId: upComposeProject
-      summary: Compose up
-      tags:
-      - Docker
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
-      parameters:
-      - $ref: ./common.yaml#/components/parameters/Id
-      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
-      responses:
-        '202':
-          description: Đã nhận, Job được tạo
-          content:
-            application/json:
-              schema:
-                $ref: ./common.yaml#/components/schemas/JobAccepted
-              example:
-                job:
-                  uuid: 01938a0f-00aa-7000-8000-00000f0000aa
-                  type: compose.up
-                  state: queued
-                  progress: 0
-                  resource:
-                    type: compose_project
-                    uuid: 01938a1e-0001-7000-8000-00001e000001
-                  steps:
-                  - seq: 1
-                    op: compose.up
                     state: pending
                     started_at: null
                     finished_at: null
@@ -2724,6 +2464,266 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: deleteComposeProject
+      summary: Xóa composeProject
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00ab-7000-8000-00000f0000ab
+                  type: compose.delete
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.validate
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: compose.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab
+                    events: /api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:down:
+    post:
+      operationId: downComposeProject
+      summary: Compose down
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00ae-7000-8000-00000f0000ae
+                  type: compose.down
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.down
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae
+                    events: /api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:pull:
+    post:
+      operationId: pullComposeProject
+      summary: Compose pull
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00af-7000-8000-00000f0000af
+                  type: compose.pull
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.pull
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af
+                    events: /api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/compose-projects/{id}:up:
+    post:
+      operationId: upComposeProject
+      summary: Compose up
+      tags:
+      - Docker
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-00ad-7000-8000-00000f0000ad
+                  type: compose.up
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: compose_project
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                  steps:
+                  - seq: 1
+                    op: compose.up
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad
+                    events: /api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad/events
+                resource:
+                  type: compose_project
+                  uuid: 01938a1e-0001-7000-8000-00001e000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/compose-projects/{id}:validate:
     post:
       operationId: validateComposeProject
@@ -2743,7 +2743,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a9-7000-8000-00000f0000a9
+                  uuid: 01938a0f-00ac-7000-8000-00000f0000ac
                   type: compose.validate
                   state: queued
                   progress: 0
@@ -2771,8 +2771,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9
-                    events: /api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events
+                    self: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac
+                    events: /api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events
                 resource:
                   type: compose_project
                   uuid: 01938a1e-0001-7000-8000-00001e000001
@@ -2921,7 +2921,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-008a-7000-8000-00000f00008a
+                  uuid: 01938a0f-008d-7000-8000-00000f00008d
                   type: cron.create
                   state: queued
                   progress: 0
@@ -2949,8 +2949,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a
-                    events: /api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a/events
+                    self: /api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d
+                    events: /api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -2992,7 +2992,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-008b-7000-8000-00000f00008b
+                  uuid: 01938a0f-008e-7000-8000-00000f00008e
                   type: cron.update
                   state: queued
                   progress: 0
@@ -3020,8 +3020,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b
-                    events: /api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b/events
+                    self: /api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e
+                    events: /api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -3057,7 +3057,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-008c-7000-8000-00000f00008c
+                  uuid: 01938a0f-008f-7000-8000-00000f00008f
                   type: cron.delete
                   state: queued
                   progress: 0
@@ -3085,8 +3085,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c
-                    events: /api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c/events
+                    self: /api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f
+                    events: /api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -3168,7 +3168,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-008d-7000-8000-00000f00008d
+                  uuid: 01938a0f-0090-7000-8000-00000f000090
                   type: cron.run
                   state: queued
                   progress: 0
@@ -3196,8 +3196,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d
-                    events: /api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d/events
+                    self: /api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090
+                    events: /api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090/events
                 resource:
                   type: cron_job
                   uuid: 01938a0d-0001-7000-8000-00000d000001
@@ -3389,7 +3389,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0082-7000-8000-00000f000082
+                  uuid: 01938a0f-0085-7000-8000-00000f000085
                   type: database_user.create
                   state: queued
                   progress: 0
@@ -3417,8 +3417,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082
-                    events: /api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082/events
+                    self: /api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085
+                    events: /api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085/events
                 resource:
                   type: database_user
                   uuid: 01938a0a-0001-7000-8000-00000a000001
@@ -3451,7 +3451,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0083-7000-8000-00000f000083
+                  uuid: 01938a0f-0086-7000-8000-00000f000086
                   type: database_user.delete
                   state: queued
                   progress: 0
@@ -3479,8 +3479,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083
-                    events: /api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083/events
+                    self: /api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086
+                    events: /api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086/events
                 resource:
                   type: database_user
                   uuid: 01938a0a-0001-7000-8000-00000a000001
@@ -3532,7 +3532,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0084-7000-8000-00000f000084
+                  uuid: 01938a0f-0087-7000-8000-00000f000087
                   type: database_user.grant
                   state: queued
                   progress: 0
@@ -3560,8 +3560,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084
-                    events: /api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084/events
+                    self: /api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087
+                    events: /api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087/events
                 resource:
                   type: database_user
                   uuid: 01938a0a-0001-7000-8000-00000a000001
@@ -3741,7 +3741,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-007e-7000-8000-00000f00007e
+                  uuid: 01938a0f-0081-7000-8000-00000f000081
                   type: database.create
                   state: queued
                   progress: 0
@@ -3779,8 +3779,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e
-                    events: /api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e/events
+                    self: /api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081
+                    events: /api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081/events
                 resource:
                   type: database
                   uuid: 01938a09-0001-7000-8000-000009000001
@@ -3869,7 +3869,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-007f-7000-8000-00000f00007f
+                  uuid: 01938a0f-0082-7000-8000-00000f000082
                   type: database.delete
                   state: queued
                   progress: 0
@@ -3902,8 +3902,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f
-                    events: /api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f/events
+                    self: /api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082
+                    events: /api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082/events
                 resource:
                   type: database
                   uuid: 01938a09-0001-7000-8000-000009000001
@@ -3936,7 +3936,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0080-7000-8000-00000f000080
+                  uuid: 01938a0f-0083-7000-8000-00000f000083
                   type: database.export
                   state: queued
                   progress: 0
@@ -3964,8 +3964,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080
-                    events: /api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080/events
+                    self: /api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083
+                    events: /api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083/events
                 resource:
                   type: database
                   uuid: 01938a09-0001-7000-8000-000009000001
@@ -4014,7 +4014,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0081-7000-8000-00000f000081
+                  uuid: 01938a0f-0084-7000-8000-00000f000084
                   type: database.import
                   state: queued
                   progress: 0
@@ -4042,8 +4042,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081
-                    events: /api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081/events
+                    self: /api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084
+                    events: /api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084/events
                 resource:
                   type: database
                   uuid: 01938a09-0001-7000-8000-000009000001
@@ -4057,6 +4057,127 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/dns/providers:
+    get:
+      operationId: listDnsProviders
+      summary: Nhà cung cấp DNS (Cloudflare)
+      tags:
+      - DNS
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/DnsProvider'
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a30-0001-7000-8000-000030000001
+                  type: cloudflare
+                  name: Cloudflare IT
+                  zones_count: 1
+                  account_label: IT An Phát
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: createDnsProvider
+      summary: Thêm nhà cung cấp DNS
+      tags:
+      - DNS
+      description: Kiểm token bằng API Cloudflare trước khi lưu (token sai → 422). Token lưu mã hóa, không bao giờ trả về
+        (D-70).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DnsProviderCreate'
+            example:
+              type: cloudflare
+              name: Cloudflare IT
+              api_token: cf_token_example_0123456789abcdef
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DnsProvider'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a30-0001-7000-8000-000030000001
+                  type: cloudflare
+                  name: Cloudflare IT
+                  zones_count: 1
+                  account_label: IT An Phát
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/dns/providers/{id}:
+    delete:
+      operationId: deleteDnsProvider
+      summary: Xóa nhà cung cấp DNS
+      tags:
+      - DNS
+      x-itso-step-up: true
+      description: 'Còn zone gắn với provider → 409 `resource_locked`.
+
+
+        Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '204':
+          description: Thành công, không có nội dung
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/dns/zones:
@@ -4124,6 +4245,129 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: createDnsZone
+      summary: Gắn zone có sẵn trên Cloudflare vào panel
+      tags:
+      - DNS
+      description: Zone phải tồn tại trong tài khoản Cloudflare của provider (không có → 422). Record được đồng bộ ngay.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DnsZoneCreate'
+            example:
+              provider_uuid: 01938a30-0001-7000-8000-000030000001
+              name: anphat.vn
+              hosting_account_uuid: 01938a05-0001-7000-8000-000005000001
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/DnsZone
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a13-0001-7000-8000-000013000001
+                  name: anphat.vn
+                  provider: cloudflare
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  records_count: 3
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/dns/zones/{id}:
+    patch:
+      operationId: updateDnsZone
+      summary: Đổi account gắn với zone
+      tags:
+      - DNS
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IfMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DnsZoneUpdate'
+            example:
+              hosting_account_uuid: null
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/DnsZone
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a13-0001-7000-8000-000013000001
+                  name: anphat.vn
+                  provider: cloudflare
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  records_count: 3
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: deleteDnsZone
+      summary: Bỏ zone khỏi panel (không xóa trên Cloudflare)
+      tags:
+      - DNS
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '204':
+          description: Thành công, không có nội dung
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/dns/zones/{id}/records:
     get:
       operationId: listDnsRecords
@@ -4215,7 +4459,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-008e-7000-8000-00000f00008e
+                  uuid: 01938a0f-0091-7000-8000-00000f000091
                   type: dns.record.create
                   state: queued
                   progress: 0
@@ -4241,8 +4485,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e
-                    events: /api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e/events
+                    self: /api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091
+                    events: /api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091/events
                 resource:
                   type: dns_zone
                   uuid: 01938a13-0001-7000-8000-000013000001
@@ -4287,7 +4531,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-008f-7000-8000-00000f00008f
+                  uuid: 01938a0f-0092-7000-8000-00000f000092
                   type: dns.record.update
                   state: queued
                   progress: 0
@@ -4313,8 +4557,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f
-                    events: /api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f/events
+                    self: /api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092
+                    events: /api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092/events
                 resource:
                   type: dns_zone
                   uuid: 01938a13-0001-7000-8000-000013000001
@@ -4351,7 +4595,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0090-7000-8000-00000f000090
+                  uuid: 01938a0f-0093-7000-8000-00000f000093
                   type: dns.record.delete
                   state: queued
                   progress: 0
@@ -4377,8 +4621,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090
-                    events: /api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090/events
+                    self: /api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093
+                    events: /api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093/events
                 resource:
                   type: dns_zone
                   uuid: 01938a13-0001-7000-8000-000013000001
@@ -4390,6 +4634,49 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/dns/zones/{id}:sync:
+    post:
+      operationId: syncDnsZone
+      summary: Đồng bộ record từ Cloudflare
+      tags:
+      - DNS
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/DnsZone
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a13-0001-7000-8000-000013000001
+                  name: anphat.vn
+                  provider: cloudflare
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  records_count: 3
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/git-deployments/{id}:rollback:
@@ -4411,7 +4698,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0098-7000-8000-00000f000098
+                  uuid: 01938a0f-009b-7000-8000-00000f00009b
                   type: git.rollback
                   state: queued
                   progress: 0
@@ -4439,8 +4726,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098
-                    events: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events
+                    self: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b
+                    events: /api/v1/admin/jobs/01938a0f-009b-7000-8000-00000f00009b/events
                 resource:
                   type: git_repository
                   uuid: 01938a2e-0001-7000-8000-00002e000001
@@ -4883,7 +5170,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0097-7000-8000-00000f000097
+                  uuid: 01938a0f-009a-7000-8000-00000f00009a
                   type: git.deploy
                   state: queued
                   progress: 0
@@ -4911,8 +5198,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097
-                    events: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events
+                    self: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a
+                    events: /api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events
                 resource:
                   type: git_repository
                   uuid: 01938a2e-0001-7000-8000-00002e000001
@@ -5209,7 +5496,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-006a-7000-8000-00000f00006a
+                  uuid: 01938a0f-006d-7000-8000-00000f00006d
                   type: hosting_account.create
                   state: queued
                   progress: 0
@@ -5247,8 +5534,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-006a-7000-8000-00000f00006a
-                    events: /api/v1/admin/jobs/01938a0f-006a-7000-8000-00000f00006a/events
+                    self: /api/v1/admin/jobs/01938a0f-006d-7000-8000-00000f00006d
+                    events: /api/v1/admin/jobs/01938a0f-006d-7000-8000-00000f00006d/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -5837,7 +6124,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0085-7000-8000-00000f000085
+                  uuid: 01938a0f-0088-7000-8000-00000f000088
                   type: file.operate
                   state: queued
                   progress: 0
@@ -5865,8 +6152,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085
-                    events: /api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085/events
+                    self: /api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088
+                    events: /api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -6043,7 +6330,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-006d-7000-8000-00000f00006d
+                  uuid: 01938a0f-0070-7000-8000-00000f000070
                   type: hosting_account.change_package
                   state: queued
                   progress: 0
@@ -6076,8 +6363,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-006d-7000-8000-00000f00006d
-                    events: /api/v1/admin/jobs/01938a0f-006d-7000-8000-00000f00006d/events
+                    self: /api/v1/admin/jobs/01938a0f-0070-7000-8000-00000f000070
+                    events: /api/v1/admin/jobs/01938a0f-0070-7000-8000-00000f000070/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -6128,7 +6415,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0071-7000-8000-00000f000071
+                  uuid: 01938a0f-0074-7000-8000-00000f000074
                   type: hosting_account.confirm_purge
                   state: queued
                   progress: 0
@@ -6156,8 +6443,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0071-7000-8000-00000f000071
-                    events: /api/v1/admin/jobs/01938a0f-0071-7000-8000-00000f000071/events
+                    self: /api/v1/admin/jobs/01938a0f-0074-7000-8000-00000f000074
+                    events: /api/v1/admin/jobs/01938a0f-0074-7000-8000-00000f000074/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0004-7000-8000-000005000004
@@ -6212,7 +6499,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-006e-7000-8000-00000f00006e
+                  uuid: 01938a0f-0071-7000-8000-00000f000071
                   type: hosting_account.migrate
                   state: queued
                   progress: 0
@@ -6250,8 +6537,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-006e-7000-8000-00000f00006e
-                    events: /api/v1/admin/jobs/01938a0f-006e-7000-8000-00000f00006e/events
+                    self: /api/v1/admin/jobs/01938a0f-0071-7000-8000-00000f000071
+                    events: /api/v1/admin/jobs/01938a0f-0071-7000-8000-00000f000071/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -6304,7 +6591,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0070-7000-8000-00000f000070
+                  uuid: 01938a0f-0073-7000-8000-00000f000073
                   type: hosting_account.schedule_purge
                   state: queued
                   progress: 0
@@ -6337,8 +6624,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0070-7000-8000-00000f000070
-                    events: /api/v1/admin/jobs/01938a0f-0070-7000-8000-00000f000070/events
+                    self: /api/v1/admin/jobs/01938a0f-0073-7000-8000-00000f000073
+                    events: /api/v1/admin/jobs/01938a0f-0073-7000-8000-00000f000073/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0004-7000-8000-000005000004
@@ -6383,7 +6670,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-006b-7000-8000-00000f00006b
+                  uuid: 01938a0f-006e-7000-8000-00000f00006e
                   type: hosting_account.suspend
                   state: queued
                   progress: 0
@@ -6416,8 +6703,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-006b-7000-8000-00000f00006b
-                    events: /api/v1/admin/jobs/01938a0f-006b-7000-8000-00000f00006b/events
+                    self: /api/v1/admin/jobs/01938a0f-006e-7000-8000-00000f00006e
+                    events: /api/v1/admin/jobs/01938a0f-006e-7000-8000-00000f00006e/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -6465,7 +6752,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-006f-7000-8000-00000f00006f
+                  uuid: 01938a0f-0072-7000-8000-00000f000072
                   type: hosting_account.terminate
                   state: queued
                   progress: 0
@@ -6498,8 +6785,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-006f-7000-8000-00000f00006f
-                    events: /api/v1/admin/jobs/01938a0f-006f-7000-8000-00000f00006f/events
+                    self: /api/v1/admin/jobs/01938a0f-0072-7000-8000-00000f000072
+                    events: /api/v1/admin/jobs/01938a0f-0072-7000-8000-00000f000072/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -6534,7 +6821,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-006c-7000-8000-00000f00006c
+                  uuid: 01938a0f-006f-7000-8000-00000f00006f
                   type: hosting_account.unsuspend
                   state: queued
                   progress: 0
@@ -6567,8 +6854,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-006c-7000-8000-00000f00006c
-                    events: /api/v1/admin/jobs/01938a0f-006c-7000-8000-00000f00006c/events
+                    self: /api/v1/admin/jobs/01938a0f-006f-7000-8000-00000f00006f
+                    events: /api/v1/admin/jobs/01938a0f-006f-7000-8000-00000f00006f/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -7179,7 +7466,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0069-7000-8000-00000f000069
+                  uuid: 01938a0f-006c-7000-8000-00000f00006c
                   type: package.migrate_accounts
                   state: queued
                   progress: 0
@@ -7207,8 +7494,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0069-7000-8000-00000f000069
-                    events: /api/v1/admin/jobs/01938a0f-0069-7000-8000-00000f000069/events
+                    self: /api/v1/admin/jobs/01938a0f-006c-7000-8000-00000f00006c
+                    events: /api/v1/admin/jobs/01938a0f-006c-7000-8000-00000f00006c/events
                 resource:
                   type: hosting_package
                   uuid: 01938a03-0001-7000-8000-000003000001
@@ -7303,7 +7590,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: succeeded
                     started_at: '2026-11-20T08:15:00+07:00'
                     finished_at: '2026-11-20T08:15:00+07:00'
@@ -7421,7 +7708,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: succeeded
                     started_at: '2026-11-20T08:15:00+07:00'
                     finished_at: '2026-11-20T08:15:00+07:00'
@@ -7583,7 +7870,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: succeeded
                     started_at: '2026-11-20T08:15:00+07:00'
                     finished_at: '2026-11-20T08:15:00+07:00'
@@ -7653,7 +7940,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0099-7000-8000-00000f000099
+                  uuid: 01938a0f-009c-7000-8000-00000f00009c
                   type: website.create
                   state: queued
                   progress: 0
@@ -7662,7 +7949,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: pending
                     started_at: null
                     finished_at: null
@@ -7696,8 +7983,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099
-                    events: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events
+                    self: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c
+                    events: /api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events
                 resource:
                   type: website
                   uuid: 01938a06-0002-7000-8000-000006000002
@@ -8362,7 +8649,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0092-7000-8000-00000f000092
+                  uuid: 01938a0f-0095-7000-8000-00000f000095
                   type: backup.restore
                   state: queued
                   progress: 0
@@ -8390,8 +8677,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092
-                    events: /api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092/events
+                    self: /api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095
+                    events: /api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -8715,7 +9002,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a1-7000-8000-00000f0000a1
+                  uuid: 01938a0f-00a4-7000-8000-00000f0000a4
                   type: fail2ban.update
                   state: queued
                   progress: 0
@@ -8743,8 +9030,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1
-                    events: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events
+                    self: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4
+                    events: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -9053,7 +9340,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a4-7000-8000-00000f0000a4
+                  uuid: 01938a0f-00a7-7000-8000-00000f0000a7
                   type: malware.restore
                   state: queued
                   progress: 0
@@ -9081,8 +9368,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4
-                    events: /api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events
+                    self: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7
+                    events: /api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events
                 resource:
                   type: quarantine_item
                   uuid: 01938a1c-0001-7000-8000-00001c000001
@@ -9164,7 +9451,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a0-7000-8000-00000f0000a0
+                  uuid: 01938a0f-00a3-7000-8000-00000f0000a3
                   type: sshd.update
                   state: queued
                   progress: 0
@@ -9192,8 +9479,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0
-                    events: /api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events
+                    self: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3
+                    events: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -9725,7 +10012,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a5-7000-8000-00000f0000a5
+                  uuid: 01938a0f-00a8-7000-8000-00000f0000a8
                   type: docker.container_control
                   state: queued
                   progress: 0
@@ -9753,8 +10040,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5
-                    events: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events
+                    self: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8
+                    events: /api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -10100,7 +10387,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009e-7000-8000-00000f00009e
+                  uuid: 01938a0f-00a1-7000-8000-00000f0000a1
                   type: firewall.apply
                   state: queued
                   progress: 0
@@ -10128,8 +10415,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e
-                    events: /api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events
+                    self: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1
+                    events: /api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -10164,7 +10451,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-009f-7000-8000-00000f00009f
+                  uuid: 01938a0f-00a2-7000-8000-00000f0000a2
                   type: firewall.confirm
                   state: queued
                   progress: 0
@@ -10192,8 +10479,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f
-                    events: /api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events
+                    self: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2
+                    events: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -10276,7 +10563,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0068-7000-8000-00000f000068
+                  uuid: 01938a0f-006b-7000-8000-00000f00006b
                   type: nginx.global.update
                   state: queued
                   progress: 0
@@ -10304,8 +10591,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0068-7000-8000-00000f000068
-                    events: /api/v1/admin/jobs/01938a0f-0068-7000-8000-00000f000068/events
+                    self: /api/v1/admin/jobs/01938a0f-006b-7000-8000-00000f00006b
+                    events: /api/v1/admin/jobs/01938a0f-006b-7000-8000-00000f00006b/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -10383,6 +10670,151 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/servers/{id}/php-versions/{version}/extensions:
+    post:
+      operationId: installPhpExtensions
+      summary: Cài extension PHP (allowlist)
+      tags:
+      - Software
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/PhpVersionPath
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhpExtensionsInput'
+            example:
+              extensions:
+              - intl
+              - redis
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-006a-7000-8000-00000f00006a
+                  type: php.extensions.install
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: server
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                  steps:
+                  - seq: 1
+                    op: php.ext.install
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-006a-7000-8000-00000f00006a
+                    events: /api/v1/admin/jobs/01938a0f-006a-7000-8000-00000f00006a/events
+                resource:
+                  type: server
+                  uuid: 01938a02-0001-7000-8000-000002000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/servers/{id}/php-versions/{version}:{action}:
+    post:
+      operationId: managePhpVersion
+      summary: Cài/gỡ phiên bản PHP
+      tags:
+      - Software
+      description: 'Phase 5 chỉ có PHP 8.3 từ kho Ubuntu 24.04 (D-68); phiên bản khác trả 409 `precondition_failed`. Gỡ khi
+        còn website dùng → 409 `resource_locked`.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/PhpVersionPath
+      - $ref: ./common.yaml#/components/parameters/PhpAction
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0069-7000-8000-00000f000069
+                  type: php.version.install
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: server
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                  steps:
+                  - seq: 1
+                    op: php.version.install
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0069-7000-8000-00000f000069
+                    events: /api/v1/admin/jobs/01938a0f-0069-7000-8000-00000f000069/events
+                resource:
+                  type: server
+                  uuid: 01938a02-0001-7000-8000-000002000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/servers/{id}/services:
     get:
       operationId: listServerServices
@@ -10462,7 +10894,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0065-7000-8000-00000f000065
+                  uuid: 01938a0f-0066-7000-8000-00000f000066
                   type: service.restart
                   state: queued
                   progress: 0
@@ -10490,8 +10922,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0065-7000-8000-00000f000065
-                    events: /api/v1/admin/jobs/01938a0f-0065-7000-8000-00000f000065/events
+                    self: /api/v1/admin/jobs/01938a0f-0066-7000-8000-00000f000066
+                    events: /api/v1/admin/jobs/01938a0f-0066-7000-8000-00000f000066/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -10589,7 +11021,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0067-7000-8000-00000f000067
+                  uuid: 01938a0f-0068-7000-8000-00000f000068
                   type: software.install
                   state: queued
                   progress: 0
@@ -10617,8 +11049,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0067-7000-8000-00000f000067
-                    events: /api/v1/admin/jobs/01938a0f-0067-7000-8000-00000f000067/events
+                    self: /api/v1/admin/jobs/01938a0f-0068-7000-8000-00000f000068
+                    events: /api/v1/admin/jobs/01938a0f-0068-7000-8000-00000f000068/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -10657,7 +11089,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0066-7000-8000-00000f000066
+                  uuid: 01938a0f-0067-7000-8000-00000f000067
                   type: server.reboot
                   state: queued
                   progress: 0
@@ -10685,8 +11117,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0066-7000-8000-00000f000066
-                    events: /api/v1/admin/jobs/01938a0f-0066-7000-8000-00000f000066/events
+                    self: /api/v1/admin/jobs/01938a0f-0067-7000-8000-00000f000067
+                    events: /api/v1/admin/jobs/01938a0f-0067-7000-8000-00000f000067/events
                 resource:
                   type: server
                   uuid: 01938a02-0001-7000-8000-000002000001
@@ -11045,6 +11477,130 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '410':
           $ref: ./common.yaml#/components/responses/Gone
+  /api/v1/admin/setup/stack:
+    get:
+      operationId: getSetupStack
+      summary: 'Bước 4: trạng thái web stack (Nginx, PHP 8.3, lego)'
+      tags:
+      - Setup
+      description: Chỉ SUPER_ADMIN do wizard tạo, đã bật TOTP. Bước này không bắt buộc để hoàn tất wizard.
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SetupStack'
+                required:
+                - data
+              example:
+                data:
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  ready: false
+                  job_uuid: null
+                  components:
+                  - key: nginx
+                    name: Nginx
+                    installed_version: 1.24.0
+                    state: installed
+                  - key: php8.3
+                    name: PHP 8.3 (FPM)
+                    installed_version: null
+                    state: available
+                  - key: lego
+                    name: lego (ACME)
+                    installed_version: null
+                    state: available
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
+  /api/v1/admin/setup/stack:install:
+    post:
+      operationId: installSetupStack
+      summary: 'Bước 4: cài web stack còn thiếu qua job'
+      tags:
+      - Setup
+      description: 'Cài phần còn thiếu trên server panel (bỏ qua phần đã cài): recipe `nginx`, PHP 8.3 qua `php.version.install`
+        (tắt master mặc định của gói, D-68), recipe `lego`.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0065-7000-8000-00000f000065
+                  type: setup.stack
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: server
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                  steps:
+                  - seq: 1
+                    op: software.install
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: php.version.install
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 3
+                    op: software.install
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/admin/jobs/01938a0f-0065-7000-8000-00000f000065
+                    events: /api/v1/admin/jobs/01938a0f-0065-7000-8000-00000f000065/events
+                resource:
+                  type: server
+                  uuid: 01938a02-0001-7000-8000-000002000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '410':
+          $ref: ./common.yaml#/components/responses/Gone
   /api/v1/admin/setup/status:
     get:
       operationId: getSetupStatus
@@ -11116,6 +11672,7 @@ paths:
                   - language
                   - admin
                   - access
+                  - stack
                   - quota
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
@@ -11248,7 +11805,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0086-7000-8000-00000f000086
+                  uuid: 01938a0f-0089-7000-8000-00000f000089
                   type: sftp.create
                   state: queued
                   progress: 0
@@ -11276,8 +11833,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086
-                    events: /api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086/events
+                    self: /api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089
+                    events: /api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089/events
                 resource:
                   type: sftp_account
                   uuid: 01938a0b-0001-7000-8000-00000b000001
@@ -11310,7 +11867,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0087-7000-8000-00000f000087
+                  uuid: 01938a0f-008a-7000-8000-00000f00008a
                   type: sftp.delete
                   state: queued
                   progress: 0
@@ -11338,8 +11895,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087
-                    events: /api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087/events
+                    self: /api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a
+                    events: /api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a/events
                 resource:
                   type: sftp_account
                   uuid: 01938a0b-0001-7000-8000-00000b000001
@@ -11431,7 +11988,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0088-7000-8000-00000f000088
+                  uuid: 01938a0f-008b-7000-8000-00000f00008b
                   type: ssh_key.create
                   state: queued
                   progress: 0
@@ -11459,8 +12016,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088
-                    events: /api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088/events
+                    self: /api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b
+                    events: /api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b/events
                 resource:
                   type: ssh_key
                   uuid: 01938a0c-0001-7000-8000-00000c000001
@@ -11493,7 +12050,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0089-7000-8000-00000f000089
+                  uuid: 01938a0f-008c-7000-8000-00000f00008c
                   type: ssh_key.delete
                   state: queued
                   progress: 0
@@ -11521,8 +12078,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089
-                    events: /api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089/events
+                    self: /api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c
+                    events: /api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c/events
                 resource:
                   type: ssh_key
                   uuid: 01938a0c-0001-7000-8000-00000c000001
@@ -12378,7 +12935,7 @@ paths:
                     name: srv-hn-01
                   primary_domain: marketing.itso.vn
                   type: static
-                  document_root: dist
+                  document_root: public/dist
                   php_version: null
                   ssl_mode: acme
                   waf_enabled: false
@@ -12433,7 +12990,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0074-7000-8000-00000f000074
+                  uuid: 01938a0f-0077-7000-8000-00000f000077
                   type: website.create
                   state: queued
                   progress: 0
@@ -12442,7 +12999,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: pending
                     started_at: null
                     finished_at: null
@@ -12461,6 +13018,11 @@ paths:
                     state: pending
                     started_at: null
                     finished_at: null
+                  - seq: 5
+                    op: nginx.vhost.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
                   attempts: 0
                   max_attempts: 3
                   timeout_sec: 600
@@ -12476,8 +13038,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0074-7000-8000-00000f000074
-                    events: /api/v1/admin/jobs/01938a0f-0074-7000-8000-00000f000074/events
+                    self: /api/v1/admin/jobs/01938a0f-0077-7000-8000-00000f000077
+                    events: /api/v1/admin/jobs/01938a0f-0077-7000-8000-00000f000077/events
                 resource:
                   type: website
                   uuid: 01938a06-0002-7000-8000-000006000002
@@ -12574,7 +13136,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0075-7000-8000-00000f000075
+                  uuid: 01938a0f-0078-7000-8000-00000f000078
                   type: website.update
                   state: queued
                   progress: 0
@@ -12607,8 +13169,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0075-7000-8000-00000f000075
-                    events: /api/v1/admin/jobs/01938a0f-0075-7000-8000-00000f000075/events
+                    self: /api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078
+                    events: /api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -12648,7 +13210,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0076-7000-8000-00000f000076
+                  uuid: 01938a0f-0079-7000-8000-00000f000079
                   type: website.delete
                   state: queued
                   progress: 0
@@ -12681,8 +13243,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0076-7000-8000-00000f000076
-                    events: /api/v1/admin/jobs/01938a0f-0076-7000-8000-00000f000076/events
+                    self: /api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079
+                    events: /api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -12728,7 +13290,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-007b-7000-8000-00000f00007b
+                  uuid: 01938a0f-007e-7000-8000-00000f00007e
                   type: certificate.issue
                   state: queued
                   progress: 0
@@ -12761,8 +13323,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b
-                    events: /api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b/events
+                    self: /api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e
+                    events: /api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -12875,7 +13437,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0077-7000-8000-00000f000077
+                  uuid: 01938a0f-007a-7000-8000-00000f00007a
                   type: website.domain.add
                   state: queued
                   progress: 0
@@ -12903,8 +13465,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0077-7000-8000-00000f000077
-                    events: /api/v1/admin/jobs/01938a0f-0077-7000-8000-00000f000077/events
+                    self: /api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a
+                    events: /api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -12940,7 +13502,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0078-7000-8000-00000f000078
+                  uuid: 01938a0f-007b-7000-8000-00000f00007b
                   type: website.domain.remove
                   state: queued
                   progress: 0
@@ -12968,8 +13530,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078
-                    events: /api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078/events
+                    self: /api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b
+                    events: /api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -12989,6 +13551,8 @@ paths:
       summary: Log truy cập/lỗi (dòng cuối)
       tags:
       - Websites
+      description: Đọc trực tiếp qua op `log.tail` của agent (không tạo job); tối đa 500 dòng, `lines` lớn hơn bị giới hạn
+        ở 500. Agent không kết nối → 503.
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/LogKind
@@ -13021,6 +13585,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
   /api/v1/admin/websites/{id}/nginx:
     get:
       operationId: getWebsiteNginx
@@ -13087,7 +13653,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0079-7000-8000-00000f000079
+                  uuid: 01938a0f-007c-7000-8000-00000f00007c
                   type: website.nginx.update
                   state: queued
                   progress: 0
@@ -13115,8 +13681,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079
-                    events: /api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079/events
+                    self: /api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c
+                    events: /api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -13205,7 +13771,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-007a-7000-8000-00000f00007a
+                  uuid: 01938a0f-007d-7000-8000-00000f00007d
                   type: website.php.update
                   state: queued
                   progress: 0
@@ -13233,8 +13799,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a
-                    events: /api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a/events
+                    self: /api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d
+                    events: /api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -13271,7 +13837,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a3-7000-8000-00000f0000a3
+                  uuid: 01938a0f-00a6-7000-8000-00000f0000a6
                   type: malware.scan
                   state: queued
                   progress: 0
@@ -13299,8 +13865,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3
-                    events: /api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events
+                    self: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6
+                    events: /api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events
                 resource:
                   type: website
                   uuid: 01938a06-0004-7000-8000-000006000004
@@ -13387,7 +13953,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-00a2-7000-8000-00000f0000a2
+                  uuid: 01938a0f-00a5-7000-8000-00000f0000a5
                   type: waf.update
                   state: queued
                   progress: 0
@@ -13420,8 +13986,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2
-                    events: /api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events
+                    self: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5
+                    events: /api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events
                 resource:
                   type: website
                   uuid: 01938a06-0001-7000-8000-000006000001
@@ -13562,7 +14128,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0093-7000-8000-00000f000093
+                  uuid: 01938a0f-0096-7000-8000-00000f000096
                   type: wordpress.install
                   state: queued
                   progress: 0
@@ -13595,8 +14161,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093
-                    events: /api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093/events
+                    self: /api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096
+                    events: /api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096/events
                 resource:
                   type: website
                   uuid: 01938a06-0002-7000-8000-000006000002
@@ -13629,7 +14195,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0095-7000-8000-00000f000095
+                  uuid: 01938a0f-0098-7000-8000-00000f000098
                   type: wordpress.clone_staging
                   state: queued
                   progress: 0
@@ -13657,8 +14223,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095
-                    events: /api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095/events
+                    self: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098
+                    events: /api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events
                 resource:
                   type: wordpress_site
                   uuid: 01938a11-0001-7000-8000-000011000001
@@ -13693,7 +14259,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0096-7000-8000-00000f000096
+                  uuid: 01938a0f-0099-7000-8000-00000f000099
                   type: wordpress.harden
                   state: queued
                   progress: 0
@@ -13721,8 +14287,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096
-                    events: /api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096/events
+                    self: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099
+                    events: /api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events
                 resource:
                   type: wordpress_site
                   uuid: 01938a11-0001-7000-8000-000011000001
@@ -13757,7 +14323,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0094-7000-8000-00000f000094
+                  uuid: 01938a0f-0097-7000-8000-00000f000097
                   type: wordpress.update
                   state: queued
                   progress: 0
@@ -13785,8 +14351,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094
-                    events: /api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094/events
+                    self: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097
+                    events: /api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events
                 resource:
                   type: wordpress_site
                   uuid: 01938a11-0001-7000-8000-000011000001
@@ -14940,6 +15506,120 @@ components:
       - installed_version
       - latest_version
       - state
+      additionalProperties: false
+    DnsProvider:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - cloudflare
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        zones_count:
+          type: integer
+          minimum: 0
+        account_label:
+          type:
+          - string
+          - 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - type
+      - name
+      - zones_count
+      - account_label
+      - created_at
+      - updated_at
+      additionalProperties: false
+      description: API token không bao giờ trả về; `account_label` là tên tài khoản Cloudflare đọc khi kiểm token.
+    DnsProviderCreate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - cloudflare
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        api_token:
+          type: string
+          minLength: 20
+          maxLength: 200
+          writeOnly: true
+          pattern: ^[A-Za-z0-9_-]+$
+      required:
+      - type
+      - name
+      - api_token
+      additionalProperties: false
+    DnsZoneCreate:
+      type: object
+      properties:
+        provider_uuid:
+          type: string
+          format: uuid
+        name:
+          $ref: ./common.yaml#/components/schemas/Domain
+        hosting_account_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+      required:
+      - provider_uuid
+      - name
+      additionalProperties: false
+    DnsZoneUpdate:
+      type: object
+      properties:
+        hosting_account_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+      required:
+      - hosting_account_uuid
+      additionalProperties: false
+    PhpExtensionsInput:
+      type: object
+      properties:
+        extensions:
+          type: array
+          items:
+            type: string
+            enum:
+            - bcmath
+            - curl
+            - gd
+            - imagick
+            - intl
+            - mbstring
+            - mysql
+            - opcache
+            - pgsql
+            - redis
+            - soap
+            - sqlite3
+            - xml
+            - zip
+          minItems: 1
+          maxItems: 20
+      required:
+      - extensions
       additionalProperties: false
     PhpVersionInfo:
       type: object
@@ -16923,6 +17603,7 @@ components:
             - language
             - admin
             - access
+            - stack
             - quota
       required:
       - installed
@@ -17009,6 +17690,57 @@ components:
       additionalProperties: false
       description: Lưu vào settings; áp dụng vào /etc/itso/itso.env bằng lệnh root `itso policy`/`itso repair --fix` trên
         server.
+    SetupStack:
+      type: object
+      properties:
+        server:
+          oneOf:
+          - $ref: ./common.yaml#/components/schemas/ServerRef
+          - type: 'null'
+        components:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                enum:
+                - nginx
+                - php8.3
+                - lego
+              name:
+                type: string
+              installed_version:
+                type:
+                - string
+                - 'null'
+              state:
+                type: string
+                enum:
+                - available
+                - installing
+                - installed
+                - failed
+            required:
+            - key
+            - name
+            - installed_version
+            - state
+            additionalProperties: false
+        ready:
+          type: boolean
+        job_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+      required:
+      - server
+      - components
+      - ready
+      - job_uuid
+      additionalProperties: false
+      description: 'Bước 4: web stack (Nginx, PHP 8.3 từ kho Ubuntu, lego cho ACME). Cài qua job recipe `software.install`.'
     SetupQuota:
       type: object
       properties:

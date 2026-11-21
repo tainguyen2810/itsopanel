@@ -10,17 +10,31 @@
           "uid": 20001
         },
         "website_uuid": "01938a06-0002-7000-8000-000006000002",
+        "site_dir": "shop.anphat.vn",
+        "type": "php",
         "server_names": [
           "shop.anphat.vn"
         ],
         "document_root": "public",
-        "php_socket": "/run/itso/php/anphat-1a2b3c4d.sock",
+        "php_socket": "/run/itso/php/anphat-01938a06.sock",
         "tls": null,
         "client_max_body_size": "64m",
         "extra_headers": {
           "X-Frame-Options": "SAMEORIGIN"
         },
-        "suspended": false
+        "suspended": false,
+        "redirect_names": [
+          "www.shop.anphat.vn"
+        ],
+        "http2": true,
+        "proxy_port": null,
+        "redirects": [
+          {
+            "from": "/old-shop",
+            "to": "https://shop.anphat.vn/",
+            "code": "301"
+          }
+        ]
       },
       "deadline": "2026-11-20T08:25:00+07:00",
       "ts": 1795137300,
@@ -40,7 +54,8 @@
           "uid": 20001
         },
         "website_uuid": "01938a06-0002-7000-8000-000006000002",
-        "version": "8.2",
+        "site_dir": "shop.anphat.vn",
+        "version": "8.3",
         "pm_max_children": 6,
         "memory_limit": "256m",
         "max_execution_time": 60,

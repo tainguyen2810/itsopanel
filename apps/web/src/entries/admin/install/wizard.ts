@@ -1,7 +1,7 @@
 /**
  * Logic wizard cài đặt lần đầu (10 bước, module 30). Kiểm tra hợp lệ phía trình duyệt trước khi gọi API
- * /admin/setup/* (Phase 4: bước code, language, admin, access, quota, summary). Bước stack, security, backup,
- * smtp chưa có ở bản này (LATER) nên không chặn. Lỗi là khóa i18n (admin:install.errors.*).
+ * /admin/setup/* (Phase 4: bước code, language, admin, access, quota, summary; Phase 5: stack, không bắt buộc).
+ * Bước security, backup, smtp chưa có ở bản này (LATER) nên không chặn. Lỗi là khóa i18n (admin:install.errors.*).
  */
 export const STEPS = [
   'code',
@@ -18,7 +18,7 @@ export const STEPS = [
 export type Step = (typeof STEPS)[number];
 
 /** Bước chưa hiện thực ở bản này: hiện thông báo, không gọi API, không chặn đi tiếp. */
-export const LATER: readonly Step[] = ['stack', 'security', 'backup', 'smtp'];
+export const LATER: readonly Step[] = ['security', 'backup', 'smtp'];
 
 export interface InstallState {
   setupCode: string;

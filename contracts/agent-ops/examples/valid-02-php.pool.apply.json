@@ -8,7 +8,8 @@
       "uid": 20001
     },
     "website_uuid": "01938a06-0002-7000-8000-000006000002",
-    "version": "8.2",
+    "site_dir": "shop.anphat.vn",
+    "version": "8.3",
     "pm_max_children": 6,
     "memory_limit": "256m",
     "max_execution_time": 60,

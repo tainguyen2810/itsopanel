@@ -1566,7 +1566,7 @@
       },
       "primary_domain": "marketing.itso.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -1670,7 +1670,7 @@
       },
       "primary_domain": "docs.binhminh.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -1826,7 +1826,7 @@
       },
       "primary_domain": "cdn.thientam.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -1878,7 +1878,7 @@
       },
       "primary_domain": "menu.gionui.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -2008,7 +2008,7 @@
       },
       "primary_domain": "portfolio.mayxanh.vn",
       "type": "static",
-      "document_root": "dist",
+      "document_root": "public/dist",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -3481,6 +3481,17 @@
       "output_tail": "Running scheduled command: emails:send"
     }
   ],
+  "dns_providers": [
+    {
+      "uuid": "01938a30-0001-7000-8000-000030000001",
+      "type": "cloudflare",
+      "name": "Cloudflare IT",
+      "zones_count": 1,
+      "account_label": "IT An Phát",
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    }
+  ],
   "dns_zones": [
     {
       "uuid": "01938a13-0001-7000-8000-000013000001",
@@ -4021,7 +4032,7 @@
       "steps": [
         {
           "seq": 1,
-          "op": "fs.mkdir",
+          "op": "fs.site_layout.ensure",
           "state": "succeeded",
           "started_at": "2026-11-20T08:15:00+07:00",
           "finished_at": "2026-11-20T08:15:00+07:00"
@@ -4354,7 +4365,7 @@
       "steps": [
         {
           "seq": 1,
-          "op": "fs.mkdir",
+          "op": "fs.site_layout.ensure",
           "state": "succeeded",
           "started_at": "2026-11-18T08:40:00+07:00",
           "finished_at": "2026-11-18T08:40:00+07:00"
@@ -6017,6 +6028,34 @@
     "timezone": "Asia/Ho_Chi_Minh",
     "access": null,
     "steps_done": []
+  },
+  "setup_stack": {
+    "server": {
+      "uuid": "01938a02-0001-7000-8000-000002000001",
+      "name": "srv-hn-01"
+    },
+    "ready": false,
+    "job_uuid": null,
+    "components": [
+      {
+        "key": "nginx",
+        "name": "Nginx",
+        "installed_version": "1.24.0",
+        "state": "installed"
+      },
+      {
+        "key": "php8.3",
+        "name": "PHP 8.3 (FPM)",
+        "installed_version": null,
+        "state": "available"
+      },
+      {
+        "key": "lego",
+        "name": "lego (ACME)",
+        "installed_version": null,
+        "state": "available"
+      }
+    ]
   },
   "services": [
     {

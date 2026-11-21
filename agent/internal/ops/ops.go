@@ -35,6 +35,8 @@ type Deps struct {
 	// Now (tùy chọn) cho test; CPUSample là khoảng lấy mẫu /proc/stat của metrics.snapshot.
 	Now       func() time.Time
 	CPUSample time.Duration
+	// AcmePebble: policy cục bộ cho phép directory ACME "pebble" (D-69).
+	AcmePebble bool
 
 	mu       sync.Mutex
 	inflight map[string]context.CancelFunc

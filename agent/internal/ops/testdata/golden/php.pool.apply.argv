@@ -1,0 +1,5 @@
+dpkg-query -W -f=${Status}	${Version} php8.3-fpm
+[uid=20001] php-fpm8.3 -t --fpm-config /etc/itso/php/8.3/lehoa/php-fpm.conf
+systemctl daemon-reload
+systemctl is-active itso-php@8.3-lehoa.service
+systemctl enable --now itso-php@8.3-lehoa.service

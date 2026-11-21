@@ -3532,7 +3532,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: succeeded
                     started_at: '2026-11-20T08:15:00+07:00'
                     finished_at: '2026-11-20T08:15:00+07:00'
@@ -3650,7 +3650,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: succeeded
                     started_at: '2026-11-20T08:15:00+07:00'
                     finished_at: '2026-11-20T08:15:00+07:00'
@@ -3812,7 +3812,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: succeeded
                     started_at: '2026-11-20T08:15:00+07:00'
                     finished_at: '2026-11-20T08:15:00+07:00'
@@ -3891,7 +3891,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: pending
                     started_at: null
                     finished_at: null
@@ -5116,7 +5116,7 @@ paths:
                     uuid: 01938a06-0002-7000-8000-000006000002
                   steps:
                   - seq: 1
-                    op: fs.mkdir
+                    op: fs.site_layout.ensure
                     state: pending
                     started_at: null
                     finished_at: null
@@ -5132,6 +5132,11 @@ paths:
                     finished_at: null
                   - seq: 4
                     op: cert.issue
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 5
+                    op: nginx.vhost.apply
                     state: pending
                     started_at: null
                     finished_at: null
@@ -5663,6 +5668,8 @@ paths:
       summary: Log truy cập/lỗi (dòng cuối)
       tags:
       - Websites
+      description: Đọc trực tiếp qua op `log.tail` của agent (không tạo job); tối đa 500 dòng, `lines` lớn hơn bị giới hạn
+        ở 500. Agent không kết nối → 503.
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/LogKind
@@ -5695,6 +5702,8 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
   /api/v1/portal/websites/{id}/nginx:
     get:
       operationId: portalGetWebsiteNginx

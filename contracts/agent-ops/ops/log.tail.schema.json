@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/log.tail.schema.json",
+  "title": "log.tail",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "site_dir": {
+          "$ref": "../defs.schema.json#/$defs/Domain"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "access",
+            "error"
+          ]
+        },
+        "lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        }
+      },
+      "required": [
+        "account",
+        "site_dir",
+        "kind",
+        "lines"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 8192
+          },
+          "maxItems": 500
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "lines",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

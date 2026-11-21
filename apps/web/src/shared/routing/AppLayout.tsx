@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, Outlet, useNavigate } from '@tanstack/react-router';
 import { list } from '@/shared/api/realm';
+import { StepUpHost } from '@/shared/auth/StepUpHost';
 import { JobDrawerHost } from '@/shared/jobs/JobDrawer';
 import { PageSkeleton } from '@/shared/page/states';
 import { useSession } from '@/shared/session/SessionContext';
@@ -48,7 +49,12 @@ function ShellLayout() {
       onOpenProfile={() => void navigate({ to: '/profile' })}
       onOpenNotifications={() => void navigate({ to: '/notifications' })}
       onSignOut={() => void session.signOut().finally(() => void navigate({ to: '/login' }))}
-      overlay={<JobDrawerHost fetchJob={fetchJob} />}
+      overlay={
+        <>
+          <JobDrawerHost fetchJob={fetchJob} />
+          <StepUpHost />
+        </>
+      }
       {...(search ? { searchFn: search } : {})}
       onNavigate={(href) => void navigate({ to: href.slice(basepath.length) || '/' })}
     >

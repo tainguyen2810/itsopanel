@@ -28,7 +28,8 @@ describe('wizard cài đặt', () => {
     expect(STEPS).toHaveLength(10);
     expect(STEPS[0]).toBe('code');
     expect(STEPS.at(-1)).toBe('summary');
-    expect(LATER).toEqual(['stack', 'security', 'backup', 'smtp']);
+    expect(LATER).toEqual(['security', 'backup', 'smtp']);
+    expect(canProceed('stack', INITIAL)).toBe(true); // bước stack không bắt buộc
     for (const st of LATER) expect(canProceed(st, INITIAL)).toBe(true);
   });
 

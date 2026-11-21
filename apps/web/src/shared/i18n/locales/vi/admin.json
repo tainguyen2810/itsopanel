@@ -264,6 +264,16 @@
       "noAllowlist": "Chưa giới hạn IP truy cập Admin Panel",
       "quotaSoft": "Đang dùng quota mềm (không chặn cứng dung lượng)",
       "quotaUnknown": "Chưa biết trạng thái quota của máy chủ"
+    },
+    "stack": {
+      "ready": "Web stack đã sẵn sàng",
+      "missing": "Web stack còn thiếu thành phần",
+      "hint": "Website cần Nginx, PHP 8.3 (FPM) và lego (cấp chứng chỉ ACME) trên server panel. Panel cài phần còn thiếu bằng gói chính thức của Ubuntu 24.04, bỏ qua phần đã có.",
+      "components": "Thành phần web stack",
+      "install": "Cài phần còn thiếu",
+      "installing": "Đang cài…",
+      "job": "Cài web stack",
+      "optional": "Bước này không bắt buộc: có thể bấm Tiếp tục và cài sau ở trang Máy chủ → Phần mềm."
     }
   },
   "servers": {
@@ -1083,8 +1093,18 @@
       "wpUser": "3–31 ký tự chữ thường/số/gạch dưới, không dùng \"admin\"",
       "repoUrl": "Dạng git@host:owner/repo.git, ssh:// hoặc https://",
       "branch": "Tên branch không hợp lệ",
-      "ruleId": "Mỗi mã rule gồm đúng 6 chữ số"
-    }
+      "ruleId": "Mỗi mã rule gồm đúng 6 chữ số",
+      "certDomain": "Domain không hợp lệ (cho phép wildcard *.domain)",
+      "certPem": "Cần chứng chỉ PEM (-----BEGIN CERTIFICATE-----)",
+      "keyPem": "Cần khóa riêng PEM không mật khẩu (-----BEGIN PRIVATE KEY-----)"
+    },
+    "uploadCert": "Tải chứng chỉ riêng",
+    "uploadCertTitle": "Tải chứng chỉ cho {{name}}",
+    "uploadCertHint": "Dán chứng chỉ (kèm chuỗi trung gian) và khóa riêng dạng PEM. Khóa riêng được lưu mã hóa, không hiển thị lại. Website chuyển sang chế độ chứng chỉ riêng và không tự gia hạn.",
+    "certPem": "Chứng chỉ (PEM)",
+    "certPemHint": "Bắt đầu bằng -----BEGIN CERTIFICATE-----; dán cả chuỗi trung gian nếu có.",
+    "keyPem": "Khóa riêng (PEM)",
+    "keyPemHint": "Bắt đầu bằng -----BEGIN PRIVATE KEY-----, không đặt mật khẩu."
   },
   "dbs": {
     "title": "Cơ sở dữ liệu",
@@ -1272,7 +1292,7 @@
     "description": "Zone và record DNS. Zone Cloudflare/PowerDNS được panel đẩy qua API nhà cung cấp; zone thủ công chỉ lưu để tham khảo.",
     "zones": "Danh sách zone",
     "noZones": "Chưa có zone DNS",
-    "noZonesHint": "Zone được tạo khi gắn domain với nhà cung cấp DNS.",
+    "noZonesHint": "Gắn zone đã có trên Cloudflare để quản lý record từ panel.",
     "providers": {
       "cloudflare": "Cloudflare",
       "powerdns": "PowerDNS",
@@ -1326,8 +1346,46 @@
       "hostname": "Tên máy không hợp lệ (không dùng IP)",
       "txt": "Văn bản 1–2048 ký tự",
       "srv": "Dạng weight port target",
-      "caa": "Dạng 0 issue \"letsencrypt.org\""
-    }
+      "caa": "Dạng 0 issue \"letsencrypt.org\"",
+      "token": "Token Cloudflare gồm 20–200 ký tự chữ, số, gạch ngang, gạch dưới",
+      "provider": "Chọn nhà cung cấp"
+    },
+    "providerList": "Nhà cung cấp DNS",
+    "providerListHint": "Tài khoản Cloudflare panel dùng để quản lý DNS. Token được lưu mã hóa và không hiển thị lại.",
+    "noProviders": "Chưa có nhà cung cấp DNS",
+    "noProvidersHint": "Thêm API token Cloudflare trước khi gắn zone.",
+    "zonesCount_one": "{{count}} zone",
+    "zonesCount_other": "{{count}} zone",
+    "addProvider": "Thêm Cloudflare",
+    "addProviderHint": "Tạo API token trên Cloudflare với quyền Zone:Read và DNS:Edit. Panel kiểm tra token với Cloudflare trước khi lưu.",
+    "providerName": "Tên gợi nhớ",
+    "apiToken": "API token Cloudflare",
+    "apiTokenHint": "Chỉ gửi một lần; panel lưu mã hóa, không hiển thị hay ghi log.",
+    "providerAdded": "Đã thêm nhà cung cấp DNS",
+    "providerRemoved": "Đã xóa nhà cung cấp DNS",
+    "removeProvider": "Xóa nhà cung cấp {{name}}",
+    "removeProviderTitle": "Xóa nhà cung cấp {{name}}?",
+    "removeProviderHint": "Chỉ xóa được khi không còn zone nào dùng nhà cung cấp này. Token bị xóa khỏi panel; DNS trên Cloudflare giữ nguyên.",
+    "removeProviderConfirm": "Xóa nhà cung cấp",
+    "provider": "Nhà cung cấp",
+    "pickProvider": "Chọn nhà cung cấp",
+    "addZone": "Gắn zone",
+    "addZoneHint": "Zone phải có sẵn trong tài khoản Cloudflare của nhà cung cấp. Panel đọc toàn bộ record về ngay sau khi gắn.",
+    "zoneName": "Tên zone",
+    "zoneAccount": "Tài khoản hosting",
+    "zoneAccountHint": "Zone được gắn với một tài khoản trong phạm vi quản lý của bạn.",
+    "zoneAccountHintSa": "Chọn tài khoản hosting, hoặc Hệ thống cho zone của panel.",
+    "zoneAdded": "Đã gắn zone",
+    "zoneUpdated": "Đã đổi tài khoản của zone",
+    "zoneAccountTitle": "Đổi tài khoản của {{name}}",
+    "sync": "Đồng bộ từ Cloudflare",
+    "synced": "Đã đồng bộ {{name}} từ Cloudflare",
+    "zoneActions": "Thao tác zone {{name}}",
+    "changeAccount": "Đổi tài khoản",
+    "removeZone": "Gỡ zone khỏi panel",
+    "removeZoneTitle": "Gỡ {{name}} khỏi panel?",
+    "removeZoneHint": "Panel thôi quản lý zone này. Zone và record trên Cloudflare giữ nguyên, có thể gắn lại sau.",
+    "zoneRemoved": "Đã gỡ {{name}} khỏi panel"
   },
   "cron": {
     "title": "Cron job",

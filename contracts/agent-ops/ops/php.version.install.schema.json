@@ -12,9 +12,9 @@
         "extensions": {
           "type": "array",
           "items": {
-            "type": "string",
-            "pattern": "^[a-z0-9_]+$"
-          }
+            "$ref": "../defs.schema.json#/$defs/PhpExtension"
+          },
+          "maxItems": 20
         }
       },
       "required": [
@@ -28,10 +28,14 @@
       "properties": {
         "installed": {
           "type": "boolean"
+        },
+        "changed": {
+          "type": "boolean"
         }
       },
       "required": [
-        "installed"
+        "installed",
+        "changed"
       ],
       "additionalProperties": false
     }

@@ -40,7 +40,14 @@ var Bins = map[string]string{
 	"pg_dump":          "/usr/bin/pg_dump",
 	"psql":             "/usr/bin/psql",
 	"frankenphp":       "/opt/itso/current/bin/frankenphp",
+	// Website (Phase 5, D-67…D-69). Chỉ PHP 8.3 (kho Ubuntu 24.04).
+	"nginx":      "/usr/sbin/nginx",
+	"php-fpm8.3": "/usr/sbin/php-fpm8.3",
+	"lego":       "/usr/bin/lego",
 }
+
+// allowedEnv là biến môi trường được phép đặt thêm cho một lệnh (ngoài env tối giản cố định).
+var allowedEnv = map[string]bool{"LEGO_CA_CERTIFICATES": true}
 
 // forbidden là tên không bao giờ được thêm vào Bins (kiểm trong test).
 var forbidden = []string{"sh", "bash", "dash", "zsh", "env", "sudo", "su", "busybox", "python3", "perl"}
@@ -52,6 +59,8 @@ type Cmd struct {
 	Stdin []byte
 	// As (tùy chọn): chạy dưới uid/gid này (setresuid trong tiến trình con), không qua su/sudo.
 	As *Cred
+	// Env (tùy chọn): "KEY=VALUE" với KEY trong allowedEnv.
+	Env []string
 }
 
 // Cred là uid/gid để hạ quyền tiến trình con.
@@ -91,6 +100,12 @@ func Check(c Cmd) (string, error) {
 			return "", fmt.Errorf("platform: argv chứa ký tự cấm: %q", a)
 		}
 	}
+	for _, e := range c.Env {
+		k, v, okKV := strings.Cut(e, "=")
+		if !okKV || !allowedEnv[k] || strings.ContainsAny(v, "\x00\n\r") {
+			return "", fmt.Errorf("platform: biến môi trường không được phép: %q", k)
+		}
+	}
 	return path, nil
 }
 
@@ -120,6 +135,7 @@ func (ExecRunner) Run(ctx context.Context, c Cmd) (Result, error) {
 	}
 	cmd := exec.CommandContext(ctx, path, c.Args...)
 	cmd.Env = []string{"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "LC_ALL=C.UTF-8", "DEBIAN_FRONTEND=noninteractive"}
+	cmd.Env = append(cmd.Env, c.Env...)
 	cmd.Dir = "/"
 	if c.As != nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: c.As.UID, Gid: c.As.GID, NoSetGroups: true}}

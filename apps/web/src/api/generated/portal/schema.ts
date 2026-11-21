@@ -1386,7 +1386,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Log truy cập/lỗi (dòng cuối) */
+        /**
+         * Log truy cập/lỗi (dòng cuối)
+         * @description Đọc trực tiếp qua op `log.tail` của agent (không tạo job); tối đa 500 dòng, `lines` lớn hơn bị giới hạn ở 500. Agent không kết nối → 503.
+         */
         get: operations["portalGetWebsiteLogs"];
         put?: never;
         post?: never;
@@ -2357,6 +2360,10 @@ export interface components {
         NginxSize: string;
         /** @description Giá trị đưa vào cấu hình Nginx: cấm ký tự phá cú pháp. */
         HeaderValue: string;
+        /** @description Đường dẫn URL cho redirect/location: không khoảng trắng, dấu nháy, $, ;, {}. */
+        UrlPath: string;
+        /** @description URL đích redirect (http/https, domain chữ thường, path an toàn). */
+        RedirectTarget: string;
         WebsiteNginx: {
             client_max_body_size?: components["schemas"]["NginxSize"];
             http2?: boolean;
@@ -2365,9 +2372,8 @@ export interface components {
                 [key: string]: components["schemas"]["HeaderValue"];
             };
             redirects?: {
-                from: components["schemas"]["RelPath"];
-                /** Format: uri */
-                to: string;
+                from: components["schemas"]["UrlPath"];
+                to: components["schemas"]["RedirectTarget"];
                 /** @enum {string} */
                 code: "301" | "302";
             }[];
@@ -2550,6 +2556,25 @@ export interface components {
                  *       "status": 412,
                  *       "code": "precondition_failed",
                  *       "detail": "If-Match không khớp ETag hiện tại.",
+                 *       "request_id": "req_01JD8K2M4N"
+                 *     }
+                 */
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Agent không kết nối */
+        AgentUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "type": "https://docs.itso.local/errors/agent_unavailable",
+                 *       "title": "Agent không kết nối",
+                 *       "status": 503,
+                 *       "code": "agent_unavailable",
+                 *       "detail": "Không gọi được agent của server; thử lại sau.",
                  *       "request_id": "req_01JD8K2M4N"
                  *     }
                  */
@@ -6697,7 +6722,7 @@ export interface operations {
                      *           "steps": [
                      *             {
                      *               "seq": 1,
-                     *               "op": "fs.mkdir",
+                     *               "op": "fs.site_layout.ensure",
                      *               "state": "succeeded",
                      *               "started_at": "2026-11-20T08:15:00+07:00",
                      *               "finished_at": "2026-11-20T08:15:00+07:00"
@@ -6849,7 +6874,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "succeeded",
                      *             "started_at": "2026-11-20T08:15:00+07:00",
                      *             "finished_at": "2026-11-20T08:15:00+07:00"
@@ -7035,7 +7060,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "succeeded",
                      *             "started_at": "2026-11-20T08:15:00+07:00",
                      *             "finished_at": "2026-11-20T08:15:00+07:00"
@@ -7133,7 +7158,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -8584,7 +8609,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "fs.mkdir",
+                     *             "op": "fs.site_layout.ensure",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -8606,6 +8631,13 @@ export interface operations {
                      *           {
                      *             "seq": 4,
                      *             "op": "cert.issue",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 5,
+                     *             "op": "nginx.vhost.apply",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -9287,6 +9319,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
         };
     };
     portalGetWebsiteNginx: {

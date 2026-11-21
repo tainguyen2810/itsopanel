@@ -90,3 +90,39 @@ export const DNS_PLACEHOLDER: Record<DnsType, string> = {
   CAA: '0 issue "letsencrypt.org"',
   NS: 'ns1.itso.vn',
 };
+
+/** Thêm nhà cung cấp DNS (POST /admin/dns/providers). Token Cloudflare: Zone:Read + DNS:Edit. */
+export const dnsProviderSchema = z.object({
+  name: z.string().trim().min(1, 'form.required').max(80, 'form.maxLength|80'),
+  api_token: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9_-]{20,200}$/, 'admin:dns.errors.token'),
+});
+export type DnsProviderForm = z.infer<typeof dnsProviderSchema>;
+
+const ZONE_RE = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+/** Gắn zone đã có trên Cloudflare (POST /admin/dns/zones). Account trống = zone hệ thống (chỉ SUPER_ADMIN). */
+export const dnsZoneSchema = z.object({
+  provider_uuid: z.string().min(1, 'admin:dns.errors.provider'),
+  name: z.string().trim().toLowerCase().regex(ZONE_RE, 'admin:sites.errors.domain'),
+  hosting_account_uuid: z.string(),
+});
+export type DnsZoneForm = z.infer<typeof dnsZoneSchema>;
+
+/** Giá trị ô chọn account nghĩa là "zone hệ thống" (không gắn account). */
+export const NO_ACCOUNT = 'none';
+
+/** Account của form zone → `hosting_account_uuid` (rỗng hoặc NO_ACCOUNT → null). */
+export function zoneAccount(v: string): string | null {
+  return v === '' || v === NO_ACCOUNT ? null : v;
+}
+
+/** Body DnsZoneCreate. */
+export function dnsZoneBody(v: DnsZoneForm) {
+  return {
+    provider_uuid: v.provider_uuid,
+    name: v.name.trim().toLowerCase(),
+    hosting_account_uuid: zoneAccount(v.hosting_account_uuid),
+  };
+}

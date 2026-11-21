@@ -24,7 +24,8 @@ function assertMatchesContract(string $file, string $method, string $path, int $
     ['schema' => $schema, 'contentType' => $ct, 'file' => $ctx] = OpenApi::responseSchema($file, $method, $path, $status);
     expect($response->status())->toBe($status)
         ->and($response->headers->get('Content-Type'))->toStartWith($ct);
-    $error = OpenApi::validate($ctx, $schema, $response->json());
+    // Giải mã dạng object để {} không thành [] (map rỗng như extra_headers).
+    $error = OpenApi::validate($ctx, $schema, json_decode((string) $response->getContent(), false));
     expect($error)->toBeNull();
 }
 

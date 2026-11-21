@@ -12,12 +12,25 @@
         "website_uuid": {
           "$ref": "../defs.schema.json#/$defs/Uuid"
         },
+        "site_dir": {
+          "$ref": "../defs.schema.json#/$defs/Domain"
+        },
+        "type": {
+          "$ref": "../defs.schema.json#/$defs/SiteType"
+        },
         "server_names": {
           "type": "array",
           "items": {
             "$ref": "../defs.schema.json#/$defs/Domain"
           },
           "minItems": 1,
+          "maxItems": 100
+        },
+        "redirect_names": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Domain"
+          },
           "maxItems": 100
         },
         "document_root": {
@@ -30,6 +43,14 @@
           ],
           "pattern": "^/run/itso/php/[a-z][a-z0-9]{2,15}-[0-9a-f]{8}\\.sock$"
         },
+        "proxy_port": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1024,
+          "maximum": 65535
+        },
         "tls": {
           "type": [
             "object",
@@ -41,24 +62,61 @@
             },
             "hsts": {
               "type": "boolean"
+            },
+            "force_https": {
+              "type": "boolean"
             }
           },
           "required": [
-            "cert_uuid"
+            "cert_uuid",
+            "hsts",
+            "force_https"
           ],
           "additionalProperties": false
+        },
+        "http2": {
+          "type": "boolean"
         },
         "client_max_body_size": {
           "$ref": "../defs.schema.json#/$defs/NginxSize"
         },
         "extra_headers": {
           "type": "object",
+          "maxProperties": 20,
           "additionalProperties": {
             "$ref": "../defs.schema.json#/$defs/HeaderValue"
           },
           "propertyNames": {
             "pattern": "^[A-Za-z][A-Za-z0-9-]{1,63}$"
           }
+        },
+        "redirects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "$ref": "../defs.schema.json#/$defs/UrlPath"
+              },
+              "to": {
+                "$ref": "../defs.schema.json#/$defs/RedirectTarget"
+              },
+              "code": {
+                "type": "string",
+                "enum": [
+                  "301",
+                  "302"
+                ]
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "code"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
         },
         "suspended": {
           "type": "boolean"
@@ -67,6 +125,8 @@
       "required": [
         "account",
         "website_uuid",
+        "site_dir",
+        "type",
         "server_names",
         "document_root"
       ],
@@ -86,12 +146,16 @@
         },
         "reloaded": {
           "type": "boolean"
+        },
+        "changed": {
+          "type": "boolean"
         }
       },
       "required": [
         "config_path",
         "nginx_test",
-        "reloaded"
+        "reloaded",
+        "changed"
       ],
       "additionalProperties": false
     }

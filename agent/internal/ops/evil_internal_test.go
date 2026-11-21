@@ -33,6 +33,25 @@ func TestEvilInputsRejectedBeforeAnyCommand(t *testing.T) {
 	}
 	fake := platform.NewFake()
 	d := &Deps{Run: fake, FS: platform.NewFS(t.TempDir(), true)}
+	acct := map[string]any{"username": "lehoa", "uid": 20001}
+	vhost := func(k string, v any) map[string]any {
+		m := map[string]any{"account": acct, "website_uuid": "01938a06-0002-7000-8000-000006000002", "site_dir": "lehoa.vn", "type": "static",
+			"server_names": []any{"lehoa.vn"}, "document_root": "public"}
+		m[k] = v
+		return m
+	}
+	pool := func(k string, v any) map[string]any {
+		m := map[string]any{"account": acct, "website_uuid": "01938a06-0002-7000-8000-000006000002", "site_dir": "lehoa.vn", "version": "8.3",
+			"pm_max_children": 4, "memory_limit": "128m", "max_execution_time": 30, "upload_max_filesize": "16m", "disable_functions": []any{}}
+		m[k] = v
+		return m
+	}
+	issue := func(k string, v any) map[string]any {
+		m := map[string]any{"account": acct, "website_uuid": "01938a06-0002-7000-8000-000006000002", "cert_uuid": "01938a0c-0001-7000-8000-00000c000001",
+			"site_dir": "lehoa.vn", "domains": []any{"lehoa.vn"}, "challenge": "http-01", "email": "it@lehoa.vn", "directory": "letsencrypt", "renew": false}
+		m[k] = v
+		return m
+	}
 	limits := map[string]any{"disk_mb": 1024, "inode_limit": 1000, "cpu_percent": 100, "ram_mb": 512, "tasks_max": 64, "io_weight": 100}
 	cases := map[string][]struct {
 		h      registry.Handler
@@ -57,7 +76,41 @@ func TestEvilInputsRejectedBeforeAnyCommand(t *testing.T) {
 		},
 		"hostname":     {{d.hostnameSet, func(s string) map[string]any { return map[string]any{"hostname": s} }}},
 		"service_name": {{d.serviceControl, func(s string) map[string]any { return map[string]any{"name": s, "action": "restart"} }}, {d.serviceStatus, func(s string) map[string]any { return map[string]any{"names": []any{s}} }}},
-		"recipe":       {{d.softwareInstall, func(s string) map[string]any { return map[string]any{"recipe": s} }}, {d.softwareRemove, func(s string) map[string]any { return map[string]any{"recipe": s} }}},
+		"domain": {
+			{d.siteLayoutEnsure, func(s string) map[string]any { return map[string]any{"account": acct, "site_dir": s} }},
+			{d.vhostApply, func(s string) map[string]any { return vhost("server_names", []any{s}) }},
+			{d.vhostApply, func(s string) map[string]any { return vhost("redirect_names", []any{s}) }},
+			{d.certIssue, func(s string) map[string]any { return issue("domains", []any{s}) }},
+			{d.logTail, func(s string) map[string]any {
+				return map[string]any{"account": acct, "site_dir": s, "kind": "access", "lines": 10}
+			}},
+		},
+		"path":         {{d.vhostApply, func(s string) map[string]any { return vhost("document_root", s) }}},
+		"header_value": {{d.vhostApply, func(s string) map[string]any { return vhost("extra_headers", map[string]any{"X-Test": s}) }}},
+		"url_path": {{d.vhostApply, func(s string) map[string]any {
+			return vhost("redirects", []any{map[string]any{"from": s, "to": "https://a.vn/", "code": "301"}})
+		}}},
+		"redirect_target": {{d.vhostApply, func(s string) map[string]any {
+			return vhost("redirects", []any{map[string]any{"from": "/a", "to": s, "code": "301"}})
+		}}},
+		"nginx_size": {
+			{d.vhostApply, func(s string) map[string]any { return vhost("client_max_body_size", s) }},
+			{d.phpPoolApply, func(s string) map[string]any { return pool("memory_limit", s) }},
+			{d.nginxGlobalApply, func(s string) map[string]any {
+				return map[string]any{"worker_processes": "auto", "worker_connections": 1024, "client_max_body_size": s, "gzip": true, "http2": true, "server_tokens": false}
+			}},
+		},
+		"php_version": {
+			{d.phpPoolApply, func(s string) map[string]any { return pool("version", s) }},
+			{d.phpVersionInstall, func(s string) map[string]any { return map[string]any{"version": s, "extensions": []any{}} }},
+			{d.phpVersionRemove, func(s string) map[string]any { return map[string]any{"version": s} }},
+		},
+		"php_extension": {
+			{d.phpExtInstall, func(s string) map[string]any { return map[string]any{"version": "8.3", "extensions": []any{s}} }},
+			{d.phpVersionInstall, func(s string) map[string]any { return map[string]any{"version": "8.3", "extensions": []any{s}} }},
+		},
+		"email":  {{d.certIssue, func(s string) map[string]any { return issue("email", s) }}},
+		"recipe": {{d.softwareInstall, func(s string) map[string]any { return map[string]any{"recipe": s} }}, {d.softwareRemove, func(s string) map[string]any { return map[string]any{"recipe": s} }}},
 	}
 	n := 0
 	for cat, hs := range cases {

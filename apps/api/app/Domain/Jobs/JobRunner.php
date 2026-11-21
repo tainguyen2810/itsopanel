@@ -7,6 +7,7 @@ namespace App\Domain\Jobs;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Notifications\Notifier;
 use App\Infrastructure\Agent\AgentClient;
+use App\Infrastructure\Agent\AgentResult;
 use App\Infrastructure\Agent\AgentUnavailable;
 use App\Jobs\RunJob;
 use App\Models\Job;
@@ -26,7 +27,8 @@ final class JobRunner
 {
     public const TERMINAL = ['succeeded', 'failed', 'cancelled', 'timed_out'];
 
-    public function __construct(private readonly AgentClient $agent, private readonly Notifier $notifier) {}
+    public function __construct(private readonly AgentClient $agent, private readonly Notifier $notifier,
+        private readonly Secrets $secrets) {}
 
     public function run(int $jobId): void
     {
@@ -81,10 +83,21 @@ final class JobRunner
             $step->save();
             $this->log($job, 'info', "Bước {$step->seq}: {$step->op}", $step);
 
+            $panel = $this->panelStep($step->op);
             try {
-                $res = $this->agent->call($step->op, $step->params_redacted, $step->op_id, $requestedBy, (float) min($remaining, 300));
+                if ($panel !== null) {
+                    $res = new AgentResult($step->op_id, true, $panel->run($step->params_redacted, $job), null, 0, 'panel');
+                } else {
+                    // Bí mật chỉ được thay vào bản gửi đi; params_redacted giữ nguyên tham chiếu.
+                    $params = $this->secrets->resolve($step->params_redacted);
+                    $res = $this->agent->call($step->op, $params, $step->op_id, $requestedBy, (float) min($remaining, 300));
+                }
             } catch (AgentUnavailable $e) {
                 $this->stepFailed($job, $step, 'agent_unavailable', mb_substr($e->getMessage(), 0, 300), true);
+
+                return;
+            } catch (PanelStepFailed $e) {
+                $this->stepFailed($job, $step, $e->errorCode, mb_substr($e->getMessage(), 0, 300), $e->retryable);
 
                 return;
             }
@@ -200,6 +213,14 @@ final class JobRunner
                     (string) ($job->error_message ?? ''), 'high', '/jobs/'.$job->uuid);
             }
         }
+    }
+
+    private function panelStep(string $op): ?PanelStep
+    {
+        $class = ((array) config('itso.panel_steps', []))[$op] ?? null;
+        $h = is_string($class) ? app($class) : null;
+
+        return $h instanceof PanelStep ? $h : null;
     }
 
     private function handler(Job $job): ?JobHandler

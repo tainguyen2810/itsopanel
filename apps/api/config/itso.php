@@ -1,7 +1,11 @@
 <?php
 
+use App\Domain\Dns\DnsRecordsStep;
 use App\Domain\Hosting\AccountJobHandler;
 use App\Domain\Servers\SoftwareJobHandler;
+use App\Domain\Web\CertificateJobHandler;
+use App\Domain\Web\ServerWebJobHandler;
+use App\Domain\Web\WebsiteJobHandler;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
@@ -35,6 +39,30 @@ return [
     ], AccountJobHandler::class) + [
         'software.install' => SoftwareJobHandler::class,
         'software.remove' => SoftwareJobHandler::class,
+    ] + array_fill_keys(['website.create', 'website.update', 'website.nginx.update', 'website.php.update',
+        'website.domain.add', 'website.domain.remove', 'website.delete'], WebsiteJobHandler::class)
+      + array_fill_keys(['php.version.install', 'php.version.remove', 'php.extensions.install', 'setup.stack'],
+          ServerWebJobHandler::class)
+      + array_fill_keys(['certificate.issue', 'certificate.upload', 'certificate.renew', 'certificate.delete'],
+          CertificateJobHandler::class),
+
+    // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
+    'panel_steps' => [
+        'dns.records.apply' => DnsRecordsStep::class,
+    ],
+
+    // ACME (D-69): email nhận thông báo của CA và directory (allowlist; Pebble chỉ cho test/CI).
+    'acme' => [
+        'email' => env('ITSO_ACME_EMAIL'),
+        'directory' => env('ITSO_ACME_DIRECTORY', 'letsencrypt'),
+        'allow_pebble' => (bool) env('ITSO_ACME_ALLOW_PEBBLE', false),
+        'renew_before_days' => 30,
+    ],
+
+    // DNS Cloudflare (D-70): base URL cố định, không nhận URL từ người dùng.
+    'cloudflare' => [
+        'base_url' => 'https://api.cloudflare.com/client/v4',
+        'timeout' => 10,
     ],
 
     // Server local (Phase 3: một server, agent local/mock). `itso:server-local` tạo/cập nhật bản ghi này.

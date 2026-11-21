@@ -61,6 +61,7 @@ func newEnv(t *testing.T) *env {
 	write(t, host, "/proc/stat", "cpu  100 0 100 700 100 0 0 0 0 0\ncpu0 1 1 1 1\n")
 	write(t, host, "/sys/fs/cgroup/cgroup.controllers", "cpu io memory pids\n")
 	write(t, host, "/run/systemd/system/.keep", "")
+	write(t, host, "/proc/net/if_inet6", "00000000000000000000000000000001 01 80 10 80       lo\n")
 	cg := ops.CgroupDir(20001)
 	write(t, host, cg+"/cpu.stat", "usage_usec 5000000\nuser_usec 4000000\nsystem_usec 1000000\nnr_periods 10\nnr_throttled 3\nthrottled_usec 250000\n")
 	write(t, host, cg+"/memory.current", "268435456\n")
@@ -393,6 +394,7 @@ func TestContractExamples(t *testing.T) {
 		if !contains(e.h.Reg.Ops(), head.Op) {
 			continue
 		}
+		prepareExample(e, head.Op)
 		e.h.Reg.SetClock(func() time.Time { return time.Unix(head.TS, 0) })
 		res := e.h.Reg.Handle(context.Background(), raw)
 		e.h.Check(head.Op, res)
@@ -416,3 +418,22 @@ func contains(l []string, s string) bool {
 }
 
 func jsonUnmarshal(b []byte, v any) error { return json.Unmarshal(b, v) }
+
+// prepareExample tạo trạng thái mà ví dụ envelope giả định (account anphat, site shop.anphat.vn, pool).
+func prepareExample(e *env, op string) {
+	switch op {
+	case contracts.OpPHPPoolApply, contracts.OpNginxVhostApply:
+		e.site("anphat", 20001, "shop.anphat.vn")
+		if op == contracts.OpNginxVhostApply {
+			e.h.OK(contracts.OpPHPPoolApply, poolParams("anphat", 20001, "01938a06-0002-7000-8000-000006000002", "shop.anphat.vn"))
+		}
+	case contracts.OpAccountEnsure:
+	}
+}
+
+func TestWebsiteLifecycleSharedWithMock(t *testing.T) {
+	if ct.FailDomainPrefix != ops.SimFailDomainPrefix {
+		t.Fatal("tiền tố ép nginx -t lỗi của mock và Sim phải giống nhau")
+	}
+	ct.WebsiteLifecycle(t, newEnv(t).h)
+}

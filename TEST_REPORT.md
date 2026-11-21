@@ -2,6 +2,99 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 5 / Prompt 5.6 — nhánh `phase-5`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox`, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Toàn bộ | `make check` | **22 PASS · 1 SKIP (staticcheck chưa cài) · 0 FAIL**, git-clean PASS, 632 s: Pest 369, Vitest 486, Playwright demo 261, fuzz 308 974 lần, docs-check, contracts/codegen/tokens, units, installer |
+| E2E stack thật | `make test-e2e-real` | PASS 8/8. Mới `phase5.spec.ts`: cài PHP 8.3 qua PHP Manager → tạo website PHP (job layout → pool → vhost) → alias → chứng chỉ (lego sandbox tự ký) → tạm khóa account (website `suspended`) → mở khóa → xóa (gõ domain + step-up TOTP); Portal tự tạo website. 4 luồng Phase 3 + 2 luồng Phase 4 vẫn PASS |
+| Step-up | `vitest src/shared/auth` | PASS 3: 403 `mfa_step_up_required` → hỏi mã → gửi lại một lần với Idempotency-Key mới; hủy / không có hộp thoại → lỗi gốc; request step-up lỗi không hỏi lại |
+| Xóa website gỡ chứng chỉ | `pest tests/Feature/Phase5` | PASS 21 (715 assertion). Mới: xóa website có chứng chỉ → `nginx.vhost.remove` → `php.pool.remove` → `cert.remove`, không còn bản ghi chứng chỉ |
+| Script VM | `bash -n tests/vm/phase5.sh tests/vm/pebble/start.sh` | Cú pháp OK. **Chờ VM:** W0–W5 (stack, 20 site + uid, cô lập A/B, `nginx -t` hoàn tác, Pebble HTTP-01 thật + gia hạn, xóa sạch) |
+
+**Lỗi tìm thấy và sửa:** (1) xóa website / provider DNS cần step-up nhưng UI không có hộp thoại → luôn 403; thêm `StepUpHost` dùng chung. (2) nhãn i18n thiếu cho job Phase 5 (`website.domain.add`, `setup.stack`, `php.version.*`, `certificate.renew`, `nginx.global.update`…). (3) xóa website không gỡ chứng chỉ (`/etc/itso/certs/<uuid>` còn lại).
+
+**Test bị bỏ qua:** không. **Chờ VM/CI:** `tests/vm/phase5.sh`, job CI `pebble`.
+
+## 2026-11-21 — Phase 5 / Prompt 5.5 — nhánh `phase-5`
+
+Môi trường: Node 22, Chromium Playwright có sẵn, MSW (bản demo) theo OpenAPI.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest | `pnpm -C apps/web test` | PASS 483 test (31 file). Mới: `jobErrors.test.ts` (mọi mã lỗi có giải thích VI+EN; `quota_exceeded` diễn giải theo tài nguyên gói), `JobView.test.tsx` (`nginx -t` lỗi hiện "đã hoàn tác" + dòng lỗi gốc; mã lạ → tiêu đề chung), schema tải chứng chỉ (PEM, wildcard, khóa có mật khẩu bị chặn), schema provider/zone DNS, MSW: provider chỉ SUPER_ADMIN, token không trả về, gắn/đồng bộ/đổi account/gỡ zone, provider còn zone 409, quota website → `quota_exceeded` + `errors.websites`; wizard đi hết 10 bước có bước stack gọi `GET /admin/setup/stack` + `POST :install` |
+| Sửa test cũ theo tính năng mới | `wizard.test.ts`, `InstallPage.test.tsx`, `demo/__tests__/sites.test.ts` | Bước `stack` không còn "chưa có ở bản này"; vượt số website trả `quota_exceeded` như API thật (trước là `package_limit_reached`) |
+| Lint · i18n · tsc | `pnpm -C apps/web lint` | PASS (eslint, prettier, tsc, check-i18n: 2575 khóa, vi = en) |
+| Playwright demo (gồm axe) | `pnpm -C apps/web e2e` | PASS 261 test (6,3 phút). Mới: DNS gắn zone Cloudflare → đồng bộ → gỡ; SSL tải chứng chỉ riêng kiểm PEM |
+| Build | `make build-demo` | PASS: build thường không chứa MSW, build demo có worker |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 5 / Prompt 5.4 — nhánh `phase-5`
+
+Môi trường: như 5.3. Cloudflare giả bằng `Http::fake` (bộ nhớ record, ép mã lỗi); agent giả bằng FakeAgent.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Chứng chỉ | `pest tests/Feature/Phase5/CertificateTest.php` | PASS 7 test: ACME → `cert.issue` (email/directory theo cấu hình) → `nginx.vhost.apply` có tls; danh sách admin + portal khớp OpenAPI; domain chưa gắn 422, thiếu `ITSO_ACME_EMAIL` / Pebble chưa cho phép 409; tải lên khóa lệch, SAN thiếu (wildcard không phủ gốc), không phải PEM, khóa mã hóa → 422; hết hạn → 422; hợp lệ → `cert.install` → vhost → gỡ bản ACME cũ; **bí mật**: `job_steps` chỉ có `{"$secret": "certificate_key:<uuid>"}`, khóa không có trong `job_steps`/`job_logs`/`audit_logs`/`certificates` (đã mã hóa)/phản hồi, agent nhận khóa thật; `itso:certs-renew` chỉ chọn chứng chỉ ACME < 30 ngày có auto_renew (bỏ qua bản 60 ngày, tắt auto_renew, tải lên); renew lỗi → `last_error`, audit `failure`, thông báo `certificate.renew_failed` cho SUPER_ADMIN; xóa chứng chỉ đang dùng → vhost bỏ tls rồi `cert.remove`; website tạo với `ssl_mode=acme` (cấp lỗi → `degraded`, chứng chỉ `failed`); PATCH none → acme cấp chứng chỉ; ma trận quyền 404 ngoài phạm vi |
+| DNS | `pest tests/Feature/Phase5/DnsTest.php` | PASS 4 test: token sai → 422, Cloudflare 503 → 409, DB không đổi; token mã hóa, không có trong phản hồi/`dns_providers`/audit/job; mọi request tới base URL cố định; zone không có trên Cloudflare 422, tạo zone đồng bộ record (bỏ loại HTTPS); ADMIN chỉ zone của account trong phạm vi, ADMIN ngoài phạm vi 404, portal không có route DNS; If-Match sai 412; record tạo/sửa/xóa ghi Cloudflare trước rồi DB; Cloudflare 400 → job failed `invalid_params`, DB giữ nguyên; 502 → thử lại 3 lần rồi failed `dependency_unavailable`; nội dung sai theo loại (IP, MX thiếu priority, proxied cho TXT, CAA, ký tự điều khiển) 422; `:sync` và `itso:dns-sync`; gỡ zone không gọi Cloudflare |
+| Laravel toàn bộ | `make test-api` | PASS 368 test, 3299 assertion |
+| Agent | `make lint-agent test-agent` | PASS. Thêm `TestCertReplaceInUseReloadsNginx`: thay chứng chỉ vhost đang dùng → `nginx -t` + reload; chưa ai dùng hoặc nội dung không đổi → không reload |
+| Lint · tĩnh · docs | `pint` · `phpstan` · `make no-exec` · `make docs-check` | PASS |
+
+**Lỗi tìm thấy nhờ test:** cast `Bytea` đọc stream PDO một lần, lần truy cập thứ hai trả chuỗi rỗng → `JobRunner` không giải được khóa chứng chỉ tải lên. Sửa: đọc stream từ offset 0 mỗi lần.
+
+**Test bị bỏ qua:** không. **Chờ CI/VM:** job `pebble` (`tests/vm/pebble/run.sh`: lego thật ↔ Pebble) chưa chạy được: repo chưa có remote, và lệnh chạy Pebble + test dưới root trong container dev bị từ chối (không thử lại). Test đã biên dịch (`go vet -tags pebble`).
+
+## 2026-11-21 — Phase 5 / Prompt 5.3 — nhánh `phase-5`
+
+Môi trường: như 5.1 (PostgreSQL 16 + Redis local). Agent giả qua `Http::fake` (FakeAgent), job chạy đồng bộ.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Website Phase 5 | `pest tests/Feature/Phase5` | PASS 9 test, 352 assertion: tạo site PHP → op `fs.site_layout.ensure` → `php.pool.apply` → `nginx.vhost.apply` (static bỏ pool); sửa `document_root` chỉ áp vhost; nginx/php áp đúng op; If-Match lệch 412; header chèn `;`/CRLF, redirect `javascript:`, hàm PHP lạ → 422; quota website/alias/PHP worker → 422 `quota_exceeded`; domain trùng (khác hoa thường) 409; `nginx -t` lỗi khi tạo → website `failed` + thông báo `job.failed`; lỗi khi thêm domain → domain bị gỡ, site vẫn `ready`; suspend/unsuspend áp lại vhost mọi site; xóa: `nginx.vhost.remove` → `php.pool.remove`, job còn đọc được; ma trận quyền (ADMIN ngoài phạm vi, USER khác → 404; ADMIN không có `software.write`/`servers.write` → 403); PHP Manager (8.2 → 409, gỡ khi còn site → 409 `resource_locked`, extension ngoài allowlist 422); Nginx toàn server (không đổi 409, ngoài khoảng 422); log agent lỗi → 503; wizard bước 4 cài phần thiếu qua `setup.stack`, đủ → `steps_done` có `stack`. Mọi phản hồi khớp OpenAPI admin + portal |
+| Laravel toàn bộ | `make test-api` | PASS 357 test, 2947 assertion. Sửa 2 test cũ theo tính năng mới: catalog recipe 7 mục (thêm nginx, lego); endpoint mẫu "chưa có ở bản này" đổi từ websites sang databases (Phase 6) |
+| Helper hợp đồng | `tests/Pest.php` | Sửa `assertMatchesContract` giải mã JSON dạng object: trước đây `{}` thành `[]` nên map rỗng (`extra_headers`) bị báo sai kiểu |
+| Lint · tĩnh | `pint --test` · `phpstan` · `make no-exec` | PASS (0 lỗi phpstan) |
+| Contracts · Web | `make contracts-check` · `make codegen-check` · `tsc` · `vitest run` | PASS · PASS · sạch · 465 test |
+
+**Test bị bỏ qua:** không. **Chờ VM:** áp vhost/pool thật qua agent sandbox → VM ở 5.6.
+
+## 2026-11-21 — Phase 5 / Prompt 5.2 — nhánh `phase-5`
+
+Môi trường: như 5.1. Đã cài `nginx` 1.24.0 và `php8.3-fpm` 8.3.6 (kho Ubuntu 24.04) **trong container dev** chỉ để kiểm cú pháp file sinh ra; không khởi động dịch vụ nào (policy-rc.d chặn).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go toàn bộ | `cd agent && go vet ./... && go test -count=1 ./...` | PASS 12 package |
+| Golden op website | `go test ./internal/ops -run 'Site\|PHP\|Vhost\|Nginx\|LogTail\|Cert'` | PASS: argv + file cho site layout (quyền/chủ/ACL, log ngoài home), pool + master + drop-in, vhost php/static/proxy/suspended/tls, nginx.conf, lego run/renew, Pebble cần policy + CA (env `LEGO_CA_CERTIFICATES`); chạy lại lần 2 không có lệnh ghi |
+| Hoàn tác | `TestVhostRollback`, `TestPHPPoolGolden` | PASS: `nginx -t` lỗi → site mới bị xóa, site sửa về bản cũ, không reload, site khác vẫn áp được; `php-fpm -t` (uid account) lỗi → pool cũ khôi phục, không reload |
+| Cú pháp thật | `go test ./internal/ops -run TestRenderedConfigsWithRealBinaries -v` | PASS: `nginx -t` thật trên 5 vhost golden + `nginx.conf`; `php-fpm8.3 -t` thật trên pool + master. Lần đầu lỗi `include fastcgi_params` (đường dẫn tương đối) và `listen [::]` trên máy không IPv6 → sửa template (đường dẫn tuyệt đối, IPv6 theo `/proc/net/if_inet6`) |
+| Vector độc | `TestEvilInputsRejectedBeforeAnyCommand` · `validate.TestEvilVectors` | PASS: thêm nhóm domain, path, header_value, url_path, redirect_target, nginx_size, php_version, php_extension, email gọi thẳng handler → bị từ chối, 0 lệnh chạy. Lần đầu: `php.version.remove 7.4` chạy `dpkg-query` trước khi từ chối → sửa: chỉ nhận 8.3 |
+| Contract chung mock + agent | `TestWebsiteLifecycleSharedWithMock` · `TestWebsiteLifecycleSharedWithAgent` | PASS: cùng luồng PHP → layout → pool → vhost (idempotent, `config_test_failed` giữ bản cũ) → chứng chỉ → TLS → xóa |
+| Fuzz template | `go test -fuzz FuzzRenderVhost -fuzztime 20s` · `FuzzRenderPool 10s` | PASS: 244 456 + 158 516 lần chạy; mọi cấu hình render được đều đúng dạng (mỗi dòng một directive, ngoặc cân bằng, không chèn thêm `open_basedir`) |
+| Unit systemd | `make units-check` | PASS 13 unit (thêm `itso-php@8.3-lehoa.service`) |
+| Contracts · lint | `make contracts-check` · `make codegen-check` · `make lint-agent` · `make no-exec` | PASS (ví dụ envelope sửa `php_socket` theo quy tắc agent suy ra) |
+
+**Test bị bỏ qua:** không. Ghi chú: một đề xuất bỏ qua vector `path` tầng semantic (symlink) trong test validator bị từ chối; thay bằng test riêng `TestRelPath` cho lớp cú pháp, phần symlink kiểm ở `TestSiteLayoutGolden` (FS thật). **Chờ VM:** master PHP chạy thật dưới uid account (phpinfo), socket ACL, `systemctl` thật, lego với Pebble.
+
+## 2026-11-21 — Phase 5 / Prompt 5.1 — nhánh `phase-5`
+
+Môi trường: như Phase 4 (PostgreSQL 16 + Redis local, container không có systemd).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen-check` | PASS: admin 239 operation (+11: DNS provider/zone 6, PHP install/extension 2, wizard bước stack 2, cộng `syncDnsZone`), portal 103; agent-ops 73 op có schema (+6: `fs.site_layout.ensure`, `nginx.vhost.inspect`, `php.version.remove`, `php.ext.install`, `cert.inspect`, `log.tail`; sửa `nginx.vhost.apply`, `php.pool.apply`, `cert.issue`, `cert.install`, `nginx.global.apply`, `php.version.install`); envelope mẫu cập nhật; Redocly 0 lỗi; 416+ example hợp lệ |
+| Vector độc | `python3 contracts/tools/gen_vectors.py` + check_contracts | PASS: 138 vector (+26: HeaderValue CRLF/`;`/`$`/`{}`, UrlPath, RedirectTarget `javascript:`/không scheme, NginxSize, PhpExtension ngoài allowlist, email chèn cờ lego, recipe php8.1 cần PPA) |
+| DB | `make db-schema` · `make db-verify` · `make db-migrations PHASE=5` | PASS 41 test SQL; Phase 3 → 11 áp lần lượt = itso.sql + extras.sql; migration Phase 5: 9 bảng, 62 câu lệnh. Thay đổi đặc tả: `domains.uuid`, `dns_records.uuid` + `priority`, `dns_providers.account_label`, `acme_accounts.server_id` + `key_location` (CHECK khóa chỉ ở agent hoặc db), `certificates.private_key_encrypted` + `acme_account_id` + `auto_renew` + `last_renew_attempt_at` + `last_error` |
+| Schema Laravel | `pest tests/Feature/Schema/SchemaTest.php` | PASS 10 test (thêm: đủ 9 bảng Phase 5; domain duy nhất khi còn hoạt động, chữ thường; CHECK `acme_accounts_key_chk`) |
+| Go | `go vet ./...` · `go test -count=1 ./...` | PASS (validator recipe thêm nginx, php8.3, lego; vector chung PHP/Go) |
+| Laravel toàn bộ · Web | `pest --parallel` · `npx vitest run` · `tsc` | PASS 348 · 465 · tsc sạch |
+
+**Test bị bỏ qua:** không. Ghi chú môi trường: `make db-verify` dừng cụm PostgreSQL dev trên cổng 5432; khởi động lại bằng `pg_ctl` trước khi chạy Pest.
+
 ## 2026-11-21 — Phase 4 / Prompt 4.6 — nhánh `phase-4`
 
 Môi trường: PostgreSQL 16 + Redis local; agent thật `itso-agent --sandbox` (runner giả, gốc riêng `.dev/agent-sandbox/root`, ký HMAC D-66). Container không có KVM/systemd/cgroup v2 nên **bộ test VM chưa chạy (chờ VM)**.

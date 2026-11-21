@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { describeCron, minInterval, nextRuns, parseCron } from '../cron';
-import { contentError, dnsRecordSchema, isIPv6 } from '../dns';
+import {
+  contentError,
+  dnsProviderSchema,
+  dnsRecordSchema,
+  dnsZoneBody,
+  dnsZoneSchema,
+  isIPv6,
+  NO_ACCOUNT,
+} from '../dns';
 import {
   crumbs,
   isInside,
@@ -177,5 +185,32 @@ describe('form record DNS', () => {
     expect(err({ name: 'a b' })).toEqual({ name: 'admin:dns.errors.name' });
     expect(err({ name: '_dmarc' })).toEqual({});
     expect(err({ name: '*.dev' })).toEqual({});
+  });
+});
+
+describe('DNS: provider và zone (Prompt 5.5)', () => {
+  it('token Cloudflare đúng dạng; tên bắt buộc', () => {
+    expect(dnsProviderSchema.safeParse({ name: 'CF', api_token: 'a'.repeat(40) }).success).toBe(
+      true,
+    );
+    const bad = dnsProviderSchema.safeParse({ name: ' ', api_token: 'có dấu cách nè 123456789' });
+    expect(bad.success).toBe(false);
+    expect(bad.error?.issues.map((i) => i.message).sort()).toEqual([
+      'admin:dns.errors.token',
+      'form.required',
+    ]);
+  });
+  it('zone: tên chữ thường, account hệ thống → null', () => {
+    const v = { provider_uuid: 'p', name: ' AnPhat.VN ', hosting_account_uuid: NO_ACCOUNT };
+    expect(dnsZoneSchema.safeParse(v).success).toBe(true);
+    expect(dnsZoneBody(v)).toEqual({
+      provider_uuid: 'p',
+      name: 'anphat.vn',
+      hosting_account_uuid: null,
+    });
+    expect(dnsZoneBody({ ...v, hosting_account_uuid: 'acc' }).hosting_account_uuid).toBe('acc');
+    expect(dnsZoneSchema.safeParse({ ...v, provider_uuid: '' }).error?.issues[0]?.message).toBe(
+      'admin:dns.errors.provider',
+    );
   });
 });

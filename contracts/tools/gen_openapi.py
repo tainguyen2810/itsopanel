@@ -179,7 +179,7 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             body_example={"hosting_account_uuid": acc["uuid"], "primary_domain": "shop.anphat.vn", "type": "php",
                           "document_root": "public", "php_version": "8.2", "ssl_mode": "acme", "proxy_target": None},
             job=True, job_example=jobs("website.create", "website", D.WEBSITES[1]["uuid"],
-                                       ["fs.mkdir", "php.pool.apply", "nginx.vhost.apply", "cert.issue"], realm=realm))
+                                       ["fs.site_layout.ensure", "php.pool.apply", "nginx.vhost.apply", "cert.issue", "nginx.vhost.apply"], realm=realm))
     api.add("get", "/websites/{id}", oid("getWebsite"), "Chi tiết website", "Websites", params=idp, ok=cref("Website"),
             ok_example=one(w))
     api.add("patch", "/websites/{id}", oid("updateWebsite"), "Cập nhật website", "Websites", params=idp,
@@ -209,9 +209,12 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
     api.add("patch", "/websites/{id}/php", oid("updateWebsitePhp"), "Đổi cấu hình PHP (trong giới hạn gói)", "Websites",
             params=idp, body=cref("WebsitePhp"), body_example={"memory_limit": "512m"}, job=True,
             job_example=jobs("website.php.update", "website", w["uuid"], ["php.pool.apply"], realm=realm))
-    api.add("get", "/websites/{id}/logs", oid("getWebsiteLogs"), "Log truy cập/lỗi (dòng cuối)", "Websites",
+    op = api.add("get", "/websites/{id}/logs", oid("getWebsiteLogs"), "Log truy cập/lỗi (dòng cuối)", "Websites",
             params=idp + [Api.p("LogKind"), Api.p("Lines")], ok=arr(s()),
-            ok_example=one(['203.0.113.50 - - [20/Nov/2026:08:14:59 +0700] "GET / HTTP/2.0" 200 5123']))
+            ok_example=one(['203.0.113.50 - - [20/Nov/2026:08:14:59 +0700] "GET / HTTP/2.0" 200 5123']),
+            desc="Đọc trực tiếp qua op `log.tail` của agent (không tạo job); tối đa 500 dòng, `lines` lớn hơn bị giới hạn ở 500. "
+                 "Agent không kết nối → 503.")
+    op["responses"]["503"] = Api.r("AgentUnavailable")
     # -- SSL
     api.add("get", "/certificates", oid("listCertificates"), "Chứng chỉ SSL", "SSL", list_=True, params=acc_filter,
             ok=cref("Certificate"), ok_example=page(D.CERTS if realm == "admin" else D.CERTS[:1]))
@@ -299,8 +302,29 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             ok=cref("CronRun"), ok_example=page(D.CRON_RUNS))
     # -- DNS (chỉ admin: portal không quản lý DNS theo sitemap)
     if realm == "admin":
+        api.add("get", "/dns/providers", oid("listDnsProviders"), "Nhà cung cấp DNS (Cloudflare)", "DNS", list_=True,
+                ok=ref("DnsProvider"), ok_example=page(D.DNS_PROVIDERS))
+        api.add("post", "/dns/providers", oid("createDnsProvider"), "Thêm nhà cung cấp DNS", "DNS",
+                body=ref("DnsProviderCreate"), body_example={"type": "cloudflare", "name": "Cloudflare IT",
+                                                             "api_token": "cf_token_example_0123456789abcdef"},
+                ok=ref("DnsProvider"), ok_example=one(D.DNS_PROVIDERS[0]), status="201",
+                desc="Kiểm token bằng API Cloudflare trước khi lưu (token sai → 422). Token lưu mã hóa, không bao giờ trả về (D-70).")
+        api.add("delete", "/dns/providers/{id}", oid("deleteDnsProvider"), "Xóa nhà cung cấp DNS", "DNS", params=idp,
+                no_content=True, step_up=True, desc="Còn zone gắn với provider → 409 `resource_locked`.")
         api.add("get", "/dns/zones", oid("listDnsZones"), "DNS zone", "DNS", list_=True, ok=cref("DnsZone"),
                 ok_example=page(D.DNS_ZONES))
+        api.add("post", "/dns/zones", oid("createDnsZone"), "Gắn zone có sẵn trên Cloudflare vào panel", "DNS",
+                body=ref("DnsZoneCreate"), body_example={"provider_uuid": D.DNS_PROVIDERS[0]["uuid"], "name": "anphat.vn",
+                                                         "hosting_account_uuid": D.ACCOUNTS[0]["uuid"]},
+                ok=cref("DnsZone"), ok_example=one(D.DNS_ZONES[0]), status="201",
+                desc="Zone phải tồn tại trong tài khoản Cloudflare của provider (không có → 422). Record được đồng bộ ngay.")
+        api.add("patch", "/dns/zones/{id}", oid("updateDnsZone"), "Đổi account gắn với zone", "DNS", params=idp,
+                body=ref("DnsZoneUpdate"), body_example={"hosting_account_uuid": None}, ok=cref("DnsZone"),
+                ok_example=one(D.DNS_ZONES[0]))
+        api.add("delete", "/dns/zones/{id}", oid("deleteDnsZone"), "Bỏ zone khỏi panel (không xóa trên Cloudflare)", "DNS",
+                params=idp, no_content=True)
+        api.add("post", "/dns/zones/{id}:sync", oid("syncDnsZone"), "Đồng bộ record từ Cloudflare", "DNS", params=idp,
+                ok=cref("DnsZone"), ok_example=one(D.DNS_ZONES[0]))
         api.add("get", "/dns/zones/{id}/records", oid("listDnsRecords"), "Record của zone", "DNS", params=idp, list_=True,
                 ok=cref("DnsRecord"), ok_example=page(D.DNS_RECORDS))
         api.add("post", "/dns/zones/{id}/records", oid("createDnsRecord"), "Thêm record", "DNS", params=idp,
@@ -436,7 +460,7 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
 
 
 # ---------------------------------------------------------------- wizard cài đặt lần đầu (Phase 4)
-def setup_paths(api: Api):
+def setup_paths(api: Api, jobs):
     csrf = [{"csrfToken": []}]
     gone = {"$ref": "./common.yaml#/components/responses/Gone"}
     conflict = {"$ref": "./common.yaml#/components/responses/Conflict"}
@@ -475,6 +499,16 @@ def setup_paths(api: Api):
                                                         "steps_done": ["code", "language", "admin", "access"]}),
                  desc="Chỉ SUPER_ADMIN do wizard tạo, đã bật TOTP (403 nếu chưa).")
     op["responses"]["410"] = gone
+    op = api.add("get", "/setup/stack", "getSetupStack", "Bước 4: trạng thái web stack (Nginx, PHP 8.3, lego)", "Setup",
+                 ok=ref("SetupStack"), ok_example=one(D.SETUP_STACK),
+                 desc="Chỉ SUPER_ADMIN do wizard tạo, đã bật TOTP. Bước này không bắt buộc để hoàn tất wizard.")
+    op["responses"]["410"] = gone
+    op = api.add("post", "/setup/stack:install", "installSetupStack", "Bước 4: cài web stack còn thiếu qua job", "Setup",
+                 job=True, job_example=jobs("setup.stack", "server", D.SERVERS[0]["uuid"],
+                                            ["software.install", "php.version.install", "software.install"]),
+                 desc="Cài phần còn thiếu trên server panel (bỏ qua phần đã cài): recipe `nginx`, PHP 8.3 qua "
+                      "`php.version.install` (tắt master mặc định của gói, D-68), recipe `lego`.")
+    op["responses"]["410"] = gone
     op = api.add("get", "/setup/quota", "getSetupQuota", "Bước 6: trạng thái disk quota của server panel", "Setup",
                  ok=ref("SetupQuota"), ok_example=one({"mode": "kernel", "server": D.server_ref(0), "facts_at": D.T2}))
     op["responses"]["410"] = gone
@@ -482,7 +516,7 @@ def setup_paths(api: Api):
                  ok=ref("SetupStatus"), ok_example=one({**st, "installed": True, "code_verified": True,
                                                         "admin_created": True, "admin_mfa_enabled": True,
                                                         "access": D.SETUP_ACCESS,
-                                                        "steps_done": ["code", "language", "admin", "access", "quota"]}),
+                                                        "steps_done": ["code", "language", "admin", "access", "stack", "quota"]}),
                  desc="Ghi `installed_at`; sau đó mọi endpoint ghi của wizard trả 410.")
     op["responses"]["410"] = gone
 
@@ -509,7 +543,7 @@ def admin_paths(api: Api):
     api.add("get", "/system/updates", "getSystemUpdates", "Phiên bản hiện tại, kênh và lệnh cập nhật", "System",
             ok=ref("SystemUpdates"), ok_example=one(D.SYSTEM_UPDATES),
             desc="Chỉ đọc. Cập nhật chạy bằng CLI root `itso update` trên server (D-65: release ký Ed25519, tự rollback).")
-    setup_paths(api)
+    setup_paths(api, jobs)
     # -- servers
     api.crud("/servers", "server", ref("Server"), "Servers", D.SERVERS, ops="lru", update_body=ref("ServerUpdate"),
              update_example={"accepting_new_accounts": False})
@@ -533,6 +567,15 @@ def admin_paths(api: Api):
             job_example=jobs("software.install", "server", srv["uuid"], ["software.install"]))
     api.add("get", "/servers/{id}/php-versions", "listPhpVersions", "Phiên bản PHP", "Software", params=idp,
             list_=True, ok=ref("PhpVersionInfo"), ok_example=page(D.PHP_VERSIONS))
+    api.add("post", "/servers/{id}/php-versions/{version}:{action}", "managePhpVersion", "Cài/gỡ phiên bản PHP", "Software",
+            params=idp + [Api.p("PhpVersionPath"), Api.p("PhpAction")], job=True,
+            job_example=jobs("php.version.install", "server", srv["uuid"], ["php.version.install"]),
+            desc="Phase 5 chỉ có PHP 8.3 từ kho Ubuntu 24.04 (D-68); phiên bản khác trả 409 `precondition_failed`. "
+                 "Gỡ khi còn website dùng → 409 `resource_locked`.")
+    api.add("post", "/servers/{id}/php-versions/{version}/extensions", "installPhpExtensions", "Cài extension PHP (allowlist)",
+            "Software", params=idp + [Api.p("PhpVersionPath")], body=ref("PhpExtensionsInput"),
+            body_example={"extensions": ["intl", "redis"]}, job=True,
+            job_example=jobs("php.extensions.install", "server", srv["uuid"], ["php.ext.install"]))
     api.add("get", "/servers/{id}/nginx", "getNginxGlobal", "Cấu hình Nginx toàn server", "Servers", params=idp,
             ok=ref("NginxGlobal"), ok_example=one(D.NGINX_GLOBAL))
     api.add("patch", "/servers/{id}/nginx", "updateNginxGlobal", "Đổi cấu hình Nginx toàn server", "Servers",
@@ -839,6 +882,8 @@ def common_components():
         "ValidationFailed": v422,
         "TooManyRequests": t429,
         "Gone": problem_resp(410, "setup_completed", "Wizard đã khóa", "Panel đã cài đặt xong; wizard không dùng lại được."),
+        "AgentUnavailable": problem_resp(503, "agent_unavailable", "Agent không kết nối",
+                                         "Không gọi được agent của server; thử lại sau."),
         "NotImplemented": problem_resp(501, "purge_not_available", "Chưa có ở phiên bản này",
                                        "Purge hiện thực ở Phase 8."),
     }
@@ -855,6 +900,8 @@ def common_components():
         "Version": qp("version", {"type": "integer", "minimum": 1}, "Số phiên bản gói.", True, "path"),
         "ServiceName": qp("service", {"type": "string", "pattern": "^[a-z0-9@.-]{2,64}$"}, "Tên dịch vụ trong allowlist.", True, "path"),
         "ServiceAction": qp("action", {"type": "string", "enum": ["start", "stop", "restart", "reload"]}, "Hành động.", True, "path"),
+        "PhpVersionPath": qp("version", {"type": "string", "pattern": "^[5-9]\\.[0-9]$"}, "Phiên bản PHP, ví dụ 8.3.", True, "path"),
+        "PhpAction": qp("action", {"type": "string", "enum": ["install", "remove"]}, "Hành động.", True, "path"),
         "SoftwareKey": qp("key", {"type": "string", "pattern": "^[a-z0-9.+-]+$"}, "Khóa recipe.", True, "path"),
         "SoftwareAction": qp("action", {"type": "string", "enum": ["install", "remove", "upgrade"]}, "Hành động.", True, "path"),
         "ContainerId": qp("container", {"type": "string", "pattern": "^[0-9a-f]{12,64}$"}, "ID container.", True, "path"),

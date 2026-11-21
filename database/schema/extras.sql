@@ -45,6 +45,7 @@ ALTER TABLE domains ADD CONSTRAINT domains_type_chk CHECK (type IN ('primary', '
 ALTER TABLE databases ADD CONSTRAINT databases_engine_chk CHECK (engine IN ('mariadb', 'mysql', 'postgresql'));
 ALTER TABLE sftp_accounts ADD CONSTRAINT sftp_protocol_chk CHECK (protocol IN ('sftp', 'ftps'));
 ALTER TABLE certificates ADD CONSTRAINT certificates_source_chk CHECK (source IN ('acme', 'upload'));
+ALTER TABLE acme_accounts ADD CONSTRAINT acme_accounts_key_chk CHECK ((key_location = 'agent' AND key_encrypted IS NULL) OR (key_location = 'db' AND key_encrypted IS NOT NULL));
 
 ALTER TABLE backup_destinations ADD CONSTRAINT backup_dest_type_chk CHECK (type IN ('local', 'sftp', 's3', 'rest'));
 ALTER TABLE restore_jobs ADD CONSTRAINT restore_mode_chk CHECK (mode IN ('new', 'overwrite'));

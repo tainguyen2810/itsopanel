@@ -10,7 +10,7 @@ user server package package_version account website domain certificate database 
 sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_record migration purge
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
-uptime_check impersonation scope channel git_repository git_deployment""".split())}
+uptime_check impersonation scope channel git_repository git_deployment dns_provider""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -192,7 +192,7 @@ WEBSITES = [
      "primary_domain": "shop.anphat.vn", "type": "php", "document_root": "public", "php_version": "8.2",
      "ssl_mode": "acme", "waf_enabled": True, "domains_count": 1, "certificate_expires_at": EXP, **do(), **ts()},
     {"uuid": u("website", 3), "hosting_account": acc_ref(1), "server": server_ref(0),
-     "primary_domain": "marketing.itso.vn", "type": "static", "document_root": "dist", "php_version": None,
+     "primary_domain": "marketing.itso.vn", "type": "static", "document_root": "public/dist", "php_version": None,
      "ssl_mode": "acme", "waf_enabled": False, "domains_count": 1, "certificate_expires_at": EXP, **do(),
      **ts()},
     {"uuid": u("website", 4), "hosting_account": acc_ref(2), "server": server_ref(2), "primary_domain": "lehoa.blog",
@@ -274,6 +274,11 @@ CRON_RUNS = [
      "status": "succeeded", "output_tail": "Running scheduled command: emails:send"},
 ]
 
+DNS_PROVIDERS = [
+    {"uuid": u("dns_provider", 1), "type": "cloudflare", "name": "Cloudflare IT", "zones_count": 1,
+     "account_label": "IT An Phát", **ts()},
+]
+
 DNS_ZONES = [
     {"uuid": u("dns_zone", 1), "name": "anphat.vn", "provider": "cloudflare", "hosting_account": acc_ref(0),
      "records_count": 6, **ts()},
@@ -351,7 +356,7 @@ JOBS = [
      "links": {"self": f"/api/v1/admin/jobs/{u('job', 1)}", "events": f"/api/v1/admin/jobs/{u('job', 1)}/events"}},
     {"uuid": u("job", 2), "type": "website.create", "state": "running", "progress": 60,
      "resource": {"type": "website", "uuid": WEBSITES[1]["uuid"]},
-     "steps": [{"seq": 1, "op": "fs.mkdir", "state": "succeeded", "started_at": T2, "finished_at": T2},
+     "steps": [{"seq": 1, "op": "fs.site_layout.ensure", "state": "succeeded", "started_at": T2, "finished_at": T2},
                {"seq": 2, "op": "php.pool.apply", "state": "succeeded", "started_at": T2, "finished_at": T2},
                {"seq": 3, "op": "nginx.vhost.apply", "state": "running", "started_at": T2, "finished_at": None},
                {"seq": 4, "op": "cert.issue", "state": "pending", "started_at": None, "finished_at": None}],
@@ -578,6 +583,12 @@ SETUP_ACCESS = {"panel_domain": "panel.itso.local", "panel_port": 8443, "entranc
 SETUP_STATUS = {"installed": False, "code_verified": False, "admin_created": False, "admin_mfa_enabled": False,
                 "locale": "vi", "timezone": "Asia/Ho_Chi_Minh", "access": None, "steps_done": []}
 
+SETUP_STACK = {"server": server_ref(0), "ready": False, "job_uuid": None, "components": [
+    {"key": "nginx", "name": "Nginx", "installed_version": "1.24.0", "state": "installed"},
+    {"key": "php8.3", "name": "PHP 8.3 (FPM)", "installed_version": None, "state": "available"},
+    {"key": "lego", "name": "lego (ACME)", "installed_version": None, "state": "available"},
+]}
+
 SERVICES = [
     {"name": "nginx", "active": True, "enabled": True, "version": "1.26.2", "since": T0},
     {"name": "php8.3-fpm", "active": True, "enabled": True, "version": "8.3.13", "since": T0},
@@ -732,7 +743,7 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
             WEBSITES.append({
                 "uuid": u("website", site_n), "hosting_account": acc_ref(acc_idx),
                 "server": ACCOUNTS[acc_idx]["server"], "primary_domain": d, "type": wtype,
-                "document_root": "dist" if wtype == "static" else "public",
+                "document_root": "public/dist" if wtype == "static" else "public",
                 "php_version": php if wtype == "php" else None, "ssl_mode": "acme", "waf_enabled": wtype == "php",
                 "domains_count": 1, "certificate_expires_at": EXP, **do(spec=1, obs=1),
                 **ts(_DAY[i], T1)})
@@ -815,7 +826,7 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
         ("software.install", "queued", 0, "server", SERVERS[1]["uuid"], 1,
          [("software.install", "pending")], None),
         ("website.create", "succeeded", 100, "website", WEBSITES[-1]["uuid"], 1,
-         [("fs.mkdir", "succeeded"), ("php.pool.apply", "succeeded"), ("nginx.vhost.apply", "succeeded"),
+         [("fs.site_layout.ensure", "succeeded"), ("php.pool.apply", "succeeded"), ("nginx.vhost.apply", "succeeded"),
           ("cert.issue", "succeeded")], None),
         ("hosting_account.suspend", "succeeded", 100, "hosting_account", ACCOUNTS[2]["uuid"], 2,
          [("account.suspend", "succeeded")], None),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Audit;
 
 use App\Auth\SessionKeys;
+use App\Domain\Jobs\Secrets;
 use App\Models\AuditLog;
 use App\Models\ImpersonationSession;
 use App\Models\User;
@@ -18,7 +19,7 @@ use Illuminate\Http\Request;
 final class AuditLogger
 {
     private const SECRET_KEYS = ['password', 'password_hash', 'current_password', 'new_password', 'token', 'token_hash',
-        'secret', 'secret_encrypted', 'recovery_codes', 'ticket'];
+        'secret', 'secret_encrypted', 'recovery_codes', 'ticket', 'private_key_pem', 'private_key', 'api_token', 'credentials'];
 
     public function __construct(private readonly Request $request) {}
 
@@ -50,6 +51,9 @@ final class AuditLogger
     public static function redact(array $data): array
     {
         foreach ($data as $k => $v) {
+            if (Secrets::isRef($v)) {
+                continue; // tham chiếu bí mật (JobRunner thay khi gọi agent) không phải giá trị bí mật
+            }
             if (is_string($k) && in_array(strtolower($k), self::SECRET_KEYS, true)) {
                 $data[$k] = '[REDACTED]';
             } elseif (is_array($v)) {

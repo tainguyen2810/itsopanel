@@ -12,6 +12,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 cp packaging/systemd/* "$tmp/"
 cp packaging/systemd/itso-worker@.service "$tmp/itso-worker@1.service"
+cp packaging/systemd/itso-php@.service "$tmp/itso-php@8.3-lehoa.service"
 g=agent/internal/ops/testdata/golden
 cp "$g/itso-acct-20001.slice.limits.conf" "$tmp/itso-acct-20001.slice"
 cp "$g/user-20001.slice.conf" "$tmp/user-20001.slice"

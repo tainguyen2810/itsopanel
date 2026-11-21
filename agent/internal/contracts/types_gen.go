@@ -18,6 +18,7 @@ const (
 	OpBackupRestore          = "backup.restore"
 	OpBackupRestoreTest      = "backup.restore_test"
 	OpBackupRun              = "backup.run"
+	OpCertInspect            = "cert.inspect"
 	OpCertInstall            = "cert.install"
 	OpCertIssue              = "cert.issue"
 	OpCertRemove             = "cert.remove"
@@ -56,9 +57,11 @@ const (
 	OpFsMkdir                = "fs.mkdir"
 	OpFsMove                 = "fs.move"
 	OpFsRead                 = "fs.read"
+	OpFsSiteLayoutEnsure     = "fs.site_layout.ensure"
 	OpFsWrite                = "fs.write"
 	OpGitDeploy              = "git.deploy"
 	OpGitRollback            = "git.rollback"
+	OpLogTail                = "log.tail"
 	OpMalwareRestore         = "malware.restore"
 	OpMalwareScan            = "malware.scan"
 	OpMetricsCgroup          = "metrics.cgroup"
@@ -70,11 +73,14 @@ const (
 	OpMigrateVerify          = "migrate.verify"
 	OpNginxGlobalApply       = "nginx.global.apply"
 	OpNginxVhostApply        = "nginx.vhost.apply"
+	OpNginxVhostInspect      = "nginx.vhost.inspect"
 	OpNginxVhostRemove       = "nginx.vhost.remove"
 	OpOpCancel               = "op.cancel"
+	OpPHPExtInstall          = "php.ext.install"
 	OpPHPPoolApply           = "php.pool.apply"
 	OpPHPPoolRemove          = "php.pool.remove"
 	OpPHPVersionInstall      = "php.version.install"
+	OpPHPVersionRemove       = "php.version.remove"
 	OpPtyOpen                = "pty.open"
 	OpQuotaApply             = "quota.apply"
 	OpQuotaReport            = "quota.report"
@@ -124,6 +130,12 @@ type HeaderValue string
 // PHPVersion — kiểu PHPVersion trong contracts/agent-ops.
 type PHPVersion string
 
+// URLPath — Đường dẫn URL cho redirect/location: không khoảng trắng, dấu nháy, $, ;, {}.
+type URLPath string
+
+// RedirectTarget — URL đích redirect (http/https, domain chữ thường, path an toàn).
+type RedirectTarget string
+
 // CIDR — kiểu CIDR trong contracts/agent-ops.
 type CIDR string
 
@@ -142,7 +154,7 @@ type SHA256 string
 // Hostname — Hostname máy chủ (RFC 1123, chữ thường).
 type Hostname string
 
-// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng".
+// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng", "nginx", "php8.3", "lego".
 type Recipe string
 
 // QuotaMode — kiểu QuotaMode trong contracts/agent-ops. Giá trị: "kernel", "soft".
@@ -170,6 +182,27 @@ type Limits struct {
 type Account struct {
 	Username Username `json:"username"`
 	UID      UID      `json:"uid"`
+}
+
+// Email — kiểu Email trong contracts/agent-ops.
+type Email string
+
+// PHPExtension — kiểu PHPExtension trong contracts/agent-ops. Giá trị: "bcmath", "curl", "gd", "imagick", "intl", "mbstring", "mysql", "opcache", "pgsql", "redis", "soap", "sqlite3", "xml", "zip".
+type PHPExtension string
+
+// SiteType — kiểu SiteType trong contracts/agent-ops. Giá trị: "php", "static", "proxy".
+type SiteType string
+
+// ACMEDirectory — kiểu ACMEDirectory trong contracts/agent-ops. Giá trị: "letsencrypt", "letsencrypt-staging", "pebble".
+type ACMEDirectory string
+
+// CertInfo — kiểu CertInfo trong contracts/agent-ops.
+type CertInfo struct {
+	CertUUID  UUID     `json:"cert_uuid"`
+	Issuer    string   `json:"issuer"`
+	NotBefore string   `json:"not_before"`
+	NotAfter  string   `json:"not_after"`
+	Domains   []Domain `json:"domains"`
 }
 
 // DBEngine — kiểu DBEngine trong contracts/agent-ops. Giá trị: "mariadb", "mysql", "postgresql".
@@ -394,35 +427,46 @@ type BackupRunResult struct {
 	Size       Bytes  `json:"size"`
 }
 
+// CertInspectParams — params của op cert.inspect (ops/cert.inspect.schema.json).
+type CertInspectParams struct {
+	CertUUID UUID `json:"cert_uuid"`
+}
+
+// CertInspectResult — result của op cert.inspect (ops/cert.inspect.schema.json).
+type CertInspectResult struct {
+	Exists bool            `json:"exists"`
+	Cert   json.RawMessage `json:"cert"`
+}
+
 // CertInstallParams — params của op cert.install (ops/cert.install.schema.json).
 type CertInstallParams struct {
 	Account        Account `json:"account"`
 	WebsiteUUID    UUID    `json:"website_uuid"`
+	CertUUID       UUID    `json:"cert_uuid"`
 	CertificatePem string  `json:"certificate_pem"`
-	PrivateKeyRef  UUID    `json:"private_key_ref"`
+	PrivateKeyPem  string  `json:"private_key_pem"`
 }
 
 // CertInstallResult — result của op cert.install (ops/cert.install.schema.json).
 type CertInstallResult struct {
-	CertUUID UUID   `json:"cert_uuid"`
-	NotAfter string `json:"not_after"`
 }
 
 // CertIssueParams — params của op cert.issue (ops/cert.issue.schema.json).
 type CertIssueParams struct {
 	Account     Account  `json:"account"`
 	WebsiteUUID UUID     `json:"website_uuid"`
+	CertUUID    UUID     `json:"cert_uuid"`
+	SiteDir     Domain   `json:"site_dir"`
 	Domains     []Domain `json:"domains"`
-	// Giá trị: "http-01", "dns-01".
-	Challenge       string `json:"challenge"`
-	ACMEAccountUUID UUID   `json:"acme_account_uuid"`
+	// Giá trị: "http-01".
+	Challenge string        `json:"challenge"`
+	Email     Email         `json:"email"`
+	Directory ACMEDirectory `json:"directory"`
+	Renew     bool          `json:"renew"`
 }
 
 // CertIssueResult — result của op cert.issue (ops/cert.issue.schema.json).
 type CertIssueResult struct {
-	CertUUID UUID   `json:"cert_uuid"`
-	NotAfter string `json:"not_after"`
-	Issuer   string `json:"issuer"`
 }
 
 // CertRemoveParams — params của op cert.remove (ops/cert.remove.schema.json).
@@ -771,6 +815,18 @@ type FsReadResult struct {
 	Truncated  bool   `json:"truncated"`
 }
 
+// FsSiteLayoutEnsureParams — params của op fs.site_layout.ensure (ops/fs.site_layout.ensure.schema.json).
+type FsSiteLayoutEnsureParams struct {
+	Account Account `json:"account"`
+	SiteDir Domain  `json:"site_dir"`
+}
+
+// FsSiteLayoutEnsureResult — result của op fs.site_layout.ensure (ops/fs.site_layout.ensure.schema.json).
+type FsSiteLayoutEnsureResult struct {
+	Path    string `json:"path"`
+	Created bool   `json:"created"`
+}
+
 // FsWriteParams — params của op fs.write (ops/fs.write.schema.json).
 type FsWriteParams struct {
 	Account    Account `json:"account"`
@@ -784,6 +840,21 @@ type FsWriteParams struct {
 type FsWriteResult struct {
 	SHA256 SHA256 `json:"sha256"`
 	Size   Bytes  `json:"size"`
+}
+
+// LogTailParams — params của op log.tail (ops/log.tail.schema.json).
+type LogTailParams struct {
+	Account Account `json:"account"`
+	SiteDir Domain  `json:"site_dir"`
+	// Giá trị: "access", "error".
+	Kind  string `json:"kind"`
+	Lines int64  `json:"lines"`
+}
+
+// LogTailResult — result của op log.tail (ops/log.tail.schema.json).
+type LogTailResult struct {
+	Lines     []string `json:"lines"`
+	Truncated bool     `json:"truncated"`
 }
 
 // MetricsCgroupParams — params của op metrics.cgroup (ops/metrics.cgroup.schema.json).
@@ -900,25 +971,41 @@ type NginxGlobalApplyResult struct {
 	// Giá trị: "ok".
 	NginxTest string `json:"nginx_test"`
 	Reloaded  bool   `json:"reloaded"`
+	Changed   bool   `json:"changed"`
 }
 
 // NginxVhostApplyParamsTLS được sinh từ schema.
 type NginxVhostApplyParamsTLS struct {
-	CertUUID UUID  `json:"cert_uuid"`
-	HSTS     *bool `json:"hsts,omitempty"`
+	CertUUID   UUID `json:"cert_uuid"`
+	HSTS       bool `json:"hsts"`
+	ForceHTTPS bool `json:"force_https"`
+}
+
+// NginxVhostApplyParamsRedirectsItem được sinh từ schema.
+type NginxVhostApplyParamsRedirectsItem struct {
+	From URLPath        `json:"from"`
+	To   RedirectTarget `json:"to"`
+	// Giá trị: "301", "302".
+	Code string `json:"code"`
 }
 
 // NginxVhostApplyParams — params của op nginx.vhost.apply (ops/nginx.vhost.apply.schema.json).
 type NginxVhostApplyParams struct {
-	Account           Account                   `json:"account"`
-	WebsiteUUID       UUID                      `json:"website_uuid"`
-	ServerNames       []Domain                  `json:"server_names"`
-	DocumentRoot      RelPath                   `json:"document_root"`
-	PHPSocket         *string                   `json:"php_socket,omitempty"`
-	TLS               *NginxVhostApplyParamsTLS `json:"tls,omitempty"`
-	ClientMaxBodySize *NginxSize                `json:"client_max_body_size,omitempty"`
-	ExtraHeaders      map[string]HeaderValue    `json:"extra_headers,omitempty"`
-	Suspended         *bool                     `json:"suspended,omitempty"`
+	Account           Account                              `json:"account"`
+	WebsiteUUID       UUID                                 `json:"website_uuid"`
+	SiteDir           Domain                               `json:"site_dir"`
+	Type              SiteType                             `json:"type"`
+	ServerNames       []Domain                             `json:"server_names"`
+	RedirectNames     []Domain                             `json:"redirect_names,omitempty"`
+	DocumentRoot      RelPath                              `json:"document_root"`
+	PHPSocket         *string                              `json:"php_socket,omitempty"`
+	ProxyPort         *int64                               `json:"proxy_port,omitempty"`
+	TLS               *NginxVhostApplyParamsTLS            `json:"tls,omitempty"`
+	Http2             *bool                                `json:"http2,omitempty"`
+	ClientMaxBodySize *NginxSize                           `json:"client_max_body_size,omitempty"`
+	ExtraHeaders      map[string]HeaderValue               `json:"extra_headers,omitempty"`
+	Redirects         []NginxVhostApplyParamsRedirectsItem `json:"redirects,omitempty"`
+	Suspended         *bool                                `json:"suspended,omitempty"`
 }
 
 // NginxVhostApplyResult — result của op nginx.vhost.apply (ops/nginx.vhost.apply.schema.json).
@@ -927,6 +1014,19 @@ type NginxVhostApplyResult struct {
 	// Giá trị: "ok".
 	NginxTest string `json:"nginx_test"`
 	Reloaded  bool   `json:"reloaded"`
+	Changed   bool   `json:"changed"`
+}
+
+// NginxVhostInspectParams — params của op nginx.vhost.inspect (ops/nginx.vhost.inspect.schema.json).
+type NginxVhostInspectParams struct {
+	WebsiteUUID UUID `json:"website_uuid"`
+}
+
+// NginxVhostInspectResult — result của op nginx.vhost.inspect (ops/nginx.vhost.inspect.schema.json).
+type NginxVhostInspectResult struct {
+	Exists bool    `json:"exists"`
+	Config *string `json:"config"`
+	SHA256 *string `json:"sha256"`
 }
 
 // NginxVhostRemoveParams — params của op nginx.vhost.remove (ops/nginx.vhost.remove.schema.json).
@@ -950,10 +1050,23 @@ type OpCancelResult struct {
 	Cancelled bool `json:"cancelled"`
 }
 
+// PHPExtInstallParams — params của op php.ext.install (ops/php.ext.install.schema.json).
+type PHPExtInstallParams struct {
+	Version    PHPVersion     `json:"version"`
+	Extensions []PHPExtension `json:"extensions"`
+}
+
+// PHPExtInstallResult — result của op php.ext.install (ops/php.ext.install.schema.json).
+type PHPExtInstallResult struct {
+	Installed []PHPExtension `json:"installed"`
+	Changed   bool           `json:"changed"`
+}
+
 // PHPPoolApplyParams — params của op php.pool.apply (ops/php.pool.apply.schema.json).
 type PHPPoolApplyParams struct {
 	Account           Account    `json:"account"`
 	WebsiteUUID       UUID       `json:"website_uuid"`
+	SiteDir           Domain     `json:"site_dir"`
 	Version           PHPVersion `json:"version"`
 	PmMaxChildren     int64      `json:"pm_max_children"`
 	MemoryLimit       NginxSize  `json:"memory_limit"`
@@ -965,7 +1078,9 @@ type PHPPoolApplyParams struct {
 // PHPPoolApplyResult — result của op php.pool.apply (ops/php.pool.apply.schema.json).
 type PHPPoolApplyResult struct {
 	Socket   string `json:"socket"`
+	Unit     string `json:"unit"`
 	Reloaded bool   `json:"reloaded"`
+	Changed  bool   `json:"changed"`
 }
 
 // PHPPoolRemoveParams — params của op php.pool.remove (ops/php.pool.remove.schema.json).
@@ -981,13 +1096,24 @@ type PHPPoolRemoveResult struct {
 
 // PHPVersionInstallParams — params của op php.version.install (ops/php.version.install.schema.json).
 type PHPVersionInstallParams struct {
-	Version    PHPVersion `json:"version"`
-	Extensions []string   `json:"extensions"`
+	Version    PHPVersion     `json:"version"`
+	Extensions []PHPExtension `json:"extensions"`
 }
 
 // PHPVersionInstallResult — result của op php.version.install (ops/php.version.install.schema.json).
 type PHPVersionInstallResult struct {
 	Installed bool `json:"installed"`
+	Changed   bool `json:"changed"`
+}
+
+// PHPVersionRemoveParams — params của op php.version.remove (ops/php.version.remove.schema.json).
+type PHPVersionRemoveParams struct {
+	Version PHPVersion `json:"version"`
+}
+
+// PHPVersionRemoveResult — result của op php.version.remove (ops/php.version.remove.schema.json).
+type PHPVersionRemoveResult struct {
+	Removed bool `json:"removed"`
 }
 
 // QuotaApplyParams — params của op quota.apply (ops/quota.apply.schema.json).
@@ -1191,6 +1317,8 @@ func NewParams(op string) any {
 		return new(BackupRestoreTestParams)
 	case OpBackupRun:
 		return new(BackupRunParams)
+	case OpCertInspect:
+		return new(CertInspectParams)
 	case OpCertInstall:
 		return new(CertInstallParams)
 	case OpCertIssue:
@@ -1247,8 +1375,12 @@ func NewParams(op string) any {
 		return new(FsMoveParams)
 	case OpFsRead:
 		return new(FsReadParams)
+	case OpFsSiteLayoutEnsure:
+		return new(FsSiteLayoutEnsureParams)
 	case OpFsWrite:
 		return new(FsWriteParams)
+	case OpLogTail:
+		return new(LogTailParams)
 	case OpMetricsCgroup:
 		return new(MetricsCgroupParams)
 	case OpMetricsSnapshot:
@@ -1267,16 +1399,22 @@ func NewParams(op string) any {
 		return new(NginxGlobalApplyParams)
 	case OpNginxVhostApply:
 		return new(NginxVhostApplyParams)
+	case OpNginxVhostInspect:
+		return new(NginxVhostInspectParams)
 	case OpNginxVhostRemove:
 		return new(NginxVhostRemoveParams)
 	case OpOpCancel:
 		return new(OpCancelParams)
+	case OpPHPExtInstall:
+		return new(PHPExtInstallParams)
 	case OpPHPPoolApply:
 		return new(PHPPoolApplyParams)
 	case OpPHPPoolRemove:
 		return new(PHPPoolRemoveParams)
 	case OpPHPVersionInstall:
 		return new(PHPVersionInstallParams)
+	case OpPHPVersionRemove:
+		return new(PHPVersionRemoveParams)
 	case OpQuotaApply:
 		return new(QuotaApplyParams)
 	case OpQuotaReport:
@@ -1332,6 +1470,8 @@ func NewResult(op string) any {
 		return new(BackupRestoreTestResult)
 	case OpBackupRun:
 		return new(BackupRunResult)
+	case OpCertInspect:
+		return new(CertInspectResult)
 	case OpCertInstall:
 		return new(CertInstallResult)
 	case OpCertIssue:
@@ -1388,8 +1528,12 @@ func NewResult(op string) any {
 		return new(FsMoveResult)
 	case OpFsRead:
 		return new(FsReadResult)
+	case OpFsSiteLayoutEnsure:
+		return new(FsSiteLayoutEnsureResult)
 	case OpFsWrite:
 		return new(FsWriteResult)
+	case OpLogTail:
+		return new(LogTailResult)
 	case OpMetricsCgroup:
 		return new(MetricsCgroupResult)
 	case OpMetricsSnapshot:
@@ -1408,16 +1552,22 @@ func NewResult(op string) any {
 		return new(NginxGlobalApplyResult)
 	case OpNginxVhostApply:
 		return new(NginxVhostApplyResult)
+	case OpNginxVhostInspect:
+		return new(NginxVhostInspectResult)
 	case OpNginxVhostRemove:
 		return new(NginxVhostRemoveResult)
 	case OpOpCancel:
 		return new(OpCancelResult)
+	case OpPHPExtInstall:
+		return new(PHPExtInstallResult)
 	case OpPHPPoolApply:
 		return new(PHPPoolApplyResult)
 	case OpPHPPoolRemove:
 		return new(PHPPoolRemoveResult)
 	case OpPHPVersionInstall:
 		return new(PHPVersionInstallResult)
+	case OpPHPVersionRemove:
+		return new(PHPVersionRemoveResult)
 	case OpQuotaApply:
 		return new(QuotaApplyResult)
 	case OpQuotaReport:

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Presenters;
 
 use App\Auth\Realm;
+use App\Models\Certificate;
+use App\Models\DnsZone;
 use App\Models\HostingAccount;
 use App\Models\HostingPackage;
 use App\Models\Job;
@@ -12,7 +14,9 @@ use App\Models\JobLog;
 use App\Models\JobStep;
 use App\Models\Server;
 use App\Models\User;
+use App\Models\Website;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** Job / JobLog theo contracts/openapi/common.yaml. */
 final class JobPresenter
@@ -23,6 +27,9 @@ final class JobPresenter
         'server' => Server::class,
         'user' => User::class,
         'hosting_package' => HostingPackage::class,
+        'website' => Website::class,
+        'certificate' => Certificate::class,
+        'dns_zone' => DnsZone::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */
@@ -31,7 +38,10 @@ final class JobPresenter
         if ($type === null || $id === null || ! isset(self::RESOURCE_MODELS[$type])) {
             return null;
         }
-        $uuid = (self::RESOURCE_MODELS[$type])::query()->whereKey($id)->value('uuid');
+        $m = self::RESOURCE_MODELS[$type];
+        // Tài nguyên đã xóa mềm (website sau website.delete) vẫn hiện trong lịch sử job.
+        $q = in_array(SoftDeletes::class, class_uses_recursive($m), true) ? $m::withTrashed() : $m::query();
+        $uuid = $q->whereKey($id)->value('uuid');
 
         return is_string($uuid) ? ['type' => $type, 'uuid' => $uuid] : null;
     }

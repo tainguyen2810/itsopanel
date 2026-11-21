@@ -89,7 +89,7 @@ func run(o options, log *slog.Logger) error {
 
 	// Host: chỉ đọc /proc, /sys của máy (kể cả sandbox, để số liệu là thật).
 	deps := &ops.Deps{Run: platform.ExecRunner{}, FS: platform.NewFS(o.root, false), Host: platform.NewFS("/", true),
-		AuditPath: o.auditLog, Sandbox: o.sandbox, CPUSample: 250 * time.Millisecond}
+		AuditPath: o.auditLog, Sandbox: o.sandbox, CPUSample: 250 * time.Millisecond, AcmePebble: pol.File.AcmePebble}
 	if o.sandbox {
 		deps.FS = platform.NewFS(o.root, os.Geteuid() != 0)
 		deps.Run = ops.SandboxRunner(deps)

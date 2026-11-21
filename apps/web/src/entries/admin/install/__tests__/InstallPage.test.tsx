@@ -84,11 +84,16 @@ describe('Wizard cài đặt dùng API thật', () => {
     });
     next();
 
-    for (const later of ['Stack', 'Bảo mật']) {
-      await heading(later);
-      expect(screen.getByText('Chưa có ở bản này')).toBeInTheDocument();
-      next();
-    }
+    // Bước 4 (Phase 5): trạng thái web stack và cài phần còn thiếu qua job, theo dõi ngay trong wizard.
+    await heading('Stack');
+    expect(await screen.findByText('Web stack còn thiếu thành phần')).toBeInTheDocument();
+    expect(screen.getByText('PHP 8.3 (FPM)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cài phần còn thiếu' }));
+    expect(await screen.findByRole('region', { name: 'Cài web stack' })).toBeInTheDocument();
+    next();
+    await heading('Bảo mật');
+    expect(screen.getByText('Chưa có ở bản này')).toBeInTheDocument();
+    next();
     await heading('Quota');
     expect(await screen.findByText('Disk quota của kernel đang bật')).toBeInTheDocument();
     next();
@@ -105,6 +110,8 @@ describe('Wizard cài đặt dùng API thật', () => {
       expect.arrayContaining([
         'POST /api/v1/admin/setup/code:verify',
         'PUT /api/v1/admin/setup/preferences',
+        'GET /api/v1/admin/setup/stack',
+        'POST /api/v1/admin/setup/stack:install',
         'POST /api/v1/admin/setup/admin',
         'POST /api/v1/auth/mfa/totp:enroll',
         'POST /api/v1/auth/mfa/totp:confirm',

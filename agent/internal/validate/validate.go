@@ -97,13 +97,17 @@ func Service(name string) error {
 	return nil
 }
 
-// Recipes là allowlist recipe phần mềm → gói apt (Phase 4: gói nền).
+// Recipes là allowlist recipe phần mềm → gói apt (Phase 4: gói nền; Phase 5: web stack từ kho Ubuntu 24.04, D-68/D-69).
+// Gói đầu tiên dùng để đọc phiên bản đã cài.
 var Recipes = map[string][]string{
 	"acl":       {"acl"},
 	"quota":     {"quota"},
 	"nftables":  {"nftables"},
 	"restic":    {"restic"},
 	"stress-ng": {"stress-ng"},
+	"nginx":     {"nginx"},
+	"php8.3":    {"php8.3-fpm", "php8.3-cli", "php8.3-common", "php8.3-opcache", "php8.3-mbstring", "php8.3-xml", "php8.3-curl", "php8.3-zip"},
+	"lego":      {"lego"},
 }
 
 // Recipe trả danh sách gói apt của recipe.

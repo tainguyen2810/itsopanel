@@ -1,0 +1,39 @@
+# Sinh bởi itso-agent (nginx.global.apply, D-67). Không sửa tay: sẽ bị ghi đè.
+# Bản gốc của gói nginx được giữ ở /etc/nginx/nginx.conf.itso-orig.
+user www-data;
+worker_processes {{.WorkerProcesses}};
+pid /run/nginx.pid;
+error_log /var/log/nginx/error.log;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections {{.WorkerConnections}};
+}
+
+http {
+    sendfile on;
+    tcp_nopush on;
+    types_hash_max_size 2048;
+    server_tokens {{if .ServerTokens}}on{{else}}off{{end}};
+    client_max_body_size {{.ClientMaxBodySize}};
+    # http2 mặc định cho vhost: {{if .HTTP2}}on{{else}}off{{end}} (nginx 1.24 bật http2 theo từng listen, panel truyền vào nginx.vhost.apply).
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    access_log /var/log/nginx/access.log;
+
+    gzip {{if .Gzip}}on{{else}}off{{end}};
+{{- if .Gzip}}
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 5;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+{{- end}}
+
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}

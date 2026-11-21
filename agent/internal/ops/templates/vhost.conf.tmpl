@@ -1,0 +1,118 @@
+# Sinh bởi itso-agent (nginx.vhost.apply, D-67). Không sửa tay: sẽ bị ghi đè.
+# website {{.WebsiteUUID}} · account {{.User}} · type {{.Type}}{{if .Suspended}} · SUSPENDED{{end}}
+{{- define "acme"}}
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/lib/itso/acme/webroot;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+{{- end}}
+{{- define "tls"}}
+    listen 443 ssl{{if .HTTP2}} http2{{end}};
+{{- if .IPv6}}
+    listen [::]:443 ssl{{if .HTTP2}} http2{{end}};
+{{- end}}
+    ssl_certificate /etc/itso/certs/{{.CertUUID}}/fullchain.pem;
+    ssl_certificate_key /etc/itso/certs/{{.CertUUID}}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:itso_ssl:10m;
+{{- end}}
+{{- if .ForceHTTPS}}
+
+server {
+    listen 80;
+{{- if .IPv6}}
+    listen [::]:80;
+{{- end}}
+    server_name {{join .ServerNames}};
+{{- template "acme"}}
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+{{- end}}
+{{- if .RedirectNames}}
+
+server {
+    listen 80;
+{{- if .IPv6}}
+    listen [::]:80;
+{{- end}}
+{{- if .CertUUID}}{{template "tls" .}}{{end}}
+    server_name {{join .RedirectNames}};
+{{- template "acme"}}
+    location / {
+        return 301 {{.Scheme}}://{{.Primary}}$request_uri;
+    }
+}
+{{- end}}
+
+server {
+{{- if not .ForceHTTPS}}
+    listen 80;
+{{- if .IPv6}}
+    listen [::]:80;
+{{- end}}
+{{- end}}
+{{- if .CertUUID}}{{template "tls" .}}
+{{- if .HSTS}}
+    add_header Strict-Transport-Security "max-age=31536000" always;
+{{- end}}
+{{- end}}
+    server_name {{join .ServerNames}};
+    root {{.Root}};
+    index {{if eq .Type "php"}}index.php {{end}}index.html index.htm;
+    access_log {{.LogDir}}/access.log;
+    error_log {{.LogDir}}/error.log warn;
+    client_max_body_size {{.BodySize}};
+    disable_symlinks if_not_owner from=$document_root;
+{{- range .Headers}}
+    add_header {{.Name}} "{{.Value}}" always;
+{{- end}}
+{{- template "acme"}}
+{{- if .Suspended}}
+    error_page 503 /itso-suspended.html;
+    location = /itso-suspended.html {
+        root /var/lib/itso/suspended;
+        internal;
+    }
+    location / {
+        return 503;
+    }
+{{- else}}
+    location ~ /\.(?!well-known/) {
+        deny all;
+    }
+{{- range .Redirects}}
+    location = {{.From}} {
+        return {{.Code}} {{.To}};
+    }
+{{- end}}
+{{- if eq .Type "php"}}
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        fastcgi_pass unix:{{.Socket}};
+    }
+{{- else if eq .Type "proxy"}}
+    location / {
+        proxy_pass http://127.0.0.1:{{.ProxyPort}};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+{{- else}}
+    location / {
+        try_files $uri $uri/ =404;
+    }
+{{- end}}
+{{- end}}
+}

@@ -224,13 +224,26 @@
       "domain_remove": "Remove website domain",
       "nginx_update": "Update website Nginx settings",
       "php_update": "Update website PHP settings",
-      "waf_update": "Update website WAF"
+      "waf_update": "Update website WAF",
+      "domain": {
+        "add": "Add domain to website",
+        "remove": "Remove domain from website"
+      },
+      "nginx": {
+        "update": "Update website Nginx settings"
+      },
+      "php": {
+        "update": "Update website PHP settings"
+      }
     },
     "job": {
       "cancel": "Job cancelled"
     },
     "nginx": {
-      "update": "Update Nginx configuration"
+      "update": "Update Nginx configuration",
+      "global": {
+        "update": "Update server-wide Nginx settings"
+      }
     },
     "container": {
       "start": "Start container",
@@ -256,7 +269,8 @@
     "certificate": {
       "issue": "Issue SSL certificate",
       "upload": "Install uploaded certificate",
-      "delete": "Remove SSL certificate"
+      "delete": "Remove SSL certificate",
+      "renew": "Renew SSL certificate"
     },
     "database_user": {
       "create": "Create database user",
@@ -348,6 +362,18 @@
     "api_token": {
       "create": "Create API token",
       "revoke": "Revoke API token"
+    },
+    "php": {
+      "extensions": {
+        "install": "Install PHP extensions"
+      },
+      "version": {
+        "install": "Install PHP version",
+        "remove": "Remove PHP version"
+      }
+    },
+    "setup": {
+      "stack": "Install web stack"
     }
   },
   "ops": {
@@ -500,5 +526,75 @@
   },
   "wizard": {
     "stepOf": "Step {{current}} of {{total}}"
+  },
+  "jobErrors": {
+    "generic": "Task failed",
+    "config_test_failed": {
+      "title": "The new configuration failed its check (nginx -t / php-fpm -t)",
+      "hint": "The panel rolled back to the previous configuration, so the website keeps running as before. Read the error line below, fix the configuration (usually custom Nginx config) and save again."
+    },
+    "precondition_failed": {
+      "title": "A precondition is not met",
+      "hint": "For example the domain does not point to this server so a certificate cannot be issued, or the version is not supported. Check DNS and the requirements, then try again."
+    },
+    "invalid_params": {
+      "title": "Invalid data",
+      "hint": "The server or the provider (Cloudflare) rejected the data. Fix it according to the message below."
+    },
+    "dependency_unavailable": {
+      "title": "A dependency is not responding",
+      "hint": "Temporary error (Cloudflare, Let's Encrypt, apt…). The panel retries automatically; if it keeps failing, try again in a few minutes."
+    },
+    "agent_unavailable": {
+      "title": "Cannot reach the agent on the server",
+      "hint": "Check the itso-agent service on the server, then try again."
+    },
+    "quota_exceeded": {
+      "title": "Package limit exceeded",
+      "hint": "Upgrade the package or free up resources, then try again."
+    },
+    "busy": {
+      "title": "The server is busy",
+      "hint": "Another operation holds a lock (for example apt). Try again in a few minutes."
+    },
+    "deadline_exceeded": {
+      "title": "Timed out",
+      "hint": "The step ran too long and was stopped. Try again; if it repeats, check the server load."
+    },
+    "timed_out": {
+      "title": "Timed out",
+      "hint": "The task exceeded its time limit. Try again; if it repeats, check the server load."
+    },
+    "already_exists": {
+      "title": "Already exists",
+      "hint": "An object with the same name but a different configuration exists on the server. Rename it or remove the old one."
+    },
+    "not_found": {
+      "title": "Not found",
+      "hint": "The object may have been removed on the server. Reload the page and try again."
+    },
+    "internal": {
+      "title": "Internal agent error",
+      "hint": "Try again; if it repeats, check the itso-agent logs on the server."
+    }
+  },
+  "problems": {
+    "quota": "The account's hosting package has no {{resource}} allowance left. {{detail}} Upgrade the package or remove some, then try again.",
+    "quotaResource": {
+      "websites": "website",
+      "databases": "database",
+      "ftp_accounts": "FTP account",
+      "cron_jobs": "cron job",
+      "disk_mb": "disk space",
+      "inodes": "inode",
+      "other": "resource"
+    }
+  },
+  "stepUp": {
+    "title": "Verify again to continue",
+    "hint": "This is a sensitive action, so enter the 6-digit code from your authenticator app. Verification lasts 10 minutes.",
+    "code": "6-digit code",
+    "confirm": "Verify and continue",
+    "invalid": "Enter all 6 digits"
   }
 }

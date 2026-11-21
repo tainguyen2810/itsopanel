@@ -1,0 +1,6 @@
+; Sinh bởi itso-agent (php.pool.apply, D-68). Master PHP-FPM {{.Version}} của account {{.User}} (chạy dưới uid {{.UID}}).
+[global]
+error_log = syslog
+syslog.ident = itso-php-{{.User}}
+daemonize = no
+include = /etc/itso/php/{{.Version}}/{{.User}}/pool.d/*.conf

@@ -51,7 +51,7 @@ func registerAccounts(r *registry.Registry) error {
 			return err
 		}
 	}
-	return nil
+	return registerWeb(r, st)
 }
 
 // get trả account khớp cả username lẫn uid (uid lệch → precondition_failed, không có → not_found).

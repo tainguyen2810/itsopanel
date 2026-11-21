@@ -103,6 +103,8 @@ test-fuzz: ## Fuzz parser envelope + validator của agent (FUZZTIME=30s cho env
 	@cd agent && go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./internal/envelope
 	@cd agent && go test -run='^$$' -fuzz=FuzzUsername -fuzztime=10s ./internal/validate
 	@cd agent && go test -run='^$$' -fuzz=FuzzHostname -fuzztime=10s ./internal/validate
+	@cd agent && go test -run='^$$' -fuzz=FuzzRenderVhost -fuzztime=10s ./internal/ops
+	@cd agent && go test -run='^$$' -fuzz=FuzzRenderPool -fuzztime=10s ./internal/ops
 
 lint: lint-web lint-api lint-agent no-exec ## Chạy lint cho mọi phần
 

@@ -1,0 +1,7 @@
+dpkg-query -W -f=${Status}	${Version} php8.3-fpm
+dpkg-query -W -f=${Status}	${Version} php8.3-cli
+dpkg-query -W -f=${Status}	${Version} php8.3-common
+dpkg-query -W -f=${Status}	${Version} php8.3-intl
+dpkg-query -W -f=${Status}	${Version} php8.3-mbstring
+apt-get install -y -q --no-install-recommends -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold php8.3-fpm php8.3-cli php8.3-common php8.3-intl php8.3-mbstring
+systemctl disable --now php8.3-fpm.service

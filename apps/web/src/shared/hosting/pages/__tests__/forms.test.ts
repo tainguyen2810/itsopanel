@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   certDaysLeft,
+  certUploadBody,
+  certUploadSchema,
   cronSchema,
   databaseSchema,
   gitRepoSchema,
   sftpSchema,
+  splitDomains,
   splitLines,
   sshKeySchema,
   websiteSchema,
@@ -143,4 +146,47 @@ it('certDaysLeft: số ngày còn lại (âm khi đã hết hạn)', () => {
   expect(certDaysLeft('2026-11-30T00:00:00+07:00', now)).toBe(10);
   expect(certDaysLeft('2026-11-18T00:00:00+07:00', now)).toBe(-2);
   expect(certDaysLeft(null, now)).toBeNull();
+});
+
+describe('certUploadSchema (tải chứng chỉ riêng)', () => {
+  const pem = '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----';
+  const key = '-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----';
+  it('chấp nhận domain thường, wildcard và PEM hợp lệ; body chuẩn hóa domain', () => {
+    const v = {
+      domains: 'Shop.AnPhat.vn, *.anphat.vn\nshop.anphat.vn',
+      certificate_pem: ` ${pem} `,
+      private_key_pem: key,
+    };
+    const r = certUploadSchema.safeParse(v);
+    expect(r.success).toBe(true);
+    expect(certUploadBody(v)).toEqual({
+      source: 'upload',
+      domains: ['shop.anphat.vn', '*.anphat.vn'],
+      certificate_pem: pem,
+      private_key_pem: key,
+    });
+  });
+  it('báo lỗi domain sai, thiếu PEM, khóa có mật khẩu', () => {
+    const r = certUploadSchema.safeParse({
+      domains: 'a..b, *.*.x.vn',
+      certificate_pem: 'không phải pem',
+      private_key_pem:
+        '-----BEGIN ENCRYPTED PRIVATE KEY-----\nx\n-----END ENCRYPTED PRIVATE KEY-----',
+    });
+    expect(errors(r)).toEqual({
+      domains: 'admin:sites.errors.certDomain',
+      certificate_pem: 'admin:sites.errors.certPem',
+      private_key_pem: 'admin:sites.errors.keyPem',
+    });
+    expect(
+      errors(
+        certUploadSchema.safeParse({ domains: ' , ', certificate_pem: pem, private_key_pem: key }),
+      ),
+    ).toEqual({
+      domains: 'form.required',
+    });
+  });
+  it('splitDomains bỏ trống và trùng', () => {
+    expect(splitDomains(' A.vn  a.vn,b.vn ')).toEqual(['a.vn', 'b.vn']);
+  });
 });

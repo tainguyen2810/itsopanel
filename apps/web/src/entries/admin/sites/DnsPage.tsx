@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Globe, Plus } from 'lucide-react';
+import { Cloud, Globe, Plus, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
 import {
@@ -31,6 +31,7 @@ import { Select } from '@/ui/Select';
 import { list, send, type Row } from '../api';
 import { useAction } from '../useAction';
 import { RowMenu } from '@/shared/hosting/pages/common';
+import { ProvidersDialog, useIsSuperAdmin, ZoneAccountDialog, ZoneDialog } from './DnsManage';
 
 type Zone = Row<'/api/v1/admin/dns/zones'>;
 type Rec = Row<'/api/v1/admin/dns/zones/{id}/records'>;
@@ -45,9 +46,38 @@ export default function DnsPage() {
     queryFn: () => list('/api/v1/admin/dns/zones'),
   });
   const zone = zones.data?.find((z) => z.uuid === url.zone) ?? zones.data?.[0];
+  const sa = useIsSuperAdmin();
+  const [providersOpen, setProvidersOpen] = useState(false);
+  const [addingZone, setAddingZone] = useState(false);
+  const addZone = (
+    <Button size="sm" onClick={() => setAddingZone(true)}>
+      <Plus aria-hidden />
+      {t('dns.addZone')}
+    </Button>
+  );
   return (
     <>
-      <PageHeader title={t('dns.title')} description={t('dns.description')} />
+      <PageHeader
+        title={t('dns.title')}
+        description={t('dns.description')}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {sa && (
+              <Button size="sm" variant="secondary" onClick={() => setProvidersOpen(true)}>
+                <Cloud aria-hidden />
+                {t('dns.providerList')}
+              </Button>
+            )}
+            {addZone}
+          </div>
+        }
+      />
+      {sa && <ProvidersDialog open={providersOpen} onOpenChange={setProvidersOpen} />}
+      <ZoneDialog
+        open={addingZone}
+        onOpenChange={setAddingZone}
+        onCreated={(z) => setUrl({ zone: z.uuid, q: undefined })}
+      />
       {zones.isError ? (
         <ErrorState error={zones.error} onRetry={() => void zones.refetch()} />
       ) : zones.isPending ? (
@@ -55,7 +85,12 @@ export default function DnsPage() {
       ) : zones.data.length === 0 ? (
         <Card>
           <CardContent>
-            <EmptyState icon={Globe} title={t('dns.noZones')} description={t('dns.noZonesHint')} />
+            <EmptyState
+              icon={Globe}
+              title={t('dns.noZones')}
+              description={t('dns.noZonesHint')}
+              action={addZone}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -84,17 +119,42 @@ export default function DnsPage() {
               ))}
             </ul>
           </nav>
-          {zone && <Records key={zone.uuid} zone={zone} />}
+          {zone && (
+            <Records
+              key={zone.uuid}
+              zone={zone}
+              onRemoved={() => setUrl({ zone: undefined, q: undefined })}
+            />
+          )}
         </div>
       )}
     </>
   );
 }
 
-function Records({ zone }: { zone: Zone }) {
+function Records({ zone, onRemoved }: { zone: Zone; onRemoved: () => void }) {
   const { t } = useTranslation('admin');
   const [editing, setEditing] = useState<Rec | 'new' | null>(null);
   const [removing, setRemoving] = useState<Rec | null>(null);
+  const [zoneAction, setZoneAction] = useState<'account' | 'remove' | null>(null);
+  const sync = useAction(
+    () => send('POST', '/api/v1/admin/dns/zones/{id}:sync', { path: { id: zone.uuid } }),
+    {
+      success: t('dns.synced', { name: zone.name }),
+      invalidate: [['admin', 'dns']],
+    },
+  );
+  const removeZone = useAction(
+    () => send('DELETE', '/api/v1/admin/dns/zones/{id}', { path: { id: zone.uuid } }),
+    {
+      success: t('dns.zoneRemoved', { name: zone.name }),
+      invalidate: [['admin', 'dns', 'zones']],
+      onSuccess: () => {
+        setZoneAction(null);
+        onRemoved();
+      },
+    },
+  );
   const remove = useAction(
     (r: Rec) =>
       send('DELETE', '/api/v1/admin/dns/zones/{id}/records/{record}', {
@@ -181,10 +241,34 @@ function Records({ zone }: { zone: Zone }) {
         title={t('dns.recordsOf', { name: zone.name })}
         description={zone.provider === 'manual' ? t('dns.manualHint') : t('dns.providerHint')}
         actions={
-          <Button size="sm" onClick={() => setEditing('new')}>
-            <Plus aria-hidden />
-            {t('dns.add')}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {zone.provider === 'cloudflare' && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => sync.mutate()}
+                disabled={sync.isPending}
+              >
+                <RefreshCw aria-hidden />
+                {t('dns.sync')}
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setEditing('new')}>
+              <Plus aria-hidden />
+              {t('dns.add')}
+            </Button>
+            <RowMenu
+              label={t('dns.zoneActions', { name: zone.name })}
+              actions={[
+                { label: t('dns.changeAccount'), onSelect: () => setZoneAction('account') },
+                {
+                  label: t('dns.removeZone'),
+                  onSelect: () => setZoneAction('remove'),
+                  danger: true,
+                },
+              ]}
+            />
+          </div>
         }
         queryKey={['admin', 'dns', zone.uuid]}
         fetch={(q) => list('/api/v1/admin/dns/zones/{id}/records', q, { path: { id: zone.uuid } })}
@@ -217,6 +301,17 @@ function Records({ zone }: { zone: Zone }) {
         onConfirm={() =>
           removing ? remove.mutateAsync(removing).then(() => undefined) : undefined
         }
+      />
+      {zoneAction === 'account' && (
+        <ZoneAccountDialog zone={zone} onClose={() => setZoneAction(null)} />
+      )}
+      <ConfirmDialog
+        open={zoneAction === 'remove'}
+        onOpenChange={(o) => !o && setZoneAction(null)}
+        title={t('dns.removeZoneTitle', { name: zone.name })}
+        description={t('dns.removeZoneHint')}
+        confirmLabel={t('dns.removeZone')}
+        onConfirm={() => removeZone.mutateAsync().then(() => undefined)}
       />
     </div>
   );
