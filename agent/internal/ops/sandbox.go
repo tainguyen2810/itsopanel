@@ -2,6 +2,7 @@ package ops
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,10 +36,22 @@ func NewSim(fs *platform.FS) *Sim {
 // SandboxRunner trả runner giả cho --sandbox: lệnh được kiểm như runner thật, ghi lại, và mô phỏng bằng Sim.
 func SandboxRunner(d *Deps) *platform.FakeRunner {
 	sim := NewSim(d.FS)
+	sim.SeedBase()
 	f := platform.NewFake()
 	f.Hook = sim.Handle
 	f.StreamHook = sim.Stream
 	return f
+}
+
+// SeedBase thêm các mục luôn có trên Ubuntu mà gốc sandbox trống thì thiếu: user/group root (user quản trị SSH
+// mặc định của sshd.config.apply, ADR 0024). Không ghi đè mục đã có.
+func (s *Sim) SeedBase() {
+	for p, line := range map[string]string{"/etc/passwd": "root:x:0:0:root:/root:/bin/bash", "/etc/group": "root:x:0:"} {
+		ls := s.lines(p)
+		if !slices.ContainsFunc(ls, func(l string) bool { return strings.HasPrefix(l, "root:") }) {
+			_ = s.write(p, append([]string{line}, ls...))
+		}
+	}
 }
 
 func ok(out string) platform.Result { return platform.Result{Stdout: []byte(out)} }

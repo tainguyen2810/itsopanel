@@ -59,3 +59,23 @@ bash tests/vm/phase6.sh                 # → /root/itso-vm-phase6.md (--upload-
 | S5 | Upload 1 GB: staging ghi làm 2 lần (ngắt giữa chừng rồi gửi tiếp) → `fs.upload.commit`, sha256 khớp, staging bị xóa |
 | S6 | Database: import + export `.sql.gz` dưới uid account; SQL của A thử `DROP`/`CREATE` trên DB của B bị từ chối |
 | S7 | Terminal: `pty.open` → socket stream bằng uid `itso-gw` (`lib/term_client.py`) → đúng uid, không đọc `/etc/shadow`, không liệt kê home khác; caller khác bị từ chối |
+
+## Security Center (Phase 7, Prompt 7.7)
+
+Trong VM đã cài (sau `run-all.sh --release … --no-uninstall`), bằng root. Script đổi tường lửa, sshd và
+fail2ban thật nên chỉ chạy trong VM dùng một lần; truyền IP máy đang SSH vào để rule chống tự khóa giữ phiên:
+
+```bash
+bash tests/vm/phase7.sh --client-ip "${SSH_CLIENT%% *}"   # → /root/itso-vm-phase7.md
+```
+
+| Mã | Kiểm |
+|---|---|
+| S0 | Cài `nginx`, `fail2ban`, `clamav`, `yara`, `modsecurity` qua recipe; `security.audit` thấy đủ gói; account thử `itsog` |
+| S1 | Safe-apply: tường lửa (thêm rule) + sshd (`MaxAuthTries 2`) áp dụng không xác nhận, token sai bị từ chối, rồi **dừng itso-agent** (mất kết nối) → timer systemd tự hoàn tác trong 45 giây: ruleset về đúng bản đã xác nhận, `sshd -T` về giá trị cũ, ssh vẫn chạy, `firewall.status` = `rolled_back` |
+| S2 | fail2ban chặn thật: SSH user không tồn tại từ IP phụ (dummy `10.250.0.2`) 5 lần → bị ban, kết nối lại bị chặn, `fail2ban.status` có IP, `fail2ban.unban` gỡ được |
+| S3 | WAF: site tĩnh + `waf.apply On` → SQLi, XSS, path traversal bị 403, trang thường 200; `DetectionOnly` → 200; `waf.events` gán đúng website (blocked/detected) |
+| S4 | EICAR trong 3 000 file: `malware.scan` (clamdscan + yara dưới uid account, slice, Nice 19) tìm thấy; site vẫn 200 suốt lúc quét (ghi load và latency); cách ly → khôi phục đúng chủ |
+| S5 | FIM: baseline → thêm file `/usr/local/bin`, sửa `/etc/ssh/sshd_config.d`, xóa file, setuid → `fim.check` báo added/modified/removed/metadata |
+| S6 | Điểm bảo mật mặc định sau cài ≥ 80 (`artisan itso:security-audit`, đọc `security_settings`); chưa xong wizard → SKIP |
+| S7 | Terminal root: policy tắt → `op_disabled`; `itso policy set terminal.root on` + restart agent → shell uid 0, bản ghi `/var/lib/itso/recordings/<uuid>.cast` 0600 root có output, `pty.recording.read` đọc được; tắt lại → `op_disabled` |
