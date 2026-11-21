@@ -15,7 +15,7 @@
 | 4.3 Ops thật | system.info/ping/reboot/hostname.set, service.status/control (allowlist), account.ensure/limits.apply/suspend/unsuspend/remove, quota.apply/report, metrics.snapshot/cgroup, software.install/remove (recipe allowlist), audit.tail, op.cancel; golden argv/file cho 15 op | c5bffe0 |
 | 4.4 CLI + installer | CLI `itso` (install, status, doctor, url, setup-code, admin reset, policy, update/rollback/repair, uninstall, logs), `install.sh` kiểm chữ ký, `make release` (tar + manifest + Ed25519 + SBOM), unit systemd (`itso.target`, agent, web, worker, scheduler, slice) | 28bb3fc |
 | 4.5 Panel | Bảng Phase 4, thẻ Nền tảng trên Server detail, dịch vụ/phần mềm/reboot qua job, metrics server/account, usage từ snapshot, `/system/updates`, wizard cài đặt lần đầu (mã một lần, bước 0–3, 6, 9) nối API thật | 4bda07a, ab61378 |
-| 4.6 Tích hợp | Bộ test VM `tests/vm/` (Multipass + Vagrant, enforcement, cài 2 lần, agent từ chối, update → rollback, uninstall); `make dev` chạy itso-agent `--sandbox` (mock vẫn dùng được bằng `ITSO_DEV_AGENT=mock`); Playwright stack thật với agent sandbox (thêm Server detail, usage); job dịch vụ đặt tên theo hành động (`service.restart`…) cho khớp nhãn UI | (commit 4.6) |
+| 4.6 Tích hợp | Bộ test VM `tests/vm/` (Multipass + Vagrant, enforcement, cài 2 lần, agent từ chối, update → rollback, uninstall); `make dev` chạy itso-agent `--sandbox` (mock vẫn dùng được bằng `ITSO_DEV_AGENT=mock`); Playwright stack thật với agent sandbox (thêm Server detail, usage); job dịch vụ đặt tên theo hành động (`service.restart`…) cho khớp nhãn UI | d6faf59 |
 
 ## 2. File chính
 
@@ -37,14 +37,14 @@
 
 ## 4. Kết quả test
 
-`make check` (2026-11-21, PostgreSQL 16 + Redis cục bộ): **KẾT_QUẢ_CHECK**. Chi tiết ở `TEST_REPORT.md` (Prompt 4.6).
+`make check` (2026-11-21, PostgreSQL 16 + Redis cục bộ): **22 PASS · 1 SKIP (staticcheck) · 0 FAIL**, git-clean PASS (576 s). Lần chạy đầu có 3 bước đỏ (1 test e2e demo của wizard chưa theo mã demo mới; docs-check và git-clean do file đang viết dở), đã sửa và chạy lại. Chi tiết ở `TEST_REPORT.md` (Prompt 4.6).
 
 | Bộ test | Kết quả |
 |---|---|
-| Pest (PostgreSQL 16 + Redis) | SỐ_PEST |
+| Pest (PostgreSQL 16 + Redis) | 347/347 |
 | Go (race, 12 package) | PASS |
-| Vitest | SỐ_VITEST |
-| Playwright (demo MSW + Design System) | SỐ_E2E |
+| Vitest | 465/465 |
+| Playwright (demo MSW + Design System) | 259/259 |
 | Playwright stack thật + agent sandbox (`make test-e2e-real`) | 6/6 |
 | Installer (`make test-installer`) · unit systemd (`make units-check`) | 8/8 · 12 unit |
 | pint, phpstan, ESLint, Prettier, tsc, i18n, gofmt, go vet, no-exec | xanh |

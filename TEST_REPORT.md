@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 4 / Prompt 4.6 — nhánh `phase-4`
+
+Môi trường: PostgreSQL 16 + Redis local; agent thật `itso-agent --sandbox` (runner giả, gốc riêng `.dev/agent-sandbox/root`, ký HMAC D-66). Container không có KVM/systemd/cgroup v2 nên **bộ test VM chưa chạy (chờ VM)**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Toàn bộ pipeline | `make check` | **22 PASS · 1 SKIP (staticcheck) · 0 FAIL**, git-clean PASS, 576 s. Lần đầu: 3 FAIL (e2e demo wizard 1/259 vì test còn dùng mã bất kỳ, nay API demo chỉ nhận `DEMO-2026-ITSO`; docs-check + git-clean do runbook đang viết dở lúc chạy) → sửa test, chạy lại file lỗi (6/6) rồi chạy lại toàn bộ trên cây sạch |
+| Playwright stack thật + agent sandbox | `make dev` · `DemoSeeder` · `make test-e2e-real` | PASS 6/6: 4 luồng Phase 3 qua agent sandbox; Server detail (thẻ Nền tảng "Sandbox", amd64; restart nginx → job `service.restart` → op `service.control` thành công; dung lượng đã cấp); account có mức sử dụng từ snapshot + API usage 200 |
+| Agent sandbox kiểm tay | `tests/vm/lib/agent_call.py --socket … --key-file …` | `system.ping` ok; `system.exec` → `unknown_op`; username `../root` → `invalid_params`; không ký / ký sai → `unauthorized_caller`; `account.ensure` ok; audit JSONL có `op_id`, `params_hash` |
+| `make dev` | chạy nền + `itso:server-local`, `itso:reconcile`, `itso:metrics-collect`, `itso:usage-refresh` | 8 job reconcile thành công qua agent sandbox; platform `agent_mode=sandbox`; 12 dịch vụ; 3 snapshot usage |
+| Script VM | `bash -n tests/vm/*.sh tests/vm/lib/common.sh` · `ruby -c tests/vm/Vagrantfile` · `python3 -m py_compile tests/vm/lib/agent_call.py` | PASS cú pháp. **Chạy thật: chờ VM** (`make release && make test-vm`) |
+| Laravel | `make test-api` | PASS 347 (ServerOpsTest cập nhật: job `service.restart`) |
+
+**Test bị bỏ qua:** không. **Chờ VM:** cài sạch ≤ 10 phút, enforcement E1–E8 (CPU, OOM, TasksMax, EDQUOT, cách ly /home, ps, `sudo -l -U itso`), agent từ chối trên máy thật, update → rollback, uninstall. `staticcheck`, `shellcheck` không có trên container.
+
 ## 2026-11-21 — Phase 4 / Prompt 4.5 — nhánh `phase-4`
 
 Môi trường: như 4.1 (PostgreSQL 16 + Redis local). Agent trong Pest là `FakeAgent` (HTTP giả theo envelope thật); UI chạy trên API giả lập MSW.
