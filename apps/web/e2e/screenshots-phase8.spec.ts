@@ -177,7 +177,10 @@ async function openDr(p: Page) {
   await p.getByLabel('Bucket').fill('itso-backup');
   await p.getByLabel('Access key').fill('AKIAITSODEMO');
   await p.getByLabel('Secret key').fill('demo-secret-key');
-  await p.getByLabel('Mật khẩu repo panel').fill(data.recovery_kit.repositories[0]?.password ?? '');
+  await p.getByLabel('Đường dẫn repo server').fill(data.recovery_kit.repositories[0]?.path ?? '');
+  await p
+    .getByLabel('Mật khẩu repo server')
+    .fill(data.recovery_kit.repositories[0]?.password ?? '');
   await p.getByLabel('Khóa riêng của panel').fill(data.recovery_kit.panel_private_key);
 }
 

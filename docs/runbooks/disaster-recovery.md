@@ -83,7 +83,7 @@ Không khôi phục được nếu thiếu **bộ khôi phục** (recovery kit: 
 3. Mở thử 3 website ngẫu nhiên (qua `/etc/hosts` trước khi đổi DNS); đăng nhập một DB bằng tài khoản cũ.
 4. Đổi DNS / IP nổi sang máy mới; cấp lại chứng chỉ nếu cần (`itso:certs-renew`).
 5. Chạy backup ngay cho panel (policy panel → "Chạy ngay") để có điểm khôi phục mới trên máy mới.
-6. Tải lại bộ khôi phục (server UUID mới không đổi vì DB panel cũ giữ bản ghi server; kiểm lại dòng "repo server").
+6. Tải lại bộ khôi phục (server UUID mới không đổi vì DB panel cũ giữ bản ghi server; kiểm lại mục "server <tên máy>").
 
 ## 6. Quay lui
 

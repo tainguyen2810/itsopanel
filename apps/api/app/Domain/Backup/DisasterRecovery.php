@@ -110,7 +110,7 @@ final class DisasterRecovery
         }
         $path = $in['repository_path'] ?? null;
         if (! is_string($path) || preg_match('#^itso/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/server$#', $path) !== 1) {
-            throw ApiProblem::field($prefix.'repository_path', 'Đường dẫn repo server dạng itso/<uuid server>/server (dòng "repo server" trong bộ khôi phục).');
+            throw ApiProblem::field($prefix.'repository_path', 'Đường dẫn repo server dạng itso/<uuid server>/server (dòng "repo:" của mục "server <tên máy>" trong bộ khôi phục).');
         }
         $pw = $in['repository_password'] ?? null;
         if (! is_string($pw) || preg_match('/^[\x21-\x7e]{16,256}$/', $pw) !== 1) {

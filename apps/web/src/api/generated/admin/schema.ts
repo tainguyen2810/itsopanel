@@ -4645,7 +4645,7 @@ export interface components {
                 state: "warn" | "paused";
             }[];
         };
-        /** @description Lấy từ bộ khôi phục: đích, đường dẫn + mật khẩu repo server (dòng `repo server …`), khóa riêng age. */
+        /** @description Lấy từ bộ khôi phục: đích, đường dẫn + mật khẩu repo server (mục `server <tên máy>`: dòng `repo:` và `password:`), khóa riêng age. */
         SetupRestoreSource: {
             /** @enum {string} */
             type: "local" | "sftp" | "s3" | "rest";
@@ -8028,13 +8028,13 @@ export interface operations {
                      *         },
                      *         "repositories": [
                      *           {
-                     *             "label": "panel + cấu hình srv-hn-01",
-                     *             "path": "s3:https://s3.ap-southeast-1.example.com/itso-backup/itso/01938a02-0001-7000-8000-000002000001/server",
+                     *             "label": "server srv-hn-01",
+                     *             "path": "itso/01938a02-0001-7000-8000-000002000001/server",
                      *             "password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw"
                      *           },
                      *           {
-                     *             "label": "anphat",
-                     *             "path": "s3:https://s3.ap-southeast-1.example.com/itso-backup/itso/01938a02-0001-7000-8000-000002000001/acct-anphat",
+                     *             "label": "account anphat",
+                     *             "path": "itso/01938a02-0001-7000-8000-000002000001/acct-01938a05-0001-7000-8000-000005000001",
                      *             "password": "demo-Hp3-acct-2mZ8-qW6r-K1vD-7cYe"
                      *           }
                      *         ],
@@ -8836,8 +8836,8 @@ export interface operations {
                      *           "scope_type": "hosting_account",
                      *           "restic_snapshot_id": "a91b03dd",
                      *           "size_mb": 1200,
-                     *           "taken_at": "2026-11-01T10:05:00+07:00",
-                     *           "verified_at": "2026-11-01T11:00:00+07:00",
+                     *           "taken_at": "2026-10-15T10:05:00+07:00",
+                     *           "verified_at": "2026-10-15T11:00:00+07:00",
                      *           "contents": [
                      *             "files",
                      *             "databases",
@@ -8851,7 +8851,7 @@ export interface operations {
                      *           "panel_version": "0.1.0-alpha",
                      *           "repository_uuid": null,
                      *           "databases": [],
-                     *           "locked_until": "2026-12-01T10:05:00+07:00"
+                     *           "locked_until": "2026-11-14T10:05:00+07:00"
                      *         },
                      *         {
                      *           "uuid": "01938a0e-0003-7000-8000-00000e000003",
@@ -17323,8 +17323,8 @@ export interface operations {
                      *           },
                      *           "confirmed_by": null,
                      *           "final_backup_snapshot_uuid": "01938a0e-0002-7000-8000-00000e000002",
-                     *           "backup_verified_at": "2026-11-01T11:00:00+07:00",
-                     *           "scheduled_for": "2026-12-01T10:00:00+07:00",
+                     *           "backup_verified_at": "2026-10-15T11:00:00+07:00",
+                     *           "scheduled_for": "2026-11-14T10:00:00+07:00",
                      *           "completed_at": null,
                      *           "objects": [],
                      *           "created_at": "2026-11-18T09:30:00+07:00",

@@ -295,7 +295,7 @@
       "runHint": "The agent decrypts the panel backup, then the panel pauses for about a minute to replace its DB and /etc/itso, reapply account config and restore website and database data in the background.",
       "sftpHint": "SFTP destinations can't be restored from the wizard (the destination's SSH key and host key are needed): on the new server run \"sudo itso backup panel-restore --kit <file> --snapshot <id> --ssh-key <key>\", then \"sudo itso panel-restore-apply --dir <printed folder>\".",
       "repoPath": "Server repository path",
-      "repoPathHint": "The \"repo server\" line in the recovery kit, like itso/<uuid>/server.",
+      "repoPathHint": "The \"repo:\" line under \"server <hostname>\" in the recovery kit, like itso/<uuid>/server.",
       "repoPassword": "Server repository password",
       "privateKey": "Panel private key",
       "privateKeyHint": "The AGE-SECRET-KEY-1… line from the recovery kit.",
@@ -998,7 +998,7 @@
     "title": "Terminated accounts",
     "description": "Data is kept at least 30 days. Purging needs a verified final backup and two different Super Admins: one schedules, the other confirms.",
     "policyTitle": "Two-step purge (D-46)",
-    "policy": "1. Super Admin A schedules the purge and the panel runs and verifies a final backup. 2. Super Admin B types the username to confirm. The purge runs when retention ends. Accounts on legal hold cannot be purged.",
+    "policy": "1. Super Admin A schedules the purge: the panel takes a final backup and verifies it (restic check + test restore). 2. Once the retention period ends, Super Admin B types the username to confirm and the purge runs immediately. Accounts under legal hold can't be purged.",
     "terminatedAt": "Terminated",
     "countdown": "Retention",
     "countdownOf": "Retention for {{name}}",
@@ -1010,7 +1010,7 @@
       "none": "Not scheduled",
       "backup": "Verifying backup",
       "confirm": "Awaiting second Super Admin",
-      "scheduled": "Confirmed, waiting for date",
+      "scheduled": "Confirmed, purging",
       "done": "Purged",
       "hold": "Legal hold"
     },
@@ -1019,15 +1019,16 @@
     "actions": "Actions",
     "schedule": "Schedule purge",
     "scheduleTitle": "Schedule purge for {{name}}?",
-    "scheduleHint": "The panel runs a final backup and a test restore. The purge only runs after {{date}} and once another Super Admin confirms.",
+    "scheduleHint": "The panel takes a final backup and test-restores it to verify. The purge can only be confirmed after {{date}}, by another Super Admin.",
     "confirm": "Confirm purge",
     "confirmTitle": "Confirm purge for {{name}}?",
-    "confirmHint": "Requested by {{name}}. All files, databases, SSL and config will be permanently deleted on {{date}}; only the final backup remains.",
+    "confirmHint": "Requested by {{name}}. All files, databases, SSL and configuration are permanently deleted as soon as you confirm; only the final backup remains.",
     "needOtherTitle": "Another Super Admin is needed",
     "needOther": "You scheduled this purge, so you cannot confirm it yourself (D-46). Ask another Super Admin to confirm; in the demo, switch to \"Nguyễn Hải\" from the account menu.",
     "understood": "Got it",
     "empty": "No terminated accounts.",
-    "needVerified": "Waiting for the final snapshot to pass a restore test"
+    "needVerified": "Waiting for the final snapshot to pass a restore test",
+    "notDue": "Can be confirmed after {{date}} (end of retention)"
   },
   "sites": {
     "title": "Websites",
@@ -2192,7 +2193,8 @@
     "errors": {
       "snapshot": "Choose a snapshot",
       "items": "Choose at least one item to restore",
-      "confirm": "Type \"{{name}}\" exactly to overwrite"
+      "confirm": "Type \"{{name}}\" exactly to overwrite",
+      "overwriteOne": "Overwrite: exactly one website (sites/<domain> folder) or one database at a time. Single files are always restored as a new copy."
     },
     "stepUpTitle": "MFA step-up required",
     "stepUpHint": "Overwriting asks for your MFA code again. The panel dumps/snapshots the current data first; if anything fails midway the live data stays untouched.",

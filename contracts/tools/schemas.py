@@ -519,7 +519,7 @@ ADMIN = {
                                "repository_path": s(pattern="^itso/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/server$"),
                                "panel_private_key": s(pattern="^AGE-SECRET-KEY-1[0-9A-Z]{58}$", writeOnly=True)},
                               required=["type", "config", "repository_path", "repository_password", "panel_private_key"],
-                              desc="Lấy từ bộ khôi phục: đích, đường dẫn + mật khẩu repo server (dòng `repo server …`), khóa riêng age."),
+                              desc="Lấy từ bộ khôi phục: đích, đường dẫn + mật khẩu repo server (mục `server <tên máy>`: dòng `repo:` và `password:`), khóa riêng age."),
     "SetupRestoreCandidate": obj({"snapshot_id": s(pattern="^[0-9a-f]{8,64}$"), "taken_at": DT, "panel_version": s(),
                                   "hostname": s(), "accounts": {"type": ["integer", "null"], "minimum": 0}, "size_mb": n(minimum=0)},
                                  desc="`accounts` null: chỉ biết sau khi giải mã (bản backup panel mã hóa age)."),

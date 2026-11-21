@@ -54,7 +54,7 @@ test('tạo tài khoản qua wizard → job xong → xuất hiện trong danh s�
   expect(errors).toEqual([]);
 });
 
-test('purge 2 bước (D-46): người lên lịch không tự xác nhận được, Super Admin khác xác nhận', async ({
+test('purge 2 bước (D-46): người lên lịch không tự xác nhận được, Super Admin khác xác nhận khi hết hạn giữ', async ({
   page,
 }) => {
   const errors = watchErrors(page);
@@ -75,12 +75,12 @@ test('purge 2 bước (D-46): người lên lịch không tự xác nhận đư�
   await expect(ok).toBeDisabled();
   await dlg.getByRole('textbox').fill('oldshop');
   await ok.click();
-  await expect(page.getByText('Đã xong: Xác nhận purge tài khoản')).toBeVisible({
+  // Như API thật: đã hết hạn giữ dữ liệu → xác nhận là xóa ngay (account.remove), account rời danh sách.
+  await expect(page.getByText('Đã xong: Xóa vĩnh viễn tài khoản')).toBeVisible({
     timeout: 15_000,
   });
   await page.keyboard.press('Escape');
-  await expect(row).toContainText('Đã xác nhận, chờ tới hạn');
-  await expect(row).toContainText('Xác nhận: Nguyễn Hải');
+  await expect(page.getByRole('row', { name: /oldshop/ })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

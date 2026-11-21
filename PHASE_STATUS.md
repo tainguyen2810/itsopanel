@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 8 — Backup & Restore → v0.1.0-alpha (đang làm; Phase 7 ✓ APPROVED 2026-11-21 cùng D-76 → D-81, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 8.6 ✱ (8.0 mockup ✓, 8.1 ADR + contracts ✓, 8.2 agent backup ✓, 8.3 agent khôi phục ✓, 8.4 panel API ✓, 8.5 DR ✓). Prompt chi tiết `docs/planning/seed/PHASE_8_PROMPTS.md`
-- **Task đang làm:** 8.6 UI nối API thật
+- **Prompt hiện tại:** 8.7 ✱ (8.0 mockup ✓, 8.1 ADR + contracts ✓, 8.2 agent backup ✓, 8.3 agent khôi phục ✓, 8.4 panel API ✓, 8.5 DR ✓, 8.6 UI ✓). Prompt chi tiết `docs/planning/seed/PHASE_8_PROMPTS.md`
+- **Task đang làm:** 8.7 e2e, review bảo mật, báo cáo, release v0.1.0-alpha, merge
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-8`
 - **Bước tiếp theo:** 8.0 → 8.7 theo `PHASE_8_PROMPTS.md`; xong 8.7 thì DỪNG chờ duyệt Phase 8 và D-82 → D-87; chạy `tests/vm/phase4–7.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -39,8 +39,8 @@ Phase 8 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.
 - ✓ 8.3 Agent: khôi phục staging, check, restore test, forget, backup panel, CLI
 - ✓ 8.4 Panel: đích, repo, policy, lịch, job, snapshot, khôi phục, quota, Portal
 - ✓ 8.5 DR: `install.sh --restore`, wizard khôi phục, `itso panel-restore-apply`, `itso:dr-restore`, runbook
-- ✱ 8.6 UI nối API thật
-- ○ 8.7 e2e, VM Phase 8, review bảo mật, báo cáo, release v0.1.0-alpha, merge
+- ✓ 8.6 UI nối API thật
+- ✱ 8.7 e2e, VM Phase 8, review bảo mật, báo cáo, release v0.1.0-alpha, merge
 
 Phase 7: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-7.md`, merge `3887644`). Chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.md`
 
@@ -156,3 +156,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 8 / 8.3 | Agent: `backup.restore` (restic → staging root 0700 → tar → helper uid account `restore_tar` vào thư mục chưa tồn tại, `RENAME_NOREPLACE`; symlink/thiết bị bị bỏ, setuid gỡ, báo `skipped[]`; website ghi đè = snapshot pre-restore + `RENAME_EXCHANGE`; DB bản mới/ghi đè, nhập dưới uid account, `pg_restore`), `backup.check`, `backup.restore_test` (sha256 manifest + nạp DB tạm), `backup.forget` (kèm snapshot meta); `kind=panel`: `pg_dump` cluster 16/itso + `/etc/itso` → tar → age → restic `--stdin`; CLI `itso backup prune|panel-restore --kit` | 5be9317 |
 | 2026-11-21 | 8 / 8.4 | Panel API backup: đích (credential mã hóa, kiểm tra qua job, ghim host key, phát hiện Object Lock), repo theo đích × server × account (mật khẩu ngẫu nhiên, init qua job), bộ khôi phục (lần đầu không step-up, sau xác nhận cần step-up, audit), policy + `itso:backup-due` (khóa Redis, jitter), `BackupJobHandler` → snapshot/verification/restore, snapshot list/browse/tải file (HMAC 5 phút, `backup.file.read` mới), verify + `itso:backup-verify`, khôi phục new/overwrite (step-up, gõ username), quota theo gói, retention (chỉ đích không bất biến), tổng quan 3-2-1-1-0, Portal, quyền `backups.*`, cổng purge D-46 (backup cuối kiểm chứng + người xác nhận thứ hai) | ba32a6d |
 | 2026-11-21 | 8 / 8.5 | Khôi phục thảm họa: `install.sh --restore` (mã thiết lập `mode: restore`, wizard chọn sẵn khôi phục), `POST /setup/restore:inspect` (agent `backup.snapshots` tag `type:panel`, không lưu bí mật) + `POST /setup/restore` (job `setup.restore`, op mới `panel.restore`, bí mật tạm trong Redis Crypt TTL 2 giờ, tham chiếu `setup_restore:…`, xóa khi job xong), `itso panel-restore-apply` (sao lưu máy mới, `pg_restore --single-transaction`, `/etc/itso` giữ file của máy mới + APP_KEY cũ, migrate, `itso:reconcile`, xóa bản rõ), `itso:dr-restore` (mỗi account một job ghi đè nhiều bước, song song 2, scheduler 5 phút), gộp kết quả khôi phục nhiều bước, runbook `docs/runbooks/disaster-recovery.md` | 4050012 |
+| 2026-11-21 | 8 / 8.6 | UI Backup & Restore khớp hành vi API thật: wizard khôi phục chọn DB theo `snapshot.databases` (agent lưu dump `db/<tên>.sql|.dump`), ghi đè đúng một website/DB, bỏ chọn server khác (Phase 9) và mục cấu hình; bộ khôi phục có `destination_uuid` (CLI `itso backup panel-restore` cần); purge chỉ xác nhận được sau hạn giữ, xác nhận = xóa ngay; wizard DR thêm đường dẫn repo server, SFTP hướng dẫn CLI; MSW purge/khôi phục/DR như API thật; dữ liệu demo oldshop đã hết hạn giữ; ảnh phase-8 chụp lại (purge, DR) | (commit 8.6) |

@@ -119,6 +119,8 @@ describe('Đích và bộ khôi phục', () => {
     expect(kit.first_view).toBe(true);
     expect(kit.panel_private_key).toMatch(/^AGE-SECRET-KEY-1/);
     expect(kitText(kit)).toContain(kit.repositories[0]?.password ?? 'x');
+    // CLI `itso backup panel-restore` (ParseKit) cần dòng destination_uuid.
+    expect(kitText(kit)).toContain(`\ndestination_uuid: ${d.uuid}\n`);
     const ack = await call('POST', `/api/v1/admin/backup-destinations/${d.uuid}:recovery-kit-ack`);
     expect(ack.status).toBe(204);
     const k2 = data<{ first_view: boolean }>(
@@ -264,6 +266,7 @@ describe('Khôi phục thảm họa từ wizard', () => {
     type: 's3',
     config: { endpoint: 'https://s3.example.com', bucket: 'itso-backup' },
     credentials: { access_key: 'AK', secret_key: 'SK' },
+    repository_path: 'itso/01938a02-0001-7000-8000-000002000001/server',
     repository_password: 'demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw',
     panel_private_key: `AGE-SECRET-KEY-1${'A'.repeat(58)}`,
   };
@@ -275,6 +278,16 @@ describe('Khôi phục thảm họa từ wizard', () => {
       repository_password: 'sai-mat-khau-0123456789',
     });
     expect(wrong.status).toBe(422);
+    // Như API thật: SFTP đi đường CLI; thiếu đường dẫn repo server → 422.
+    const sftp = await call('POST', '/api/v1/admin/setup/restore:inspect', {
+      ...source,
+      type: 'sftp',
+      config: { host: 'bk.example.com', user: 'itso', path: '/srv/bk' },
+    });
+    expect(sftp.status).toBe(422);
+    expect(JSON.stringify(sftp.body)).toContain('itso backup panel-restore');
+    const noPath = { ...source, repository_path: 'itso/x/acct-1' };
+    expect((await call('POST', '/api/v1/admin/setup/restore:inspect', noPath)).status).toBe(422);
     const ins = await call('POST', '/api/v1/admin/setup/restore:inspect', source);
     valid('/api/v1/admin/setup/restore:inspect', 'post', ins);
     const [c] = data<{ snapshot_id: string }[]>(ins);

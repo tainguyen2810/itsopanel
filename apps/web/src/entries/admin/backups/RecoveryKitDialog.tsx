@@ -28,6 +28,8 @@ export function kitText(kit: Kit): string {
     '# ITSO Panel recovery kit',
     `# generated_at: ${kit.generated_at}`,
     `destination: ${kit.destination.name} (${kit.destination.type})`,
+    // CLI `itso backup panel-restore` cần uuid đích (khóa SSH/host key SFTP theo đích).
+    `destination_uuid: ${kit.destination.uuid}`,
     cfg,
     'repositories:',
     repos,

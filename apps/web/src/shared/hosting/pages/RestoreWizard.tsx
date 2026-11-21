@@ -21,6 +21,7 @@ import { VerifyBadge, type Snapshot } from './backup';
 import { AccountSelect, Mono } from './common';
 
 const STEPS = ['snapshot', 'items', 'mode', 'review'] as const;
+const OVERWRITABLE = /^(files:sites\/[a-z0-9.-]+|database:[a-z][a-z0-9_]{0,63})$/;
 
 /**
  * Wizard khôi phục (Admin và Portal): chọn snapshot → chọn nội dung → cách khôi phục → xác nhận.
@@ -69,7 +70,6 @@ export function RestoreWizard({
     enabled: enabled && snapshotId !== undefined,
   });
   const sites = useQuery(browse('sites', snapshot?.contents.includes('files') ?? false));
-  const dumps = useQuery(browse('databases', snapshot?.contents.includes('databases') ?? false));
   const items = normalizeItems(paths);
   const targetId = target ?? acc?.server.uuid;
   const targetName =
@@ -105,6 +105,13 @@ export function RestoreWizard({
   const check = (): string | null => {
     if (step === 0) return snapshot ? null : t('rs.errors.snapshot');
     if (step === 1) return items.length > 0 ? null : t('rs.errors.items');
+    // Ghi đè (D-85): mỗi lần đúng một website (sites/<tên miền>) hoặc một database.
+    if (
+      step === 2 &&
+      mode === 'overwrite' &&
+      (items.length !== 1 || !OVERWRITABLE.test(items[0] ?? ''))
+    )
+      return t('rs.errors.overwriteOne');
     if (step === 2 && mode === 'overwrite' && confirm.trim() !== acc?.username)
       return t('rs.errors.confirm', { name: acc?.username ?? '' });
     return null;
@@ -188,16 +195,8 @@ export function RestoreWizard({
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 font-medium">{t('rs.databases')}</legend>
           <div className="grid gap-2 sm:grid-cols-2">
-            {(dumps.data ?? []).map((e) =>
-              pick(e.path, e.name.replace(/\.sql\.zst$/, ''), fmt.bytes(e.size)),
-            )}
+            {(snapshot.databases ?? []).map((name) => pick(`database:${name}`, name))}
           </div>
-        </fieldset>
-      )}
-      {snapshot?.contents.includes('config') && (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 font-medium">{t('rs.config')}</legend>
-          {pick('config', t('rs.configItem'), t('rs.configHint'))}
         </fieldset>
       )}
       {items.length > 0 && (

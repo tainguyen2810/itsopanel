@@ -22,6 +22,16 @@ type Rule = S['AlertRule'];
 const P = (p: string) => `/api/v1/admin${p}` as Parameters<typeof on>[1];
 const invalid = (detail: string) =>
   problem(422, 'validation_failed', 'Dữ liệu không hợp lệ', detail);
+/** 422 gắn vào một trường, như ApiProblem::field của API thật. */
+const fieldInvalid = (field: string, message: string): Reply => {
+  const r = problem(
+    422,
+    'validation_failed',
+    'Dữ liệu không hợp lệ',
+    'Một hoặc nhiều trường không hợp lệ.',
+  );
+  return { ...r, body: { ...(r.body as object), errors: { [field]: [message] } } };
+};
 const notFound = (what: string) => problem(404, 'not_found', `Không tìm thấy ${what}`);
 const conflict = (detail: string, code = 'conflict') =>
   problem(409, code, 'Xung đột trạng thái', detail);
@@ -950,24 +960,22 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
       if (kind === 'config' && !s.contents.includes('config'))
         return invalid('Snapshot không chứa cấu hình.');
     }
-    let target = a.server;
-    if (b.target_server_uuid) {
-      const sv = ctx.db.data.servers.find((x) => x.uuid === b.target_server_uuid);
-      if (!sv || !canSeeServer(v, sv.uuid)) return invalid('Server đích không nằm trong phạm vi.');
-      if (sv.status !== 'ready' || !sv.agent_connected)
-        return conflict('Server đích chưa sẵn sàng.', 'invalid_state_transition');
-      target = { uuid: sv.uuid, name: sv.name };
-    }
+    // Như API thật (RestoreService): khôi phục trên server hiện tại của account; sang server khác là Phase 9.
+    const target = a.server;
+    if (b.target_server_uuid && b.target_server_uuid !== a.server.uuid)
+      return invalid('Khôi phục sang máy chủ khác: Phase 9 (chuyển account).');
+    if (a.lifecycle_state !== 'active')
+      return conflict(
+        `Account đang ${a.lifecycle_state}: kích hoạt lại trước khi khôi phục.`,
+        'invalid_state_transition',
+      );
+    if (items.includes('config'))
+      return invalid('Khôi phục cấu hình máy chủ: dùng DR ("itso backup panel-restore").');
     if (b.mode === 'overwrite') {
-      if (target.uuid !== a.server.uuid)
-        return invalid('Ghi đè chỉ thực hiện trên server hiện tại của account.');
+      if (items.length !== 1 || !/^(files:sites\/[a-z0-9.-]+|database:.+)$/.test(items[0] ?? ''))
+        return invalid('Ghi đè: mỗi lần đúng một website hoặc một database.');
       if (b.confirm !== a.username)
-        return problem(
-          422,
-          'confirmation_mismatch',
-          'Xác nhận không khớp',
-          `Gõ đúng "${a.username}" để ghi đè.`,
-        );
+        return fieldInvalid('confirm', 'Gõ đúng username account để xác nhận ghi đè.');
     }
     const r: S['Restore'] = {
       uuid: ctx.db.newUuid(),
@@ -988,7 +996,7 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
     const reply = startJob(ctx, {
       type: 'backup.restore',
       resource: { type: 'restore', uuid: r.uuid },
-      ops: b.mode === 'overwrite' ? ['backup.run', 'backup.restore'] : ['backup.restore'],
+      ops: ['backup.restore'],
       server: target,
       changes: { snapshot: s.restic_snapshot_id, mode: b.mode, items },
       onDone: (db) => {

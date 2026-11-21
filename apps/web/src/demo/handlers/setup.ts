@@ -236,6 +236,8 @@ export function registerSetup() {
   // ---- Khôi phục thảm họa (D-87): mở repo panel bằng bộ khôi phục, chọn bản backup panel, khôi phục.
   const sourceError = (b: Partial<S['SetupRestoreSource']>): string | null => {
     if (!b.type || !['local', 'sftp', 's3', 'rest'].includes(b.type)) return 'Chọn loại đích.';
+    if (b.type === 'sftp')
+      return 'Đích SFTP: chạy "sudo itso backup panel-restore --kit <file> --snapshot <id> --ssh-key <khóa>" rồi "sudo itso panel-restore-apply --dir <thư mục in ra>" (runbook DR).';
     const need: Record<string, string[]> = {
       local: ['path'],
       sftp: ['host', 'user', 'path'],
@@ -243,6 +245,8 @@ export function registerSetup() {
       rest: ['url'],
     };
     for (const k of need[b.type] ?? []) if (!b.config?.[k]?.trim()) return `Thiếu cấu hình "${k}".`;
+    if (!/^itso\/[0-9a-f-]{36}\/server$/.test(b.repository_path ?? ''))
+      return 'Đường dẫn repo server dạng itso/<uuid server>/server (dòng "repo:" của mục "server <tên máy>" trong bộ khôi phục).';
     if ((b.repository_password ?? '').length < 16)
       return 'Mật khẩu repo từ 16 ký tự (trong bộ khôi phục).';
     if (!/^AGE-SECRET-KEY-1[0-9A-Z]{58}$/.test(b.panel_private_key ?? ''))

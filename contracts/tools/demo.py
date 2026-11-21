@@ -164,8 +164,8 @@ ACCOUNTS = [
      **ts()},
     {"uuid": u("account", 4), "username": "oldshop", "server": server_ref(2), "package": pkg_ref(1, 1),
      "owner": user_ref(2), "uid": 20003, "home_path": "/home/oldshop", "lifecycle_state": "terminated",
-     "suspended_reason": None, "terminated_at": "2026-11-01T10:00:00+07:00",
-     "purge_after": "2026-12-01T10:00:00+07:00", "legal_hold": False,
+     "suspended_reason": None, "terminated_at": "2026-10-15T10:00:00+07:00",
+     "purge_after": "2026-11-14T10:00:00+07:00", "legal_hold": False,
      "usage": usage(950, 21000, 0, 0, 0, 0, 0, 0, 1200, 1), **do(status="suspended"), **ts()},
 ]
 
@@ -322,7 +322,7 @@ SNAPSHOTS = [
     {"uuid": u("snapshot", 2), "hosting_account": acc_ref(3), "destination": {"uuid": BACKUP_DESTS[1]["uuid"],
                                                                            "name": BACKUP_DESTS[1]["name"]},
      "scope_type": "hosting_account", "restic_snapshot_id": "a91b03dd", "size_mb": 1200.0,
-     "taken_at": "2026-11-01T10:05:00+07:00", "verified_at": "2026-11-01T11:00:00+07:00",
+     "taken_at": "2026-10-15T10:05:00+07:00", "verified_at": "2026-10-15T11:00:00+07:00",
      "contents": ["files", "databases", "config"], "tags": ["final", "pre-purge"]},
 ]
 
@@ -340,9 +340,9 @@ RECOVERY_KIT = {
     "destination": {"uuid": BACKUP_DESTS[1]["uuid"], "name": BACKUP_DESTS[1]["name"], "type": "s3",
                     "config": BACKUP_DESTS[1]["config"]},
     "repositories": [
-        {"label": "panel + cấu hình srv-hn-01", "path": "s3:https://s3.ap-southeast-1.example.com/itso-backup/itso/01938a02-0001-7000-8000-000002000001/server",
+        {"label": "server srv-hn-01", "path": "itso/01938a02-0001-7000-8000-000002000001/server",
          "password": "demo-Rk7-panel-9fQ2-xV4m-T8sL-3bNw"},
-        {"label": "anphat", "path": "s3:https://s3.ap-southeast-1.example.com/itso-backup/itso/01938a02-0001-7000-8000-000002000001/acct-anphat",
+        {"label": "account anphat", "path": "itso/01938a02-0001-7000-8000-000002000001/acct-" + ACCOUNTS[0]["uuid"],
          "password": "demo-Hp3-acct-2mZ8-qW6r-K1vD-7cYe"},
     ],
     "panel_public_key": "age1demo0itso0panel0public0key0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -369,8 +369,8 @@ MIGRATIONS = [
 
 PURGES = [
     {"uuid": u("purge", 1), "hosting_account": acc_ref(3), "requested_by": user_ref(0), "confirmed_by": None,
-     "final_backup_snapshot_uuid": SNAPSHOTS[1]["uuid"], "backup_verified_at": "2026-11-01T11:00:00+07:00",
-     "scheduled_for": "2026-12-01T10:00:00+07:00", "completed_at": None, "objects": [], **ts()},
+     "final_backup_snapshot_uuid": SNAPSHOTS[1]["uuid"], "backup_verified_at": "2026-10-15T11:00:00+07:00",
+     "scheduled_for": "2026-11-14T10:00:00+07:00", "completed_at": None, "objects": [], **ts()},
 ]
 
 # ---------------------------------------------------------------- jobs

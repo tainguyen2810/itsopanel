@@ -208,14 +208,14 @@ const CASES: [string, string, string, unknown, number, string?][] = [
     '/api/v1/admin/hosting-accounts/{id}:schedule-purge',
     `/api/v1/admin/hosting-accounts/${OLDSHOP}:schedule-purge`,
     {},
-    409,
+    202,
   ],
   [
     'post',
     '/api/v1/admin/hosting-accounts/{id}:confirm-purge',
     `/api/v1/admin/hosting-accounts/${OLDSHOP}:confirm-purge`,
     { purge_uuid: PURGE, confirm_username: 'oldshop' },
-    403,
+    409,
   ],
   [
     'post',
@@ -345,16 +345,43 @@ describe('API giả lập gói và tài khoản hosting', () => {
     const rec = recs.find((p) => p.hosting_account.uuid === ANPHAT);
     expect(rec, JSON.stringify(purge)).toBeDefined();
     const body = { purge_uuid: rec?.uuid, confirm_username: 'anphat' };
-    expect(
-      (await call('POST', `/api/v1/admin/hosting-accounts/${ANPHAT}:confirm-purge`, body)).status,
-    ).toBe(403);
-    await finish(
-      await call('POST', `/api/v1/admin/hosting-accounts/${ANPHAT}:confirm-purge`, body, HAI),
+    // Mới chấm dứt: còn trong hạn giữ dữ liệu → chưa xác nhận được (như PurgeService).
+    const early = await call(
+      'POST',
+      `/api/v1/admin/hosting-accounts/${ANPHAT}:confirm-purge`,
+      body,
+      HAI,
     );
+    expect(early.status).toBe(409);
+    expect(JSON.stringify(early.body)).toContain('Chưa tới hạn');
+
+    // oldshop đã hết hạn giữ: SA A lên lịch lại (thay biên bản cũ) → tự xác nhận 409 → SA B xác nhận → purge ngay.
+    await finish(
+      await call('POST', `/api/v1/admin/hosting-accounts/${OLDSHOP}:schedule-purge`, {}),
+    );
+    const open = data<
+      { uuid: string; hosting_account: { uuid: string }; completed_at: string | null }[]
+    >(await call('GET', '/api/v1/admin/purge-records?per_page=100')).filter(
+      (p) => p.hosting_account.uuid === OLDSHOP && !p.completed_at,
+    );
+    expect(open).toHaveLength(1);
+    const ob = { purge_uuid: open[0]?.uuid, confirm_username: 'oldshop' };
+    const self = await call('POST', `/api/v1/admin/hosting-accounts/${OLDSHOP}:confirm-purge`, ob);
+    expect(self.status).toBe(409);
+    expect(JSON.stringify(self.body)).toContain('người xác nhận thứ hai');
+    const ok = await call(
+      'POST',
+      `/api/v1/admin/hosting-accounts/${OLDSHOP}:confirm-purge`,
+      ob,
+      HAI,
+    );
+    expect((ok.body as { job: { type: string } }).job.type).toBe('hosting_account.purge');
+    await finish(ok);
+    expect((await account(OLDSHOP)).lifecycle_state).toBe('purged');
     expect(
-      (await call('POST', `/api/v1/admin/hosting-accounts/${ANPHAT}:confirm-purge`, body, HAI))
+      (await call('POST', `/api/v1/admin/hosting-accounts/${OLDSHOP}:confirm-purge`, ob, HAI))
         .status,
-    ).toBe(409);
+    ).toBe(422);
   });
 
   it('legal hold chặn lên lịch purge', async () => {

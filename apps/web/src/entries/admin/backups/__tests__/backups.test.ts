@@ -86,6 +86,9 @@ describe('Chọn mục khôi phục', () => {
     expect(restoreItem('sites/anphat.vn/public')).toBe('files:sites/anphat.vn/public');
     expect(restoreItem('databases/anphat_web.sql.zst')).toBe('database:anphat_web');
     expect(restoreItem('config/nginx/anphat.vn.conf')).toBe('config');
+    // DB chọn theo danh sách databases của snapshot (agent lưu dump ở db/<tên>.sql|.dump).
+    expect(restoreItem('database:anphat_web')).toBe('database:anphat_web');
+    expect(restoreItem('database:../x')).toBe('files:database:../x');
   });
   it('bỏ mục con khi đã chọn thư mục cha, gộp config', () => {
     expect(

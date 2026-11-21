@@ -295,7 +295,7 @@
       "runHint": "Agent giải mã bản backup panel, rồi panel tự dừng khoảng một phút để thay DB và /etc/itso, áp lại cấu hình account và khôi phục dữ liệu website, database ở nền.",
       "sftpHint": "Đích SFTP không khôi phục qua wizard (cần khóa SSH và host key của đích): trên máy mới chạy \"sudo itso backup panel-restore --kit <file> --snapshot <id> --ssh-key <khóa>\" rồi \"sudo itso panel-restore-apply --dir <thư mục in ra>\".",
       "repoPath": "Đường dẫn repo server",
-      "repoPathHint": "Dòng \"repo server\" trong bộ khôi phục, dạng itso/<uuid>/server.",
+      "repoPathHint": "Dòng \"repo:\" của mục \"server <tên máy>\" trong bộ khôi phục, dạng itso/<uuid>/server.",
       "repoPassword": "Mật khẩu repo server",
       "privateKey": "Khóa riêng của panel",
       "privateKeyHint": "Dòng AGE-SECRET-KEY-1… trong bộ khôi phục.",
@@ -998,7 +998,7 @@
     "title": "Tài khoản đã chấm dứt",
     "description": "Dữ liệu giữ tối thiểu 30 ngày. Purge cần backup cuối đã kiểm chứng và hai Super Admin khác nhau: một người lên lịch, người kia xác nhận.",
     "policyTitle": "Quy trình purge 2 bước (D-46)",
-    "policy": "1. Super Admin A lên lịch purge, panel chạy và kiểm chứng backup cuối. 2. Super Admin B gõ username để xác nhận. Purge tự chạy khi hết thời hạn giữ dữ liệu. Tài khoản đang giữ pháp lý không purge được.",
+    "policy": "1. Super Admin A lên lịch purge: panel chạy backup cuối rồi tự kiểm chứng (restic check + thử khôi phục). 2. Khi hết thời hạn giữ dữ liệu, Super Admin B gõ username để xác nhận, purge chạy ngay. Tài khoản đang giữ pháp lý không purge được.",
     "terminatedAt": "Chấm dứt lúc",
     "countdown": "Thời hạn giữ",
     "countdownOf": "Thời hạn giữ dữ liệu của {{name}}",
@@ -1010,7 +1010,7 @@
       "none": "Chưa lên lịch",
       "backup": "Đang kiểm chứng backup",
       "confirm": "Chờ Super Admin thứ hai",
-      "scheduled": "Đã xác nhận, chờ tới hạn",
+      "scheduled": "Đã xác nhận, đang purge",
       "done": "Đã purge",
       "hold": "Giữ pháp lý"
     },
@@ -1019,15 +1019,16 @@
     "actions": "Thao tác",
     "schedule": "Lên lịch purge",
     "scheduleTitle": "Lên lịch purge {{name}}?",
-    "scheduleHint": "Panel chạy backup cuối và thử khôi phục để kiểm chứng. Purge chỉ chạy sau {{date}} và khi một Super Admin khác xác nhận.",
+    "scheduleHint": "Panel chạy backup cuối và thử khôi phục để kiểm chứng. Chỉ xác nhận purge được sau {{date}}, bởi một Super Admin khác.",
     "confirm": "Xác nhận purge",
     "confirmTitle": "Xác nhận purge {{name}}?",
-    "confirmHint": "{{name}} đã yêu cầu. Toàn bộ file, database, SSL và cấu hình sẽ bị xóa vĩnh viễn vào {{date}}; chỉ còn bản backup cuối.",
+    "confirmHint": "{{name}} đã yêu cầu. Toàn bộ file, database, SSL và cấu hình bị xóa vĩnh viễn ngay khi xác nhận; chỉ còn bản backup cuối.",
     "needOtherTitle": "Cần một Super Admin khác",
     "needOther": "Bạn đã lên lịch purge này nên không thể tự xác nhận (D-46). Nhờ một Super Admin khác đăng nhập để xác nhận; ở bản demo, đổi vai trò sang \"Nguyễn Hải\" ở menu tài khoản.",
     "understood": "Đã hiểu",
     "empty": "Không có tài khoản nào đã chấm dứt.",
-    "needVerified": "Chờ snapshot cuối được kiểm chứng khôi phục được"
+    "needVerified": "Chờ snapshot cuối được kiểm chứng khôi phục được",
+    "notDue": "Chỉ xác nhận được sau {{date}} (hết thời hạn giữ dữ liệu)"
   },
   "sites": {
     "title": "Website",
@@ -2192,7 +2193,8 @@
     "errors": {
       "snapshot": "Chọn một snapshot",
       "items": "Chọn ít nhất một mục cần khôi phục",
-      "confirm": "Gõ đúng \"{{name}}\" để ghi đè"
+      "confirm": "Gõ đúng \"{{name}}\" để ghi đè",
+      "overwriteOne": "Ghi đè: mỗi lần đúng một website (thư mục sites/<tên miền>) hoặc một database. File lẻ luôn khôi phục ra bản mới."
     },
     "stepUpTitle": "Cần xác thực lại MFA",
     "stepUpHint": "Ghi đè cần nhập lại mã MFA. Panel dump/chụp snapshot bản hiện tại trước khi ghi đè; lỗi giữa chừng thì bản đang chạy không đổi.",

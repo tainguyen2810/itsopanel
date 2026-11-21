@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.6 (UI Backup & Restore nối API thật) — nhánh `phase-8`
+
+Phạm vi: `apps/web/src` — `shared/hosting/pages/RestoreWizard` (DB theo `snapshot.databases`, ghi đè đúng 1 website/DB, bỏ mục cấu hình), `shared/hosting/backup.ts`, `entries/admin/backups/{RestoreNewPage,RecoveryKitDialog}` (không chọn server khác; dòng `destination_uuid`), `entries/admin/hosting/TerminatedPage` (xác nhận purge chỉ sau hạn giữ), `entries/admin/install/{DrRestore,InstallPage}` (đường dẫn repo server, `restore_mode`, SFTP → CLI); MSW `demo/handlers/{governance,hosting,setup}.ts` theo hành vi API thật; i18n VI/EN; dữ liệu demo (`contracts/tools/demo.py`: oldshop hết hạn giữ, bộ khôi phục mẫu đúng định dạng thật). Contracts: chỉ ví dụ/mô tả.
+
+Đối chiếu UI ↔ API thật tìm ra (mockup 8.0 giả định khác API): DB trong snapshot không nằm ở `databases/<tên>.sql.zst` (agent: `db/<tên>.sql|.dump`) → chọn theo danh sách `databases` của snapshot; ghi đè nhiều mục / sang server khác / mục cấu hình bị API từ chối → chặn ngay ở wizard; bộ khôi phục thiếu `destination_uuid` nên CLI `itso backup panel-restore` không đọc được; purge thật xóa ngay khi xác nhận và chỉ sau hạn giữ (mockup: xác nhận bất kỳ lúc nào, xóa khi tới hạn).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest (toàn bộ) | `pnpm exec vitest run` (apps/web) | PASS 559/559 (37 file). Sửa/mới: `demo/__tests__/backup8.test.ts` (kit có `destination_uuid`; DR: SFTP 422 kèm hướng dẫn CLI, sai đường dẫn repo 422), `governance.test.ts` (ghi đè sai username → 422 trường `confirm`; ghi đè 2 mục 422; server khác 422), `hosting.test.ts` (mới chấm dứt → xác nhận 409 "Chưa tới hạn"; lên lịch lại thay biên bản cũ; tự xác nhận 409; SA khác → job `hosting_account.purge`, account `purged`; xác nhận lại 422), `backups.test.ts` (`restoreItem('database:…')`) |
+| Lint + Prettier + i18n | `pnpm lint` · `pnpm tsc --noEmit` | PASS; `check-i18n: OK — 6 namespace, 2899 key, 0 thiếu (vi = en)` · OK |
+| Playwright demo | `pnpm exec playwright test --trace off e2e/demo-backup8.spec.ts e2e/demo-hosting.spec.ts` | 12/12 PASS (Backup Center 5 tab + Portal + wizard DR: axe 0 lỗi critical/serious; purge 2 bước: SA khác xác nhận → "Xóa vĩnh viễn tài khoản", account rời danh sách) |
+| Playwright hồi quy | `pnpm exec playwright test --trace off e2e/demo-smoke.spec.ts e2e/demo-portal.spec.ts` | 80/80 PASS |
+| Ảnh | `SCREENSHOT_DIR_P8=docs/screenshots/phase-8 playwright test e2e/screenshots-phase8.spec.ts -g "install-dr\|terminated"` | 16/16, chụp lại 12 ảnh (wizard DR có đường dẫn repo server, trang purge) |
+| API (không đổi hành vi) | `bash scripts/pest-pg.sh tests/Feature/Phase8` · `make lint-api` · `make contracts-check` · `make codegen-check` | PASS 11/11 · PASS · PASS · OK |
+
+**Chờ VM:** không (luồng thật kiểm ở 8.7). **Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 8 / Prompt 8.5 (khôi phục thảm họa) — nhánh `phase-8`
 
 Môi trường: PostgreSQL 16 + Redis trong container; agent giả kiểm params/result theo `contracts/agent-ops`; agent thật chạy với restic thật trong test Go. Diễn tập DR trên 2 VM: **chờ VM** (`tests/vm/phase8.sh`, Prompt 8.7).
