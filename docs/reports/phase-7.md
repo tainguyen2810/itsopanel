@@ -17,7 +17,7 @@
 | 7.4 Panel API | Domain/Security (ruleset PHP khớp golden agent, safe-apply, SSH, fail2ban, WAF + đồng bộ sự kiện, mã độc, FIM, điểm, sự kiện → thông báo), 32 endpoint admin + 5 portal, CAPTCHA PoW, `auth.log` cho fail2ban, IP allowlist chống tự khóa, nền bảo mật khi xong wizard | cc0074a |
 | 7.5 Terminal root | Policy `terminal.root`/`record_user` (`itso policy set … on/off`), `pty.open.root` (SUPER_ADMIN + step-up ≤ 10 phút), ghi asciicast 0600 (50 MB → cắt), `pty.list`, `pty.recording.read`, `itso allowlist reset` | 9ce6ef9 |
 | 7.6 UI | Bộ chọn máy chủ (`?server=`), gỡ chặn IP fail2ban, FIM changes, xem trước ruleset + chặn khi `lockout_risk`, đếm ngược khôi phục từ status, sự kiện WAF theo website, phát lại bản ghi phân trang, wizard → xác nhận tường lửa | cd3b467 |
-| 7.7 Tích hợp | e2e stack thật Phase 7 (5 luồng); sửa lỗi sandbox thiếu user root (§4); `tests/vm/phase7.sh` S0–S7; review bảo mật; runbook | (commit 7.7) |
+| 7.7 Tích hợp | e2e stack thật Phase 7 (5 luồng); sửa lỗi sandbox thiếu user root (§4); `tests/vm/phase7.sh` S0–S7; review bảo mật; runbook | 8821cae, 1c6ce68 |
 
 ## 2. File chính
 
