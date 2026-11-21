@@ -88,6 +88,13 @@ func LoadCA(certPEM, keyPEM []byte) (*CA, error) {
 	return &CA{Cert: cert, CertPEM: certPEM, key: key}, nil
 }
 
+// ValidUUID kiểm server_uuid (dạng uuid chữ thường).
+func ValidUUID(s string) bool { return uuidRe.MatchString(s) }
+
+// EnrollCN là CN của CSR lúc join: node chưa biết server_uuid, panel cấp uuid và chứng chỉ luôn mang
+// CN = server_uuid. Khi xoay vòng, CSR bắt buộc CN = server_uuid.
+const EnrollCN = "itso-enroll"
+
 // SignCSR ký CSR của node. Kiểm: một khối PEM CSR, chữ ký hợp lệ, khóa ECDSA P-256, CN = serverUUID.
 // Mọi extension xin thêm (SAN, IsCA, KeyUsage) bị bỏ: chứng chỉ chỉ dùng ClientAuth.
 func (ca *CA) SignCSR(csrPEM []byte, serverUUID string, ttl time.Duration, now time.Time) (*Issued, error) {
@@ -101,7 +108,7 @@ func (ca *CA) SignCSR(csrPEM []byte, serverUUID string, ttl time.Duration, now t
 	if err != nil {
 		return nil, err
 	}
-	if csr.Subject.CommonName != serverUUID {
+	if csr.Subject.CommonName != serverUUID && csr.Subject.CommonName != EnrollCN {
 		return nil, fmt.Errorf("CN của CSR (%q) khác server_uuid", csr.Subject.CommonName)
 	}
 	serial, err := randSerial()
@@ -145,9 +152,9 @@ func ParseCSR(csrPEM []byte) (*x509.CertificateRequest, error) {
 	return csr, nil
 }
 
-// NewKeyAndCSR sinh khóa ECDSA P-256 + CSR CN = serverUUID (chạy trên node).
+// NewKeyAndCSR (serverUUID = EnrollCN khi join) sinh khóa ECDSA P-256 + CSR CN = serverUUID (chạy trên node).
 func NewKeyAndCSR(serverUUID string) (keyPEM, csrPEM []byte, err error) {
-	if !uuidRe.MatchString(serverUUID) {
+	if !uuidRe.MatchString(serverUUID) && serverUUID != EnrollCN {
 		return nil, nil, errors.New("server_uuid không hợp lệ")
 	}
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

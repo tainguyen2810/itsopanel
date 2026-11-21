@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 9 / Prompt 9.3 (installer theo vai trò, `itso node`) — nhánh `phase-9`
+
+Phạm vi: `agent/internal/install/{node.go,steps.go,manage.go,release.go,env.go,preflight.go}` (+ `node_test.go`), `agent/internal/pki` (CSR join CN `itso-enroll`), `agent/cmd/itso` (`--role/--join/--token/--ca-sha256`, `pki`, `node`), `packaging/systemd/{itso-relay,itso-agent-node,itso-cert-rotate}.*`, `itso.target`, `packaging/Caddyfile`, `packaging/install.sh.in`, `scripts/release.sh` (build `itso-relay`), `tests/installer/install_sh_test.sh`, `docs/runbooks/multi-server.md`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Installer Go (gốc giả + runner giả) | `go test ./internal/install/` | **PASS**. Mới: control plane tạo CA/relay/enroll đúng quyền + chủ, unit relay + timer xoay, chạy lại không ghi gì và không sinh lại CA, đổi vai trò tại chỗ bị từ chối; node join với control plane giả (TLS do CA nội bộ cấp): không cài postgresql/redis/artisan/itso.target, file 0600/0644/0700, khóa HMAC riêng, output không lộ token/khóa, token không xuống đĩa; pin sai → dừng và **không gửi token**; token sai → `enrollment_invalid`; chứng chỉ trả về cho khóa khác → từ chối; tham số sai bị chặn trước mọi kết nối; `node status`/`leave --yes` (thiếu `--yes` lỗi)/`rejoin` (khóa mới, restart agent node); `update`/`rollback` trên node chỉ đổi release + restart `itso-agent-node`; `doctor` trên node kiểm chứng chỉ node, không kiểm dịch vụ panel |
+| PKI | `go test ./internal/pki/` | PASS (CSR join `itso-enroll` → chứng chỉ CN = server_uuid) |
+| Go toàn bộ | `go test -race ./...` · `make lint-agent` · `make no-exec` | PASS · sạch · OK |
+| Unit systemd | `make units-check` | `verify-units: OK (18 unit)` (mới: `itso-relay.service`, `itso-agent-node.service`, `itso-cert-rotate.service/.timer`) |
+| install.sh | `make test-installer` | **11/11** (mới: `--role node --join --token --ca-sha256` và `--role control-plane` chuyển nguyên cho `itso install`) |
+| Lint API · Docs | `make lint-api` · `make docs-check` | PASS · 0 lỗi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** cài control plane + join node thật, tường lửa, `systemctl` thật (9.8 `tests/vm/phase9.sh`). Lệnh `itso:certs-rotate` mà timer gọi được hiện thực ở 9.4.
+
 ## 2026-11-21 — Phase 9 / Prompt 9.2 (CA nội bộ, itso-relay, agent node) — nhánh `phase-9`
 
 Phạm vi: `agent/internal/pki`, `agent/internal/ops/pki.go` (+ `pki_test.go`), `agent/internal/relay/{frame,hub,node,server}.go` (+ `relay_test.go`), `agent/cmd/itso-relay`, `agent/cmd/itso-agent` (`--mode node`); Laravel `AgentClient::forServer`, `AgentUnreachable`, `JobRunner`, `config/itso.php` (`relay.socket`, `relay.enroll_key_file`); `scripts/dev.sh` (relay + node sandbox).

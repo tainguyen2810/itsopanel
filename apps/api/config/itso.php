@@ -41,7 +41,7 @@ return [
     // Kênh node từ xa qua itso-relay (Phase 9, D-89/D-91): heartbeat 20 giây.
     'relay' => [
         // Unix socket của itso-relay (Laravel gửi envelope cho node mtls qua đây).
-        'socket' => env('ITSO_RELAY_SOCKET', '/run/itso/relay.sock'),
+        'socket' => env('ITSO_RELAY_SOCKET', '/run/itso-relay/relay.sock'),
         // Khóa ký yêu cầu enroll mà relay chuyển tiếp (dùng chung với itso-relay --relay-key-file).
         'enroll_key_file' => env('ITSO_RELAY_ENROLL_KEY_FILE', '/etc/itso/relay/enroll.key'),
         'degraded_after_sec' => (int) env('ITSO_RELAY_DEGRADED_AFTER', 60),

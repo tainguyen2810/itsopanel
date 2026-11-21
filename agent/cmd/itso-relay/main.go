@@ -39,12 +39,12 @@ func main() {
 		return
 	}
 	listen := flag.String("listen", ":28444", "địa chỉ TLS công khai cho node")
-	socket := flag.String("socket", "unix:/run/itso/relay.sock", "unix socket cho Laravel")
+	socket := flag.String("socket", "unix:/run/itso-relay/relay.sock", "unix socket cho Laravel")
 	caFile := flag.String("ca", ops.CACertPath, "chứng chỉ CA nội bộ (công khai)")
 	certFile := flag.String("cert", "/etc/itso/relay/relay.pem", "chứng chỉ TLS của relay")
 	keyFile := flag.String("key", "/etc/itso/relay/relay.key", "khóa TLS của relay")
-	stateFile := flag.String("state", "/var/lib/itso/relay/state.json", "danh sách fingerprint bị thu hồi")
-	enrollURL := flag.String("enroll-url", "http://127.0.0.1/api/v1/internal/nodes:enroll", "endpoint enroll của Laravel (rỗng = tắt)")
+	stateFile := flag.String("state", "/var/lib/itso-relay/state.json", "danh sách fingerprint bị thu hồi")
+	enrollURL := flag.String("enroll-url", "http://127.0.0.1:28480/api/v1/internal/nodes:enroll", "endpoint enroll của Laravel (rỗng = tắt)")
 	relayKeyFile := flag.String("relay-key-file", "/etc/itso/relay/enroll.key", "khóa ký yêu cầu enroll chuyển tiếp (dùng chung với panel)")
 	sandbox := flag.Bool("sandbox", false, "dev/e2e: cho phép chạy bằng root và đường dẫn tùy ý")
 	showVersion := flag.Bool("version", false, "in phiên bản")

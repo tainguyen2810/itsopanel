@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"itso.local/agent/internal/ops"
+	"itso.local/agent/internal/pki"
 	"itso.local/agent/internal/policy"
 )
 
@@ -74,6 +76,10 @@ func (e *Env) URL() string {
 
 // Status in phiên bản, trạng thái unit, URL.
 func (e *Env) Status(ctx context.Context) error {
+	if e.Role() == RoleNode {
+		e.printf("ITSO node %s\n", e.CurrentVersion())
+		return e.NodeStatus(ctx)
+	}
 	cur := e.CurrentVersion()
 	if cur == "" {
 		e.printf("ITSO Panel: chưa cài\n")
@@ -106,7 +112,15 @@ func (e *Env) Doctor(ctx context.Context) []Check {
 	} else {
 		add("release", Pass, "%s", v)
 	}
-	for _, u := range panelUnits {
+	node := e.Role() == RoleNode
+	units, secrets := panelUnits, []string{AgentKey, EnvFile, TLSKey}
+	if node {
+		units, secrets = []string{NodeUnit}, []string{AgentKey, ops.NodeKeyPath}
+	} else if e.Role() == RoleControlPlane || e.FS.Exists(ops.CACertPath) {
+		units = append(append([]string{}, panelUnits...), "itso-relay.service")
+		secrets = append(secrets, ops.CAKeyPath, RelayKey, RelayEnrollKey)
+	}
+	for _, u := range units {
 		if st := strings.TrimSpace(string(e.try(ctx, "systemctl", "is-active", u).Stdout)); st == "active" {
 			add(u, Pass, "active")
 		} else {
@@ -118,7 +132,7 @@ func (e *Env) Doctor(ctx context.Context) []Check {
 	} else {
 		add("agent_socket", Fail, "không có %s", AgentSocket)
 	}
-	for _, f := range []string{AgentKey, EnvFile, TLSKey} {
+	for _, f := range secrets {
 		rp, _ := e.FS.Path(f)
 		fi, err := os.Lstat(rp)
 		switch {
@@ -130,7 +144,19 @@ func (e *Env) Doctor(ctx context.Context) []Check {
 			add("perm "+f, Pass, "%v", fi.Mode().Perm())
 		}
 	}
-	if c, err := e.cert(); err != nil {
+	if node {
+		if b, err := e.FS.ReadFile(ops.NodeCertPath); err != nil {
+			add("node_cert", Fail, "không có chứng chỉ node (itso node rejoin)")
+		} else if c, err := pki.ParseCert(b); err != nil {
+			add("node_cert", Fail, "%v", err)
+		} else if left := c.NotAfter.Sub(e.now()); left <= 0 {
+			add("node_cert", Fail, "chứng chỉ node đã hết hạn: itso node rejoin")
+		} else if left < 7*24*time.Hour {
+			add("node_cert", Warn, "chứng chỉ node hết hạn sau %d ngày (panel tự xoay; kiểm kết nối relay)", int(left.Hours()/24))
+		} else {
+			add("node_cert", Pass, "hết hạn %s", c.NotAfter.Format("2006-01-02"))
+		}
+	} else if c, err := e.cert(); err != nil {
 		add("tls", Fail, "%v", err)
 	} else if left := c.NotAfter.Sub(e.now()); left < 14*24*time.Hour {
 		add("tls", Warn, "chứng chỉ panel hết hạn sau %d ngày", int(left.Hours()/24))

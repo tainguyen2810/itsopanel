@@ -4,6 +4,7 @@
 # Mọi logic còn lại nằm trong `itso install` (Go, có test).
 #
 #   sudo bash install.sh [--version X] [tùy chọn của itso install…]
+#   Node (Phase 9): sudo bash install.sh --role node --join https://CP:28444 --token itso_enr_… --ca-sha256 <pin>
 #
 # Biến môi trường: ITSO_RELEASE_URL (máy chủ phát hành), ITSO_RELEASE_DIR (thư mục có sẵn file, cài offline),
 # ITSO_BOOTSTRAP_DIR (nơi chép file đã kiểm, mặc định /opt/itso/bootstrap).

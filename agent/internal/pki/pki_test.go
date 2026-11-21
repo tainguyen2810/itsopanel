@@ -118,3 +118,21 @@ func TestLoadCARejectsMismatchedKey(t *testing.T) {
 		t.Fatal(fp, err)
 	}
 }
+
+func TestEnrollCSRGetsServerUUID(t *testing.T) {
+	certPEM, keyPEM, _ := NewCA("t", time.Now())
+	ca, _ := LoadCA(certPEM, keyPEM)
+	_, csr, err := NewKeyAndCSR(EnrollCN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := "01938a01-0002-7000-8000-000000000002"
+	is, err := ca.SignCSR(csr, u, MaxTTL, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, _ := ParseCert(is.CertPEM)
+	if c.Subject.CommonName != u {
+		t.Fatalf("CN = %q", c.Subject.CommonName)
+	}
+}

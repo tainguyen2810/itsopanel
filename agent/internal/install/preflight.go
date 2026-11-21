@@ -33,6 +33,11 @@ type Options struct {
 	DryRun     bool
 	Yes        bool
 	Restore    bool // cài như mới rồi vào chế độ khôi phục từ backup (DR)
+	// Phase 9 (D-88): vai trò; node cần Join + Token + CASHA256 (token không bao giờ ghi xuống đĩa/log).
+	Role     string
+	Join     string
+	Token    string
+	CASHA256 string
 }
 
 // otherPanels: dấu hiệu panel khác đã cài (10 §3).

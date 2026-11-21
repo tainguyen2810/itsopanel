@@ -47,6 +47,7 @@ LDF="-s -w -X main.version=$VER -X main.releasePubKey=$PUB_B64"
 (cd agent && CGO_ENABLED=0 GOOS=linux GOARCH="$ARCH" go build -trimpath -ldflags "$LDF" -o "$STAGE/bin/itso" ./cmd/itso)
 (cd agent && CGO_ENABLED=0 GOOS=linux GOARCH="$ARCH" go build -trimpath -ldflags "-s -w -X itso.local/agent/internal/ops.Version=$VER" -o "$STAGE/bin/itso-agent" ./cmd/itso-agent)
 (cd agent && CGO_ENABLED=0 GOOS=linux GOARCH="$ARCH" go build -trimpath -ldflags "-s -w -X itso.local/agent/internal/ops.Version=$VER" -o "$STAGE/bin/itso-gateway" ./cmd/itso-gateway)
+(cd agent && CGO_ENABLED=0 GOOS=linux GOARCH="$ARCH" go build -trimpath -ldflags "-s -w -X itso.local/agent/internal/ops.Version=$VER" -o "$STAGE/bin/itso-relay" ./cmd/itso-relay)
 
 cp -r packaging/systemd "$STAGE/packaging/systemd"
 cp packaging/Caddyfile "$STAGE/packaging/Caddyfile"

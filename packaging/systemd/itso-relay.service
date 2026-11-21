@@ -1,0 +1,48 @@
+# itso-relay: kênh agent từ xa (D-89, ADR 0035). Node quay số RA cổng 28444 (TLS 1.3, mTLS); Laravel gửi envelope
+# đã ký qua unix socket. Không đặc quyền, không giữ khóa CA hay khóa HMAC của node.
+[Unit]
+Description=ITSO Panel relay cho agent node
+PartOf=itso.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=itso-relay
+Group=itso-relay
+Slice=itso-panel.slice
+ExecStart=/opt/itso/current/bin/itso-relay --listen :28444 --socket unix:/run/itso-relay/relay.sock --ca /etc/itso/pki/ca.pem --cert /etc/itso/relay/relay.pem --key /etc/itso/relay/relay.key --state /var/lib/itso-relay/state.json --enroll-url http://127.0.0.1:28480/api/v1/internal/nodes:enroll --relay-key-file /etc/itso/relay/enroll.key
+Restart=on-failure
+RestartSec=2s
+RuntimeDirectory=itso-relay
+RuntimeDirectoryMode=0750
+StateDirectory=itso-relay
+StateDirectoryMode=0700
+UMask=0007
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LimitNOFILE=65536
+
+[Install]
+WantedBy=itso.target
