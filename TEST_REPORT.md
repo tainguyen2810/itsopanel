@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.2 (agent: runner restic, đích, backup) — nhánh `phase-8`
+
+Môi trường: restic 0.16.4 (gói Ubuntu) trong container.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Logic backup | `go test ./internal/backup/` | PASS: URL 4 loại đích, 15 đích/repo độc bị từ chối, argv không chứa mật khẩu repo/credential S3/rest, `sftp.command` cố định, loại trừ neo dưới home, tag/snapshot id độc, đọc `ls --json` chỉ mục con trực tiếp, phân loại lỗi + che credential, manifest bỏ symlink và file đổi; SSH server thật trong tiến trình (ghim host key, lệch → `host_key_mismatch`, khóa chưa thêm → `repo_auth_failed`); S3 SigV4 + Object Lock 30 ngày, rest-server append-only 403/404 |
+| restic thật | `go test ./internal/ops/ -run TestBackup` | PASS 4/4: init idempotent, repo local 0700, backup files (symlink → `/etc/shadow` lưu như symlink, `tmp/` `.cache/` `*.log` bị loại), dump DB dưới uid 20001 qua `--stdin`, snapshots (snapshot meta bị ẩn, hostname = server), browse + truncated, stats, sai mật khẩu → `repo_auth_failed`, repo chưa init → `repo_not_initialized`, thư mục bí mật bị xóa sau op; golden argv máy thật `backup.s3.argv` (EnvironmentFile 0600); 10 tham số độc bị từ chối trước khi chạy restic. Lần đầu golden thiếu bước `init` do hook test so chuỗi sai (" cat config"); sửa hook, ghi lại golden |
+| Fuzz | `go test -run='^$' -fuzz=FuzzParseDest -fuzztime=15s ./internal/backup` | PASS 87 482 lần (lần đầu đếm sai số thành phần `sftp.command` trong chính test: 23, không phải 22); thêm vào `make test-fuzz` |
+| Agent toàn bộ | `go vet ./... && go test ./...` · `make no-exec` | PASS · OK |
+
+**Test bị bỏ qua:** không (test restic thật tự bỏ qua khi máy không có `/usr/bin/restic`; ở đây có).
+
 ## 2026-11-21 — Phase 8 / Prompt 8.1 (ADR, contracts, migration) — nhánh `phase-8`
 
 | Bộ test | Lệnh | Kết quả |

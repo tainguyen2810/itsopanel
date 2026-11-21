@@ -3,8 +3,10 @@ package ops
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -208,6 +210,15 @@ func (s *dbSim) stream(ctx context.Context, p platform.Proc) (int, error) {
 	switch p.Bin {
 	case "itso-fs-helper":
 		return SandboxFSHelper(ctx, p)
+	case "restic":
+		// Sandbox dùng restic thật nếu máy dev có (repo dưới gốc sandbox, Phase 8); không có thì báo thiếu phụ thuộc.
+		if _, err := os.Stat(platform.Bins["restic"]); err != nil {
+			if p.Stderr != nil {
+				fmt.Fprintln(p.Stderr, "restic: not installed on this dev machine")
+			}
+			return -1, errors.New("restic không có trên máy dev")
+		}
+		return platform.ExecRunner{}.Stream(ctx, p)
 	case "mariadb-dump", "pg_dump":
 		bin := map[string]string{"mariadb-dump": "mariadb", "pg_dump": "psql"}[p.Bin]
 		name := p.Args[len(p.Args)-1]
