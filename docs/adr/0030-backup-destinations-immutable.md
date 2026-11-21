@@ -1,6 +1,6 @@
 # ADR 0030: Đích backup local/SFTP/S3/rest, credential chỉ để ghi, forget tắt mặc định
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 8)
+- **Trạng thái:** Accepted (2026-11-21, duyệt cùng Phase 8)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-83, D-19, D-69
 

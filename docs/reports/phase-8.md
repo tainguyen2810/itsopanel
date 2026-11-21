@@ -1,10 +1,10 @@
 # Báo cáo Phase 8: Backup & Restore → v0.1.0-alpha
 
-- **Trạng thái:** ✓ hoàn tất phần làm được không cần VM, **chờ duyệt**. Nhánh `phase-8`, merge `--no-ff` vào `main` ở Git local (không push, không remote), tag local `v0.1.0-alpha`. Tiêu chí cần kernel/systemd/dịch vụ thật hoặc 2 máy được đánh dấu **chờ VM**; bộ script đã sẵn sàng (`tests/vm/phase8.sh`).
+- **Trạng thái:** ✓ hoàn tất phần làm được không cần VM, **APPROVED** (2026-11-21). Nhánh `phase-8`, merge `--no-ff` vào `main` ở Git local (không push, không remote), tag local `v0.1.0-alpha`. Tiêu chí cần kernel/systemd/dịch vụ thật hoặc 2 máy được đánh dấu **chờ VM**; bộ script đã sẵn sàng (`tests/vm/phase8.sh`).
 - **Thời gian:** 2026-11-21.
 - **Cách làm:** như Phase 7, **mockup trước khi code** (8.0, ảnh `docs/screenshots/phase-8/`), rồi contracts → agent → panel API → DR → UI nối API thật → tích hợp. Agent được test với **restic 0.16.4 thật** trên repo local (sandbox), đích từ xa (SFTP/S3/rest) bằng argv/env golden; stack cloud thật (PostgreSQL 16 + Redis + Laravel + Vite + agent sandbox + gateway).
 - **Phạm vi giữ đúng:** không đổi cấu hình máy chủ thật, không deploy. Laravel không chạy lệnh hệ thống (`check-no-exec` xanh). Agent không có op chạy lệnh tùy ý, không `sh -c`; dump/import DB và chép dữ liệu khôi phục chạy dưới uid account. Mật khẩu repo và credential đích chỉ qua tham chiếu bí mật, không vào job params, log, audit hay argv. Billing/WooCommerce/thanh toán: OUT OF SCOPE.
-- **Quyết định đề xuất chờ duyệt:** D-82 (repo restic + bộ khôi phục), D-83 (đích + immutable), D-84 (nội dung + nhất quán), D-85 (khôi phục qua staging), D-86 (lịch, tài nguyên, quota), D-87 (kiểm chứng + DR). ADR 0029 → 0033.
+- **Quyết định đã duyệt (2026-11-21):** D-82 (repo restic + bộ khôi phục), D-83 (đích + immutable), D-84 (nội dung + nhất quán), D-85 (khôi phục qua staging), D-86 (lịch, tài nguyên, quota), D-87 (kiểm chứng + DR). ADR 0029 → 0033.
 
 ## 1. Đã làm
 
@@ -90,4 +90,4 @@ E2E stack thật Phase 8 (`e2e-real/phase8.spec.ts`, 2 luồng, restic thật):
 
 ## 8. Bước tiếp theo
 
-Chờ duyệt Phase 8, D-82 → D-87 và mốc `v0.1.0-alpha`. **Không** bắt đầu Phase 9 khi chưa được duyệt.
+Phase 8, D-82 → D-87 và mốc `v0.1.0-alpha` đã duyệt (2026-11-21). Kế hoạch Phase 9: `docs/planning/seed/PHASE_9_PROMPTS.md`.
