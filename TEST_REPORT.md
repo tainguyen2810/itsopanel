@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.3 (agent: khôi phục, kiểm chứng, forget, backup panel, CLI) — nhánh `phase-8`
+
+Môi trường: restic 0.16.4 (gói Ubuntu) trong container, chạy bằng root; helper File Manager chạy trong tiến trình ở sandbox (uid account kiểm qua argv ghi lại).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| fsx khôi phục | `go test ./internal/fsx/ -run 'TestRestoreTar\|TestExchange'` | PASS 2/2: giải đúng nội dung, symlink/FIFO bị bỏ và báo lý do, setuid gỡ (0755), đích có sẵn → `already_exists`, tên `..` bị từ chối không để rác, vượt kích thước lỗi, đích là symlink ra ngoài không bị ghi xuyên; hoán đổi nguyên tử, từ chối hoán đổi với symlink |
+| Backup panel + bộ khôi phục | `go test ./internal/backup/` | PASS: tar + age round-trip (bản mã không chứa chuỗi bí mật, khóa sai/recipient sai lỗi, vượt giới hạn lỗi, tar độc `..`/symlink bị từ chối, file giải ra không cho group/other đọc); `ParseKit` (CRLF, 2 repo, đường dẫn repo lạ bị từ chối) |
+| restic thật: khôi phục | `go test ./internal/ops/ -run 'TestBackupRestore\|TestBackupCheck\|TestBackupForget\|TestBackupPanel\|TestKitCreds'` | PASS 8/8: file vào `backups/restore-<ts>` khớp nội dung, symlink → `/etc/shadow` không tạo lại, setuid gỡ, giải qua helper `[uid=20001]`, staging được dọn, chạy lại → `already_exists`; symlink đặt sẵn tại đích và thư mục cha symlink → từ chối, thư mục ngoài home trống; website ghi đè trả về bản snapshot, file lạ (`shell.php`) rời bản đang chạy, bản cũ giữ ở `.restore-<ts>`, snapshot pre-restore có hostname = server; DB bản mới/đã tồn tại/sai tên/account khác, ghi đè có pre-restore, nhập dưới uid 20001; `restore_test` DB nạp DB tạm OK; `check` 100% OK, làm hỏng pack → `check` báo lỗi và `restore_test` không ra ok; `backup.forget` bị `op_disabled` theo policy mặc định; backup panel: `pg_dump --cluster 16/itso -Fc itso` dưới uid postgres, staging dọn, `restore_test` kiểm sha256 file `.age`, `KitPanelRestore` giải ra đúng 3 file, khóa riêng sai bị từ chối; prune bằng bộ khôi phục keep-last 1: dry-run 2 mục (snapshot + meta), chạy thật còn đúng snapshot mới nhất |
+| CLI | `go test ./cmd/itso/` | PASS: cú pháp sai → mã 2 + usage; thiếu `--keep-*`, keep âm, snapshot `latest`, bộ khôi phục thiếu khóa riêng → mã 1 với thông báo rõ |
+| Agent toàn bộ | `go vet ./... && go test ./...` · `make lint-agent` · `make no-exec` | PASS · OK · OK (lần đầu `no-exec` bắt chuỗi shebang trong dữ liệu test; đổi nội dung file test) |
+
+Lỗi gặp khi viết test và đã sửa: `os.Chmod(…, 0o4755)` của Go không đặt setuid (phải dùng `os.ModeSetuid`); tag `pre_restore_tags` thử ngoài mẫu schema bị từ chối đúng (đổi dữ liệu test); hai lần khôi phục cùng giây trùng tên `.restore-<ts>` → `already_exists` đúng thiết kế (test đổi giờ).
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 8 / Prompt 8.2 (agent: runner restic, đích, backup) — nhánh `phase-8`
 
 Môi trường: restic 0.16.4 (gói Ubuntu) trong container.

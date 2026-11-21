@@ -43,6 +43,9 @@ Dùng: itso [--root DIR --sandbox] <lệnh> [tùy chọn]
   repair [--fix]
   uninstall [--purge-panel-data --confirm-hostname <hostname>]
   logs <agent|web|worker|scheduler|redis> [-n 200]
+  backup prune --kit FILE --keep-daily N [--keep-last|--keep-weekly|--keep-monthly|--keep-yearly N] [--ssh-key FILE] [--dry-run]
+  backup panel-restore --kit FILE --snapshot ID [--out DIR] [--ssh-key FILE]
+                                                   (credential đích đọc từ stdin: s3 = 2 dòng key id/secret, rest = 1 dòng mật khẩu)
 `
 
 func main() {
@@ -89,6 +92,7 @@ func run(ctx context.Context, args []string, out, errw io.Writer) int {
 	if k, err := base64.StdEncoding.DecodeString(releasePubKey); err == nil && len(k) == ed25519.PublicKeySize {
 		e.PubKey = k
 	}
+	sandboxMode = *sandbox
 	if err := dispatch(ctx, e, cmd, rest); err != nil {
 		fmt.Fprintln(errw, "itso:", err)
 		if errors.Is(err, errUsage) {
@@ -101,6 +105,12 @@ func run(ctx context.Context, args []string, out, errw io.Writer) int {
 }
 
 var errUsage = errors.New("sai cú pháp")
+
+// sandboxMode / stdin: đặt bởi run (test thay stdin).
+var (
+	sandboxMode bool
+	stdin       io.Reader = os.Stdin
+)
 
 func contains(l []string, s string) bool {
 	for _, x := range l {
@@ -242,6 +252,8 @@ func dispatch(ctx context.Context, e *install.Env, cmd string, args []string) er
 			return errUsage
 		}
 		return e.Logs(ctx, args[0], *n)
+	case "backup":
+		return backupCmd(ctx, e, args)
 	}
 	return fmt.Errorf("%w: lệnh lạ %q", errUsage, cmd)
 }

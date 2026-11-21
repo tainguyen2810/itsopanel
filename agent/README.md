@@ -41,6 +41,8 @@ Logic ở `internal/install` (test được trên gốc giả + runner giả), l
 | `itso repair [--fix]` | Kiểm checksums.txt của release, unit systemd, quyền file khóa |
 | `itso uninstall [--purge-panel-data --confirm-hostname H]` | Gỡ panel, giữ `/home` và dữ liệu hosting, đổi tên `/etc/itso` |
 | `itso admin reset-password EMAIL` · `itso admin reset-mfa EMAIL` · `itso policy get` · `itso policy set` · `itso logs DỊCH_VỤ` | Khôi phục truy cập (artisan argv cố định), policy agent, journal |
+| `itso backup prune --kit FILE --keep-daily N … [--dry-run]` | Prune ngoài luồng bằng bộ khôi phục (ADR 0029 §4): credential có quyền xóa nhập qua stdin, không lưu; xóa kèm snapshot meta |
+| `itso backup panel-restore --kit FILE --snapshot ID [--out DIR]` | Tải + giải mã age backup panel (dump DB + `/etc/itso`) vào thư mục root 0700 (ADR 0033 §6) |
 
 `--sandbox --root DIR`: chạy trên gốc giả với runner giả (dev/test). Bản build thường không có khóa công khai phát hành nên từ chối mọi release; `make release` nhúng khóa bằng `-ldflags`.
 

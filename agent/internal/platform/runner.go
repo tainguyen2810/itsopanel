@@ -41,6 +41,7 @@ var Bins = map[string]string{
 	"pg_dropcluster":   "/usr/bin/pg_dropcluster",
 	"pg_dump":          "/usr/bin/pg_dump",
 	"psql":             "/usr/bin/psql",
+	"pg_restore":       "/usr/bin/pg_restore",
 	"frankenphp":       "/opt/itso/current/bin/frankenphp",
 	// Website (Phase 5, D-67…D-69). Chỉ PHP 8.3 (kho Ubuntu 24.04).
 	"nginx":      "/usr/sbin/nginx",

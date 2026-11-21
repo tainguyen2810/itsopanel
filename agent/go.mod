@@ -13,3 +13,5 @@ require (
 	github.com/coder/websocket v1.8.14
 	golang.org/x/crypto v0.39.0
 )
+
+require filippo.io/age v1.2.1 // indirect

@@ -222,6 +222,11 @@ func (s *dbSim) stream(ctx context.Context, p platform.Proc) (int, error) {
 	case "mariadb-dump", "pg_dump":
 		bin := map[string]string{"mariadb-dump": "mariadb", "pg_dump": "psql"}[p.Bin]
 		name := p.Args[len(p.Args)-1]
+		if p.Bin == "pg_dump" && name == PanelDB {
+			// CSDL panel trong sandbox: dump giả cố định (backup panel, Phase 8).
+			_, err := p.Stdout.Write([]byte("PGDMP sandbox panel dump\n"))
+			return 0, err
+		}
 		s.mu.Lock()
 		exists := s.dbs[bin][name]
 		body := append([]byte("-- sandbox dump "+name+"\n"), s.dumps[bin+"/"+name]...)
@@ -234,21 +239,25 @@ func (s *dbSim) stream(ctx context.Context, p platform.Proc) (int, error) {
 		}
 		_, err := p.Stdout.Write(body)
 		return 0, err
-	case "mariadb", "psql":
+	case "mariadb", "psql", "pg_restore":
 		name := p.Args[len(p.Args)-1]
+		eng := p.Bin
+		if eng == "pg_restore" {
+			eng = "psql"
+		}
 		b, err := io.ReadAll(p.Stdin)
 		if err != nil {
 			return -1, err
 		}
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		if !s.dbs[p.Bin][name] {
+		if !s.dbs[eng][name] {
 			if p.Stderr != nil {
 				fmt.Fprintf(p.Stderr, "Unknown database '%s'\n", name)
 			}
 			return 1, nil
 		}
-		s.dumps[p.Bin+"/"+name] = b
+		s.dumps[eng+"/"+name] = b
 		return 0, nil
 	}
 	if p.Stdin != nil {

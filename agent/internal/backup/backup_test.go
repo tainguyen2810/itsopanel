@@ -18,16 +18,16 @@ import (
 )
 
 const (
-	srv  = "0193aa10-0001-7000-8000-000000000001"
-	acc  = "01938a01-0003-7000-8000-000000000020"
-	dst  = "0193bb10-0001-7000-8000-000000000003"
-	rpw  = "Rk7-panel-9fQ2-xV4m-T8sL"
-	path = "itso/" + srv + "/acct-" + acc
+	srv   = "0193aa10-0001-7000-8000-000000000001"
+	acc   = "01938a01-0003-7000-8000-000000000020"
+	dst   = "0193bb10-0001-7000-8000-000000000003"
+	rpw   = "Rk7-panel-9fQ2-xV4m-T8sL"
+	rpath = "itso/" + srv + "/acct-" + acc
 )
 
 func repoParams(dest map[string]any) RepoParams {
 	b, _ := json.Marshal(dest)
-	return RepoParams{RepoUUID: dst, Path: path, Destination: b, Password: rpw}
+	return RepoParams{RepoUUID: dst, Path: rpath, Destination: b, Password: rpw}
 }
 
 func TestParseRepoAndURL(t *testing.T) {
@@ -35,14 +35,14 @@ func TestParseRepoAndURL(t *testing.T) {
 		dest map[string]any
 		want string
 	}{
-		{map[string]any{"type": "local", "destination_uuid": dst}, "/R/" + path},
+		{map[string]any{"type": "local", "destination_uuid": dst}, "/R/" + rpath},
 		{map[string]any{"type": "sftp", "destination_uuid": dst, "host": "backup2.itso.local", "port": 2222, "user": "itso-backup",
-			"path": "/srv/backup", "host_key_sha256": nil}, "sftp:itso-backup@backup2.itso.local:/srv/backup/" + path},
+			"path": "/srv/backup", "host_key_sha256": nil}, "sftp:itso-backup@backup2.itso.local:/srv/backup/" + rpath},
 		{map[string]any{"type": "s3", "destination_uuid": dst, "endpoint": "https://s3.example.com", "bucket": "itso-backup",
 			"region": "ap-southeast-1", "access_key_id": "AKIAITSODEMO", "secret_access_key": "demo-secret-key"},
-			"s3:https://s3.example.com/itso-backup/" + path},
+			"s3:https://s3.example.com/itso-backup/" + rpath},
 		{map[string]any{"type": "rest", "destination_uuid": dst, "url": "https://rest.itso.local/itso", "user": "itso",
-			"password": "p@ss/w0rd!x"}, "rest:https://itso:p%40ss%2Fw0rd%21x@rest.itso.local/itso/" + path + "/"},
+			"password": "p@ss/w0rd!x"}, "rest:https://itso:p%40ss%2Fw0rd%21x@rest.itso.local/itso/" + rpath + "/"},
 	}
 	for _, c := range cases {
 		r, err := ParseRepo(repoParams(c.dest))
@@ -63,9 +63,9 @@ func TestParseRepoRejectsEvil(t *testing.T) {
 	bad := []RepoParams{
 		{RepoUUID: dst, Path: "itso/" + srv + "/../x", Destination: mustJSON(good), Password: rpw},
 		{RepoUUID: dst, Path: "/var/backups", Destination: mustJSON(good), Password: rpw},
-		{RepoUUID: dst, Path: path, Destination: mustJSON(good), Password: "short"},
-		{RepoUUID: dst, Path: path, Destination: mustJSON(good), Password: "has space in password!!"},
-		{RepoUUID: "x", Path: path, Destination: mustJSON(good), Password: rpw},
+		{RepoUUID: dst, Path: rpath, Destination: mustJSON(good), Password: "short"},
+		{RepoUUID: dst, Path: rpath, Destination: mustJSON(good), Password: "has space in password!!"},
+		{RepoUUID: "x", Path: rpath, Destination: mustJSON(good), Password: rpw},
 	}
 	dests := []map[string]any{
 		{"type": "local", "destination_uuid": dst, "path": "/"},
@@ -80,7 +80,7 @@ func TestParseRepoRejectsEvil(t *testing.T) {
 		{"type": "ftp", "destination_uuid": dst},
 	}
 	for _, d := range dests {
-		bad = append(bad, RepoParams{RepoUUID: dst, Path: path, Destination: mustJSON(d), Password: rpw})
+		bad = append(bad, RepoParams{RepoUUID: dst, Path: rpath, Destination: mustJSON(d), Password: rpw})
 	}
 	for i, p := range bad {
 		if _, err := ParseRepo(p); err == nil {

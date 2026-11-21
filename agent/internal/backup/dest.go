@@ -219,6 +219,15 @@ func (r Repo) AccountUUID() string {
 	return after
 }
 
+// ServerUUID trả uuid máy chủ trong đường dẫn repo itso/<server>/….
+func (r Repo) ServerUUID() string {
+	parts := strings.SplitN(r.Path, "/", 3)
+	if len(parts) < 2 {
+		return ""
+	}
+	return parts[1]
+}
+
 // URL dựng chuỗi repo restic. localRoot là đường dẫn thật của LocalRoot (sandbox: dưới gốc giả).
 // URL rest có credential nên chỉ được ghi vào file 0600 (--repository-file), không bao giờ vào argv.
 func (r Repo) URL(localRoot string) string {

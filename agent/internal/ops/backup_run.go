@@ -6,6 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"os"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"itso.local/agent/internal/backup"
@@ -95,9 +98,75 @@ func reUUIDStr(s string) bool {
 
 func validDomain(s string) bool { return validate.Domain(s) == nil }
 
-// backupPanel: hiện thực ở Prompt 8.3 (pg_dump + /etc/itso → age → restic --stdin).
-func (d *Deps) backupPanel(context.Context, *resticRun, *backupRunParams, []string, *backup.Meta) (backup.Summary, error) {
-	return backup.Summary{}, &registry.OpError{Code: "precondition_failed", Message: "backup panel chưa có ở bản này"}
+// PanelDB/PanelCluster: CSDL panel trên cluster PostgreSQL riêng.
+const (
+	PanelDB      = "itso"
+	PanelCluster = "16/itso" // cluster riêng của panel (như itso update)
+)
+
+// backupPanel (ADR 0031 §4): pg_dump -Fc itso (dưới user postgres) ghi tạm vào staging root 0700 (tar cần kích
+// thước trước), cộng cây /etc/itso → tar → age tới age_recipient → restic --stdin. Bản rõ không rời staging.
+func (d *Deps) backupPanel(ctx context.Context, r *resticRun, p *backupRunParams, base []string, meta *backup.Meta) (backup.Summary, error) {
+	st, err := d.streamer()
+	if err != nil {
+		return backup.Summary{}, err
+	}
+	cred, err := d.systemCred("postgres")
+	if err != nil {
+		return backup.Summary{}, err
+	}
+	dir, cleanup, err := d.staging("panel-" + path.Base(r.sess.Dir))
+	if err != nil {
+		return backup.Summary{}, err
+	}
+	defer cleanup()
+	dumpPath := filepath.Join(dir, "itso.dump")
+	f, err := os.OpenFile(dumpPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return backup.Summary{}, opErr(err)
+	}
+	var derr strings.Builder
+	code, err := st.Stream(ctx, platform.Proc{Bin: "pg_dump", Args: []string{"--cluster", PanelCluster, "-Fc", PanelDB}, As: cred, Stdout: f, Stderr: &derr})
+	if cerr := f.Close(); err == nil && cerr != nil {
+		err = cerr
+	}
+	if err != nil {
+		return backup.Summary{}, &registry.OpError{Code: "dependency_unavailable", Message: "pg_dump: " + err.Error(), Retryable: true}
+	}
+	if code != 0 {
+		return backup.Summary{}, &registry.OpError{Code: "precondition_failed", Message: "pg_dump lỗi: " + truncate(strings.TrimSpace(derr.String()), 300)}
+	}
+	etc, _ := d.FS.Path("/etc/itso")
+	files, err := backup.PanelFiles(dumpPath, etc)
+	if err != nil {
+		return backup.Summary{}, opErr(err)
+	}
+	// Manifest: sha256 của chính file mã hóa trong snapshot (restore_test kiểm được mà không cần khóa riêng).
+	pr, pw := io.Pipe()
+	hw := backup.NewHashingWriter(pw)
+	go func() {
+		_ = pw.CloseWithError(backup.WritePanelArchive(hw, *p.AgeRecipient, files, d.now()))
+	}()
+	args := append(append([]string{}, base...), "--stdin", "--stdin-filename", "panel/itso-panel.tar.age")
+	rcode, out, stderr, rerr := r.restic(ctx, "", pr, nil, dedupTags(args)...)
+	_ = pr.CloseWithError(io.ErrClosedPipe)
+	if rerr != nil {
+		return backup.Summary{}, rerr
+	}
+	s, err := r.summary(rcode, out, stderr)
+	if err != nil {
+		return s, err
+	}
+	meta.Databases = []string{PanelDB}
+	meta.Manifest = map[string]string{"panel/itso-panel.tar.age": hw.Sum()}
+	return s, nil
+}
+
+func truncate(s string, n int) string {
+	if len(s) > n {
+		return s[:n]
+	}
+	return s
 }
 
 func (d *Deps) backupRun(ctx context.Context, env *envelope.Envelope) (map[string]any, error) {
