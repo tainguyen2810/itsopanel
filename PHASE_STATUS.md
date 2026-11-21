@@ -4,12 +4,12 @@
 
 ## Hiện tại
 
-- **Phase:** 6 — Database / File Manager / FTP-SFTP / Cron / Terminal USER (✓ xong 2026-11-21, chờ duyệt; Phase 5 ✓ APPROVED 2026-11-21 cùng D-67 → D-70, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** Phase 6 xong (6.1 → 6.6), merge main local; **DỪNG chờ duyệt** Phase 6 + D-71 → D-75. Người dùng yêu cầu (2026-11-21) "tiếp nhé, lên kế hoạch làm Phase 6"; làm hàng loạt 6.1 → 6.6, tự merge local
-- **Task đang làm:** không (chờ duyệt). Chờ VM: `tests/vm/phase4.sh`…`phase6.sh`
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-6`
-- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_6_PROMPTS.md`; cuối 6.6 báo cáo Phase 6 và DỪNG (không bắt đầu Phase 7)
-- **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
+- **Phase:** 7 — Security Center (✱ đang làm; Phase 6 ✓ APPROVED 2026-11-21 cùng D-71 → D-75, kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 7.0 Mockup. Người dùng yêu cầu (2026-11-21) "tiip nhé, mà quên làm mockup r": đã bù mockup Phase 6 (`docs/screenshots/phase-6/`), từ Phase 7 mockup trước khi code; làm hàng loạt 7.0 → 7.7, tự merge local
+- **Task đang làm:** 7.0 Mockup Security Center trên bản demo
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-7`
+- **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_7_PROMPTS.md`; cuối 7.7 báo cáo Phase 7 và DỪNG (không bắt đầu Phase 8)
+- **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
 
@@ -21,8 +21,8 @@
 | 3 | Auth, RBAC, Users, Packages, Accounts, Jobs, Audit | ✓ APPROVED (báo cáo `docs/reports/phase-3.md`) |
 | 4 | Go Agent, Installer, CLI, cách ly và quota | ✓ APPROVED (báo cáo `docs/reports/phase-4.md`; tiêu chí cần VM: chờ VM) |
 | 5 | Website / Nginx / PHP / SSL / DNS | ✓ APPROVED (báo cáo `docs/reports/phase-5.md`; tiêu chí cần VM: chờ VM) |
-| 6 | Database / File / FTP-SFTP / Cron / Terminal | ✱ |
-| 7 | Security Center | ○ |
+| 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
+| 7 | Security Center | ✱ |
 | 8 | Backup & Restore → v0.1.0-alpha | ○ |
 | 9 | Multi-server & chuyển tài khoản | ○ |
 | 10 | Docker Manager, WordPress Toolkit, Software | ○ |
@@ -31,7 +31,18 @@
 
 ## Checklist Phase hiện tại
 
-Phase 6 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.md`
+Phase 7 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_7_PROMPTS.md`
+
+- ✱ 7.0 Mockup Security Center trên bản demo (`docs/screenshots/phase-7/`)
+- ○ 7.1 ADR firewall/SSH/WAF/malware/FIM/terminal root (D-76…D-81), contracts, migration Phase 7
+- ○ 7.2 Agent: firewall nftables safe-apply, SSH hardening, Fail2ban
+- ○ 7.3 Agent: WAF, mã độc + cách ly, FIM, security.audit
+- ○ 7.4 Panel: Security Center API, CAPTCHA, IP allowlist chống tự khóa
+- ○ 7.5 Terminal root theo policy + ghi phiên
+- ○ 7.6 UI nối API thật
+- ○ 7.7 e2e, VM Phase 7, review bảo mật, báo cáo, merge
+
+Phase 6: ✓ APPROVED 2026-11-21 (báo cáo `docs/reports/phase-6.md`, merge `547002f`; mockup bù `c811794`). Chi tiết: `docs/planning/seed/PHASE_6_PROMPTS.md`
 
 - ✓ 6.1 ADR database/file/SFTP/cron/terminal (D-71…D-75), contracts, migration Phase 6
 - ✓ 6.2 Agent: File Manager hạ quyền, database, SFTP/FTPS/SSH key, cron
@@ -117,3 +128,5 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 6 / 6.4 | Terminal USER: agent `pty.open` (ticket 32 byte, 30 giây, một lần, ≤ 2 phiên/account, shell /bin/bash), socket stream `/run/itso/agent-stream.sock` (peercred itso-gw), jail `systemd-run --pty`, nhàn rỗi 15 phút / tối đa 12 giờ, shell giả ở sandbox; `cmd/itso-gateway` (WebSocket ↔ khung, kiểm Origin) + unit hardening; Laravel `/terminal/sessions` (step-up, gói SSH, audit, không lưu ticket), `itso:terminal-reap`; make dev chạy gateway, Vite proxy `/gateway` | f7f654a |
 | 2026-11-21 | 6 / 6.5 | UI nối API thật: tải lên tiếp tục được (chunk 8 MiB, tạm dừng/tiếp tục/hủy, tự đồng bộ khi 409), terminal xterm.js qua WebSocket gateway (theme theo token, tự fit, thông báo lý do đóng), mật khẩu DB/SFTP do panel sinh hiện một lần + đổi mật khẩu SFTP, tải file bằng link ký; MSW demo khớp hành vi mới; sửa UUID SFTP demo trùng | 612a8e6 |
 | 2026-11-21 | 6 / 6.6 | Playwright stack thật Phase 6 (12/12 cùng Phase 3–5); sửa 6 lỗi: `redact` đổi null thành `[REDACTED]` gửi agent, khóa SSH thiếu padding, gateway 2 khung close (coder/websocket 1.8.14), Uploader báo xong trước commit, staging `make dev`, cron `a/n` vượt miền (fuzz); `tests/vm/phase6.sh` S0–S7 + `term_client.py`; review bảo mật File Manager; runbook; báo cáo `docs/reports/phase-6.md`; merge phase-6 → main (local) | 12a9266 |
+| 2026-11-21 | 6 / mockup | Mockup bù Phase 6: 17 màn × 1440/390 × sáng/tối (`docs/screenshots/phase-6/`, `make screenshots`) | c70997a |
+| 2026-11-21 | 7 | Phase 6 APPROVED (D-71 → D-75, ADR 0018–0022 Accepted); viết `PHASE_7_PROMPTS.md` (7.0 mockup trước khi code), D-76 → D-81 đề xuất | (commit 7.plan) |

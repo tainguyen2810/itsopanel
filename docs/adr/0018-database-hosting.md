@@ -1,6 +1,6 @@
 # ADR 0018: Database hosting (MariaDB + PostgreSQL), danh tính chủ theo account
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 6)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 6)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-71, D-09, D-02, D-63, D-69
 

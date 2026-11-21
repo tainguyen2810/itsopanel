@@ -1,6 +1,6 @@
 # ADR 0022: Terminal cho USER chạy trong jail qua itso-gateway
 
-- **Trạng thái:** Proposed (chờ duyệt cùng Phase 6)
+- **Trạng thái:** Accepted (2026-11-21, cùng Phase 6)
 - **Ngày:** 2026-11-21
 - **Quyết định liên quan:** D-75, D-07, D-21, D-66
 
