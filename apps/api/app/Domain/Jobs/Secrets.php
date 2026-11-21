@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Jobs;
 
+use App\Models\BackupDestination;
+use App\Models\BackupRepository;
 use App\Models\Certificate;
 use App\Models\DatabaseUser;
 use App\Models\SftpAccount;
@@ -53,6 +55,22 @@ final class Secrets
             $c = Certificate::query()->where('uuid', $uuid)->first();
             if ($c instanceof Certificate && is_string($c->private_key_encrypted) && $c->private_key_encrypted !== '') {
                 return Crypt::decryptString($c->private_key_encrypted);
+            }
+        }
+        // Backup (ADR 0029 §4): mật khẩu repo restic; credential ghi của đích `backup_dest_credential:<uuid>/<khóa>`.
+        if ($kind === 'backup_repo_password' && Str::isUuid($uuid)) {
+            $enc = BackupRepository::withTrashed()->where('uuid', $uuid)->first()?->password_encrypted;
+            if (is_string($enc) && $enc !== '') {
+                return Crypt::decryptString($enc);
+            }
+        }
+        if ($kind === 'backup_dest_credential' && preg_match('#^([0-9a-f-]{36})/([a-z_]{1,40})$#', $uuid, $m) === 1) {
+            $d = BackupDestination::withTrashed()->where('uuid', $m[1])->first();
+            if ($d instanceof BackupDestination && is_string($d->credentials_encrypted) && $d->credentials_encrypted !== '') {
+                $creds = json_decode(Crypt::decryptString($d->credentials_encrypted), true);
+                if (is_array($creds) && is_string($creds[$m[2]] ?? null)) {
+                    return $creds[$m[2]];
+                }
             }
         }
         // Mật khẩu DB user / FTP-SFTP (D-71, D-73): lưu mã hóa trong panel, chỉ giải ngay trước khi gửi agent.

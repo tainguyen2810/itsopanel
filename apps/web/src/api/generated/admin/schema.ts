@@ -427,6 +427,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/backup-snapshots/{id}/raw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tải một file từ snapshot (URL ký số từ download-link)
+         * @description Stream file theo khúc 1 MiB qua agent (`backup.file.read`, `restic dump`); tối đa 512 MiB. Cần phiên đăng nhập và chữ ký còn hạn (HMAC, 5 phút).
+         */
+        get: operations["downloadBackupFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/backup-snapshots/{id}:download-link": {
         parameters: {
             query?: never;
@@ -438,7 +458,7 @@ export interface paths {
         put?: never;
         /**
          * Link tải bản backup
-         * @description Link ký, dùng một lần, hết hạn 15 phút; file lẻ được agent đọc từ snapshot (`restic dump`) khi tải.
+         * @description Link ký HMAC hết hạn 5 phút tới `/backup-snapshots/{id}/raw`; chỉ tải từng file (`path` bắt buộc, null → 422: lấy cả snapshot bằng khôi phục). File được agent đọc từ snapshot (`restic dump`) khi tải.
          */
         post: operations["backupDownloadLink"];
         delete?: never;
@@ -5472,7 +5492,7 @@ export interface components {
             /** Format: date-time */
             modified_at: string;
         };
-        /** @description `path` rỗng = tải cả snapshot (tar.zst); có `path` = tải một file/thư mục trong snapshot. */
+        /** @description `path` = một file thường trong snapshot (≤ 512 MiB); null → 422 (lấy cả snapshot bằng khôi phục). */
         BackupDownloadRequest: {
             path?: components["schemas"]["RelPath"] | null;
         };
@@ -5955,7 +5975,7 @@ export interface components {
             /** Format: uuid */
             uuid: string;
             /** Format: uuid */
-            snapshot_uuid: string;
+            snapshot_uuid: string | null;
             hosting_account: components["schemas"]["AccountRef"];
             target_server: components["schemas"]["ServerRef"];
             /** @enum {string} */
@@ -6543,16 +6563,16 @@ export interface components {
         FilterScopeType: "hosting_account" | "website" | "database" | "server_config" | "panel";
         /** @description Đường dẫn tương đối với home account. */
         PathQuery: components["schemas"]["RelPath"];
+        /** @description Hạn chữ ký (Unix giây). */
+        Expires: number;
+        /** @description Chữ ký HMAC của URL. */
+        Signature: string;
         /** @description UUID record DNS. */
         RecordId: string;
         /** @description Lọc theo server. */
         FilterServer: string;
         /** @description Lọc theo trạng thái vòng đời. */
         FilterLifecycle: components["schemas"]["LifecycleState"];
-        /** @description Hạn chữ ký (Unix giây). */
-        Expires: number;
-        /** @description Chữ ký HMAC của URL. */
-        Signature: string;
         /** @description UUID phiên upload. */
         UploadId: string;
         /** @description Vị trí chunk. */
@@ -9025,6 +9045,44 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    downloadBackupFile: {
+        parameters: {
+            query: {
+                /** @description Đường dẫn tương đối với home account. */
+                path: components["parameters"]["PathQuery"];
+                /** @description Hạn chữ ký (Unix giây). */
+                expires: components["parameters"]["Expires"];
+                /** @description Chữ ký HMAC của URL. */
+                signature: components["parameters"]["Signature"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nội dung file */
+            200: {
+                headers: {
+                    /** @description attachment; filename=… */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /** @example <?php … */
+                    "application/octet-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["AgentUnavailable"];
+        };
+    };
     backupDownloadLink: {
         parameters: {
             query?: never;
@@ -9055,7 +9113,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "data": {
-                     *         "url": "https://portal.itso.local/dl/backup/4f2a9c1e.tar.zst?sig=abc",
+                     *         "url": "https://portal.itso.local/api/v1/portal/backup-snapshots/01938a0e-0001-7000-8000-00000e000001/raw?path=sites%2Fanphat.vn%2Fpublic%2Fwp-config.php&expires=1763605200&signature=abc",
                      *         "expires_at": "2026-11-20T09:15:00+07:00"
                      *       }
                      *     }

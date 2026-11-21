@@ -448,6 +448,7 @@ Table account_migrations {
 
 Table purge_records {
   id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
   hosting_account_id bigint [not null, ref: > hosting_accounts.id]
   requested_by_user_id bigint [not null, ref: > users.id]
   confirmed_by_user_id bigint [ref: > users.id]
@@ -1098,7 +1099,7 @@ Table backup_verifications {
 Table restore_jobs {
   id bigint [pk, increment]
   uuid uuid [not null, unique, default: `gen_random_uuid()`]
-  snapshot_id bigint [not null, ref: > backup_snapshots.id]
+  snapshot_id bigint [ref: > backup_snapshots.id, note: 'null khi snapshot nguồn đã bị forget sau đó']
   hosting_account_id bigint [ref: > hosting_accounts.id]
   target_type text [not null, note: 'hosting_account (nhân bản: account khác cùng máy)']
   target_id bigint

@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Backup\BackupJobHandler;
 use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
 use App\Domain\Hosting\AccountJobHandler;
@@ -52,7 +53,8 @@ return [
       + array_fill_keys(['certificate.issue', 'certificate.upload', 'certificate.renew', 'certificate.delete'],
           CertificateJobHandler::class)
       + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class)
-      + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class),
+      + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class)
+      + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class),
 
     // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
     'panel_steps' => [

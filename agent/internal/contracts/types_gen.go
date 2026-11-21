@@ -16,6 +16,7 @@ const (
 	OpBackupBrowse           = "backup.browse"
 	OpBackupCheck            = "backup.check"
 	OpBackupDestinationTest  = "backup.destination.test"
+	OpBackupFileRead         = "backup.file.read"
 	OpBackupForget           = "backup.forget"
 	OpBackupRepoInit         = "backup.repo.init"
 	OpBackupRestore          = "backup.restore"
@@ -536,6 +537,22 @@ type BackupDestinationTestResult struct {
 	ObjectLockDays *int64  `json:"object_lock_days"`
 	HostKeySHA256  *string `json:"host_key_sha256"`
 	SSHPublicKey   *string `json:"ssh_public_key"`
+}
+
+// BackupFileReadParams — params của op backup.file.read (ops/backup.file.read.schema.json).
+type BackupFileReadParams struct {
+	Repo       BackupRepo       `json:"repo"`
+	SnapshotID ResticSnapshotID `json:"snapshot_id"`
+	Path       RelPath          `json:"path"`
+	Offset     int64            `json:"offset"`
+	MaxBytes   int64            `json:"max_bytes"`
+}
+
+// BackupFileReadResult — result của op backup.file.read (ops/backup.file.read.schema.json).
+type BackupFileReadResult struct {
+	ContentB64 string `json:"content_b64"`
+	Size       Bytes  `json:"size"`
+	Eof        bool   `json:"eof"`
 }
 
 // BackupForgetParams — params của op backup.forget (ops/backup.forget.schema.json).
@@ -2199,6 +2216,8 @@ func NewParams(op string) any {
 		return new(BackupCheckParams)
 	case OpBackupDestinationTest:
 		return new(BackupDestinationTestParams)
+	case OpBackupFileRead:
+		return new(BackupFileReadParams)
 	case OpBackupForget:
 		return new(BackupForgetParams)
 	case OpBackupRepoInit:
@@ -2432,6 +2451,8 @@ func NewResult(op string) any {
 		return new(BackupCheckResult)
 	case OpBackupDestinationTest:
 		return new(BackupDestinationTestResult)
+	case OpBackupFileRead:
+		return new(BackupFileReadResult)
 	case OpBackupForget:
 		return new(BackupForgetResult)
 	case OpBackupRepoInit:

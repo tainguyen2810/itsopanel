@@ -2,6 +2,24 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 8 / Prompt 8.4 (Panel API Backup & Restore) — nhánh `phase-8`
+
+Môi trường: PostgreSQL 16 + Redis trong container; agent giả (`FakeAgent`) kiểm mọi params/result op backup theo `contracts/agent-ops` (helper `p8schema`, Opis JSON Schema), nên tham số panel gửi đi khớp schema agent thật.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Phase 8 API | `make test-api` (lọc `tests/Feature/Phase8`) | PASS 7/7, 423 assertion: đích (tạo/sửa/kiểm tra, trùng vị trí 409, local sai đường dẫn 422, credential chỉ tới agent qua tham chiếu bí mật, Object Lock phát hiện → prune `cli`), bộ khôi phục (lần đầu 200, sau xác nhận + hết step-up 403); backup ngay (init → files → DB → stats, lần sau không init, snapshot ghi nhận theo loại); Portal chỉ thấy snapshot/khôi phục account mình, USER khác 404/422; duyệt + link tải ký HMAC (chữ ký sai 403, quá 5 phút 403, nội dung stream theo khúc đúng); policy + `itso:backup-due` (chưa đến hạn không chạy, đến hạn chạy, lần kế lệch jitter, `last_status`), retention keep_last 1 → forget, đích append-only → không forget; quota 1 MB đang dùng 5 MB → 409 `quota_exceeded`, policy bỏ qua, tổng quan báo `paused`; verify (check + restore test, lỗi lệch sha256 → failed + lỗi trong 3-2-1-1-0); xóa snapshot (ADMIN 403, đích bất biến 409, SA → forget); khôi phục new (website/file, DB mới `<tên>_r<ts>` sẵn sàng), overwrite (sai username 422, hết step-up 403 `mfa_step_up_required`, đúng → snapshot pre-restore), Portal khôi phục cần MFA/step-up; purge (account chưa chấm dứt 409, ADMIN 403, restore test hỏng → xác nhận 409 D-46, chưa tới hạn 409, người lên lịch tự xác nhận 409, SUPER_ADMIN thứ hai → `account.remove` + biên bản, account `purged`); ma trận quyền; bí mật (mật khẩu repo, credential đích, khóa age riêng) không có trong job_steps/job_logs/audit_logs/jobs/các bảng backup |
+| Pest toàn bộ | `make test-api` | PASS 458/458 (5074 assertion). Lần đầu 3 test cũ fail vì còn kỳ vọng purge trả 501 và `backup-snapshots` chưa có route: đã cập nhật theo hành vi mới (purge chặn account chưa chấm dứt / thiếu biên bản; đường dẫn "chưa có" dùng `/account-migrations` của Phase 9) |
+| Tĩnh | `vendor/bin/phpstan analyse` · `make lint-api` · `make no-exec` | 0 lỗi · PASS · OK (lần đầu `no-exec` bắt dấu backtick trong chuỗi thông báo; đổi sang ngoặc kép) |
+| Contracts/DB | `make contracts && make codegen && make contracts-check && make codegen-check && make db-verify` | PASS (op mới `backup.file.read`; `Restore.snapshot_uuid` nullable + `restore_jobs.snapshot_id` nullable để giữ lịch sử khi snapshot bị forget) |
+| Agent | `go test ./internal/ops/ ./internal/contracts/...` · `make lint-agent` | PASS (`TestBackupFileRead`: đọc khúc giữa file, offset ≥ size → eof, thư mục/symlink bị từ chối) · OK |
+
+Lỗi tìm ra nhờ test và đã sửa: hạn link tải dùng `time()` (không theo đồng hồ test) → `Carbon::now()`; forget snapshot vướng khóa ngoại (`backup_jobs`, `restore_jobs`…) → giữ lịch sử với tham chiếu null; trigger DB `itso_hosting_purge_guard` đòi người xác nhận khác người lên lịch → panel kiểm trước và báo 409 rõ ràng; policy ghi `running` sau khi job đồng bộ đã xong → ghi trước khi dispatch.
+
+Giới hạn còn lại (ghi vào báo cáo Phase 8): agent thật chưa hiện thực `account.remove` (chỉ agent mock) nên bước xóa của purge trên máy thật sẽ báo lỗi op, không giả thành công.
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 8 / Prompt 8.3 (agent: khôi phục, kiểm chứng, forget, backup panel, CLI) — nhánh `phase-8`
 
 Môi trường: restic 0.16.4 (gói Ubuntu) trong container, chạy bằng root; helper File Manager chạy trong tiến trình ở sandbox (uid account kiểm qua argv ghi lại).

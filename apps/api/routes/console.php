@@ -25,3 +25,7 @@ Schedule::command('itso:waf-events-sync')->everyMinute()->withoutOverlapping();
 Schedule::command('itso:security-audit --expire-only')->everyMinute()->withoutOverlapping();
 Schedule::command('itso:security-audit')->cron('7 */6 * * *')->withoutOverlapping();
 Schedule::command('itso:fim-check')->hourlyAt(53)->withoutOverlapping();
+
+// Phase 8: backup theo chính sách (khóa Redis + jitter) và kiểm chứng định kỳ (check tuần, restore test tháng).
+Schedule::command('itso:backup-due')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('itso:backup-verify')->dailyAt('04:41')->withoutOverlapping();

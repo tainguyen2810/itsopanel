@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\ApiTokenController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
+use App\Http\Controllers\Api\V1\Admin\BackupAdminController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DnsController;
 use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Api\V1\Security\ProtectionController;
 use App\Http\Controllers\Api\V1\Security\SecurityController;
 use App\Http\Controllers\Api\V1\Security\TerminalSessionController;
 use App\Http\Controllers\Api\V1\Shared\AccessController;
+use App\Http\Controllers\Api\V1\Shared\BackupController;
 use App\Http\Controllers\Api\V1\Shared\CertificateController;
 use App\Http\Controllers\Api\V1\Shared\CronController;
 use App\Http\Controllers\Api\V1\Shared\DatabaseController;
@@ -185,10 +187,45 @@ Route::prefix('v1')->group(function (): void {
             }
             Route::post('hosting-accounts/{id}:terminate', [HostingAccountController::class, 'terminate'])
                 ->middleware(['itso.perm:accounts.terminate', 'itso.step-up', 'itso.idempotent']);
-            foreach (['migrate', 'schedule-purge', 'confirm-purge'] as $action) {
-                Route::post("hosting-accounts/{id}:$action", [HostingAccountController::class, 'notAvailable'])
-                    ->middleware(['itso.perm:accounts.terminate', 'itso.step-up']);
-            }
+            Route::post('hosting-accounts/{id}:migrate', [HostingAccountController::class, 'notAvailable'])
+                ->middleware(['itso.perm:accounts.terminate', 'itso.step-up']);
+            // Cổng purge (D-46, Prompt 8.4): backup cuối đã kiểm chứng + xác nhận gõ username.
+            Route::post('hosting-accounts/{id}:schedule-purge', [BackupAdminController::class, 'schedulePurge'])
+                ->middleware(['itso.perm:backups.manage', 'itso.step-up', 'itso.idempotent']);
+            Route::post('hosting-accounts/{id}:confirm-purge', [BackupAdminController::class, 'confirmPurge'])
+                ->middleware(['itso.perm:backups.manage', 'itso.step-up', 'itso.idempotent']);
+            Route::get('purge-records', [BackupAdminController::class, 'purgeRecords'])->middleware('itso.perm:backups.manage');
+
+            // ---- Backup & khôi phục (Prompt 8.4)
+            Route::middleware('itso.perm:backups.manage')->group(function (): void {
+                Route::get('backup-destinations', [BackupAdminController::class, 'destinations']);
+                Route::post('backup-destinations', [BackupAdminController::class, 'storeDestination']);
+                Route::get('backup-destinations/{id}', [BackupAdminController::class, 'showDestination']);
+                Route::patch('backup-destinations/{id}', [BackupAdminController::class, 'updateDestination']);
+                Route::post('backup-destinations/{id}:test', [BackupAdminController::class, 'testDestination'])->middleware('itso.idempotent');
+                Route::post('backup-destinations/{id}:recovery-kit', [BackupAdminController::class, 'recoveryKit']);
+                Route::post('backup-destinations/{id}:recovery-kit-ack', [BackupAdminController::class, 'acknowledgeKit']);
+                Route::get('backup-policies', [BackupAdminController::class, 'policies']);
+                Route::post('backup-policies', [BackupAdminController::class, 'storePolicy']);
+                Route::get('backup-policies/{id}', [BackupAdminController::class, 'showPolicy']);
+                Route::patch('backup-policies/{id}', [BackupAdminController::class, 'updatePolicy']);
+                Route::delete('backup-policies/{id}', [BackupAdminController::class, 'destroyPolicy']);
+                Route::post('backup-policies/{id}:run', [BackupAdminController::class, 'runPolicy'])->middleware('itso.idempotent');
+                Route::delete('backup-snapshots/{id}', [BackupAdminController::class, 'destroySnapshot'])->middleware(['itso.step-up', 'itso.idempotent']);
+            });
+            Route::get('backups/overview', [BackupAdminController::class, 'overview'])->middleware('itso.perm:backups.read');
+            Route::get('backup-repositories', [BackupAdminController::class, 'repositories'])->middleware('itso.perm:backups.read');
+            Route::get('backup-verifications', [BackupAdminController::class, 'verifications'])->middleware('itso.perm:backups.read');
+            Route::post('backup-snapshots/{id}:verify', [BackupAdminController::class, 'verifySnapshot'])
+                ->middleware(['itso.perm:backups.write', 'itso.idempotent']);
+            Route::get('backup-snapshots', [BackupController::class, 'index'])->middleware('itso.perm:backups.read');
+            Route::get('backup-snapshots/{id}/browse', [BackupController::class, 'browse'])->middleware('itso.perm:backups.read');
+            Route::post('backup-snapshots/{id}:download-link', [BackupController::class, 'downloadLink'])->middleware('itso.perm:backups.write');
+            Route::get('backup-snapshots/{id}/raw', [BackupController::class, 'raw'])->middleware('itso.perm:backups.write');
+            Route::post('backups', [BackupController::class, 'backup'])->middleware(['itso.perm:backups.write', 'itso.idempotent']);
+            Route::get('restores', [BackupController::class, 'restores'])->middleware('itso.perm:backups.read');
+            Route::get('restores/{id}', [BackupController::class, 'showRestore'])->middleware('itso.perm:backups.read');
+            Route::post('restores', [BackupController::class, 'restore'])->middleware(['itso.perm:backups.restore', 'itso.step-up', 'itso.idempotent']);
 
             // ---- Website (Prompt 5.3); quét mã độc/WAF: khối Security Center (Phase 7) bên dưới.
             Route::get('websites', [WebsiteController::class, 'index'])->middleware('itso.perm:websites.read');
@@ -382,6 +419,16 @@ Route::prefix('v1')->group(function (): void {
             Route::post('protection/findings/{id}:quarantine', [ProtectionController::class, 'quarantine'])->middleware('itso.idempotent');
             Route::delete('protection/findings/{id}', [ProtectionController::class, 'deleteFinding'])->middleware(['itso.step-up', 'itso.idempotent']);
             Route::post('hosting-accounts/{id}/scans', [ProtectionController::class, 'scanAccount'])->middleware('itso.idempotent');
+
+            // ---- Backup của account mình (Prompt 8.4)
+            Route::get('backup-snapshots', [BackupController::class, 'index']);
+            Route::get('backup-snapshots/{id}/browse', [BackupController::class, 'browse']);
+            Route::post('backup-snapshots/{id}:download-link', [BackupController::class, 'downloadLink']);
+            Route::get('backup-snapshots/{id}/raw', [BackupController::class, 'raw']);
+            Route::post('backups', [BackupController::class, 'backup'])->middleware('itso.idempotent');
+            Route::get('restores', [BackupController::class, 'restores']);
+            Route::get('restores/{id}', [BackupController::class, 'showRestore']);
+            Route::post('restores', [BackupController::class, 'restore'])->middleware(['itso.step-up', 'itso.idempotent']);
         });
     });
 });

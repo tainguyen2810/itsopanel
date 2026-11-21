@@ -3,6 +3,7 @@ package ops_test
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"strings"
@@ -376,4 +377,35 @@ func TestKitCredsAndDestination(t *testing.T) {
 	if _, err := ops.KitDestination(k, ops.KitCreds{}); err == nil {
 		t.Fatal("port lạ phải bị từ chối")
 	}
+}
+
+func TestBackupFileRead(t *testing.T) {
+	e, repo, sid, _ := bkSetup(t)
+	big := strings.Repeat("0123456789abcdef", 300000) // 4,8 MB
+	write(t, filepath.Join(e.fs.Root, "home/anphat"), "sites/anphat.vn/public/big.bin", big)
+	sid2 := e.h.OK(contracts.OpBackupRun, bkRun(repo, "files", acct(), nil))["snapshot_id"].(string)
+	read := func(snap, p string, off, n int) map[string]any {
+		return e.h.OK(contracts.OpBackupFileRead, map[string]any{"repo": repo, "snapshot_id": snap, "path": p, "offset": off, "max_bytes": n})
+	}
+	r := read(sid, "sites/anphat.vn/public/index.php", 0, 1<<20)
+	if b, _ := base64.StdEncoding.DecodeString(r["content_b64"].(string)); string(b) != "<?php echo 'v1';" || r["eof"] != true {
+		t.Fatal(r)
+	}
+	var got []byte
+	for off := 0; ; {
+		r := read(sid2, "sites/anphat.vn/public/big.bin", off, 2<<20)
+		b, _ := base64.StdEncoding.DecodeString(r["content_b64"].(string))
+		got = append(got, b...)
+		off += len(b)
+		if r["eof"] == true {
+			break
+		}
+	}
+	if string(got) != big {
+		t.Fatalf("ghép khúc phải ra đúng file: %d/%d", len(got), len(big))
+	}
+	e.h.Fail(contracts.OpBackupFileRead, map[string]any{"repo": repo, "snapshot_id": sid, "path": "sites/anphat.vn/public/evil", "offset": 0, "max_bytes": 10}, "precondition_failed")
+	e.h.Fail(contracts.OpBackupFileRead, map[string]any{"repo": repo, "snapshot_id": sid, "path": "sites/anphat.vn/public", "offset": 0, "max_bytes": 10}, "precondition_failed")
+	e.h.Fail(contracts.OpBackupFileRead, map[string]any{"repo": repo, "snapshot_id": sid, "path": "sites/nope.txt", "offset": 0, "max_bytes": 10}, "not_found")
+	e.h.Fail(contracts.OpBackupFileRead, map[string]any{"repo": repo, "snapshot_id": sid, "path": "../etc/shadow", "offset": 0, "max_bytes": 10}, "invalid_params")
 }

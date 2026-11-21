@@ -151,11 +151,12 @@ it('máy trạng thái: suspend/unsuspend/terminate/khôi phục; chuyển khôn
     $acc = $a->account->refresh();
     expect($acc->lifecycle_state)->toBe('terminated')
         ->and((int) round($acc->terminated_at->diffInDays($acc->purge_after)))->toBe(30);
-    foreach (['schedule-purge', 'confirm-purge', 'migrate'] as $x) {
-        $r = idem($sa, "$u:$x", $x === 'migrate' ? ['target_server_uuid' => (string) Str::uuid(), 'strategy' => 'live_sync'] : []);
-        expect($r->status())->toBe(501)->and($r->json('code'))->toBe($x === 'migrate' ? 'migration_not_available' : 'purge_not_available');
-        assertMatchesContract(HA, 'post', "/api/v1/admin/hosting-accounts/{id}:$x", 501, $r);
-    }
+    $r = idem($sa, "$u:migrate", ['target_server_uuid' => (string) Str::uuid(), 'strategy' => 'live_sync']);
+    expect($r->json('code'))->toBe('migration_not_available');
+    assertMatchesContract(HA, 'post', '/api/v1/admin/hosting-accounts/{id}:migrate', 501, $r);
+    // Purge (Phase 8): cần đích backup cho backup cuối; xác nhận cần biên bản. Chi tiết ở tests/Feature/Phase8.
+    assertMatchesContract(HA, 'post', '/api/v1/admin/hosting-accounts/{id}:schedule-purge', 409, idem($sa, "$u:schedule-purge", []));
+    assertMatchesContract(HA, 'post', '/api/v1/admin/hosting-accounts/{id}:confirm-purge', 422, idem($sa, "$u:confirm-purge", []));
     expect(idem($sa, "$u:suspend", ['reason' => 'Không được nữa'])->status())->toBe(409);
     // Khôi phục trong thời gian giữ.
     expect(idem($sa, "$u:unsuspend")->status())->toBe(202)->and($acc->refresh())->lifecycle_state->toBe('active')

@@ -35,6 +35,7 @@ func init() {
 			contracts.OpBackupSnapshots:       d.backupSnapshots,
 			contracts.OpBackupBrowse:          d.backupBrowse,
 			contracts.OpBackupStats:           d.backupStats,
+			contracts.OpBackupFileRead:        d.backupFileRead,
 		}
 	})
 }
@@ -74,9 +75,26 @@ func (d *Deps) ensureTree(p string, mode uint32) error {
 }
 
 func (d *Deps) openRepo(env *envelope.Envelope, rp backup.RepoParams) (*resticRun, func(), error) {
+	return d.openRepoMode(env, rp, true)
+}
+
+// openRepoRead: op chỉ đọc (snapshots, browse, stats, file.read) không giữ khóa của agent — restic tự dùng khóa
+// chia sẻ, nên duyệt/tải file vẫn chạy được khi repo đang backup.
+func (d *Deps) openRepoRead(env *envelope.Envelope, rp backup.RepoParams) (*resticRun, func(), error) {
+	return d.openRepoMode(env, rp, false)
+}
+
+func (d *Deps) openRepoMode(env *envelope.Envelope, rp backup.RepoParams, exclusive bool) (*resticRun, func(), error) {
 	repo, err := backup.ParseRepo(rp)
 	if err != nil {
 		return nil, nil, bkErr(err)
+	}
+	if !exclusive {
+		sess, cleanup, err := d.writeSession(env, repo)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &resticRun{d: d, repo: repo, sess: sess}, cleanup, nil
 	}
 	mu, _ := repoLocks.LoadOrStore(repo.UUID, &sync.Mutex{})
 	lock := mu.(*sync.Mutex)
@@ -361,7 +379,7 @@ func (d *Deps) backupSnapshots(ctx context.Context, env *envelope.Envelope) (map
 	if p.Limit < 1 || p.Limit > 1000 {
 		return nil, &registry.OpError{Code: "invalid_params", Message: "limit ngoài 1–1000"}
 	}
-	r, done, err := d.openRepo(env, p.Repo)
+	r, done, err := d.openRepoRead(env, p.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +426,7 @@ func (d *Deps) backupStats(ctx context.Context, env *envelope.Envelope) (map[str
 	if err := decode(env, &p); err != nil {
 		return nil, err
 	}
-	r, done, err := d.openRepo(env, p.Repo)
+	r, done, err := d.openRepoRead(env, p.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +476,7 @@ func (d *Deps) backupBrowse(ctx context.Context, env *envelope.Envelope) (map[st
 	if p.Limit < 1 || p.Limit > 5000 {
 		return nil, &registry.OpError{Code: "invalid_params", Message: "limit ngoài 1–5000"}
 	}
-	r, done, err := d.openRepo(env, p.Repo)
+	r, done, err := d.openRepoRead(env, p.Repo)
 	if err != nil {
 		return nil, err
 	}

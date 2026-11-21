@@ -1135,6 +1135,17 @@
       "status": "specified"
     },
     {
+      "op": "backup.file.read",
+      "domain": "backup",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 8,
+      "runs_as": "root",
+      "timeout_sec": 120,
+      "schema": "ops/backup.file.read.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "backup.stats",
       "domain": "backup",
       "risk": "low",

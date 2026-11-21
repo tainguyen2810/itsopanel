@@ -788,13 +788,51 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/portal/backup-snapshots/{id}/raw:
+    get:
+      operationId: portalDownloadBackupFile
+      summary: Tải một file từ snapshot (URL ký số từ download-link)
+      tags:
+      - Backups
+      description: Stream file theo khúc 1 MiB qua agent (`backup.file.read`, `restic dump`); tối đa 512 MiB. Cần phiên đăng
+        nhập và chữ ký còn hạn (HMAC, 5 phút).
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/PathQuery
+      - $ref: ./common.yaml#/components/parameters/Expires
+      - $ref: ./common.yaml#/components/parameters/Signature
+      responses:
+        '200':
+          description: Nội dung file
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: attachment; filename=…
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+              example: <?php …
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '503':
+          $ref: ./common.yaml#/components/responses/AgentUnavailable
   /api/v1/portal/backup-snapshots/{id}:download-link:
     post:
       operationId: portalBackupDownloadLink
       summary: Link tải bản backup
       tags:
       - Backups
-      description: Link ký, dùng một lần, hết hạn 15 phút; file lẻ được agent đọc từ snapshot (`restic dump`) khi tải.
+      description: 'Link ký HMAC hết hạn 5 phút tới `/backup-snapshots/{id}/raw`; chỉ tải từng file (`path` bắt buộc, null
+        → 422: lấy cả snapshot bằng khôi phục). File được agent đọc từ snapshot (`restic dump`) khi tải.'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       requestBody:
@@ -819,7 +857,7 @@ paths:
                 - data
               example:
                 data:
-                  url: https://portal.itso.local/dl/backup/4f2a9c1e.tar.zst?sig=abc
+                  url: https://portal.itso.local/api/v1/portal/backup-snapshots/01938a0e-0001-7000-8000-00000e000001/raw?path=sites%2Fanphat.vn%2Fpublic%2Fwp-config.php&expires=1763605200&signature=abc
                   expires_at: '2026-11-20T09:15:00+07:00'
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized

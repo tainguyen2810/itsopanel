@@ -201,15 +201,12 @@ final class HostingAccountController
             isset($in['version']) ? (int) $in['version'] : null, $in['reason'] ?? null));
     }
 
-    /** schedule-purge / confirm-purge (Phase 8), migrate (Phase 9): chưa hiện thực — trả 501, không giả thành công. */
+    /** migrate (Phase 9): chưa hiện thực — trả 501, không giả thành công. Purge: BackupAdminController (Phase 8). */
     public function notAvailable(Request $request, string $id): JsonResponse
     {
         $this->find($request, $id);
-        $migrate = str_ends_with($request->path(), ':migrate');
 
-        throw new ApiProblem(501, $migrate ? 'migration_not_available' : 'purge_not_available', 'Chưa có ở phiên bản này',
-            $migrate ? 'Chuyển account sang server khác hiện thực ở Phase 9.'
-                : 'Purge (backup cuối + kiểm chứng + xác nhận 2 bước) hiện thực ở Phase 8. Account vẫn được giữ tới purge_after.');
+        throw new ApiProblem(501, 'migration_not_available', 'Chưa có ở phiên bản này', 'Chuyển account sang server khác hiện thực ở Phase 9.');
     }
 
     public function placement(Request $request): JsonResponse

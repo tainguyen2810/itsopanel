@@ -2406,7 +2406,7 @@ components:
           - $ref: '#/components/schemas/RelPath'
           - type: 'null'
       additionalProperties: false
-      description: '`path` rỗng = tải cả snapshot (tar.zst); có `path` = tải một file/thư mục trong snapshot.'
+      description: '`path` = một file thường trong snapshot (≤ 512 MiB); null → 422 (lấy cả snapshot bằng khôi phục).'
     Restore:
       type: object
       properties:
@@ -2414,7 +2414,9 @@ components:
           type: string
           format: uuid
         snapshot_uuid:
-          type: string
+          type:
+          - string
+          - 'null'
           format: uuid
         hosting_account:
           $ref: '#/components/schemas/AccountRef'

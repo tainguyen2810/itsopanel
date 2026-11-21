@@ -211,7 +211,7 @@ t("hosting", "account_migrations", ID + [
     "job_id bigint [ref: > jobs.id]", "cleanup_after timestamptz",
     "requested_by_user_id bigint [not null, ref: > users.id]",
 ] + TS, ["hosting_account_id", "state"], "Chuyển account giữa server (D-48).")
-t("hosting", "purge_records", IDN + [
+t("hosting", "purge_records", ID + [
     "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
     "requested_by_user_id bigint [not null, ref: > users.id]",
     "confirmed_by_user_id bigint [ref: > users.id]",
@@ -476,7 +476,7 @@ t("backup", "backup_verifications", IDN + [
     "started_at timestamptz [not null, default: `now()`]", "finished_at timestamptz",
 ], ["(destination_id, started_at)", "repository_id"])
 t("backup", "restore_jobs", ID + [
-    "snapshot_id bigint [not null, ref: > backup_snapshots.id]",
+    "snapshot_id bigint [ref: > backup_snapshots.id, note: 'null khi snapshot nguồn đã bị forget sau đó']",
     "hosting_account_id bigint [ref: > hosting_accounts.id]",
     "target_type text [not null, note: 'hosting_account (nhân bản: account khác cùng máy)']",
     "target_id bigint", "target_server_id bigint [ref: > servers.id]",

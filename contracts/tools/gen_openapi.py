@@ -386,9 +386,22 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
     api.add("post", "/backup-snapshots/{id}:download-link", oid("backupDownloadLink"), "Link tải bản backup", "Backups",
             params=idp, body=cref("BackupDownloadRequest"), body_example={"path": "sites/anphat.vn/public/wp-config.php"},
             ok=cref("SignedUrl"),
-            desc="Link ký, dùng một lần, hết hạn 15 phút; file lẻ được agent đọc từ snapshot (`restic dump`) khi tải.",
-            ok_example=one({"url": "https://portal.itso.local/dl/backup/4f2a9c1e.tar.zst?sig=abc",
+            desc="Link ký HMAC hết hạn 5 phút tới `/backup-snapshots/{id}/raw`; chỉ tải từng file (`path` bắt buộc, null → 422: "
+                 "lấy cả snapshot bằng khôi phục). File được agent đọc từ snapshot (`restic dump`) khi tải.",
+            ok_example=one({"url": "https://portal.itso.local/api/v1/portal/backup-snapshots/01938a0e-0001-7000-8000-00000e000001/raw"
+                                   "?path=sites%2Fanphat.vn%2Fpublic%2Fwp-config.php&expires=1763605200&signature=abc",
                             "expires_at": "2026-11-20T09:15:00+07:00"}))
+    braw = "/backup-snapshots/{id}/raw"
+    api.add("get", braw, oid("downloadBackupFile"), "Tải một file từ snapshot (URL ký số từ download-link)", "Backups",
+            params=idp + [Api.p("PathQuery"), Api.p("Expires"), Api.p("Signature")], ok=None,
+            desc="Stream file theo khúc 1 MiB qua agent (`backup.file.read`, `restic dump`); tối đa 512 MiB. Cần phiên đăng nhập "
+                 "và chữ ký còn hạn (HMAC, 5 phút).")
+    bfull = api.prefix + braw
+    api.paths[bfull]["get"]["responses"]["200"] = {
+        "description": "Nội dung file",
+        "headers": {"Content-Disposition": {"schema": {"type": "string"}, "description": "attachment; filename=…"}},
+        "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}, "example": "<?php …"}}}
+    api.paths[bfull]["get"]["responses"]["503"] = Api.r("AgentUnavailable")
     api.add("get", "/restores", oid("listRestores"), "Lịch sử khôi phục", "Backups", list_=True, ok=cref("Restore"),
             ok_example=page(D.RESTORES))
     api.add("post", "/restores", oid("createRestore"), "Khôi phục", "Backups", body=cref("RestoreRequest"),
