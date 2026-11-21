@@ -2,6 +2,25 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 6 / Prompt 6.2 — nhánh `phase-6`
+
+Môi trường: như 6.1 (container không có systemd, MariaDB, PostgreSQL client thật cho agent, sshd, Pure-FTPd). Agent chạy với runner giả (Sim) trên gốc thư mục tạm; riêng `internal/fsx` chạy trên kernel thật (openat2).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Lint agent | `make lint-agent` (gofmt + `go vet ./...`) · `make no-exec` | PASS · PASS (helper File Manager là chính binary agent qua bảng `Bins`, không có shell) |
+| Go toàn bộ | `go test -count=1 ./...` · `go test -race ./internal/ops ./internal/fsx ./internal/mock` | PASS · PASS |
+| File Manager tấn công (FS thật) | `go test ./internal/fsx` | PASS: `../`, đường dẫn tuyệt đối, symlink ra ngoài home, symlink đổi giữa chừng (34k lần đọc, không thoát), zip slip, zip bomb (tỉ lệ, số entry, tổng dung lượng), symlink/setuid trong zip, tar.gz có hardlink/symlink/device/`../`, helper từ chối chạy bằng root, upload commit theo fd |
+| Op dữ liệu (Sim) | `go test ./internal/ops -run 'TestDB\|TestSshd\|TestSFTP\|TestSSH\|TestFTP\|TestCron\|TestFS'` | PASS: vòng đời DB MariaDB + PostgreSQL (owner, create idempotent, user, grant, inspect, import → dump qua helper dưới uid account, dump lỗi không để lại file, lock, drop); tên DB độc/sai tiền tố/tên hệ thống và mật khẩu có nháy/gạch chéo ngược/khoảng trắng bị từ chối **trước khi chạy lệnh**; mật khẩu không bao giờ nằm trong argv; `sshd -t` lỗi → khôi phục, không reload; SFTP đổi group sftp ↔ ssh, idempotent; SSH key: chặn option `command=`, loại lạ, base64 hỏng, blob khác loại, comment có ký tự điều khiển, trùng → `already_exists`; FTP: tiền tố, root_path không có/thoát home/symlink → từ chối, tắt = mật khẩu ngẫu nhiên, xóa sai account → từ chối; cron: bảng chuyển đổi 13 biểu thức + 13 biểu thức bị từ chối (DOM+DOW, 30/2, ngoài miền, bước 0…), unit/script golden, lệnh nằm nguyên văn trong script `root:<group> 0640`, tắt job → xóa unit, `cron.inspect`, `cron.run_once` trong slice; File Manager qua helper: write/read/sha, staging symlink bị chặn |
+| Golden | `testdata/golden/{db.sql,50-itso.conf,itso-cron.service,itso-cron.timer,cron.apply.argv,sshd.match.apply.argv}` | PASS |
+| Ví dụ contracts | `TestContractExamples` | PASS (thêm `fs.list`, `cron.apply`, `db.mysql.create` chạy qua agent thật) |
+| Fuzz | `go test -fuzz=FuzzCronToOnCalendar -fuzztime=10s` · `-fuzz=FuzzParseSSHKey` · `FuzzCheckPath` | PASS (105k / 279k lần chạy, không lỗi); thêm vào `make test-fuzz` |
+| Installer · unit | `make test-installer` · `make units-check` | PASS 8/8 · PASS 13 unit (thư mục mới `/var/lib/itso/uploads` itso 0700, `/etc/itso-cron`, `/etc/ssh/itso_authorized_keys`) |
+
+Ghi chú: chạy thật MariaDB/PostgreSQL/sshd/Pure-FTPd/systemd-run (chroot SFTP, TLS bắt buộc, slice) là **chờ VM** (`tests/vm/phase6.sh` ở 6.6).
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-21 — Phase 6 / Prompt 6.1 — nhánh `phase-6`
 
 Môi trường: như Phase 5 (PostgreSQL 16 + Redis local, container không có systemd).

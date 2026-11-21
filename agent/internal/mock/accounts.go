@@ -51,6 +51,9 @@ func registerAccounts(r *registry.Registry) error {
 			return err
 		}
 	}
+	if err := registerData(r, st); err != nil {
+		return err
+	}
 	return registerWeb(r, st)
 }
 

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -183,4 +184,17 @@ func toData(v any) (map[string]any, error) {
 	}
 	var m map[string]any
 	return m, json.Unmarshal(b, &m)
+}
+
+// Phase6Ops là các op dữ liệu hosting (D-71…D-74) — mock agent dùng lại đúng handler thật trên sandbox.
+func Phase6Ops(d *Deps) map[string]registry.Handler {
+	out := map[string]registry.Handler{}
+	for k, v := range extraHandlers(d) {
+		for _, p := range []string{"fs.", "db.", "sshd.", "sftp.", "ftp.", "ssh.keys.", "cron."} {
+			if strings.HasPrefix(k, p) && k != contracts.OpFsSiteLayoutEnsure {
+				out[k] = v
+			}
+		}
+	}
+	return out
 }

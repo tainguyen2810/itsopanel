@@ -1,0 +1,12 @@
+# Sinh bởi itso-agent (cron.apply) · account anphat · không sửa tay
+[Unit]
+Description=ITSO cron timer 01938a0d-0001-7000-8000-00000d000001 (anphat)
+
+[Timer]
+OnCalendar=*-*-* *:00,15,30,45:00
+Persistent=false
+AccuracySec=1s
+RandomizedDelaySec=0
+
+[Install]
+WantedBy=timers.target

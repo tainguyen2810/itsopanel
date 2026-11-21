@@ -81,6 +81,7 @@ func newEnv(t *testing.T) *env {
 		}
 		return e.sim.Handle(c)
 	}
+	e.fake.StreamHook = e.sim.Stream
 	e.d = &ops.Deps{Run: e.fake, FS: e.fs, Host: platform.NewFS(host, true), AuditPath: filepath.Join(root, "audit.jsonl"),
 		Now: func() time.Time { return ct.Now }}
 	r := registry.New(ops.Version)
@@ -427,6 +428,8 @@ func prepareExample(e *env, op string) {
 		if op == contracts.OpNginxVhostApply {
 			e.h.OK(contracts.OpPHPPoolApply, poolParams("anphat", 20001, "01938a06-0002-7000-8000-000006000002", "shop.anphat.vn"))
 		}
+	case contracts.OpFsList, contracts.OpCronApply, contracts.OpDBMysqlCreate:
+		e.site("anphat", 20001, "anphat.vn")
 	case contracts.OpAccountEnsure:
 	}
 }

@@ -188,6 +188,13 @@ func (e *Env) rootGroup(group string) platform.Owner {
 	return platform.Owner{UID: 0, GID: g}
 }
 
+// userOwner trả uid:gid của user hệ thống name (không có → root).
+func (e *Env) userOwner(name string) platform.Owner {
+	u, _ := e.uid(name)
+	g, _ := e.gid(name)
+	return platform.Owner{UID: u, GID: g}
+}
+
 // as trả Cred chạy dưới user hệ thống name.
 func (e *Env) as(name string) (*platform.Cred, error) {
 	u, ok := e.uid(name)

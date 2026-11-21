@@ -22,12 +22,13 @@ type Sim struct {
 	active    map[string]bool
 	installed map[string]string
 	quota     map[string][4]string // uid → block soft/hard, inode soft/hard
+	data      *dbSim               // DB, Pure-FTPd, sshd, systemd-run (Phase 6)
 }
 
 // NewSim tạo trình mô phỏng trên fs. Dịch vụ (.service, .timer) mặc định đang chạy; slice chưa chạy.
 func NewSim(fs *platform.FS) *Sim {
 	return &Sim{FS: fs, Mount: "/ ext4 rw,relatime,usrjquota=aquota.user,jqfmt=vfsv1",
-		acl: map[string][]string{}, active: map[string]bool{}, installed: map[string]string{}, quota: map[string][4]string{}}
+		acl: map[string][]string{}, active: map[string]bool{}, installed: map[string]string{}, quota: map[string][4]string{}, data: newDBSim()}
 }
 
 // SandboxRunner trả runner giả cho --sandbox: lệnh được kiểm như runner thật, ghi lại, và mô phỏng bằng Sim.
@@ -35,6 +36,7 @@ func SandboxRunner(d *Deps) *platform.FakeRunner {
 	sim := NewSim(d.FS)
 	f := platform.NewFake()
 	f.Hook = sim.Handle
+	f.StreamHook = sim.Stream
 	return f
 }
 
@@ -46,6 +48,9 @@ func fail(code int, msg string) platform.Result {
 
 // Handle mô phỏng một lệnh. Luôn trả handled=true.
 func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
+	if r, handled := s.data.handle(c); handled {
+		return r, true
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	a := c.Args

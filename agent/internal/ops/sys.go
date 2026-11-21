@@ -197,3 +197,19 @@ func sortedKeys[V any](m map[string]V) []string {
 	sort.Strings(out)
 	return out
 }
+
+// mkdirs tạo các thư mục còn thiếu trên đường dẫn (root 0755); thư mục đã có giữ nguyên quyền.
+func (d *Deps) mkdirs(p string) error {
+	parts := strings.Split(strings.Trim(p, "/"), "/")
+	cur := ""
+	for _, s := range parts {
+		cur += "/" + s
+		if d.FS.Exists(cur) {
+			continue
+		}
+		if _, err := d.FS.EnsureDir(cur, 0o755, platform.Owner{}); err != nil {
+			return opErr(err)
+		}
+	}
+	return nil
+}

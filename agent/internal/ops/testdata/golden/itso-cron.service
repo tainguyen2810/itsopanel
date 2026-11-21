@@ -1,0 +1,19 @@
+# Sinh bởi itso-agent (cron.apply) · account anphat · không sửa tay
+[Unit]
+Description=ITSO cron 01938a0d-0001-7000-8000-00000d000001 (anphat)
+
+[Service]
+Type=oneshot
+User=anphat
+Group=anphat
+Slice=itso-acct-20001.slice
+WorkingDirectory=/home/anphat/sites/anphat.vn
+ExecStart=/bin/bash /etc/itso-cron/anphat/01938a0d-0001-7000-8000-00000d000001.sh
+RuntimeMaxSec=600
+NoNewPrivileges=yes
+PrivateTmp=yes
+Nice=10
+IOSchedulingClass=idle
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=itso-cron-01938a0d-0001-7000-8000-00000d000001

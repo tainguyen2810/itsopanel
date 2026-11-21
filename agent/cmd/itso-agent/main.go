@@ -20,6 +20,7 @@ import (
 
 	"itso.local/agent/internal/audit"
 	"itso.local/agent/internal/auth"
+	"itso.local/agent/internal/fsx"
 	"itso.local/agent/internal/ops"
 	"itso.local/agent/internal/platform"
 	"itso.local/agent/internal/policy"
@@ -33,6 +34,10 @@ type options struct {
 }
 
 func main() {
+	// Helper File Manager (ADR 0019): agent tự chạy lại chính nó dưới uid account; xử lý trước mọi flag.
+	if len(os.Args) == 2 && os.Args[1] == "fs-helper" {
+		os.Exit(fsx.HelperMain(os.Stdin, os.Stdout, os.Stderr))
+	}
 	var o options
 	flag.StringVar(&o.listen, "listen", "unix:/run/itso/agent.sock", "unix:/path.sock (máy thật chỉ dùng unix socket)")
 	flag.StringVar(&o.keyFile, "key-file", "/etc/itso/agent.key", "khóa HMAC dùng chung với panel (≤ 0640)")
