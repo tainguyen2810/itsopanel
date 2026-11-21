@@ -153,8 +153,11 @@ func (d *Deps) ensureACL(ctx context.Context, path, entry string) error {
 	if err != nil {
 		return err
 	}
-	// "u:www-data:--x" ↔ dòng "user:www-data:--x" của getfacl.
-	want := "user:" + strings.TrimPrefix(entry, "u:")
+	// "u:www-data:--x" ↔ dòng "user:www-data:--x"; "d:u:…" ↔ "default:user:…" của getfacl.
+	want := "user:" + strings.TrimPrefix(strings.TrimPrefix(entry, "d:"), "u:")
+	if strings.HasPrefix(entry, "d:") {
+		want = "default:" + want
+	}
 	for _, l := range strings.Split(string(res.Stdout), "\n") {
 		if strings.TrimSpace(strings.SplitN(l, "#", 2)[0]) == want {
 			return nil

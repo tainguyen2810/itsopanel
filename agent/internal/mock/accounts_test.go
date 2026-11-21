@@ -40,3 +40,7 @@ func TestAccountLifecycle(t *testing.T) {
 func TestAccountParamsValidatedBySchema(t *testing.T) {
 	ct.AccountParamsValidated(t, newHarness(t))
 }
+
+func TestWebsiteLifecycleSharedWithAgent(t *testing.T) {
+	ct.WebsiteLifecycle(t, newHarness(t))
+}

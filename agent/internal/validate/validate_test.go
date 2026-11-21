@@ -40,6 +40,15 @@ func TestEvilVectors(t *testing.T) {
 		"hostname":     Hostname,
 		"service_name": Service,
 		"recipe":       func(s string) error { _, err := Recipe(s); return err },
+		// Phase 5 (web.go).
+		"domain":          Domain,
+		"nginx_size":      NginxSize,
+		"header_value":    HeaderValue,
+		"url_path":        URLPath,
+		"redirect_target": RedirectTarget,
+		"php_extension":   PHPExtension,
+		"email":           Email,
+		"php_version":     func(s string) error { return PHPVersion(s, true) },
 	}
 	for cat, fn := range check {
 		c, ok := v.Categories[cat]
@@ -115,4 +124,19 @@ func FuzzHostname(f *testing.F) {
 			}
 		}
 	})
+}
+
+// RelPath là lớp cú pháp; symlink ra ngoài home kiểm khi resolve trên FS (platform.FS.NoSymlinkBelow).
+func TestRelPath(t *testing.T) {
+	for _, ok := range []string{".", "public", "public/web", "sites/anphat.vn/public/index.php", ".env"} {
+		if err := RelPath(ok); err != nil {
+			t.Errorf("%q phải hợp lệ: %v", ok, err)
+		}
+	}
+	for _, bad := range []string{"", "/etc/shadow", "../x", "sites/../../etc", "sites/..", "sites/./x", "sites//x", "sites/", "a\x00b", "a\nb",
+		"public;deny", "public{", "public}", "pub lic", "public$host", "a\"b", "a'b", "a\\b", "a#b"} {
+		if RelPath(bad) == nil {
+			t.Errorf("%q phải bị từ chối", bad)
+		}
+	}
 }

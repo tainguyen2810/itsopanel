@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -136,8 +138,10 @@ func (f *FS) EnsureDir(p string, mode fs.FileMode, owner Owner) (bool, error) {
 		return false, err
 	}
 	defer d.Close()
-	if fi.Mode().Perm() != mode.Perm() {
-		if err := d.Chmod(mode.Perm()); err != nil {
+	// Quyền gồm cả sticky bit (vd. /run/itso/php 1733).
+	want := mode & (fs.ModePerm | fs.ModeSticky)
+	if fi.Mode()&(fs.ModePerm|fs.ModeSticky) != want {
+		if err := d.Chmod(want); err != nil {
 			return false, err
 		}
 		changed = true
@@ -280,4 +284,100 @@ func (f *FS) RemoveTree(p string, allowed ...string) error {
 		return fmt.Errorf("platform: từ chối xóa cây %q", p)
 	}
 	return os.RemoveAll(rp)
+}
+
+// ReadDir liệt kê tên trong thư mục (đã sắp xếp); thư mục không tồn tại → rỗng. Không theo symlink ở thành phần cuối.
+func (f *FS) ReadDir(p string) ([]string, error) {
+	rp, err := f.Path(p)
+	if err != nil {
+		return nil, err
+	}
+	d, err := os.OpenFile(rp, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_DIRECTORY, 0)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+// NoSymlinkBelow kiểm mọi thành phần của p nằm dưới base (base không tính) không phải symlink.
+// Dùng trước khi root thao tác trong cây do account sở hữu (chặn account đổi thư mục thành symlink).
+// Thành phần chưa tồn tại thì dừng kiểm (sẽ được tạo mới bằng Mkdir, không theo symlink).
+func (f *FS) NoSymlinkBelow(base, p string) error {
+	if p != base && !strings.HasPrefix(p, base+"/") {
+		return fmt.Errorf("platform: %s không nằm dưới %s", p, base)
+	}
+	cur := base
+	for _, seg := range strings.Split(strings.TrimPrefix(strings.TrimPrefix(p, base), "/"), "/") {
+		if seg == "" {
+			continue
+		}
+		cur += "/" + seg
+		rp, err := f.Path(cur)
+		if err != nil {
+			return err
+		}
+		fi, err := os.Lstat(rp)
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if fi.Mode()&fs.ModeSymlink != 0 {
+			return fmt.Errorf("platform: %s là symlink, từ chối", cur)
+		}
+	}
+	return nil
+}
+
+// Tail đọc tối đa n dòng cuối của file (không theo symlink, đọc tối đa maxBytes từ cuối).
+// truncated=true khi file còn dòng cũ hơn không được trả.
+func (f *FS) Tail(p string, n int, maxBytes int64) ([]string, bool, error) {
+	rp, err := f.Path(p)
+	if err != nil {
+		return nil, false, err
+	}
+	fd, err := os.OpenFile(rp, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return nil, false, err
+	}
+	defer fd.Close()
+	fi, err := fd.Stat()
+	if err != nil {
+		return nil, false, err
+	}
+	if !fi.Mode().IsRegular() {
+		return nil, false, fmt.Errorf("platform: %s không phải file thường", p)
+	}
+	start := int64(0)
+	if fi.Size() > maxBytes {
+		start = fi.Size() - maxBytes
+	}
+	buf := make([]byte, fi.Size()-start)
+	if _, err := fd.ReadAt(buf, start); err != nil && !errors.Is(err, io.EOF) {
+		return nil, false, err
+	}
+	text := strings.TrimRight(string(buf), "\n")
+	if text == "" {
+		return []string{}, start > 0, nil
+	}
+	lines := strings.Split(text, "\n")
+	partial := start > 0
+	if partial { // dòng đầu bị cắt giữa chừng
+		lines = lines[1:]
+	}
+	truncated := partial
+	if len(lines) > n {
+		lines, truncated = lines[len(lines)-n:], true
+	}
+	return lines, truncated, nil
 }

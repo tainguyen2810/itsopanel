@@ -1,0 +1,1 @@
+lego --accept-tos --email=it@lehoa.vn --server=https://acme-v02.api.letsencrypt.org/directory --path=/etc/itso/acme/letsencrypt --http --http.webroot=/var/lib/itso/acme/webroot --domains=lehoa.vn --domains=www.lehoa.vn run

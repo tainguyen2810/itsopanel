@@ -1,0 +1,2 @@
+systemctl disable --now itso-php@8.3-lehoa.service
+systemctl daemon-reload

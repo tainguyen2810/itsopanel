@@ -85,10 +85,18 @@ func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
 	case "getfacl":
 		var b strings.Builder
 		b.WriteString("user::rwx\n")
+		var defs []string
 		for _, e := range s.acl[last] {
+			if strings.HasPrefix(e, "d:") {
+				defs = append(defs, "default:user:"+strings.TrimPrefix(e, "d:u:"))
+				continue
+			}
 			b.WriteString("user:" + strings.TrimPrefix(e, "u:") + "\n")
 		}
 		b.WriteString("group::r-x\nmask::r-x\nother::---\n")
+		for _, x := range defs {
+			b.WriteString(x + "\n")
+		}
 		return ok(b.String()), true
 	case "setfacl":
 		if len(a) == 3 && a[0] == "-m" {
@@ -119,6 +127,12 @@ func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
 				}
 			}
 		}
+	case "nginx":
+		return s.nginxTest(), true
+	case "php-fpm8.3":
+		return ok("NOTICE: configuration file test is successful\n"), true
+	case "lego":
+		return s.lego(c), true
 	case "findmnt":
 		return ok(s.Mount + "\n"), true
 	case "setquota":
@@ -145,8 +159,12 @@ func (s *Sim) systemctl(a []string) platform.Result {
 	if len(a) > 1 {
 		unit = a[1]
 	}
+	if a[0] == "enable" || a[0] == "disable" { // enable/disable --now <unit>
+		unit = a[len(a)-1]
+	}
 	isActive := s.active[unit]
-	if _, set := s.active[unit]; !set && (strings.HasSuffix(unit, ".service") || strings.HasSuffix(unit, ".timer")) {
+	if _, set := s.active[unit]; !set && (strings.HasSuffix(unit, ".service") || strings.HasSuffix(unit, ".timer")) &&
+		!strings.HasPrefix(unit, "itso-php@") { // master PHP của account chỉ chạy khi agent bật
 		isActive = true
 	}
 	switch a[0] {
@@ -161,6 +179,14 @@ func (s *Sim) systemctl(a []string) platform.Result {
 		s.active[unit] = true
 	case "stop":
 		s.active[unit] = false
+	case "enable":
+		if contains(a, "--now") {
+			s.active[unit] = true
+		}
+	case "disable":
+		if contains(a, "--now") {
+			s.active[unit] = false
+		}
 	}
 	return platform.Result{}
 }

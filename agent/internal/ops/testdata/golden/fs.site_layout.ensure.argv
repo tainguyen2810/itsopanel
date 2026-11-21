@@ -1,0 +1,6 @@
+getfacl --omit-header --absolute-names /home/lehoa/sites/lehoa.vn
+setfacl -m u:www-data:--x /home/lehoa/sites/lehoa.vn
+getfacl --omit-header --absolute-names /home/lehoa/sites/lehoa.vn/public
+setfacl -m u:www-data:r-x /home/lehoa/sites/lehoa.vn/public
+getfacl --omit-header --absolute-names /home/lehoa/sites/lehoa.vn/public
+setfacl -m d:u:www-data:r-x /home/lehoa/sites/lehoa.vn/public

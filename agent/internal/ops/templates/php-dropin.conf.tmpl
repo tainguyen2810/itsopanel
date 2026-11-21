@@ -1,0 +1,8 @@
+# Sinh bởi itso-agent (php.pool.apply, D-68). Không sửa tay: sẽ bị ghi đè.
+[Service]
+User={{.User}}
+Group={{.User}}
+Slice=itso-acct-{{.UID}}.slice
+ReadWritePaths=/home/{{.User}}/sites /run/itso/php
+ExecStart=
+ExecStart=/usr/sbin/php-fpm{{.Version}} --nodaemonize --fpm-config /etc/itso/php/{{.Version}}/{{.User}}/php-fpm.conf

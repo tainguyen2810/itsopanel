@@ -1,0 +1,31 @@
+# Master PHP-FPM của MỘT hosting account (D-68, ADR 0015). Instance: <phiên bản>-<username>, vd. itso-php@8.3-anphat.
+# User=, Group=, Slice=itso-acct-<uid>.slice, ReadWritePaths= và ExecStart= nằm trong drop-in
+# /etc/systemd/system/itso-php@<instance>.service.d/10-itso.conf do itso-agent (php.pool.apply) sinh.
+# Không có drop-in thì unit không chạy (ExecStart mặc định là /bin/false), để không bao giờ có master chạy root.
+[Unit]
+Description=ITSO PHP-FPM %i
+After=network.target
+
+[Service]
+Type=notify
+# /run/itso/php 1733 (tạo lại sau reboot): mọi master tạo được socket của mình, không liệt kê/xóa socket của account khác.
+ExecStartPre=+/usr/bin/install -d -o root -g root -m 1733 /run/itso/php
+ExecStart=/bin/false
+ExecReload=/bin/kill -USR2 $MAINPID
+KillMode=mixed
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

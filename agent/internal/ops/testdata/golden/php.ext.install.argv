@@ -1,0 +1,5 @@
+dpkg-query -W -f=${Status}	${Version} php8.3-fpm
+dpkg-query -W -f=${Status}	${Version} php8.3-redis
+dpkg-query -W -f=${Status}	${Version} php8.3-gd
+dpkg-query -W -f=${Status}	${Version} php8.3-intl
+apt-get install -y -q --no-install-recommends -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold php8.3-redis php8.3-gd

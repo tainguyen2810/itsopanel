@@ -2,6 +2,24 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-21 — Phase 5 / Prompt 5.2 — nhánh `phase-5`
+
+Môi trường: như 5.1. Đã cài `nginx` 1.24.0 và `php8.3-fpm` 8.3.6 (kho Ubuntu 24.04) **trong container dev** chỉ để kiểm cú pháp file sinh ra; không khởi động dịch vụ nào (policy-rc.d chặn).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go toàn bộ | `cd agent && go vet ./... && go test -count=1 ./...` | PASS 12 package |
+| Golden op website | `go test ./internal/ops -run 'Site\|PHP\|Vhost\|Nginx\|LogTail\|Cert'` | PASS: argv + file cho site layout (quyền/chủ/ACL, log ngoài home), pool + master + drop-in, vhost php/static/proxy/suspended/tls, nginx.conf, lego run/renew, Pebble cần policy + CA (env `LEGO_CA_CERTIFICATES`); chạy lại lần 2 không có lệnh ghi |
+| Hoàn tác | `TestVhostRollback`, `TestPHPPoolGolden` | PASS: `nginx -t` lỗi → site mới bị xóa, site sửa về bản cũ, không reload, site khác vẫn áp được; `php-fpm -t` (uid account) lỗi → pool cũ khôi phục, không reload |
+| Cú pháp thật | `go test ./internal/ops -run TestRenderedConfigsWithRealBinaries -v` | PASS: `nginx -t` thật trên 5 vhost golden + `nginx.conf`; `php-fpm8.3 -t` thật trên pool + master. Lần đầu lỗi `include fastcgi_params` (đường dẫn tương đối) và `listen [::]` trên máy không IPv6 → sửa template (đường dẫn tuyệt đối, IPv6 theo `/proc/net/if_inet6`) |
+| Vector độc | `TestEvilInputsRejectedBeforeAnyCommand` · `validate.TestEvilVectors` | PASS: thêm nhóm domain, path, header_value, url_path, redirect_target, nginx_size, php_version, php_extension, email gọi thẳng handler → bị từ chối, 0 lệnh chạy. Lần đầu: `php.version.remove 7.4` chạy `dpkg-query` trước khi từ chối → sửa: chỉ nhận 8.3 |
+| Contract chung mock + agent | `TestWebsiteLifecycleSharedWithMock` · `TestWebsiteLifecycleSharedWithAgent` | PASS: cùng luồng PHP → layout → pool → vhost (idempotent, `config_test_failed` giữ bản cũ) → chứng chỉ → TLS → xóa |
+| Fuzz template | `go test -fuzz FuzzRenderVhost -fuzztime 20s` · `FuzzRenderPool 10s` | PASS: 244 456 + 158 516 lần chạy; mọi cấu hình render được đều đúng dạng (mỗi dòng một directive, ngoặc cân bằng, không chèn thêm `open_basedir`) |
+| Unit systemd | `make units-check` | PASS 13 unit (thêm `itso-php@8.3-lehoa.service`) |
+| Contracts · lint | `make contracts-check` · `make codegen-check` · `make lint-agent` · `make no-exec` | PASS (ví dụ envelope sửa `php_socket` theo quy tắc agent suy ra) |
+
+**Test bị bỏ qua:** không. Ghi chú: một đề xuất bỏ qua vector `path` tầng semantic (symlink) trong test validator bị từ chối; thay bằng test riêng `TestRelPath` cho lớp cú pháp, phần symlink kiểm ở `TestSiteLayoutGolden` (FS thật). **Chờ VM:** master PHP chạy thật dưới uid account (phpinfo), socket ACL, `systemctl` thật, lego với Pebble.
+
 ## 2026-11-21 — Phase 5 / Prompt 5.1 — nhánh `phase-5`
 
 Môi trường: như Phase 4 (PostgreSQL 16 + Redis local, container không có systemd).

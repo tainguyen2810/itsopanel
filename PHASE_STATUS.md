@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 5 — Website / Nginx / PHP / SSL / DNS (đang làm; Phase 4 ✓ APPROVED 2026-11-21 cùng D-63 → D-66, kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 5.2 Agent ops website. Người dùng yêu cầu (2026-11-21) "ok, lên kế hoạch và làm Phase 5"; làm hàng loạt 5.1 → 5.6, tự merge local
-- **Task đang làm:** 5.2 — bắt đầu (5.1 ✓)
+- **Prompt hiện tại:** 5.3 Panel website. Người dùng yêu cầu (2026-11-21) "ok, lên kế hoạch và làm Phase 5"; làm hàng loạt 5.1 → 5.6, tự merge local
+- **Task đang làm:** 5.3 — bắt đầu (5.1, 5.2 ✓)
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-5`
 - **Bước tiếp theo:** Theo `docs/planning/seed/PHASE_5_PROMPTS.md`; cuối 5.6 báo cáo Phase 5 và DỪNG (không bắt đầu Phase 6)
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM (enforcement, installer thật) chạy bằng bộ script `tests/vm/` khi có VM
@@ -34,8 +34,8 @@
 Phase 5 (đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_5_PROMPTS.md`
 
 - ✓ 5.1 ADR vhost/PHP-FPM/ACME/DNS (D-67…D-70), contracts, migration Phase 5
-- ✱ 5.2 Agent: vhost + rollback, site layout, PHP-FPM, chứng chỉ, log
-- ○ 5.3 Panel: websites, domain, PHP Manager, Nginx global, suspend, wizard stack
+- ✓ 5.2 Agent: vhost + rollback, site layout, PHP-FPM, chứng chỉ, log
+- ✱ 5.3 Panel: websites, domain, PHP Manager, Nginx global, suspend, wizard stack
 - ○ 5.4 SSL (ACME, gia hạn, tải lên) + DNS Cloudflare
 - ○ 5.5 UI nối API thật
 - ○ 5.6 e2e, VM Phase 5, báo cáo, merge
@@ -96,3 +96,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 4 / 4.6 | Bộ test VM `tests/vm/` (Multipass + Vagrant; `run-all.sh`: cài sạch ≤ 10 phút, cài lần 2, doctor, unit, HTTPS health, recipe stress-ng, enforcement 07 §9 E1–E8, agent từ chối A1–A5, update → rollback, uninstall giữ /home; `lib/agent_call.py` ký HMAC D-66), `make test-vm`; `make dev` chạy itso-agent `--sandbox` (khóa HMAC + gốc riêng ở `.dev/`, `ITSO_DEV_AGENT=mock` giữ mock); job dịch vụ đặt tên `service.<action>`; Playwright stack thật 6/6 với agent sandbox (thêm Server detail, usage; helper dùng chung); sửa e2e demo wizard theo mã demo; báo cáo `docs/reports/phase-4.md`, runbook `phase-4-vm-test.md`; merge phase-4 → main (local) | d6faf59 |
 | 2026-11-21 | 5 / kế hoạch | Người dùng duyệt Phase 4 (D-63…D-66 APPROVED); kế hoạch Phase 5 (6 prompt, D-67…D-70 đề xuất), mở nhánh phase-5 | 345ea41 |
 | 2026-11-21 | 5 / 5.1 | ADR 0014–0017 (D-67…D-70), ADR 0011–0013 Accepted; agent-ops: 6 op mới + sửa 6 op theo ADR (site_dir, loại site, redirect, proxy 127.0.0.1, TLS, ACME email/directory, khóa tải lên bí mật), recipe nginx/php8.3/lego, 26 vector độc; OpenAPI +11 (DNS provider/zone, PHP install/extension, wizard stack); DBML (uuid cho domains/dns_records, acme_accounts theo server + key_location, khóa chứng chỉ tải lên mã hóa) + migration Phase 5 (9 bảng) | 2af9ee5 |
+| 2026-11-21 | 5 / 5.2 | Agent: 15 op website thật (`fs.site_layout.ensure`, `nginx.vhost.apply/remove/inspect` với `nginx -t` + hoàn tác, `nginx.global.apply` sinh `nginx.conf`, `php.version.install/remove`, `php.ext.install`, `php.pool.apply/remove` (master itso-php@ dưới uid account, `php-fpm -t` dưới uid account), `cert.issue` (lego HTTP-01, Pebble theo policy `acme_pebble`), `cert.install/inspect/remove`, `log.tail`); template nhúng; Sim mô phỏng nginx/php-fpm/lego; mock agent 15 op; bộ contract chung `WebsiteLifecycle`; unit `itso-php@.service`; log site chuyển ra `/var/log/itso/sites` (ADR 0014 sửa đổi) | (commit 5.2) |

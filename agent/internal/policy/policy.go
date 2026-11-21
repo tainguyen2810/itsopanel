@@ -24,11 +24,13 @@ const DefaultPath = "/etc/itso/agent-policy.yaml"
 
 // File là nội dung YAML.
 type File struct {
-	Version      int             `yaml:"version"`
-	RootTerminal bool            `yaml:"root_terminal"`
-	Docker       bool            `yaml:"docker"`
-	BackupForget bool            `yaml:"backup_forget"`
-	Ops          map[string]bool `yaml:"ops,omitempty"`
+	Version      int  `yaml:"version"`
+	RootTerminal bool `yaml:"root_terminal"`
+	Docker       bool `yaml:"docker"`
+	BackupForget bool `yaml:"backup_forget"`
+	// AcmePebble cho phép cert.issue dùng directory "pebble" (chỉ VM/CI, D-69).
+	AcmePebble bool            `yaml:"acme_pebble"`
+	Ops        map[string]bool `yaml:"ops,omitempty"`
 }
 
 // Policy là chính sách đã nạp.

@@ -1,0 +1,24 @@
+; Sinh bởi itso-agent (php.pool.apply, D-68). Không sửa tay: sẽ bị ghi đè.
+; website {{.WebsiteUUID}} · account {{.User}} · site {{.SiteDir}}
+[{{.Pool}}]
+listen = {{.Socket}}
+listen.acl_users = www-data
+listen.mode = 0600
+pm = ondemand
+pm.max_children = {{.MaxChildren}}
+pm.process_idle_timeout = 30s
+pm.max_requests = 500
+chdir = /
+catch_workers_output = no
+security.limit_extensions = .php
+php_admin_value[open_basedir] = {{.SiteRoot}}/:/usr/share/php/
+php_admin_value[upload_tmp_dir] = {{.SiteRoot}}/tmp
+php_admin_value[session.save_path] = {{.SiteRoot}}/tmp
+php_admin_value[sys_temp_dir] = {{.SiteRoot}}/tmp
+php_admin_value[memory_limit] = {{.MemoryLimit}}
+php_admin_value[max_execution_time] = {{.MaxExecutionTime}}
+php_admin_value[upload_max_filesize] = {{.UploadMax}}
+php_admin_value[post_max_size] = {{.UploadMax}}
+php_admin_value[disable_functions] = {{.DisableFunctions}}
+php_admin_flag[expose_php] = off
+php_admin_flag[allow_url_include] = off

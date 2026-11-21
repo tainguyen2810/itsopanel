@@ -1,0 +1,2 @@
+dpkg-query -W -f=${Status}	${Version} php8.3-fpm
+apt-get remove -y -q php8.3-fpm php8.3-cli php8.3-common

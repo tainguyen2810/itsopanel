@@ -71,12 +71,12 @@ File mà account tạo đều mang uid của account → user quota phản ánh 
 /home/acct12/                 root:acct12   0750  + ACL u:www-data:--x
 ├── sites/example.com/
 │   ├── public/               acct12:acct12 0750 + ACL u:www-data:r-x (default ACL kế thừa)
-│   ├── logs/                 root:acct12   0750  (nginx ghi qua root, account đọc)
 │   └── tmp/                  acct12        0700  (upload_tmp_dir, session.save_path)
 ├── backups/                  acct12        0700  (export DB, file tạm restore)
 ├── .ssh/                     acct12        0700
 └── .itso/                    root          0755  (metadata, không cho account sửa)
 ```
+- Log Nginx của site: `/var/log/itso/sites/acct12/example.com/` root:acct12 0750 (ngoài home, xem ADR 0014 mục Sửa đổi: account không đổi được thành symlink).
 - Home do root sở hữu → đáp ứng yêu cầu `ChrootDirectory` của SFTP.
 - Account không liệt kê được home người khác (0750 + group riêng).
 - `/proc` mount `hidepid=invisible,gid=itso-proc` (agent và giám sát trong group `itso-proc`).

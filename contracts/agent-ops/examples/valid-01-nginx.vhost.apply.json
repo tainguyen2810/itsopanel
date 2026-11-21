@@ -14,7 +14,7 @@
       "shop.anphat.vn"
     ],
     "document_root": "public",
-    "php_socket": "/run/itso/php/anphat-1a2b3c4d.sock",
+    "php_socket": "/run/itso/php/anphat-01938a06.sock",
     "tls": null,
     "client_max_body_size": "64m",
     "extra_headers": {
