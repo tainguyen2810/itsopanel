@@ -23,7 +23,15 @@ export interface UploadApi {
   cancel(uuid: string): Promise<void>;
 }
 
-export type UploadState = 'idle' | 'uploading' | 'paused' | 'done' | 'error' | 'cancelled';
+export type UploadState =
+  'idle' | 'uploading' | 'committing' | 'paused' | 'done' | 'error' | 'cancelled';
+
+/** Lỗi khi job ghi file vào thư mục account (fs.upload.commit) không thành công. */
+export class UploadCommitError extends Error {
+  constructor(readonly status: UploadSession['status']) {
+    super(`upload ${status}`);
+  }
+}
 
 /** Khoảng byte tiếp theo [start, end] (end bao gồm) hoặc null khi đã đủ. */
 export function nextRange(
@@ -57,12 +65,14 @@ export interface UploadSnapshot {
   session: UploadSession | null;
 }
 
-/** Một lần tải file lên: start → (pause ↔ resume) → done | error | cancelled. */
+/** Một lần tải file lên: start → (pause ↔ resume) → committing (job ghi file) → done | error | cancelled. */
 export class Uploader {
   state: UploadState = 'idle';
   received = 0;
   error: unknown = null;
   session: UploadSession | null = null;
+  /** Nhịp hỏi trạng thái khi server đang ghi file (ms); test đặt 0. */
+  pollMs = 500;
   private running = false;
   private stop = false;
 
@@ -128,13 +138,33 @@ export class Uploader {
         this.onChange(this.snapshot());
         r = nextRange(this.received, this.size, chunk);
       }
-      this.running = false;
-      if (r === null) this.set('done');
-      else this.set('paused');
+      if (r === null) {
+        await this.commit();
+        this.running = false;
+        this.set('done');
+      } else {
+        this.running = false;
+        this.set('paused');
+      }
     } catch (e) {
       this.running = false;
       this.set('error', e);
     }
+  }
+
+  /** Đủ byte: chờ job fs.upload.commit ghi file vào thư mục rồi mới báo xong (để danh sách file thấy ngay). */
+  private async commit(): Promise<void> {
+    const sess = this.session;
+    if (sess === null) return;
+    let cur = sess;
+    if (cur.status === 'receiving' || cur.status === 'committing') this.set('committing');
+    for (let i = 0; cur.status === 'receiving' || cur.status === 'committing'; i++) {
+      if (i >= 240) throw new UploadCommitError(cur.status);
+      await new Promise((ok) => setTimeout(ok, Math.min(this.pollMs * (1 + i), this.pollMs * 4)));
+      cur = await this.api.status(sess.uuid);
+    }
+    this.session = cur;
+    if (cur.status !== 'completed') throw new UploadCommitError(cur.status);
   }
 
   /** Dừng sau chunk đang gửi. */

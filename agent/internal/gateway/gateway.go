@@ -50,6 +50,11 @@ func (c Config) logf(msg string, args ...any) {
 	}
 }
 
+type closeMsg struct {
+	code   websocket.StatusCode
+	reason string
+}
+
 func (c Config) terminal(w http.ResponseWriter, r *http.Request) {
 	ticket := r.URL.Query().Get("ticket")
 	if !term.ValidTicket(ticket) {
@@ -94,6 +99,7 @@ func (c Config) terminal(w http.ResponseWriter, r *http.Request) {
 	_ = agent.SetDeadline(time.Time{})
 
 	errc := make(chan error, 2)
+	exitc := make(chan closeMsg, 1)
 	go func() { // trình duyệt → agent
 		for {
 			typ, b, err := ws.Read(ctx)
@@ -137,12 +143,17 @@ func (c Config) terminal(w http.ResponseWriter, r *http.Request) {
 				if ex.Reason == "idle" {
 					code = CloseIdle
 				}
-				_ = ws.Close(code, ex.Reason)
-				errc <- nil
+				exitc <- closeMsg{code, ex.Reason}
 				return
 			}
 		}
 	}()
-	<-errc
-	_ = ws.Close(websocket.StatusNormalClosure, "closed")
+	// Chỉ một lần Close: hai khung close (vd. exit của shell trùng lúc trình duyệt đóng) làm Chrome báo 1006
+	// "Close received after close" thay vì lý do thật.
+	m := closeMsg{websocket.StatusNormalClosure, "closed"}
+	select {
+	case m = <-exitc:
+	case <-errc:
+	}
+	_ = ws.Close(m.code, m.reason)
 }

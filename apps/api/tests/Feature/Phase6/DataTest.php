@@ -215,7 +215,7 @@ it('SFTP/FTPS + khóa SSH: tạo, đổi mật khẩu (secret một lần), trù
         ->and(collect($agent->calls)->last()['params']['keys'])->toHaveCount(1);
     $dupk = d6($in, 'POST', '/api/v1/admin/ssh-keys', ['hosting_account_uuid' => $a->account->uuid, 'name' => 'Lại', 'public_key' => D6KEY]);
     assertMatchesContract(D6A, 'post', '/api/v1/admin/ssh-keys', 409, $dupk);
-    foreach (['ssh-dss AAAAB3NzaC1kc3M= x', 'ssh-ed25519 !!!', "ssh-ed25519 AAAA\nssh-rsa AAAA"] as $bad) {
+    foreach (['ssh-dss AAAAB3NzaC1kc3M= x', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnk', 'ssh-ed25519 !!!', "ssh-ed25519 AAAA\nssh-rsa AAAA"] as $bad) {
         expect(d6($in, 'POST', '/api/v1/admin/ssh-keys', ['hosting_account_uuid' => $a->account->uuid, 'name' => 'x', 'public_key' => $bad])
             ->status())->toBe(422, $bad);
     }
@@ -422,7 +422,9 @@ it('tạm khóa account: khóa DB user, tắt timer cron, vô hiệu FTPS; tài 
     $calls = collect($agent->calls);
     expect($calls->firstWhere('op', 'db.mysql.lock')['params']['locked'] ?? null)->toBeTrue()
         ->and($calls->firstWhere('op', 'cron.apply')['params']['entries'][0]['enabled'] ?? null)->toBeFalse()
-        ->and($calls->firstWhere('op', 'ftp.user.ensure')['params']['enabled'] ?? null)->toBeFalse();
+        ->and($calls->firstWhere('op', 'ftp.user.ensure')['params']['enabled'] ?? null)->toBeFalse()
+        // null không bị đổi thành chuỗi '[REDACTED]' (agent sẽ coi đó là mật khẩu 10 ký tự).
+        ->and($calls->firstWhere('op', 'ftp.user.ensure')['params'] ?? [])->toHaveKey('password', null);
     expect(Database::query()->value('status'))->toBe('suspended')->and(DatabaseUser::query()->value('status'))->toBe('suspended')
         ->and(CronJob::query()->value('status'))->toBe('suspended')->and(SftpAccount::query()->value('status'))->toBe('suspended');
 

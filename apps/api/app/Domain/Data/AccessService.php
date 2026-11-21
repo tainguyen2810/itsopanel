@@ -127,7 +127,8 @@ final class AccessService
             throw $bad('Chỉ nhận khóa ssh-ed25519, ecdsa-sha2-nistp256 hoặc ssh-rsa dạng "<loại> <base64> [ghi chú]".');
         }
         $blob = base64_decode($parts[1], true);
-        if ($blob === false || strlen($blob) < 4) {
+        // Khớp agent (Go base64.StdEncoding): phải đúng padding chuẩn, nếu không job sẽ hỏng ở máy.
+        if ($blob === false || strlen($blob) < 4 || base64_encode($blob) !== $parts[1]) {
             throw $bad('Phần base64 của khóa không hợp lệ.');
         }
         $n = unpack('N', substr($blob, 0, 4))[1] ?? 0;

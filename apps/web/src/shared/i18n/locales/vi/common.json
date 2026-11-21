@@ -275,7 +275,9 @@
     "database_user": {
       "create": "Tạo user database",
       "delete": "Xóa user database",
-      "grant": "Cập nhật quyền user database"
+      "grant": "Cập nhật quyền user database",
+      "grants": "Cập nhật quyền user database",
+      "rotate_password": "Đổi mật khẩu user database"
     },
     "file": {
       "mkdir": "Tạo thư mục",
@@ -284,7 +286,9 @@
       "delete": "Xóa file",
       "chmod": "Đổi quyền file",
       "compress": "Nén file",
-      "extract": "Giải nén file"
+      "extract": "Giải nén file",
+      "operate": "Thao tác file",
+      "upload": "Tải file lên"
     },
     "sftp": {
       "create": "Tạo tài khoản SFTP",
@@ -374,6 +378,17 @@
     },
     "setup": {
       "stack": "Cài web stack"
+    },
+    "sftp_account": {
+      "create": "Tạo tài khoản SFTP/FTPS",
+      "delete": "Xóa tài khoản SFTP/FTPS",
+      "rotate_password": "Đổi mật khẩu SFTP/FTPS"
+    },
+    "cron_job": {
+      "create": "Tạo cron job",
+      "update": "Sửa cron job",
+      "delete": "Xóa cron job",
+      "run": "Chạy cron job"
     }
   },
   "ops": {

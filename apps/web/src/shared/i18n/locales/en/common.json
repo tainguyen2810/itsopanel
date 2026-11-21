@@ -275,7 +275,9 @@
     "database_user": {
       "create": "Create database user",
       "delete": "Delete database user",
-      "grant": "Update database user grants"
+      "grant": "Update database user grants",
+      "grants": "Update database user grants",
+      "rotate_password": "Rotate database user password"
     },
     "file": {
       "mkdir": "Create folder",
@@ -284,7 +286,9 @@
       "delete": "Delete files",
       "chmod": "Change file permissions",
       "compress": "Compress files",
-      "extract": "Extract archive"
+      "extract": "Extract archive",
+      "operate": "File operation",
+      "upload": "Upload file"
     },
     "sftp": {
       "create": "Create SFTP account",
@@ -374,6 +378,17 @@
     },
     "setup": {
       "stack": "Install web stack"
+    },
+    "sftp_account": {
+      "create": "Create SFTP/FTPS account",
+      "delete": "Delete SFTP/FTPS account",
+      "rotate_password": "Rotate SFTP/FTPS password"
+    },
+    "cron_job": {
+      "create": "Create cron job",
+      "update": "Update cron job",
+      "delete": "Delete cron job",
+      "run": "Run cron job"
     }
   },
   "ops": {

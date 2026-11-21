@@ -1256,11 +1256,13 @@
     "uploadState": {
       "idle": "Chờ",
       "uploading": "Đang tải",
+      "committing": "Đang ghi vào thư mục",
       "paused": "Đã tạm dừng",
       "done": "Xong",
       "error": "Lỗi",
       "cancelled": "Đã hủy"
-    }
+    },
+    "uploadCommitFailed": "Không ghi được file vào thư mục. Xem chi tiết trong job \"Tải file lên\"."
   },
   "sftp": {
     "title": "SFTP và SSH",

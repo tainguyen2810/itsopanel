@@ -6,7 +6,13 @@ import { errorText } from '@/shared/api/useAction';
 import { useFmt } from '@/shared/format/useFmt';
 import { Button } from '@/ui/Button';
 import { ProgressBar } from '@/ui/ProgressBar';
-import { Uploader, type UploadApi, type UploadSession, type UploadSnapshot } from '../upload';
+import {
+  UploadCommitError,
+  Uploader,
+  type UploadApi,
+  type UploadSession,
+  type UploadSnapshot,
+} from '../upload';
 
 /** API upload theo realm (admin/portal) cho một account. */
 export function uploadApi(account: string): UploadApi {
@@ -102,7 +108,11 @@ export function UploadList({
                 }
               />
               {snap.state === 'error' && (
-                <p className="text-sm text-danger-text">{errorText(snap.error)}</p>
+                <p className="text-sm text-danger-text">
+                  {snap.error instanceof UploadCommitError
+                    ? t('files.uploadCommitFailed')
+                    : errorText(snap.error)}
+                </p>
               )}
               <div className="flex gap-2">
                 {snap.state === 'uploading' && (

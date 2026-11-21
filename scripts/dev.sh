@@ -13,7 +13,9 @@ case "$ITSO_DEV_AGENT" in
   sandbox)
     ITSO_AGENT_SOCKET="${ITSO_AGENT_SOCKET:-$SBX/agent.sock}"
     ITSO_AGENT_KEY_FILE="${ITSO_AGENT_KEY_FILE:-$SBX/agent.key}"
-    export ITSO_AGENT_KEY_FILE ;;
+    # Staging upload: panel ghi chunk, agent sandbox đọc /var/lib/itso/uploads dưới gốc sandbox (ADR 0019 §5).
+    ITSO_UPLOAD_DIR="${ITSO_UPLOAD_DIR:-$SBX/root/var/lib/itso/uploads}"
+    export ITSO_AGENT_KEY_FILE ITSO_UPLOAD_DIR ;;
   mock)
     ITSO_AGENT_SOCKET="${ITSO_AGENT_SOCKET:-/tmp/itso-mock-agent.sock}" ;;
   *) echo "ITSO_DEV_AGENT phải là sandbox hoặc mock"; exit 1 ;;
@@ -48,7 +50,7 @@ prefix() {
 if [[ "$ITSO_DEV_AGENT" == sandbox ]]; then
   # Build lại agent nếu mã nguồn đổi (nhanh nhờ cache của Go). Khóa HMAC + policy tạo một lần trong .dev/ (gitignore).
   ( cd agent && go build -o bin/itso-agent ./cmd/itso-agent && go build -o bin/itso-gateway ./cmd/itso-gateway )
-  mkdir -p "$SBX/root"
+  mkdir -p "$SBX/root" "$ITSO_UPLOAD_DIR"
   umask 077
   [[ -s "$ITSO_AGENT_KEY_FILE" ]] || od -An -N32 -tx1 /dev/urandom | tr -d ' \n' > "$ITSO_AGENT_KEY_FILE"
   chmod 600 "$ITSO_AGENT_KEY_FILE"

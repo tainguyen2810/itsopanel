@@ -1256,11 +1256,13 @@
     "uploadState": {
       "idle": "Waiting",
       "uploading": "Uploading",
+      "committing": "Saving to folder",
       "paused": "Paused",
       "done": "Done",
       "error": "Error",
       "cancelled": "Cancelled"
-    }
+    },
+    "uploadCommitFailed": "Could not save the file to the folder. See the \"Upload file\" job for details."
   },
   "sftp": {
     "title": "SFTP and SSH",

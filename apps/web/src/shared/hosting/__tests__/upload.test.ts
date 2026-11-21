@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/api/http';
 import {
   CHUNK,
+  UploadCommitError,
   Uploader,
   contentRange,
   nextRange,
@@ -145,5 +146,34 @@ describe('upload chunk', () => {
     await up.start();
     expect(up.state).toBe('done');
     expect(ranges).toEqual(['bytes 0-0/1']);
+  });
+
+  it('đủ byte → committing tới khi job ghi file xong (completed) mới done', async () => {
+    for (const end of ['completed', 'failed'] as const) {
+      const { s: srv, api } = fakeServer();
+      const realChunk = api.chunk;
+      api.chunk = async (...a) => {
+        await realChunk(...a);
+        if (srv.status === 'completed') srv.status = 'committing';
+        return { ...srv, status: srv.status };
+      };
+      let polls = 0;
+      api.status = async () => {
+        polls += 1;
+        if (polls === 2) srv.status = end;
+        return { ...srv };
+      };
+      const states: string[] = [];
+      const up = new Uploader(new Blob(['0123456789']), 'a.bin', api, (x) => states.push(x.state));
+      up.pollMs = 0;
+      await up.start();
+      expect(states).toContain('committing');
+      expect(polls).toBe(2);
+      if (end === 'completed') expect(up.state).toBe('done');
+      else {
+        expect(up.state).toBe('error');
+        expect(up.error).toBeInstanceOf(UploadCommitError);
+      }
+    }
   });
 });
