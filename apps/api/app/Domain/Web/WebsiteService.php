@@ -419,7 +419,12 @@ final class WebsiteService
         $v = $v === null ? PhpCatalog::DEFAULT : (string) $v;
         if (! PhpCatalog::supported($v)) {
             throw new ApiProblem(409, 'precondition_failed', 'Phiên bản PHP chưa hỗ trợ',
-                'Phase 5 chỉ hỗ trợ PHP 8.3 từ kho Ubuntu 24.04 (D-68).');
+                'Hỗ trợ PHP '.implode(', ', PhpCatalog::SUPPORTED).' (D-68, D-100).');
+        }
+        $allowed = $a->packageVersion->php_versions ?? [];
+        if ($allowed !== [] && ! in_array($v, $allowed, true)) {
+            throw new ApiProblem(409, 'precondition_failed', 'Gói không cho phép phiên bản PHP này',
+                'Gói hosting của account chỉ cho phép PHP '.implode(', ', $allowed).'.');
         }
         if (! PhpVersion::query()->where('server_id', $a->server_id)->where('version', $v)->where('status', 'ready')->exists()) {
             throw new ApiProblem(409, 'precondition_failed', 'PHP chưa cài trên server',

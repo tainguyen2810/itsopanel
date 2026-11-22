@@ -34,3 +34,6 @@ Schedule::command('itso:backup-due')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('itso:backup-verify')->dailyAt('04:41')->withoutOverlapping();
 // 8.5: khôi phục thảm họa: xếp hàng khôi phục dữ liệu account sau khi panel được khôi phục (không làm gì khi chưa bật).
 Schedule::command('itso:dr-restore')->everyFiveMinutes()->withoutOverlapping();
+
+// Phase 10: catalog phần mềm + bản mới từ agent (D-100).
+Schedule::command('itso:software-refresh')->dailyAt('05:23')->withoutOverlapping();

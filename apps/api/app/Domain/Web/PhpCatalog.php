@@ -10,7 +10,8 @@ final class PhpCatalog
     public const DEFAULT = '8.3';
 
     /** @var list<string> */
-    public const SUPPORTED = ['8.3'];
+    /** 8.3 từ kho Ubuntu 24.04 (D-68); 8.1/8.2/8.4 từ PPA ondrej/php khóa ghim (D-100). */
+    public const SUPPORTED = ['8.1', '8.2', '8.3', '8.4'];
 
     /** @var list<string> */
     public const EXTENSIONS = ['bcmath', 'curl', 'gd', 'imagick', 'intl', 'mbstring', 'mysql', 'opcache', 'pgsql', 'redis',

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 318,
+  "total": 324,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -867,6 +867,42 @@
           "expect": "reject",
           "layer": "schema",
           "note": "Kho Docker Inc. không dùng (D-94)"
+        },
+        {
+          "input": "docker",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 10 (docker.io + docker-compose-v2, D-94)"
+        },
+        {
+          "input": "wp-cli",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 10 (phar ghim sha512, D-99)"
+        },
+        {
+          "input": "php8.4",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "PHP từ PPA ondrej/php khóa ghim (D-100)"
+        },
+        {
+          "input": "valkey",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 10 (xung đột redis)"
+        },
+        {
+          "input": "php8.4 && curl evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh sau recipe hợp lệ"
+        },
+        {
+          "input": "ppa:ondrej/php",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tên PPA tùy ý thay recipe"
         },
         {
           "input": "fail2ban",

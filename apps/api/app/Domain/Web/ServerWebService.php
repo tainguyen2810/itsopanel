@@ -54,7 +54,7 @@ final class ServerWebService
     {
         if (! PhpCatalog::supported($version)) {
             throw new ApiProblem(409, 'precondition_failed', 'Phiên bản PHP chưa hỗ trợ',
-                'Phase 5 chỉ có PHP 8.3 từ kho Ubuntu 24.04 (D-68); bản khác cần PPA, chưa bật.');
+                'Hỗ trợ PHP '.implode(', ', PhpCatalog::SUPPORTED).': 8.3 từ kho Ubuntu, còn lại từ PPA ondrej/php (D-68, D-100).');
         }
         if ($action === 'remove' && Website::query()->where('server_id', $s->id)->where('php_version', $version)->exists()) {
             throw new ApiProblem(409, 'resource_locked', 'PHP đang được dùng', "Còn website dùng PHP $version: chuyển hoặc xóa website trước.");

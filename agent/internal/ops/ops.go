@@ -49,6 +49,8 @@ type Deps struct {
 	NodeMode bool
 	// HTTPAddrs (tùy chọn, test): địa chỉ http.check gọi theo scheme; mặc định 127.0.0.1:80 / 127.0.0.1:443.
 	HTTPAddrs map[string]string
+	// Fetch (tùy chọn, test): tải tệp HTTPS có hash ghim (wp-cli). Nil = net/http.
+	Fetch func(ctx context.Context, url string, limit int64) ([]byte, error)
 
 	mu       sync.Mutex
 	inflight map[string]context.CancelFunc

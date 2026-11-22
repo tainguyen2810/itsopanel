@@ -114,6 +114,18 @@ var Recipes = map[string][]string{
 	"clamav":      {"clamav", "clamav-daemon", "clamav-freshclam"},
 	"yara":        {"yara"},
 	"modsecurity": {"libnginx-mod-http-modsecurity", "modsecurity-crs"},
+	// Phase 10 (D-100, ADR 0045). PHP 8.1/8.2/8.4 từ PPA ondrej/php (khóa ghim, chỉ thêm kho khi cài bản đó);
+	// wp-cli không phải gói apt: phar ghim sha512 (ADR 0044); valkey cần kho có gói valkey-server.
+	"php8.1":    {"php8.1-fpm", "php8.1-cli", "php8.1-common"},
+	"php8.2":    {"php8.2-fpm", "php8.2-cli", "php8.2-common"},
+	"php8.4":    {"php8.4-fpm", "php8.4-cli", "php8.4-common"},
+	"redis":     {"redis-server"},
+	"valkey":    {"valkey-server"},
+	"memcached": {"memcached"},
+	"nodejs":    {"nodejs"},
+	"composer":  {"composer"},
+	"wp-cli":    {},
+	"docker":    {"docker.io", "docker-compose-v2"},
 }
 
 // Recipe trả danh sách gói apt của recipe.

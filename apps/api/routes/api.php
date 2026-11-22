@@ -161,6 +161,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers/{id}/software', [ServerOpsController::class, 'software'])->middleware('itso.perm:servers.read');
             Route::post('servers/{id}/software/{key}:{action}', [ServerOpsController::class, 'manageSoftware'])
                 ->middleware(['itso.perm:software.write', 'itso.idempotent']);
+            Route::get('servers/{id}/os-updates', [ServerOpsController::class, 'osUpdates'])->middleware('itso.perm:servers.read');
+            Route::put('servers/{id}/os-updates', [ServerOpsController::class, 'putOsUpdates'])
+                ->middleware(['itso.perm:software.write', 'itso.idempotent']);
             Route::get('servers/{id}/php-versions', [ServerWebController::class, 'phpVersions'])->middleware('itso.perm:servers.read');
             Route::post('servers/{id}/php-versions/{version}/extensions', [ServerWebController::class, 'installExtensions'])
                 ->middleware(['itso.perm:software.write', 'itso.idempotent']);

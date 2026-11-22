@@ -23,8 +23,12 @@ var (
 // reservedDomains: tên nội bộ không bao giờ phục vụ như website (vector semantic).
 var reservedDomainSuffix = []string{"localhost", "localdomain", "local", "internal", "invalid", "test", "example.invalid"}
 
-// PHPSupported là phiên bản PHP Phase 5 hỗ trợ (kho Ubuntu 24.04, D-68).
-var PHPSupported = map[string]bool{"8.3": true}
+// PHPSupported là phiên bản PHP agent quản lý: 8.3 từ kho Ubuntu 24.04 (D-68); 8.1/8.2/8.4 từ PPA ondrej/php
+// có khóa ghim (Phase 10, D-100).
+var PHPSupported = map[string]bool{"8.1": true, "8.2": true, "8.3": true, "8.4": true}
+
+// PHPFromPPA: phiên bản cần kho PPA ondrej/php.
+var PHPFromPPA = map[string]bool{"8.1": true, "8.2": true, "8.4": true}
 
 // PHPExtensions là allowlist extension → tên gói apt (php<ver>-<ext>).
 var PHPExtensions = map[string]bool{"bcmath": true, "curl": true, "gd": true, "imagick": true, "intl": true, "mbstring": true,
@@ -151,7 +155,7 @@ func PHPVersion(v string, supported bool) error {
 	}
 	if supported && !PHPSupported[v] {
 		return &Error{Code: "precondition_failed", Field: "version",
-			Msg: "chỉ hỗ trợ PHP 8.3 từ kho Ubuntu 24.04 (bản khác cần PPA, chưa bật — D-68)"}
+			Msg: "chỉ hỗ trợ PHP 8.1–8.4 (8.3 từ kho Ubuntu, còn lại từ PPA ondrej/php — D-68, D-100)"}
 	}
 	return nil
 }

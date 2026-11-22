@@ -73,6 +73,8 @@ return [
     ], AccountJobHandler::class) + [
         'software.install' => SoftwareJobHandler::class,
         'software.remove' => SoftwareJobHandler::class,
+        'software.upgrade' => SoftwareJobHandler::class,
+        'software.os_updates' => SoftwareJobHandler::class,
     ] + array_fill_keys(['website.create', 'website.update', 'website.nginx.update', 'website.php.update',
         'website.domain.add', 'website.domain.remove', 'website.delete'], WebsiteJobHandler::class)
       + array_fill_keys(['php.version.install', 'php.version.remove', 'php.extensions.install', 'setup.stack'],

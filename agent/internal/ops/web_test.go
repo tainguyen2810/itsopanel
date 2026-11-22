@@ -103,7 +103,7 @@ func TestPHPVersionAndExtGolden(t *testing.T) {
 	if d := e.h.OK(contracts.OpPHPVersionInstall, map[string]any{"version": "8.3", "extensions": []any{}}); d["changed"] != false {
 		t.Fatal(d)
 	}
-	e.h.Fail(contracts.OpPHPVersionInstall, map[string]any{"version": "8.1", "extensions": []any{}}, "precondition_failed")
+	e.h.Fail(contracts.OpPHPVersionInstall, map[string]any{"version": "7.4", "extensions": []any{}}, "precondition_failed")
 	if d := e.step("php.ext.install", contracts.OpPHPExtInstall, map[string]any{"version": "8.3", "extensions": []any{"redis", "gd", "intl"}}, true); d["changed"] != true ||
 		strings.Join(toStrings(d["installed"]), ",") != "gd,intl,redis" {
 		t.Fatal(d)
