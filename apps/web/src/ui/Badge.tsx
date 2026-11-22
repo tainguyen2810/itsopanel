@@ -87,7 +87,17 @@ export type StatusKey =
   | 'unreachable'
   | 'revoked'
   | 'waiting_agent'
-  | 'holding';
+  | 'holding'
+  | 'partial'
+  | 'deploying'
+  | 'enabled'
+  | 'not_installed'
+  | 'installing'
+  | 'healthy'
+  | 'unhealthy'
+  | 'starting'
+  | 'updating'
+  | 'cloning';
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
@@ -145,6 +155,16 @@ const TONE: Record<StatusKey, Tone> = {
   revoked: 'neutral',
   waiting_agent: 'warning',
   holding: 'info',
+  partial: 'warning',
+  deploying: 'info',
+  enabled: 'success',
+  not_installed: 'neutral',
+  installing: 'info',
+  healthy: 'success',
+  unhealthy: 'danger',
+  starting: 'info',
+  updating: 'info',
+  cloning: 'info',
 };
 
 /** Trạng thái có trong bảng (dữ liệu API có thể có giá trị mới: hiện nguyên văn, tông trung tính). */

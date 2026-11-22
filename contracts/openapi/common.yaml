@@ -1163,6 +1163,7 @@ components:
           - php
           - static
           - proxy
+          - docker
         document_root:
           $ref: '#/components/schemas/RelPath'
         php_version:
@@ -1179,6 +1180,22 @@ components:
           - string
           - 'null'
           pattern: ^http://127\.0\.0\.1:[0-9]{2,5}$
+        docker_target:
+          type:
+          - object
+          - 'null'
+          properties:
+            compose_project_uuid:
+              type: string
+              format: uuid
+            service:
+              type: string
+              pattern: ^[a-z0-9][a-z0-9_.-]{0,62}$
+          required:
+          - compose_project_uuid
+          - service
+          additionalProperties: false
+          description: 'Chỉ Admin, type=docker (Phase 10, D-97): vhost proxy tới cổng 127.0.0.1 đã cấp cho service.'
       required:
       - hosting_account_uuid
       - primary_domain
@@ -2318,6 +2335,7 @@ components:
           - database
           - server_config
           - panel
+          - compose_project
         website:
           oneOf:
           - $ref: '#/components/schemas/WebsiteRef'
@@ -2326,6 +2344,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DbName'
+        volumes:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$
         restic_snapshot_id:
           type: string
           pattern: ^[0-9a-f]{8,64}$
@@ -2348,6 +2371,7 @@ components:
             - files
             - databases
             - config
+            - docker_volumes
         tags:
           type: array
           items:
@@ -2370,6 +2394,7 @@ components:
       - scope_type
       - website
       - databases
+      - volumes
       - restic_snapshot_id
       - size_mb
       - taken_at
@@ -2511,7 +2536,7 @@ components:
           type: array
           items:
             type: string
-            pattern: ^(files:.+|database:[a-z][a-z0-9_]{0,63}|config)$
+            pattern: ^(files:.+|database:[a-z][a-z0-9_]{0,63}|config|volume:[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127})$
           minItems: 1
         target_server_uuid:
           type:
@@ -2558,10 +2583,56 @@ components:
           - 'off'
           - minor
           - all
+        update_window:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):00-([01][0-9]|2[0-3]):00$
+          description: Cửa sổ giờ tự cập nhật (giờ server).
         hardening:
           type: object
           additionalProperties:
             type: boolean
+          description: 'Khóa: file_edit_disabled, xmlrpc_blocked, php_in_uploads_blocked, wp_config_protected, salts_rotated,
+            version_hidden.'
+        maintenance:
+          type: boolean
+        admin_username:
+          type:
+          - string
+          - 'null'
+        php_version:
+          oneOf:
+          - $ref: '#/components/schemas/PhpVersion'
+          - type: 'null'
+        state:
+          type: string
+          enum:
+          - ready
+          - updating
+          - cloning
+          - error
+        last_update:
+          type:
+          - object
+          - 'null'
+          properties:
+            uuid:
+              type: string
+              format: uuid
+            state:
+              type: string
+              enum:
+              - running
+              - succeeded
+              - rolled_back
+              - failed
+            at:
+              type: string
+              format: date-time
+          required:
+          - uuid
+          - state
+          - at
+          additionalProperties: false
         staging_of:
           type:
           - string
@@ -2580,9 +2651,281 @@ components:
       - plugins_outdated
       - themes_outdated
       - auto_update
+      - update_window
       - hardening
+      - maintenance
+      - admin_username
+      - php_version
+      - state
+      - last_update
       - staging_of
       - updated_at
+      additionalProperties: false
+    WordPressComponent:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - plugin
+          - theme
+        slug:
+          type: string
+          pattern: ^[a-z0-9][a-z0-9_-]{0,99}$
+        name:
+          type: string
+        version:
+          type: string
+        latest_version:
+          type:
+          - string
+          - 'null'
+        active:
+          type: boolean
+        auto_update:
+          type: boolean
+      required:
+      - type
+      - slug
+      - name
+      - version
+      - latest_version
+      - active
+      - auto_update
+      additionalProperties: false
+    WordPressSiteDetail:
+      type: object
+      properties:
+        site:
+          $ref: '#/components/schemas/WordPressSite'
+        core:
+          type: object
+          properties:
+            version:
+              type: string
+            latest_version:
+              type: string
+            checksums_ok:
+              type:
+              - boolean
+              - 'null'
+          required:
+          - version
+          - latest_version
+          - checksums_ok
+          additionalProperties: false
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/WordPressComponent'
+        staging:
+          type: array
+          items:
+            type: object
+            properties:
+              uuid:
+                type: string
+                format: uuid
+              domain:
+                $ref: '#/components/schemas/Domain'
+              created_at:
+                type: string
+                format: date-time
+            required:
+            - uuid
+            - domain
+            - created_at
+            additionalProperties: false
+      required:
+      - site
+      - core
+      - components
+      - staging
+      additionalProperties: false
+    WordPressUpdate:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        site_uuid:
+          type: string
+          format: uuid
+        trigger:
+          type: string
+          enum:
+          - manual
+          - auto
+        state:
+          type: string
+          enum:
+          - running
+          - succeeded
+          - rolled_back
+          - failed
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                - core
+                - plugin
+                - theme
+              slug:
+                type: string
+              from:
+                type: string
+              to:
+                type: string
+            required:
+            - type
+            - slug
+            - from
+            - to
+            additionalProperties: false
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                enum:
+                - snapshot
+                - maintenance
+                - update
+                - verify
+                - rollback
+              state:
+                type: string
+                enum:
+                - pending
+                - running
+                - done
+                - failed
+                - skipped
+            required:
+            - key
+            - state
+            additionalProperties: false
+        snapshot_uuid:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        error:
+          type:
+          - string
+          - 'null'
+        requested_by:
+          oneOf:
+          - $ref: '#/components/schemas/UserRef'
+          - type: 'null'
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - uuid
+      - site_uuid
+      - trigger
+      - state
+      - items
+      - steps
+      - snapshot_uuid
+      - error
+      - requested_by
+      - started_at
+      - finished_at
+      additionalProperties: false
+      description: 'Một lượt cập nhật (D-99): snapshot trước, kiểm tra sau, lỗi thì khôi phục snapshot.'
+    WordPressUpdateRequest:
+      type: object
+      properties:
+        core:
+          type: boolean
+        plugins:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z0-9][a-z0-9_-]{0,99}$
+          maxItems: 200
+        themes:
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z0-9][a-z0-9_-]{0,99}$
+          maxItems: 50
+      additionalProperties: false
+    WordPressSettings:
+      type: object
+      properties:
+        auto_update:
+          type: string
+          enum:
+          - 'off'
+          - minor
+          - all
+        update_window:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):00-([01][0-9]|2[0-3]):00$
+      additionalProperties: false
+    WordPressHardenRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+            enum:
+            - file_edit_disabled
+            - xmlrpc_blocked
+            - php_in_uploads_blocked
+            - wp_config_protected
+            - salts_rotated
+            - version_hidden
+          minItems: 1
+        enabled:
+          type: boolean
+      required:
+      - items
+      - enabled
+      additionalProperties: false
+    WordPressCloneRequest:
+      type: object
+      properties:
+        subdomain:
+          type: string
+          pattern: ^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$
+        basic_auth:
+          type: boolean
+        noindex:
+          type: boolean
+      required:
+      - subdomain
+      additionalProperties: false
+    WordPressPassword:
+      type: object
+      properties:
+        password:
+          $ref: '#/components/schemas/SecretPassword'
+      required:
+      - password
+      additionalProperties: false
+    WordPressMaintenance:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+      required:
+      - enabled
       additionalProperties: false
     WordPressInstall:
       type: object
@@ -3371,6 +3714,14 @@ components:
         - stop
         - restart
       description: Hành động.
+    VolumeName:
+      name: volume
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$
+      description: Tên volume Docker.
     SettingsGroup:
       name: group
       in: path
@@ -3461,6 +3812,7 @@ components:
         - database
         - server_config
         - panel
+        - compose_project
       description: Lọc theo loại backup.
     FilterServer:
       name: filter[server]

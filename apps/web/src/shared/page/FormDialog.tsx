@@ -10,6 +10,9 @@ interface Props {
   description?: ReactNode;
   submitLabel?: string;
   pending?: boolean;
+  /** Khóa nút gửi khi điều kiện ngoài form chưa đạt (vd chưa kiểm compose.yaml). */
+  submitDisabled?: boolean;
+  className?: string;
   onSubmit: () => void;
   children: ReactNode;
 }
@@ -22,6 +25,8 @@ export function FormDialog({
   description,
   submitLabel,
   pending = false,
+  submitDisabled = false,
+  className,
   onSubmit,
   children,
 }: Props) {
@@ -32,14 +37,18 @@ export function FormDialog({
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title={title} {...(description ? { description } : {})}>
+      <DialogContent
+        title={title}
+        {...(description ? { description } : {})}
+        {...(className ? { className } : {})}
+      >
         <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
           {children}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('actions.cancel')}
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending || submitDisabled}>
               {submitLabel ?? t('actions.save')}
             </Button>
           </div>

@@ -423,11 +423,28 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
                           "admin_email": "it@anphat.vn", "locale": "vi"},
             job=True, job_example=jobs("wordpress.install", "website", D.WEBSITES[1]["uuid"],
                                        ["db.mysql.create", "wp.install"], realm=realm))
-    for action, label, steps in [("update", "Cập nhật core/plugin/theme", ["wp.update"]),
-                                 ("clone-staging", "Tạo bản staging", ["wp.clone"]),
-                                 ("harden", "Áp dụng hardening", ["wp.harden"])]:
+    api.add("post", "/wordpress/sites:scan", oid("scanWordPressSites"), "Quét phát hiện site WordPress", "WordPress",
+            job=True, desc="Quét docroot các website trong phạm vi (wp.detect, D-99); site mới xuất hiện trong danh sách.",
+            job_example=jobs("wordpress.scan", None, None, ["wp.detect"], realm=realm, server=2))
+    api.add("get", "/wordpress/sites/{id}", oid("getWordPressSite"), "Chi tiết site WordPress", "WordPress", params=idp,
+            ok=cref("WordPressSiteDetail"), ok_example=one(D.WORDPRESS_DETAIL))
+    api.add("patch", "/wordpress/sites/{id}", oid("updateWordPressSettings"), "Chính sách tự cập nhật", "WordPress",
+            params=idp, body=cref("WordPressSettings"), body_example={"auto_update": "minor", "update_window": "02:00-05:00"},
+            ok=cref("WordPressSite"), ok_example=one(wp))
+    api.add("get", "/wordpress/sites/{id}/updates", oid("listWordPressUpdates"), "Lịch sử cập nhật", "WordPress",
+            params=idp, list_=True, ok=cref("WordPressUpdate"), ok_example=page(D.WORDPRESS_UPDATES))
+    for action, label, steps, body, ex, step_up in [
+            ("update", "Cập nhật core/plugin/theme (snapshot trước, lỗi thì rollback)", ["backup.run", "wp.maintenance", "wp.update", "http.check"],
+             "WordPressUpdateRequest", {"core": True, "plugins": ["wp-mail-smtp"], "themes": []}, False),
+            ("clone-staging", "Tạo bản staging", ["fs.site_layout.ensure", "nginx.vhost.apply", "wp.clone"], "WordPressCloneRequest",
+             {"subdomain": "staging", "basic_auth": True, "noindex": True}, False),
+            ("harden", "Áp dụng hardening", ["wp.harden", "nginx.vhost.apply"], "WordPressHardenRequest",
+             {"items": ["xmlrpc_blocked", "php_in_uploads_blocked"], "enabled": True}, False),
+            ("admin-password", "Đổi mật khẩu admin WordPress", ["wp.admin_password"], "WordPressPassword",
+             {"password": "N3w-Strong.Pass2026"}, True),
+            ("maintenance", "Bật/tắt chế độ bảo trì", ["wp.maintenance"], "WordPressMaintenance", {"enabled": True}, False)]:
         api.add("post", f"/wordpress/sites/{{id}}:{action}", oid("wordPress" + "".join(x.title() for x in action.split("-"))),
-                label, "WordPress", params=idp, job=True,
+                label, "WordPress", params=idp, job=True, body=cref(body), body_example=ex, step_up=step_up,
                 job_example=jobs(f"wordpress.{action.replace('-', '_')}", "wordpress_site", wp["uuid"], steps, realm=realm,
                                  server=2))
     # -- Git deploy (module 22). Webhook công khai POST /hooks/git/{token} để Phase 10.
@@ -649,13 +666,20 @@ def admin_paths(api: Api):
             list_=True, ok=ref("Software"), ok_example=page(D.SOFTWARE))
     api.add("post", "/servers/{id}/software/{key}:{action}", "manageServerSoftware", "Cài/gỡ/nâng cấp theo recipe",
             "Software", params=idp + [Api.p("SoftwareKey"), Api.p("SoftwareAction")], job=True,
+            desc="Xung đột (vd `redis` ↔ `valkey`) → 409 `conflict`; gỡ khi đang dùng hoặc thành phần lõi → 409 `resource_locked` (D-100).",
             job_example=jobs("software.install", "server", srv["uuid"], ["software.install"]))
+    api.add("get", "/servers/{id}/os-updates", "getOsAutoUpdates", "Cập nhật bảo mật tự động của hệ điều hành", "Software",
+            params=idp, ok=ref("OsAutoUpdates"), ok_example=one(D.OS_UPDATES))
+    api.add("put", "/servers/{id}/os-updates", "putOsAutoUpdates", "Bật/tắt unattended-upgrades", "Software",
+            params=idp, body=ref("OsAutoUpdatesInput"), body_example={"enabled": True, "security_only": True}, job=True,
+            job_example=jobs("software.os_updates", "server", srv["uuid"], ["os.auto_updates"]),
+            desc="Không bao giờ tự reboot (D-100).")
     api.add("get", "/servers/{id}/php-versions", "listPhpVersions", "Phiên bản PHP", "Software", params=idp,
             list_=True, ok=ref("PhpVersionInfo"), ok_example=page(D.PHP_VERSIONS))
     api.add("post", "/servers/{id}/php-versions/{version}:{action}", "managePhpVersion", "Cài/gỡ phiên bản PHP", "Software",
             params=idp + [Api.p("PhpVersionPath"), Api.p("PhpAction")], job=True,
             job_example=jobs("php.version.install", "server", srv["uuid"], ["php.version.install"]),
-            desc="Phase 5 chỉ có PHP 8.3 từ kho Ubuntu 24.04 (D-68); phiên bản khác trả 409 `precondition_failed`. "
+            desc="PHP 8.3 từ kho Ubuntu 24.04 (D-68); 8.1/8.2/8.4 từ PPA ondrej/php ghim khóa, kho chỉ bật khi cài bản đầu tiên (D-100). "
                  "Gỡ khi còn website dùng → 409 `resource_locked`.")
     api.add("post", "/servers/{id}/php-versions/{version}/extensions", "installPhpExtensions", "Cài extension PHP (allowlist)",
             "Software", params=idp + [Api.p("PhpVersionPath")], body=ref("PhpExtensionsInput"),
@@ -915,6 +939,20 @@ def admin_paths(api: Api):
             job_example=jobs("malware.restore", "quarantine_item", D.QUARANTINE[0]["uuid"], ["malware.restore"], server=2))
     # -- docker
     dk = [Api.p("Id")]
+    api.add("get", "/servers/{id}/docker", "getDockerHost", "Trạng thái Docker trên server", "Docker", params=dk,
+            ok=ref("DockerHost"), ok_example=one(D.DOCKER_HOSTS[0]))
+    api.add("post", "/servers/{id}/docker:enable", "enableDocker", "Cài và cấu hình Docker an toàn", "Docker", params=dk,
+            job=True, step_up=True, desc="Recipe `docker` (docker.io + docker-compose-v2) → daemon.json an toàn → DOCKER-USER (D-94, D-95).",
+            job_example=jobs("docker.enable", "server", srv["uuid"], ["software.install", "docker.host.configure", "docker.firewall.sync"]))
+    api.add("post", "/servers/{id}/docker:sync-firewall", "syncDockerFirewall", "Đồng bộ chain DOCKER-USER", "Docker", params=dk,
+            job=True, job_example=jobs("docker.firewall_sync", "server", srv["uuid"], ["docker.firewall.sync"]))
+    api.add("post", "/servers/{id}/docker/images:prune", "pruneDockerImages", "Xóa image không dùng", "Docker", params=dk,
+            job=True, job_example=jobs("docker.image_prune", "server", srv["uuid"], ["docker.image.prune"]),
+            desc="Không xóa image đang dùng hoặc bản rollback còn hạn (D-98).")
+    api.add("delete", "/servers/{id}/docker/volumes/{volume}", "deleteDockerVolume", "Xóa volume", "Docker",
+            params=dk + [Api.p("VolumeName")], job=True, step_up=True,
+            job_example=jobs("docker.volume_remove", "server", srv["uuid"], ["docker.volume.remove"]),
+            desc="Volume đang được container dùng → 409 `resource_locked`.")
     api.add("get", "/servers/{id}/docker/containers", "listContainers", "Container", "Docker", params=dk, list_=True,
             ok=ref("Container"), ok_example=page(D.CONTAINERS))
     api.add("post", "/servers/{id}/docker/containers/{container}:{action}", "controlContainer", "start/stop/restart",
@@ -939,10 +977,28 @@ def admin_paths(api: Api):
         api.add("post", f"/compose-projects/{{id}}:{action}", f"{action}ComposeProject", f"Compose {action}", "Docker",
                 params=idp, job=True,
                 job_example=jobs(f"compose.{action}", "compose_project", D.COMPOSE[0]["uuid"], [f"compose.{action}"]))
+    api.add("post", "/compose-projects:validate", "previewComposeValidation", "Kiểm YAML trước khi lưu (không chạy gì)",
+            "Docker", body=ref("ComposeValidateRequest"),
+            body_example={"server_uuid": srv["uuid"], "compose_yaml": "services:\n  app:\n    image: nginx:1.27\n    privileged: true\n",
+                          "overrides": []},
+            ok=ref("ComposeValidation"), ok_example=one(D.COMPOSE_PREVIEW),
+            desc="Gọi `compose.validate` của agent (đọc, đồng bộ). Override chỉ SUPER_ADMIN.")
+    api.add("get", "/compose-projects/{id}/revisions", "listComposeRevisions", "Revision của project", "Docker",
+            params=idp, list_=True, ok=ref("ComposeRevision"), ok_example=page(D.COMPOSE_REVISIONS))
+    for action, label, ops_ in [("update-images", "Cập nhật image (giữ bản cũ để rollback)", ["docker.image.update"]),
+                                ("rollback-images", "Quay về image trước", ["docker.image.rollback"])]:
+        api.add("post", f"/compose-projects/{{id}}:{action}", "".join(x.title() for x in action.split("-")).replace("Update", "update", 1).replace("Rollback", "rollback", 1) + "ComposeProject",
+                label, "Docker", params=idp, job=True, body=ref("ComposeImageUpdate"), body_example={"services": ["app"]},
+                job_example=jobs(f"compose.{action.replace('-', '_')}", "compose_project", D.COMPOSE[0]["uuid"], ops_))
+    api.add("get", "/compose-templates", "listComposeTemplates", "Mẫu compose dựng sẵn", "Docker", list_=True,
+            ok=ref("ComposeTemplate"), ok_example=page(D.COMPOSE_TEMPLATES))
     api.crud("/registries", "registry", ref("Registry"), "Docker", D.REGISTRIES, ops="lcd",
              create_body=ref("RegistryInput"),
              create_example={"name": "GHCR nội bộ", "url": "https://ghcr.io", "username": "itso-bot", "password": "********"},
              plural="registries")
+    api.add("post", "/registries/{id}:test", "testRegistry", "Kiểm tra đăng nhập registry", "Docker", params=idp, job=True,
+            job_example=jobs("registry.test", "registry", D.REGISTRIES[0]["uuid"], ["docker.registry.login"]),
+            desc="Mật khẩu đi qua vault của agent (secret_ref), không vào params job (D-98).")
     # -- monitoring
     api.add("get", "/metrics/servers/{id}", "getServerMetrics", "Chuỗi số liệu server", "Monitoring",
             params=idp + [Api.p("Metric"), Api.p("Range")], ok=ref("MetricSeries"), ok_example=one(D.METRICS))
@@ -1066,6 +1122,7 @@ def common_components():
         "SoftwareAction": qp("action", {"type": "string", "enum": ["install", "remove", "upgrade"]}, "Hành động.", True, "path"),
         "ContainerId": qp("container", {"type": "string", "pattern": "^[0-9a-f]{12,64}$"}, "ID container.", True, "path"),
         "ContainerAction": qp("action", {"type": "string", "enum": ["start", "stop", "restart"]}, "Hành động.", True, "path"),
+        "VolumeName": qp("volume", {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"}, "Tên volume Docker.", True, "path"),
         "SettingsGroup": qp("group", {"type": "string", "enum": ["general", "security", "smtp", "backup", "updates"]}, "Nhóm cài đặt.", True, "path"),
         "Cursor": qp("cursor", {"type": "string"}, "Cursor trang tiếp theo."),
         "Limit": qp("limit", {"type": "integer", "minimum": 1, "maximum": 200, "default": 50}, "Số bản ghi mỗi trang."),
@@ -1075,7 +1132,7 @@ def common_components():
         "PathQuery": qp("path", {"$ref": "#/components/schemas/RelPath"}, "Đường dẫn tương đối với home account.", True),
         "FilterHostingAccount": qp("filter[hosting_account]", {"type": "string", "format": "uuid"}, "Lọc theo account."),
         "FilterDestination": qp("filter[destination]", {"type": "string", "format": "uuid"}, "Lọc theo đích backup."),
-        "FilterScopeType": qp("filter[scope_type]", {"type": "string", "enum": ["hosting_account", "website", "database", "server_config", "panel"]}, "Lọc theo loại backup."),
+        "FilterScopeType": qp("filter[scope_type]", {"type": "string", "enum": ["hosting_account", "website", "database", "server_config", "panel", "compose_project"]}, "Lọc theo loại backup."),
         "FilterServer": qp("filter[server]", {"type": "string", "format": "uuid"}, "Lọc theo server."),
         "FilterLifecycle": qp("filter[lifecycle_state]", {"$ref": "#/components/schemas/LifecycleState"}, "Lọc theo trạng thái vòng đời."),
         "FilterRealm": qp("filter[realm]", {"type": "string", "enum": ["admin", "portal"]}, "Lọc theo realm."),

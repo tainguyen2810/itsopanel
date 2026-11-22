@@ -3,6 +3,7 @@ import { onTick, type DemoDb } from '../db';
 import { page } from '../list';
 import { created, noContent, ok, on, problem, type Ctx, type Reply } from '../router';
 import { canSeeServer, visibility } from '../scope';
+import { composeWrite, imagesIn, pushRevision, volumesIn } from './docker';
 import { actorRef, startJob } from './writes';
 
 type S = A['schemas'];
@@ -320,11 +321,22 @@ export function registerInfra() {
     const php = /^php(\d\.\d)$/.exec(key);
     const sw = rows.find((x) => x.key === key);
     if (!sw && !php) return problem(404, 'not_found', 'Không có recipe cho phần mềm này');
-    if (sw && action === 'install' && sw.state !== 'available') {
+    if (sw && action === 'install' && !['available', 'failed'].includes(sw.state)) {
       return problem(409, 'conflict', 'Phần mềm đã được cài');
     }
     if (sw && action !== 'install' && sw.state === 'available') {
       return problem(409, 'conflict', 'Phần mềm chưa được cài');
+    }
+    if (sw && action === 'install') {
+      const clash = rows.find((x) => sw.conflicts.includes(x.key) && x.installed_version !== null);
+      if (clash) return problem(409, 'conflict', `Xung đột với ${clash.name} đang cài`);
+      const missing = sw.requires.filter(
+        (k) => !rows.some((x) => x.key === k && x.installed_version !== null),
+      );
+      if (missing.length) return invalid(`Cần cài trước: ${missing.join(', ')}`);
+    }
+    if (sw && action === 'remove' && sw.remove_blocked) {
+      return problem(409, 'resource_locked', 'Không gỡ được', sw.remove_blocked);
     }
     return startJob(ctx, {
       type: `software.${action}`,
@@ -545,15 +557,16 @@ export function registerInfra() {
   };
   const COMPOSE_NAME = /^[a-z0-9][a-z0-9_-]{0,62}$/;
   on('post', '/api/v1/admin/compose-projects', (ctx) => {
-    const deny = SA_ONLY(ctx);
-    if (deny) return deny;
     const b = (ctx.body ?? {}) as {
       server_uuid?: string;
       name?: string;
       compose_yaml?: string;
+      template?: string | null;
+      overrides?: { rule: string; reason: string }[];
     };
-    const srv = ctx.db.data.servers.find((x) => x.uuid === b.server_uuid);
-    if (!srv) return invalid('Chọn server.');
+    if (!b.server_uuid) return invalid('Chọn server.');
+    const srv = serverOf({ ...ctx, params: { id: b.server_uuid } });
+    if (isReply(srv)) return srv;
     if (!b.name || !COMPOSE_NAME.test(b.name)) return invalid('Tên project không hợp lệ.');
     if (!b.compose_yaml?.includes('services:')) {
       return invalid('compose.yaml phải có khóa services:.');
@@ -562,49 +575,77 @@ export function registerInfra() {
     if (list.some((x) => x.name === b.name && x.server.uuid === srv.uuid)) {
       return problem(409, 'conflict', 'Tên project đã có trên server này');
     }
+    const r = composeWrite(ctx, srv, b.compose_yaml, b.overrides);
+    if (isReply(r)) return r;
     const uuid = ctx.db.newUuid();
-    const services = (b.compose_yaml.match(/^ {2}[a-z0-9_-]+:\s*$/gm) ?? []).length || 1;
-    const proj = {
+    const proj: S['ComposeProject'] = {
       uuid,
       server: ref(srv),
       name: b.name,
-      status: 'stopped',
-      services,
+      status: 'deploying',
+      services: r.services,
       revision: 1,
-      validation: { ok: true, warnings: [] },
+      template: b.template ?? null,
+      validation: r.v,
       compose_yaml: b.compose_yaml,
+      ports: r.ports,
+      images: imagesIn(b.compose_yaml),
+      websites: [],
+      last_image_update: null,
+      volumes: volumesIn(b.compose_yaml),
       created_at: ctx.db.now(),
       updated_at: ctx.db.now(),
-    } as unknown as S['ComposeProject'];
+    };
     list.push(proj);
+    pushRevision(ctx.db, ctx, proj, true);
     return startJob(ctx, {
       type: 'compose.create',
       resource: { type: 'compose_project', uuid },
       ops: ['compose.validate', 'compose.apply', 'compose.up'],
       server: ref(srv),
-      changes: { name: b.name },
+      changes: { name: b.name, overrides: r.v.overrides.map((o) => o.rule) },
       onDone: () => {
         proj.status = 'running';
       },
     });
   });
   on('patch', '/api/v1/admin/compose-projects/{id}', (ctx) => {
-    const deny = SA_ONLY(ctx);
-    if (deny) return deny;
     const c = composeOf(ctx);
     if (isReply(c)) return c;
-    const b = (ctx.body ?? {}) as { compose_yaml?: string; name?: string };
+    const b = (ctx.body ?? {}) as {
+      compose_yaml?: string;
+      name?: string;
+      overrides?: { rule: string; reason: string }[];
+    };
     if (b.name !== undefined && !COMPOSE_NAME.test(b.name)) return invalid('Tên không hợp lệ.');
     if (b.compose_yaml !== undefined && !b.compose_yaml.includes('services:')) {
       return invalid('compose.yaml phải có khóa services:.');
     }
+    const srv = ctx.db.data.servers.find((x) => x.uuid === c.server.uuid) as S['Server'];
+    const r =
+      b.compose_yaml !== undefined ? composeWrite(ctx, srv, b.compose_yaml, b.overrides) : null;
+    if (r && isReply(r)) return r;
     return startJob(ctx, {
       type: 'compose.update',
       resource: { type: 'compose_project', uuid: c.uuid },
       ops: ['compose.validate', 'compose.apply'],
       server: c.server,
+      ...(r ? { changes: { overrides: r.v.overrides.map((o) => o.rule) } } : {}),
       onDone: (db) => {
-        Object.assign(c, b, { revision: c.revision + 1, updated_at: db.now() });
+        if (b.name !== undefined) c.name = b.name;
+        if (r && b.compose_yaml !== undefined) {
+          Object.assign(c, {
+            compose_yaml: b.compose_yaml,
+            validation: r.v,
+            services: r.services,
+            ports: r.ports,
+            images: imagesIn(b.compose_yaml),
+            volumes: volumesIn(b.compose_yaml),
+          });
+        }
+        c.revision += 1;
+        c.updated_at = db.now();
+        if (r) pushRevision(db, ctx, c);
       },
     });
   });
@@ -637,7 +678,7 @@ export function registerInfra() {
         onDone: () => {
           if (action === 'up') c.status = 'running';
           if (action === 'down') c.status = 'stopped';
-          if (action === 'validate') c.validation = { ok: true, warnings: [] };
+          if (action === 'validate') c.validation = { ...c.validation, ok: true };
         },
       });
     });
@@ -656,6 +697,7 @@ export function registerInfra() {
       name: b.name,
       url: b.url,
       username: b.username ?? null,
+      last_test: null,
       created_at: ctx.db.now(),
       updated_at: ctx.db.now(),
     } as S['Registry'];

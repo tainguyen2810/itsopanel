@@ -58,7 +58,8 @@
     "monitoringAlerts": "Alerts",
     "audit": "Audit log",
     "notifications": "Notifications",
-    "settings": "System settings"
+    "settings": "System settings",
+    "wordpressDetail": "WordPress details"
   },
   "portal": {
     "login": "Sign in",
@@ -78,7 +79,8 @@
     "terminal": "Terminal",
     "jobDetail": "Task progress",
     "notifications": "Notifications",
-    "profile": "Profile"
+    "profile": "Profile",
+    "wordpressDetail": "WordPress details"
   },
   "placeholder": {
     "title": "This page is being built",

@@ -1399,6 +1399,127 @@
       "status": "declared"
     },
     {
+      "op": "docker.host.configure",
+      "domain": "docker",
+      "risk": "critical",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "docker.firewall.sync",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "docker.image.prune",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "docker.image.update",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "docker.image.rollback",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "docker.registry.login",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "docker.volume.remove",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "os.auto_updates",
+      "domain": "software",
+      "risk": "medium",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "wp.detect",
+      "domain": "wordpress",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "wp.admin_password",
+      "domain": "wordpress",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "wp.maintenance",
+      "domain": "wordpress",
+      "risk": "medium",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
       "op": "git.deploy",
       "domain": "git",
       "risk": "high",

@@ -2052,9 +2052,9 @@
         "uuid": "01938a02-0001-7000-8000-000002000001",
         "name": "srv-hn-01"
       },
-      "primary_domain": "api.intranet.itso.vn",
-      "type": "proxy",
-      "document_root": "public",
+      "primary_domain": "uptime.intranet.itso.vn",
+      "type": "docker",
+      "document_root": ".",
       "php_version": null,
       "ssl_mode": "acme",
       "waf_enabled": false,
@@ -2368,9 +2368,9 @@
       "uuid": "01938a07-0013-7000-8000-000007000013",
       "website": {
         "uuid": "01938a06-0012-7000-8000-000006000012",
-        "primary_domain": "api.intranet.itso.vn"
+        "primary_domain": "uptime.intranet.itso.vn"
       },
-      "name": "api.intranet.itso.vn",
+      "name": "uptime.intranet.itso.vn",
       "type": "primary",
       "verified_at": "2026-11-17T16:05:00+07:00",
       "created_at": "2026-11-17T16:05:00+07:00",
@@ -2725,11 +2725,11 @@
       "uuid": "01938a08-0012-7000-8000-000008000012",
       "website": {
         "uuid": "01938a06-0012-7000-8000-000006000012",
-        "primary_domain": "api.intranet.itso.vn"
+        "primary_domain": "uptime.intranet.itso.vn"
       },
       "source": "acme",
       "domains": [
-        "api.intranet.itso.vn"
+        "uptime.intranet.itso.vn"
       ],
       "issuer": "Let's Encrypt R11",
       "not_before": "2026-11-18T07:00:00+07:00",
@@ -3848,7 +3848,8 @@
         "**/*.log"
       ],
       "next_run_at": "2026-11-21T01:00:00+07:00",
-      "retention_mode": "cli"
+      "retention_mode": "cli",
+      "volume_consistency": null
     },
     {
       "uuid": "01938a18-0002-7000-8000-000018000002",
@@ -3873,7 +3874,8 @@
       ],
       "excludes": [],
       "next_run_at": "2026-11-22T02:30:00+07:00",
-      "retention_mode": "cli"
+      "retention_mode": "cli",
+      "volume_consistency": null
     },
     {
       "uuid": "01938a18-0003-7000-8000-000018000003",
@@ -3898,7 +3900,8 @@
       "last_status": "succeeded",
       "created_at": "2026-11-18T09:30:00+07:00",
       "updated_at": "2026-11-19T14:05:00+07:00",
-      "retention_mode": "panel"
+      "retention_mode": "panel",
+      "volume_consistency": null
     },
     {
       "uuid": "01938a18-0004-7000-8000-000018000004",
@@ -3923,7 +3926,36 @@
       "last_status": "failed",
       "created_at": "2026-11-18T09:30:00+07:00",
       "updated_at": "2026-11-19T14:05:00+07:00",
-      "retention_mode": "panel"
+      "retention_mode": "panel",
+      "volume_consistency": null
+    },
+    {
+      "uuid": "01938a18-0009-7000-8000-000018000009",
+      "name": "Docker volume hằng đêm",
+      "scope_type": "compose_project",
+      "scope_uuid": "01938a1e-0002-7000-8000-00001e000002",
+      "schedule": "10 2 * * *",
+      "destination_uuids": [
+        "01938a17-0001-7000-8000-000017000001",
+        "01938a17-0002-7000-8000-000017000002"
+      ],
+      "retention": {
+        "daily": 7,
+        "weekly": 4,
+        "monthly": 6
+      },
+      "enabled": true,
+      "last_run_at": "2026-11-20T01:00:00+07:00",
+      "last_status": "succeeded",
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00",
+      "contents": [
+        "docker_volumes"
+      ],
+      "excludes": [],
+      "next_run_at": "2026-11-21T01:00:00+07:00",
+      "retention_mode": "cli",
+      "volume_consistency": "pause"
     }
   ],
   "snapshots": [
@@ -3957,7 +3989,8 @@
         "anphat_web",
         "anphat_shop"
       ],
-      "locked_until": "2026-12-20T01:12:00+07:00"
+      "locked_until": "2026-12-20T01:12:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0002-7000-8000-00000e000002",
@@ -3987,7 +4020,8 @@
       "panel_version": "0.1.0-alpha",
       "repository_uuid": null,
       "databases": [],
-      "locked_until": "2026-11-14T10:05:00+07:00"
+      "locked_until": "2026-11-14T10:05:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0003-7000-8000-00000e000003",
@@ -4018,7 +4052,8 @@
       "databases": [
         "binhminh_web"
       ],
-      "locked_until": "2026-12-20T01:14:00+07:00"
+      "locked_until": "2026-12-20T01:14:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0004-7000-8000-00000e000004",
@@ -4049,7 +4084,8 @@
       "databases": [
         "saomai_web"
       ],
-      "locked_until": "2026-12-20T01:15:00+07:00"
+      "locked_until": "2026-12-20T01:15:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0005-7000-8000-00000e000005",
@@ -4080,7 +4116,8 @@
       "databases": [
         "hritso_web"
       ],
-      "locked_until": "2026-12-20T01:16:00+07:00"
+      "locked_until": "2026-12-20T01:16:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0006-7000-8000-00000e000006",
@@ -4111,7 +4148,8 @@
       "databases": [
         "thientam_web"
       ],
-      "locked_until": "2026-12-20T01:17:00+07:00"
+      "locked_until": "2026-12-20T01:17:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0007-7000-8000-00000e000007",
@@ -4142,7 +4180,8 @@
       "databases": [
         "gionui_web"
       ],
-      "locked_until": "2026-12-20T01:18:00+07:00"
+      "locked_until": "2026-12-20T01:18:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0008-7000-8000-00000e000008",
@@ -4173,7 +4212,8 @@
       "databases": [
         "intranet_web"
       ],
-      "locked_until": "2026-12-20T01:19:00+07:00"
+      "locked_until": "2026-12-20T01:19:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0009-7000-8000-00000e000009",
@@ -4204,7 +4244,8 @@
       "databases": [
         "mayxanh_web"
       ],
-      "locked_until": "2026-12-20T01:20:00+07:00"
+      "locked_until": "2026-12-20T01:20:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0064-7000-8000-00000e000064",
@@ -4234,7 +4275,8 @@
         "6h"
       ],
       "panel_version": "0.1.0-alpha",
-      "locked_until": null
+      "locked_until": null,
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0065-7000-8000-00000e000065",
@@ -4265,7 +4307,8 @@
         "trước khi nâng cấp"
       ],
       "panel_version": "0.1.0-alpha",
-      "locked_until": null
+      "locked_until": null,
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0066-7000-8000-00000e000066",
@@ -4289,7 +4332,8 @@
         "daily"
       ],
       "panel_version": "0.1.0-alpha",
-      "locked_until": null
+      "locked_until": null,
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0067-7000-8000-00000e000067",
@@ -4314,7 +4358,8 @@
         "weekly"
       ],
       "panel_version": "0.1.0-alpha",
-      "locked_until": "2026-12-15T02:31:00+07:00"
+      "locked_until": "2026-12-15T02:31:00+07:00",
+      "volumes": []
     },
     {
       "uuid": "01938a0e-0078-7000-8000-00000e000078",
@@ -4344,7 +4389,36 @@
         "pre-purge"
       ],
       "panel_version": "0.1.0-alpha",
-      "locked_until": "2026-12-20T07:40:00+07:00"
+      "locked_until": "2026-12-20T07:40:00+07:00",
+      "volumes": []
+    },
+    {
+      "uuid": "01938a0e-0028-7000-8000-00000e000028",
+      "hosting_account": null,
+      "destination": {
+        "uuid": "01938a17-0002-7000-8000-000017000002",
+        "name": "S3 Object Lock (offsite)"
+      },
+      "scope_type": "compose_project",
+      "restic_snapshot_id": "7d3e9a1f",
+      "size_mb": 1790.2,
+      "taken_at": "2026-11-20T02:12:00+07:00",
+      "verified_at": "2026-11-20T03:00:00+07:00",
+      "contents": [
+        "docker_volumes"
+      ],
+      "tags": [
+        "docker",
+        "compose:bi"
+      ],
+      "website": null,
+      "panel_version": "0.1.0-alpha",
+      "repository_uuid": "01938a35-0001-7000-8000-000035000001",
+      "databases": [],
+      "locked_until": "2026-12-20T01:12:00+07:00",
+      "volumes": [
+        "bi-data"
+      ]
     }
   ],
   "restores": [
@@ -6505,6 +6579,113 @@
     ],
     "updated_at": "2026-11-18T09:30:00+07:00"
   },
+  "docker_hosts": [
+    {
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "state": "enabled",
+      "engine_version": "27.5.1",
+      "compose_version": "2.29.7",
+      "api_version": "1.47",
+      "daemon": {
+        "default_bind_ip": "127.0.0.1",
+        "userland_proxy": false,
+        "live_restore": true,
+        "log_max_size": "10m",
+        "log_max_file": 3
+      },
+      "checks": [
+        {
+          "key": "daemon_json",
+          "ok": true,
+          "detail": "ip=127.0.0.1, userland-proxy=false, live-restore=true"
+        },
+        {
+          "key": "docker_group_empty",
+          "ok": true,
+          "detail": "Nhóm docker không có thành viên"
+        },
+        {
+          "key": "docker_user_chain",
+          "ok": true,
+          "detail": "DOCKER-USER: 1 cổng mở, còn lại DROP từ eth0"
+        },
+        {
+          "key": "socket_root_only",
+          "ok": true,
+          "detail": "/var/run/docker.sock root:root 0660"
+        },
+        {
+          "key": "compose_plugin",
+          "ok": true,
+          "detail": "docker compose v2.29.7"
+        }
+      ],
+      "docker_group_members": [],
+      "firewall": {
+        "synced_at": "2026-11-20T08:15:00+07:00",
+        "open_ports": [
+          {
+            "port": 20031,
+            "protocol": "tcp",
+            "source": "10.10.0.0/16",
+            "note": "Uptime Kuma cho mạng văn phòng HN"
+          }
+        ]
+      },
+      "port_range": {
+        "from": 20000,
+        "to": 29999
+      },
+      "ports_allocated": 3,
+      "counts": {
+        "containers": 4,
+        "running": 3,
+        "images": 5,
+        "volumes": 4,
+        "projects": 3
+      },
+      "observed_at": "2026-11-20T08:15:00+07:00"
+    },
+    {
+      "server": {
+        "uuid": "01938a02-0002-7000-8000-000002000002",
+        "name": "srv-hn-02"
+      },
+      "state": "not_installed",
+      "engine_version": null,
+      "compose_version": null,
+      "api_version": null,
+      "daemon": {
+        "default_bind_ip": "127.0.0.1",
+        "userland_proxy": false,
+        "live_restore": true,
+        "log_max_size": "10m",
+        "log_max_file": 3
+      },
+      "checks": [],
+      "docker_group_members": [],
+      "firewall": {
+        "synced_at": null,
+        "open_ports": []
+      },
+      "port_range": {
+        "from": 20000,
+        "to": 29999
+      },
+      "ports_allocated": 0,
+      "counts": {
+        "containers": 0,
+        "running": 0,
+        "images": 0,
+        "volumes": 0,
+        "projects": 0
+      },
+      "observed_at": "2026-11-20T08:15:00+07:00"
+    }
+  ],
   "containers": [
     {
       "id": "3f9a1c2b7d4e",
@@ -6513,24 +6694,58 @@
       "state": "running",
       "status": "Up 3 days",
       "ports": [
-        "127.0.0.1:6380->6379/tcp"
+        "127.0.0.1:20011->6379/tcp"
       ],
       "compose_project": "cache",
       "cpu_pct": 0.8,
       "mem_mb": 42.0,
+      "mem_limit_mb": 256.0,
+      "health": "healthy",
       "created_at": "2026-11-18T09:30:00+07:00"
     },
     {
       "id": "8b2e4d6f1a3c",
       "name": "metabase",
-      "image": "metabase/metabase:v0.51.2",
+      "image": "metabase/metabase:v0.50.0",
       "state": "exited",
       "status": "Exited (137) 2 hours ago",
       "ports": [],
       "compose_project": "bi",
       "cpu_pct": 0.0,
       "mem_mb": 0.0,
+      "mem_limit_mb": 1024.0,
+      "health": null,
       "created_at": "2026-11-18T09:30:00+07:00"
+    },
+    {
+      "id": "c4d5e6f7a8b9",
+      "name": "bi-postgres",
+      "image": "postgres:16-alpine",
+      "state": "running",
+      "status": "Up 2 days",
+      "ports": [],
+      "compose_project": "bi",
+      "cpu_pct": 0.3,
+      "mem_mb": 61.5,
+      "mem_limit_mb": 512.0,
+      "health": "healthy",
+      "created_at": "2026-11-18T09:30:00+07:00"
+    },
+    {
+      "id": "d1e2f3a4b5c6",
+      "name": "uptime-kuma",
+      "image": "louislam/uptime-kuma:1.23.16",
+      "state": "running",
+      "status": "Up 20 hours (healthy)",
+      "ports": [
+        "127.0.0.1:20031->3001/tcp"
+      ],
+      "compose_project": "status",
+      "cpu_pct": 1.6,
+      "mem_mb": 118.0,
+      "mem_limit_mb": 512.0,
+      "health": "healthy",
+      "created_at": "2026-11-19T14:05:00+07:00"
     }
   ],
   "compose": [
@@ -6544,11 +6759,58 @@
       "status": "running",
       "services": 1,
       "revision": 3,
+      "template": null,
       "validation": {
         "ok": true,
-        "warnings": []
+        "findings": [],
+        "rewrites": [
+          {
+            "service": "redis",
+            "path": "services.redis.ports[0]",
+            "before": "6380:6379",
+            "after": "127.0.0.1:20011:6379"
+          },
+          {
+            "service": "redis",
+            "path": "services.redis.pids_limit",
+            "before": null,
+            "after": "256"
+          }
+        ],
+        "overrides": [],
+        "validated_yaml": null
       },
-      "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n",
+      "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"6380:6379\"\n    mem_limit: 256m\n    cpus: 0.5\n    restart: unless-stopped\n    volumes:\n      - cache_data:/data\nvolumes:\n  cache_data: {}\n",
+      "ports": [
+        {
+          "service": "redis",
+          "container_port": 6379,
+          "host_port": 20011,
+          "protocol": "tcp"
+        }
+      ],
+      "images": [
+        {
+          "service": "redis",
+          "image": "redis:7.4-alpine",
+          "digest": "sha256:6a1f3b2c9d84",
+          "latest_digest": "sha256:6a1f3b2c9d84",
+          "update_available": false,
+          "rollback_available": true
+        }
+      ],
+      "websites": [],
+      "last_image_update": {
+        "state": "succeeded",
+        "service": "redis",
+        "from_digest": "sha256:52c0e8a1f7b3",
+        "to_digest": "sha256:6a1f3b2c9d84",
+        "reason": null,
+        "at": "2026-11-19T14:05:00+07:00"
+      },
+      "volumes": [
+        "cache_data"
+      ],
       "created_at": "2026-11-18T09:30:00+07:00",
       "updated_at": "2026-11-19T14:05:00+07:00"
     },
@@ -6559,28 +6821,345 @@
         "name": "srv-hn-01"
       },
       "name": "bi",
-      "status": "stopped",
+      "status": "partial",
       "services": 2,
       "revision": 1,
+      "template": null,
       "validation": {
         "ok": true,
-        "warnings": [
-          "Service metabase không giới hạn memory"
-        ]
+        "findings": [
+          {
+            "rule": "missing_healthcheck",
+            "severity": "warning",
+            "service": "metabase",
+            "path": "services.metabase",
+            "message": "Service metabase không khai báo healthcheck: cập nhật image chỉ kiểm trạng thái running",
+            "overridable": false
+          }
+        ],
+        "rewrites": [
+          {
+            "service": "metabase",
+            "path": "services.metabase.ports[0]",
+            "before": "3000:3000",
+            "after": "127.0.0.1:20021:3000"
+          },
+          {
+            "service": "metabase",
+            "path": "services.metabase.mem_limit",
+            "before": null,
+            "after": "1024m"
+          }
+        ],
+        "overrides": [],
+        "validated_yaml": null
       },
-      "compose_yaml": "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"127.0.0.1:3000:3000\"\n    environment:\n      MB_DB_TYPE: postgres\n  postgres:\n    image: postgres:16-alpine\n    volumes:\n      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n",
+      "compose_yaml": "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"3000:3000\"\n    environment:\n      MB_DB_TYPE: postgres\n      MB_DB_HOST: postgres\n  postgres:\n    image: postgres:16-alpine\n    mem_limit: 512m\n    volumes:\n      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n",
+      "ports": [
+        {
+          "service": "metabase",
+          "container_port": 3000,
+          "host_port": 20021,
+          "protocol": "tcp"
+        }
+      ],
+      "images": [
+        {
+          "service": "metabase",
+          "image": "metabase/metabase:v0.50.0",
+          "digest": "sha256:91d0c2e4b7a5",
+          "latest_digest": "sha256:a7e3f9b1c2d6",
+          "update_available": true,
+          "rollback_available": true
+        },
+        {
+          "service": "postgres",
+          "image": "postgres:16-alpine",
+          "digest": "sha256:2b8c4e6f0a1d",
+          "latest_digest": "sha256:2b8c4e6f0a1d",
+          "update_available": false,
+          "rollback_available": false
+        }
+      ],
+      "websites": [],
+      "last_image_update": {
+        "state": "rolled_back",
+        "service": "metabase",
+        "from_digest": "sha256:91d0c2e4b7a5",
+        "to_digest": "sha256:a7e3f9b1c2d6",
+        "reason": "Container metabase thoát mã 137 sau 41 giây (health kiểm 60 giây): đã quay về image cũ",
+        "at": "2026-11-20T08:15:00+07:00"
+      },
+      "volumes": [
+        "bi-data"
+      ],
       "created_at": "2026-11-18T09:30:00+07:00",
       "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a1e-0003-7000-8000-00001e000003",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "name": "status",
+      "status": "running",
+      "services": 1,
+      "revision": 2,
+      "template": "uptime-kuma",
+      "validation": {
+        "ok": true,
+        "findings": [
+          {
+            "rule": "cap_add",
+            "severity": "error",
+            "service": "app",
+            "path": "services.app.cap_add[0]",
+            "message": "cap_add NET_RAW ngoài allowlist (NET_BIND_SERVICE, CHOWN, SETUID, SETGID)",
+            "overridable": true
+          }
+        ],
+        "rewrites": [
+          {
+            "service": "app",
+            "path": "services.app.ports[0]",
+            "before": "3001:3001",
+            "after": "127.0.0.1:20031:3001"
+          }
+        ],
+        "overrides": [
+          {
+            "rule": "cap_add",
+            "reason": "Uptime Kuma cần NET_RAW để ping ICMP tới server nội bộ",
+            "by": {
+              "uuid": "01938a01-0001-7000-8000-000001000001",
+              "name": "Quản trị hệ thống",
+              "email": "superadmin@itso.local"
+            },
+            "at": "2026-11-19T14:05:00+07:00"
+          }
+        ],
+        "validated_yaml": null
+      },
+      "compose_yaml": "services:\n  app:\n    image: louislam/uptime-kuma:1.23.16\n    ports:\n      - \"3001:3001\"\n    cap_add:\n      - NET_RAW\n    volumes:\n      - kuma-data:/app/data\n    mem_limit: 512m\n    cpus: 1\n    healthcheck:\n      test: [\"CMD\", \"extra/healthcheck\"]\n      interval: 30s\nvolumes:\n  kuma-data: {}\n",
+      "ports": [
+        {
+          "service": "app",
+          "container_port": 3001,
+          "host_port": 20031,
+          "protocol": "tcp"
+        }
+      ],
+      "images": [
+        {
+          "service": "app",
+          "image": "louislam/uptime-kuma:1.23.16",
+          "digest": "sha256:e4f5a6b7c8d9",
+          "latest_digest": "sha256:e4f5a6b7c8d9",
+          "update_available": false,
+          "rollback_available": false
+        }
+      ],
+      "websites": [
+        {
+          "uuid": "01938a06-0012-7000-8000-000006000012",
+          "domain": "uptime.intranet.itso.vn",
+          "service": "app",
+          "ssl": true
+        }
+      ],
+      "last_image_update": null,
+      "volumes": [
+        "kuma-data"
+      ],
+      "created_at": "2026-11-19T14:05:00+07:00",
+      "updated_at": "2026-11-20T08:15:00+07:00"
+    }
+  ],
+  "compose_preview": {
+    "ok": false,
+    "findings": [
+      {
+        "rule": "privileged",
+        "severity": "error",
+        "service": "app",
+        "path": "services.app.privileged",
+        "message": "privileged: true cho container toàn quyền trên host",
+        "overridable": true
+      },
+      {
+        "rule": "bind_mount",
+        "severity": "error",
+        "service": "app",
+        "path": "services.app.volumes[0]",
+        "message": "Bind mount /var/run/docker.sock cho container điều khiển Docker",
+        "overridable": false
+      },
+      {
+        "rule": "missing_limits",
+        "severity": "warning",
+        "service": "app",
+        "path": "services.app",
+        "message": "Thiếu mem_limit: sẽ tự thêm 512m theo mặc định server",
+        "overridable": false
+      }
+    ],
+    "rewrites": [
+      {
+        "service": "app",
+        "path": "services.app.ports[0]",
+        "before": "8080:80",
+        "after": "127.0.0.1:20041:80"
+      },
+      {
+        "service": "app",
+        "path": "services.app.mem_limit",
+        "before": null,
+        "after": "512m"
+      }
+    ],
+    "overrides": [],
+    "validated_yaml": null
+  },
+  "compose_revisions": [
+    {
+      "number": 3,
+      "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"6380:6379\"\n    mem_limit: 256m\n    cpus: 0.5\n    restart: unless-stopped\n    volumes:\n      - cache_data:/data\nvolumes:\n  cache_data: {}\n",
+      "validated_yaml": null,
+      "ok": true,
+      "findings": 0,
+      "overrides": 0,
+      "created_by": {
+        "uuid": "01938a01-0001-7000-8000-000001000001",
+        "name": "Quản trị hệ thống",
+        "email": "superadmin@itso.local"
+      },
+      "created_at": "2026-11-19T14:05:00+07:00",
+      "current": true
+    },
+    {
+      "number": 2,
+      "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"6380:6379\"\n    mem_limit: 128m\n    restart: unless-stopped\n    volumes:\n      - cache_data:/data\nvolumes:\n  cache_data: {}\n",
+      "validated_yaml": null,
+      "ok": true,
+      "findings": 0,
+      "overrides": 0,
+      "created_by": {
+        "uuid": "01938a01-0002-7000-8000-000001000002",
+        "name": "Trần Minh",
+        "email": "minh.tran@itso.local"
+      },
+      "created_at": "2026-11-19T09:40:00+07:00",
+      "current": false
+    },
+    {
+      "number": 1,
+      "compose_yaml": "services:\n  redis:\n    image: redis:7.2-alpine\n    ports:\n      - \"6380:6379\"\n    privileged: true\n",
+      "validated_yaml": null,
+      "ok": false,
+      "findings": 1,
+      "overrides": 0,
+      "created_by": {
+        "uuid": "01938a01-0002-7000-8000-000001000002",
+        "name": "Trần Minh",
+        "email": "minh.tran@itso.local"
+      },
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "current": false
+    }
+  ],
+  "compose_templates": [
+    {
+      "key": "uptime-kuma",
+      "name": "Uptime Kuma",
+      "description": "Theo dõi uptime website và dịch vụ nội bộ",
+      "category": "monitoring",
+      "web_service": "app",
+      "compose_yaml": "services:\n  app:\n    image: louislam/uptime-kuma:1.23.16\n    ports:\n      - \"3001\"\n    volumes:\n      - kuma-data:/app/data\n    mem_limit: 512m\n    cpus: 1\nvolumes:\n  kuma-data: {}\n"
+    },
+    {
+      "key": "n8n",
+      "name": "n8n",
+      "description": "Tự động hóa quy trình (workflow automation)",
+      "category": "automation",
+      "web_service": "app",
+      "compose_yaml": "services:\n  app:\n    image: n8nio/n8n:1.72.1\n    ports:\n      - \"5678\"\n    environment:\n      N8N_SECURE_COOKIE: \"true\"\n    volumes:\n      - n8n-data:/home/node/.n8n\n    mem_limit: 1024m\n    cpus: 1\nvolumes:\n  n8n-data: {}\n"
+    },
+    {
+      "key": "minio",
+      "name": "MinIO",
+      "description": "Lưu trữ đối tượng tương thích S3 cho nội bộ",
+      "category": "storage",
+      "web_service": "app",
+      "compose_yaml": "services:\n  app:\n    image: minio/minio:RELEASE.2024-11-07T00-52-20Z\n    command: [\"server\", \"/data\", \"--console-address\", \":9001\"]\n    ports:\n      - \"9001\"\n    volumes:\n      - minio-data:/data\n    mem_limit: 1024m\nvolumes:\n  minio-data: {}\n"
+    },
+    {
+      "key": "wordpress",
+      "name": "WordPress (container)",
+      "description": "WordPress + MariaDB trong Docker, tách khỏi hosting account",
+      "category": "cms",
+      "web_service": "wordpress",
+      "compose_yaml": "services:\n  wordpress:\n    image: wordpress:6.7-php8.3-apache\n    ports:\n      - \"80\"\n    environment:\n      WORDPRESS_DB_HOST: db\n      WORDPRESS_DB_NAME: wp\n    volumes:\n      - wp-html:/var/www/html\n    mem_limit: 512m\n  db:\n    image: mariadb:11.4\n    volumes:\n      - wp-db:/var/lib/mysql\n    mem_limit: 512m\nvolumes:\n  wp-html: {}\n  wp-db: {}\n"
     }
   ],
   "docker_images": [
     {
-      "id": "sha256:1a2b3c4d5e6f",
+      "id": "sha256:6a1f3b2c9d84",
       "tags": [
         "redis:7.4-alpine"
       ],
       "size_mb": 41.2,
-      "created_at": "2026-11-18T09:30:00+07:00"
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "in_use": true,
+      "dangling": false,
+      "update_available": false,
+      "rollback_of": null
+    },
+    {
+      "id": "sha256:52c0e8a1f7b3",
+      "tags": [
+        "itso-rollback/cache-redis:20261119140500"
+      ],
+      "size_mb": 40.8,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "in_use": false,
+      "dangling": false,
+      "update_available": false,
+      "rollback_of": "redis:7.4-alpine"
+    },
+    {
+      "id": "sha256:91d0c2e4b7a5",
+      "tags": [
+        "metabase/metabase:v0.50.0"
+      ],
+      "size_mb": 812.4,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "in_use": true,
+      "dangling": false,
+      "update_available": true,
+      "rollback_of": null
+    },
+    {
+      "id": "sha256:2b8c4e6f0a1d",
+      "tags": [
+        "postgres:16-alpine"
+      ],
+      "size_mb": 263.7,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "in_use": true,
+      "dangling": false,
+      "update_available": false,
+      "rollback_of": null
+    },
+    {
+      "id": "sha256:0f1e2d3c4b5a",
+      "tags": [],
+      "size_mb": 118.9,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "in_use": false,
+      "dangling": true,
+      "update_available": false,
+      "rollback_of": null
     }
   ],
   "docker_volumes": [
@@ -6588,7 +7167,43 @@
       "name": "cache_data",
       "driver": "local",
       "size_mb": 120.0,
-      "in_use": true
+      "in_use": true,
+      "used_by": [
+        "itso-redis-cache"
+      ],
+      "compose_project": "cache",
+      "last_backup_at": "2026-11-20T02:10:00+07:00"
+    },
+    {
+      "name": "bi-data",
+      "driver": "local",
+      "size_mb": 1840.5,
+      "in_use": true,
+      "used_by": [
+        "bi-postgres"
+      ],
+      "compose_project": "bi",
+      "last_backup_at": "2026-11-20T02:12:00+07:00"
+    },
+    {
+      "name": "kuma-data",
+      "driver": "local",
+      "size_mb": 64.3,
+      "in_use": true,
+      "used_by": [
+        "uptime-kuma"
+      ],
+      "compose_project": "status",
+      "last_backup_at": null
+    },
+    {
+      "name": "old-test-data",
+      "driver": "local",
+      "size_mb": 12.0,
+      "in_use": false,
+      "used_by": [],
+      "compose_project": null,
+      "last_backup_at": null
     }
   ],
   "docker_networks": [
@@ -6596,7 +7211,22 @@
       "id": "f1e2d3c4b5a6",
       "name": "cache_default",
       "driver": "bridge",
-      "containers": 1
+      "containers": 1,
+      "internal": false
+    },
+    {
+      "id": "a9b8c7d6e5f4",
+      "name": "bi_default",
+      "driver": "bridge",
+      "containers": 2,
+      "internal": false
+    },
+    {
+      "id": "b1c2d3e4f5a6",
+      "name": "status_default",
+      "driver": "bridge",
+      "containers": 1,
+      "internal": false
     }
   ],
   "registries": [
@@ -6605,6 +7235,24 @@
       "name": "GHCR nội bộ",
       "url": "https://ghcr.io",
       "username": "itso-bot",
+      "last_test": {
+        "ok": true,
+        "message": "Đăng nhập thành công",
+        "at": "2026-11-19T14:05:00+07:00"
+      },
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a24-0002-7000-8000-000024000002",
+      "name": "Harbor văn phòng",
+      "url": "https://harbor.itso.local",
+      "username": "ci",
+      "last_test": {
+        "ok": false,
+        "message": "401 Unauthorized: mật khẩu sai hoặc hết hạn",
+        "at": "2026-11-20T08:15:00+07:00"
+      },
       "created_at": "2026-11-18T09:30:00+07:00",
       "updated_at": "2026-11-19T14:05:00+07:00"
     }
@@ -6626,15 +7274,66 @@
       "plugins_outdated": 3,
       "themes_outdated": 1,
       "auto_update": "minor",
+      "update_window": "02:00-05:00",
       "hardening": {
-        "xmlrpc_disabled": true,
-        "file_edit_disabled": true
+        "file_edit_disabled": true,
+        "xmlrpc_blocked": true,
+        "php_in_uploads_blocked": false,
+        "wp_config_protected": true,
+        "salts_rotated": false,
+        "version_hidden": false
+      },
+      "maintenance": false,
+      "admin_username": "marketing_admin",
+      "php_version": "8.3",
+      "state": "ready",
+      "last_update": {
+        "uuid": "01938a37-0002-7000-8000-000037000002",
+        "state": "rolled_back",
+        "at": "2026-11-20T08:15:00+07:00"
       },
       "staging_of": null,
       "updated_at": "2026-11-19T14:05:00+07:00"
     },
     {
       "uuid": "01938a11-0002-7000-8000-000011000002",
+      "website": {
+        "uuid": "01938a06-0001-7000-8000-000006000001",
+        "primary_domain": "anphat.vn"
+      },
+      "hosting_account": {
+        "uuid": "01938a05-0001-7000-8000-000005000001",
+        "username": "anphat"
+      },
+      "wp_version": "6.7.1",
+      "latest_version": "6.7.1",
+      "plugins_total": 6,
+      "plugins_outdated": 1,
+      "themes_outdated": 0,
+      "auto_update": "all",
+      "update_window": "01:00-04:00",
+      "hardening": {
+        "file_edit_disabled": true,
+        "xmlrpc_blocked": true,
+        "php_in_uploads_blocked": true,
+        "wp_config_protected": true,
+        "salts_rotated": true,
+        "version_hidden": false
+      },
+      "maintenance": false,
+      "admin_username": "anphat_web",
+      "php_version": "8.3",
+      "state": "ready",
+      "last_update": {
+        "uuid": "01938a37-0003-7000-8000-000037000003",
+        "state": "succeeded",
+        "at": "2026-11-19T01:03:40+07:00"
+      },
+      "staging_of": null,
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a11-0003-7000-8000-000011000003",
       "website": {
         "uuid": "01938a06-0008-7000-8000-000006000008",
         "primary_domain": "saomai.edu.vn"
@@ -6649,15 +7348,25 @@
       "plugins_outdated": 1,
       "themes_outdated": 1,
       "auto_update": "minor",
+      "update_window": "02:00-05:00",
       "hardening": {
-        "xmlrpc_disabled": true,
-        "file_edit_disabled": true
+        "file_edit_disabled": true,
+        "xmlrpc_blocked": true,
+        "php_in_uploads_blocked": true,
+        "wp_config_protected": true,
+        "salts_rotated": false,
+        "version_hidden": true
       },
+      "maintenance": false,
+      "admin_username": "saomai_admin",
+      "php_version": "8.3",
+      "state": "ready",
+      "last_update": null,
       "staging_of": null,
       "updated_at": "2026-11-19T14:05:00+07:00"
     },
     {
-      "uuid": "01938a11-0003-7000-8000-000011000003",
+      "uuid": "01938a11-0004-7000-8000-000011000004",
       "website": {
         "uuid": "01938a06-000b-7000-8000-00000600000b",
         "primary_domain": "thientam.vn"
@@ -6672,15 +7381,25 @@
       "plugins_outdated": 0,
       "themes_outdated": 1,
       "auto_update": "minor",
+      "update_window": "02:00-05:00",
       "hardening": {
-        "xmlrpc_disabled": true,
-        "file_edit_disabled": true
+        "file_edit_disabled": true,
+        "xmlrpc_blocked": true,
+        "php_in_uploads_blocked": true,
+        "wp_config_protected": true,
+        "salts_rotated": false,
+        "version_hidden": true
       },
+      "maintenance": false,
+      "admin_username": "thientam_admin",
+      "php_version": "8.3",
+      "state": "ready",
+      "last_update": null,
       "staging_of": null,
       "updated_at": "2026-11-19T14:05:00+07:00"
     },
     {
-      "uuid": "01938a11-0004-7000-8000-000011000004",
+      "uuid": "01938a11-0005-7000-8000-000011000005",
       "website": {
         "uuid": "01938a06-000e-7000-8000-00000600000e",
         "primary_domain": "gionui.vn"
@@ -6695,15 +7414,25 @@
       "plugins_outdated": 1,
       "themes_outdated": 0,
       "auto_update": "minor",
+      "update_window": "02:00-05:00",
       "hardening": {
-        "xmlrpc_disabled": true,
-        "file_edit_disabled": false
+        "file_edit_disabled": false,
+        "xmlrpc_blocked": true,
+        "php_in_uploads_blocked": false,
+        "wp_config_protected": true,
+        "salts_rotated": false,
+        "version_hidden": false
       },
+      "maintenance": false,
+      "admin_username": "gionui_admin",
+      "php_version": "8.3",
+      "state": "ready",
+      "last_update": null,
       "staging_of": null,
       "updated_at": "2026-11-19T14:05:00+07:00"
     },
     {
-      "uuid": "01938a11-0005-7000-8000-000011000005",
+      "uuid": "01938a11-0006-7000-8000-000011000006",
       "website": {
         "uuid": "01938a06-0015-7000-8000-000006000015",
         "primary_domain": "blog.mayxanh.vn"
@@ -6718,12 +7447,267 @@
       "plugins_outdated": 0,
       "themes_outdated": 0,
       "auto_update": "minor",
+      "update_window": "02:00-05:00",
       "hardening": {
-        "xmlrpc_disabled": true,
-        "file_edit_disabled": false
+        "file_edit_disabled": false,
+        "xmlrpc_blocked": true,
+        "php_in_uploads_blocked": false,
+        "wp_config_protected": true,
+        "salts_rotated": false,
+        "version_hidden": false
+      },
+      "maintenance": false,
+      "admin_username": "mayxanh_admin",
+      "php_version": "8.3",
+      "state": "ready",
+      "last_update": null,
+      "staging_of": null,
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    }
+  ],
+  "wordpress_detail": {
+    "site": {
+      "uuid": "01938a11-0001-7000-8000-000011000001",
+      "website": {
+        "uuid": "01938a06-0004-7000-8000-000006000004",
+        "primary_domain": "lehoa.blog"
+      },
+      "hosting_account": {
+        "uuid": "01938a05-0003-7000-8000-000005000003",
+        "username": "lehoa"
+      },
+      "wp_version": "6.6.2",
+      "latest_version": "6.7.1",
+      "plugins_total": 14,
+      "plugins_outdated": 3,
+      "themes_outdated": 1,
+      "auto_update": "minor",
+      "update_window": "02:00-05:00",
+      "hardening": {
+        "file_edit_disabled": true,
+        "xmlrpc_blocked": true,
+        "php_in_uploads_blocked": false,
+        "wp_config_protected": true,
+        "salts_rotated": false,
+        "version_hidden": false
+      },
+      "maintenance": false,
+      "admin_username": "marketing_admin",
+      "php_version": "8.3",
+      "state": "ready",
+      "last_update": {
+        "uuid": "01938a37-0002-7000-8000-000037000002",
+        "state": "rolled_back",
+        "at": "2026-11-20T08:15:00+07:00"
       },
       "staging_of": null,
       "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    "core": {
+      "version": "6.6.2",
+      "latest_version": "6.7.1",
+      "checksums_ok": true
+    },
+    "components": [
+      {
+        "type": "plugin",
+        "slug": "wp-mail-smtp",
+        "name": "WP Mail SMTP",
+        "version": "4.2.0",
+        "latest_version": "4.3.0",
+        "active": true,
+        "auto_update": false
+      },
+      {
+        "type": "plugin",
+        "slug": "wordpress-seo",
+        "name": "Yoast SEO",
+        "version": "23.8",
+        "latest_version": "23.9",
+        "active": true,
+        "auto_update": true
+      },
+      {
+        "type": "plugin",
+        "slug": "contact-form-7",
+        "name": "Contact Form 7",
+        "version": "6.0.1",
+        "latest_version": "6.0.1",
+        "active": true,
+        "auto_update": true
+      },
+      {
+        "type": "plugin",
+        "slug": "elementor",
+        "name": "Elementor",
+        "version": "3.25.4",
+        "latest_version": "3.25.9",
+        "active": true,
+        "auto_update": false
+      },
+      {
+        "type": "plugin",
+        "slug": "hello-dolly",
+        "name": "Hello Dolly",
+        "version": "1.7.2",
+        "latest_version": null,
+        "active": false,
+        "auto_update": false
+      },
+      {
+        "type": "theme",
+        "slug": "astra",
+        "name": "Astra",
+        "version": "4.8.3",
+        "latest_version": "4.8.6",
+        "active": true,
+        "auto_update": false
+      },
+      {
+        "type": "theme",
+        "slug": "twentytwentyfour",
+        "name": "Twenty Twenty-Four",
+        "version": "1.3",
+        "latest_version": "1.3",
+        "active": false,
+        "auto_update": true
+      }
+    ],
+    "staging": []
+  },
+  "wordpress_updates": [
+    {
+      "uuid": "01938a37-0002-7000-8000-000037000002",
+      "site_uuid": "01938a11-0001-7000-8000-000011000001",
+      "trigger": "manual",
+      "state": "rolled_back",
+      "items": [
+        {
+          "type": "plugin",
+          "slug": "wp-mail-smtp",
+          "from": "4.2.0",
+          "to": "4.3.0"
+        },
+        {
+          "type": "core",
+          "slug": "wordpress",
+          "from": "6.6.2",
+          "to": "6.7.1"
+        }
+      ],
+      "steps": [
+        {
+          "key": "snapshot",
+          "state": "done"
+        },
+        {
+          "key": "maintenance",
+          "state": "done"
+        },
+        {
+          "key": "update",
+          "state": "done"
+        },
+        {
+          "key": "verify",
+          "state": "failed"
+        },
+        {
+          "key": "rollback",
+          "state": "done"
+        }
+      ],
+      "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+      "error": "Kiểm tra sau cập nhật: trang chủ trả 500 (PHP Fatal error trong wp-mail-smtp/src/Core.php). Đã khôi phục file + DB từ snapshot.",
+      "requested_by": {
+        "uuid": "01938a01-0004-7000-8000-000001000004",
+        "name": "Phòng Marketing",
+        "email": "marketing@itso.vn"
+      },
+      "started_at": "2026-11-20T08:15:00+07:00",
+      "finished_at": "2026-11-20T08:19:30+07:00"
+    },
+    {
+      "uuid": "01938a37-0001-7000-8000-000037000001",
+      "site_uuid": "01938a11-0001-7000-8000-000011000001",
+      "trigger": "auto",
+      "state": "succeeded",
+      "items": [
+        {
+          "type": "plugin",
+          "slug": "wordpress-seo",
+          "from": "23.7",
+          "to": "23.8"
+        }
+      ],
+      "steps": [
+        {
+          "key": "snapshot",
+          "state": "done"
+        },
+        {
+          "key": "maintenance",
+          "state": "done"
+        },
+        {
+          "key": "update",
+          "state": "done"
+        },
+        {
+          "key": "verify",
+          "state": "done"
+        },
+        {
+          "key": "rollback",
+          "state": "skipped"
+        }
+      ],
+      "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+      "error": null,
+      "requested_by": null,
+      "started_at": "2026-11-19T03:00:00+07:00",
+      "finished_at": "2026-11-19T03:02:10+07:00"
+    },
+    {
+      "uuid": "01938a37-0003-7000-8000-000037000003",
+      "site_uuid": "01938a11-0002-7000-8000-000011000002",
+      "trigger": "auto",
+      "state": "succeeded",
+      "items": [
+        {
+          "type": "core",
+          "slug": "wordpress",
+          "from": "6.7",
+          "to": "6.7.1"
+        }
+      ],
+      "steps": [
+        {
+          "key": "snapshot",
+          "state": "done"
+        },
+        {
+          "key": "maintenance",
+          "state": "done"
+        },
+        {
+          "key": "update",
+          "state": "done"
+        },
+        {
+          "key": "verify",
+          "state": "done"
+        },
+        {
+          "key": "rollback",
+          "state": "skipped"
+        }
+      ],
+      "snapshot_uuid": null,
+      "error": null,
+      "requested_by": null,
+      "started_at": "2026-11-19T01:00:00+07:00",
+      "finished_at": "2026-11-19T01:03:40+07:00"
     }
   ],
   "git_deployments": [
@@ -7773,27 +8757,345 @@
       "key": "nginx",
       "name": "Nginx",
       "category": "web",
-      "installed_version": "1.26.2",
-      "latest_version": "1.26.2",
-      "state": "installed"
+      "installed_version": "1.24.0",
+      "latest_version": "1.24.0",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": {
+        "name": "nginx",
+        "active": true
+      },
+      "core": true,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [
+        {
+          "kind": "website",
+          "count": 22
+        }
+      ],
+      "remove_blocked": "Thành phần lõi: mọi website đi qua Nginx"
+    },
+    {
+      "key": "php8.3",
+      "name": "PHP 8.3 (FPM)",
+      "category": "php",
+      "installed_version": "8.3.6",
+      "latest_version": "8.3.6",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": null,
+      "core": true,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [
+        {
+          "kind": "website",
+          "count": 15
+        },
+        {
+          "kind": "php_pool",
+          "count": 15
+        }
+      ],
+      "remove_blocked": "Phiên bản PHP mặc định, đang có 15 website dùng"
+    },
+    {
+      "key": "php8.2",
+      "name": "PHP 8.2 (FPM)",
+      "category": "php",
+      "installed_version": "8.2.26",
+      "latest_version": "8.2.27",
+      "state": "upgradable",
+      "source": "ppa-ondrej-php",
+      "service": null,
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [
+        {
+          "kind": "website",
+          "count": 2
+        },
+        {
+          "kind": "php_pool",
+          "count": 2
+        }
+      ],
+      "remove_blocked": "Đang có 2 website dùng PHP 8.2"
     },
     {
       "key": "php8.4",
-      "name": "PHP 8.4",
+      "name": "PHP 8.4 (FPM)",
       "category": "php",
       "installed_version": null,
-      "latest_version": "8.4.1",
-      "state": "available"
+      "latest_version": "8.4.2",
+      "state": "available",
+      "source": "ppa-ondrej-php",
+      "service": null,
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": null
+    },
+    {
+      "key": "php8.1",
+      "name": "PHP 8.1 (FPM)",
+      "category": "php",
+      "installed_version": null,
+      "latest_version": "8.1.31",
+      "state": "available",
+      "source": "ppa-ondrej-php",
+      "service": null,
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": null
+    },
+    {
+      "key": "mariadb",
+      "name": "MariaDB",
+      "category": "database",
+      "installed_version": "10.11.8",
+      "latest_version": "10.11.8",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": {
+        "name": "mariadb",
+        "active": true
+      },
+      "core": true,
+      "conflicts": [
+        "mysql"
+      ],
+      "requires": [],
+      "in_use": [
+        {
+          "kind": "website",
+          "count": 14
+        }
+      ],
+      "remove_blocked": "Đang có 14 database"
+    },
+    {
+      "key": "postgresql",
+      "name": "PostgreSQL 16",
+      "category": "database",
+      "installed_version": "16.6",
+      "latest_version": "16.6",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": {
+        "name": "postgresql",
+        "active": true
+      },
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [
+        {
+          "kind": "website",
+          "count": 1
+        }
+      ],
+      "remove_blocked": "Đang có 1 database"
     },
     {
       "key": "redis",
       "name": "Redis",
       "category": "cache",
-      "installed_version": "7.2.6",
-      "latest_version": "7.4.1",
-      "state": "upgradable"
+      "installed_version": "7.0.15",
+      "latest_version": "7.0.15",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": {
+        "name": "redis-server",
+        "active": true
+      },
+      "core": false,
+      "conflicts": [
+        "valkey"
+      ],
+      "requires": [],
+      "in_use": [
+        {
+          "kind": "wordpress_site",
+          "count": 2
+        }
+      ],
+      "remove_blocked": "Đang có 2 site WordPress dùng object cache"
+    },
+    {
+      "key": "valkey",
+      "name": "Valkey",
+      "category": "cache",
+      "installed_version": null,
+      "latest_version": "7.2.8",
+      "state": "available",
+      "source": "ubuntu",
+      "service": null,
+      "core": false,
+      "conflicts": [
+        "redis"
+      ],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": null
+    },
+    {
+      "key": "memcached",
+      "name": "Memcached",
+      "category": "cache",
+      "installed_version": null,
+      "latest_version": "1.6.24",
+      "state": "available",
+      "source": "ubuntu",
+      "service": null,
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": null
+    },
+    {
+      "key": "nodejs",
+      "name": "Node.js 18 (runtime)",
+      "category": "runtime",
+      "installed_version": null,
+      "latest_version": "18.19.1",
+      "state": "available",
+      "source": "ubuntu",
+      "service": null,
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": null
+    },
+    {
+      "key": "composer",
+      "name": "Composer",
+      "category": "tools",
+      "installed_version": "2.7.1",
+      "latest_version": "2.7.1",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": null,
+      "core": false,
+      "conflicts": [],
+      "requires": [
+        "php8.3"
+      ],
+      "in_use": [],
+      "remove_blocked": null
+    },
+    {
+      "key": "wp-cli",
+      "name": "WP-CLI",
+      "category": "tools",
+      "installed_version": "2.11.0",
+      "latest_version": "2.11.0",
+      "state": "installed",
+      "source": "itso",
+      "service": null,
+      "core": false,
+      "conflicts": [],
+      "requires": [
+        "php8.3"
+      ],
+      "in_use": [
+        {
+          "kind": "wordpress_site",
+          "count": 5
+        }
+      ],
+      "remove_blocked": "WordPress Toolkit đang quản lý 5 site"
+    },
+    {
+      "key": "docker",
+      "name": "Docker Engine + Compose",
+      "category": "docker",
+      "installed_version": "27.5.1",
+      "latest_version": "27.5.1",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": {
+        "name": "docker",
+        "active": true
+      },
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [
+        {
+          "kind": "compose_project",
+          "count": 3
+        }
+      ],
+      "remove_blocked": "Đang có 3 compose project"
+    },
+    {
+      "key": "fail2ban",
+      "name": "Fail2ban",
+      "category": "security",
+      "installed_version": "1.0.2",
+      "latest_version": "1.0.2",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": {
+        "name": "fail2ban",
+        "active": true
+      },
+      "core": true,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": "Thành phần lõi của Security Center"
+    },
+    {
+      "key": "clamav",
+      "name": "ClamAV",
+      "category": "security",
+      "installed_version": "1.0.7",
+      "latest_version": "1.0.8",
+      "state": "upgradable",
+      "source": "ubuntu",
+      "service": {
+        "name": "clamav-daemon",
+        "active": true
+      },
+      "core": false,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": null
+    },
+    {
+      "key": "restic",
+      "name": "restic",
+      "category": "base",
+      "installed_version": "0.16.4",
+      "latest_version": "0.16.4",
+      "state": "installed",
+      "source": "ubuntu",
+      "service": null,
+      "core": true,
+      "conflicts": [],
+      "requires": [],
+      "in_use": [],
+      "remove_blocked": "Thành phần lõi của Backup Center"
     }
   ],
+  "os_updates": {
+    "enabled": true,
+    "security_only": true,
+    "auto_reboot": false,
+    "pending_security": 2,
+    "last_run_at": "2026-11-20T06:25:00+07:00",
+    "updated_at": "2026-11-19T14:05:00+07:00"
+  },
   "php_versions": [
     {
       "version": "8.3",
@@ -7817,6 +9119,20 @@
         "gd",
         "zip"
       ]
+    },
+    {
+      "version": "8.4",
+      "installed": false,
+      "default": false,
+      "sites_count": 0,
+      "extensions": []
+    },
+    {
+      "version": "8.1",
+      "installed": false,
+      "default": false,
+      "sites_count": 0,
+      "extensions": []
     }
   ],
   "nginx_global": {

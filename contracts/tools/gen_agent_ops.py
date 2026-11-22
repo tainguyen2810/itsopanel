@@ -555,6 +555,13 @@ DECLARED = [
     ("compose.pull", "docker", "high", False, 10), ("wp.install", "wordpress", "high", True, 10),
     ("wp.update", "wordpress", "high", True, 10), ("wp.clone", "wordpress", "high", True, 10),
     ("wp.harden", "wordpress", "medium", True, 10),
+    # Phase 10.0 (mockup): tên op mới; schema viết ở 10.1.
+    ("docker.host.configure", "docker", "critical", False, 10), ("docker.firewall.sync", "docker", "high", False, 10),
+    ("docker.image.prune", "docker", "medium", False, 10), ("docker.image.update", "docker", "high", False, 10),
+    ("docker.image.rollback", "docker", "high", False, 10), ("docker.registry.login", "docker", "medium", False, 10),
+    ("docker.volume.remove", "docker", "high", False, 10), ("os.auto_updates", "software", "medium", True, 10),
+    ("wp.detect", "wordpress", "low", True, 10), ("wp.admin_password", "wordpress", "high", True, 10),
+    ("wp.maintenance", "wordpress", "medium", True, 10),
     ("git.deploy", "git", "high", True, 10),
     ("git.rollback", "git", "high", True, 10),
 ]

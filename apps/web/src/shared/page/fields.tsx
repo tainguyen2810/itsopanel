@@ -72,8 +72,14 @@ export function TextareaField<T extends FieldValues>({
 export function SelectField<T extends FieldValues>({
   options,
   placeholder,
+  onValueChange,
   ...base
-}: Base<T> & { options: SelectOption[]; placeholder?: string }) {
+}: Base<T> & {
+  options: SelectOption[];
+  placeholder?: string;
+  /** Gọi thêm sau khi field đổi giá trị (vd điền mẫu). */
+  onValueChange?: (v: string) => void;
+}) {
   return (
     <FormField
       {...base}
@@ -85,7 +91,10 @@ export function SelectField<T extends FieldValues>({
           options={options}
           {...(placeholder ? { placeholder } : {})}
           value={f.value === undefined || f.value === null ? undefined : String(f.value)}
-          onValueChange={f.onChange}
+          onValueChange={(v: string) => {
+            f.onChange(v);
+            onValueChange?.(v);
+          }}
         />
       )}
     />

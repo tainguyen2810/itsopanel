@@ -148,6 +148,17 @@
         "wp.update",
         "wp.clone",
         "wp.harden",
+        "docker.host.configure",
+        "docker.firewall.sync",
+        "docker.image.prune",
+        "docker.image.update",
+        "docker.image.rollback",
+        "docker.registry.login",
+        "docker.volume.remove",
+        "os.auto_updates",
+        "wp.detect",
+        "wp.admin_password",
+        "wp.maintenance",
         "git.deploy",
         "git.rollback"
       ]

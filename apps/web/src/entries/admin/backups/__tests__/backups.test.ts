@@ -186,7 +186,8 @@ describe('Form đích và chính sách sao lưu', () => {
       name: 'Hằng ngày',
       scope_type: 'all_accounts' as const,
       scope_uuid: '',
-      contents: ['files', 'databases'] as ('files' | 'databases' | 'config')[],
+      contents: ['files', 'databases'] as ('files' | 'databases' | 'config' | 'docker_volumes')[],
+      volume_consistency: 'pause' as const,
       excludes: 'tmp/**\n**/cache/**',
       schedule: '0 2 * * *',
       destination_uuids: ['d'],
@@ -205,6 +206,16 @@ describe('Form đích và chính sách sao lưu', () => {
       true,
     );
     expect(policySchema.safeParse({ ...p, contents: [] }).success).toBe(false);
+    // Phase 10: compose project cần chọn project; nội dung là volume Docker.
+    expect(policySchema.safeParse({ ...p, scope_type: 'compose_project' }).success).toBe(false);
+    expect(
+      policySchema.safeParse({
+        ...p,
+        scope_type: 'compose_project',
+        scope_uuid: 'c',
+        contents: ['docker_volumes'],
+      }).success,
+    ).toBe(true);
     expect(policySchema.safeParse({ ...p, excludes: '/etc/passwd' }).success).toBe(false);
     expect(policySchema.safeParse({ ...p, excludes: 'sites/../..' }).success).toBe(false);
     expect(excludeLines(' a/**\n\n b ')).toEqual(['a/**', 'b']);

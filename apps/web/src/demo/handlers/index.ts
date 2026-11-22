@@ -3,6 +3,7 @@ import { visibility, canSeeServer, canSeeAccount } from '../scope';
 import { registerAdminLists } from './admin';
 import { registerCommon } from './common';
 import { registerDashboard } from './dashboard';
+import { registerDocker } from './docker';
 import { registerGovernance } from './governance';
 import { registerHosting } from './hosting';
 import { registerInfra } from './infra';
@@ -21,6 +22,7 @@ export function registerAll() {
   registerAdminLists();
   registerDashboard();
   registerInfra();
+  registerDocker();
   registerHosting();
   registerSites();
   registerGovernance();

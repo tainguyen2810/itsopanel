@@ -44,6 +44,7 @@ export const ADMIN_ROUTES: RouteDef[] = [
   { id: 'dns', path: '/dns', nav: 'dns' },
   { id: 'cron', path: '/cron', nav: 'cron' },
   { id: 'wordpress', path: '/wordpress', nav: 'wordpress' },
+  { id: 'wordpressDetail', path: '/wordpress/$id', nav: 'wordpress' },
   { id: 'gitDeployments', path: '/git-deployments', nav: 'gitDeployments' },
 
   { id: 'security', path: '/security', nav: 'security' },

@@ -226,6 +226,14 @@ function DetailDialog({ snapshot: s, onClose }: { snapshot: Snapshot; onClose: (
                   ],
                 ]
               : []),
+            ...(s.volumes.length
+              ? [
+                  [t('bk.volumes'), <Mono key="v">{s.volumes.join(', ')}</Mono>] as [
+                    string,
+                    React.ReactNode,
+                  ],
+                ]
+              : []),
             [
               t('bk.tags'),
               <span key="t" className="flex flex-wrap gap-1">

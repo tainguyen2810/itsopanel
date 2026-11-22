@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 10 / Prompt 10.0 (mockup Docker, WordPress, Software trên demo) — nhánh `phase-10`
+
+Phạm vi: contracts (schema Docker/Compose/WordPress/Software/OS updates, endpoint mới, op khai báo), dataset demo, MSW `demo/handlers/docker.ts` (mới: Docker host, bật Docker, firewall, prune, volume, validator compose mô phỏng D-96, revision, image update/rollback, mẫu, registry test, OS updates) + `infra.ts` (compose tạo/sửa chạy validator, override chỉ SA, Software xung đột/phụ thuộc/gỡ bị chặn) + `sites.ts` (WordPress chi tiết/cài đặt/lịch sử/quét/cập nhật chọn lọc/hardening/bảo trì/mật khẩu/staging, website `docker`); UI: `ServerSoftwarePage`, `ServerDockerPage`, `ComposePage`, `ComposeDetailPage`, `docker/validation.tsx`, `RegistriesPage`, `WordPressPage` + `WordPressDetailPage` (mới, Admin + Portal), website loại docker, chính sách backup compose. Dữ liệu demo: thay plugin mẫu WooCommerce bằng WP Mail SMTP (ngoài phạm vi), thêm site WordPress cho An Phát (Portal).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `python3 contracts/tools/check_demo.py` · `make codegen` · `make codegen-check` | PASS (admin 289, portal 120 operation; 23 op khai báo) · PASS · OK · OK |
+| Vitest | `pnpm -s vitest run` | **590/590 PASS** (mới: `demo/__tests__/phase10.test.ts` 10 test, `admin/__tests__/phase10-helpers.test.ts` 6 test; lần đầu 5 lỗi do form có trường mới (`volume_consistency`, `compose_project_uuid`/`service`) → cập nhật fixture + thêm case compose/docker; 4 lỗi GET WordPress chi tiết do test thiếu id → thêm `sites`) |
+| Lint | `pnpm -s lint` (eslint, prettier, tsc, check-i18n) | sạch (i18n 3280 key, vi = en) |
+| Playwright demo | `playwright test e2e/demo-*.spec.ts` | **199/199 PASS** sau sửa; lần đầu 198/199: `demo-infra` compose cũ triển khai thẳng → nay phải Kiểm tra trước (D-96) và chọn server đã bật Docker → cập nhật test |
+| axe + 390px + EN (route mới) | `playwright test e2e/demo-smoke.spec.ts e2e/demo-audit.spec.ts -g "wordpress\|docker\|compose\|software\|registr\|websites\|backups"` | 32/32 PASS |
+| Ảnh Phase 10 | `SCREENSHOT_DIR_P10=docs/screenshots/phase-10 playwright test e2e/screenshots-phase10.spec.ts` | **68/68** (17 màn × 1440/390 × sáng/tối); `make screenshots` đã nối `SCREENSHOT_DIR_P10` |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 9 / Prompt 9.8 (tích hợp: e2e 2 agent qua relay, VM, review, make check) — nhánh `phase-9`
 
 Phạm vi: `apps/web/e2e-real/phase9.spec.ts` (mới), sửa lỗi tìm ra nhờ e2e (`MigrationService` preflight repo chưa khởi tạo → cảnh báo; contract `migrate.preflight` thêm `enforce`, agent trả `precondition_failed`, chặng đích gửi `enforce=true`; `JobController` lọc `waiting_agent`), sandbox (`migrate.go` ownership/HTTP, `scripts/dev.sh` CA + URL relay, `Placement` cho chọn server bị loại ở wizard chuyển), `tests/vm/phase9.sh` + `tests/vm/lib/panel_api.php`, `docs/security/multi-server-review.md`, runbook §5, báo cáo `docs/reports/phase-9.md`. Commit 45ebccd.

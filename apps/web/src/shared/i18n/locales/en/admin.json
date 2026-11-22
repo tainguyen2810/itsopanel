@@ -526,7 +526,13 @@
       "web": "Web server",
       "php": "PHP",
       "cache": "Cache",
-      "db": "Database"
+      "db": "Database",
+      "database": "Databases",
+      "runtime": "Runtimes",
+      "tools": "Tools",
+      "docker": "Docker",
+      "security": "Security",
+      "base": "Base system"
     },
     "installed": "Installed",
     "latest": "Latest",
@@ -534,6 +540,52 @@
       "install": "Install",
       "upgrade": "Upgrade",
       "remove": "Remove"
+    },
+    "confirm": {
+      "install": "Install {{name}}?",
+      "upgrade": "Upgrade {{name}}?",
+      "remove": "Remove {{name}}?"
+    },
+    "confirmHint": {
+      "install": "The agent installs it with a built-in recipe and starts the service if any.",
+      "upgrade": "Upgrades to the latest version in the archive; the service is restarted.",
+      "remove": "Removes the package, keeping config files and data."
+    },
+    "conflict": "Conflicts with installed {{name}}",
+    "os": {
+      "allUpdates": "All updates",
+      "description": "unattended-upgrades for Ubuntu. The panel never reboots automatically.",
+      "lastRun": "Last run",
+      "noReboot": "No automatic reboot",
+      "off": "Off",
+      "on": "On",
+      "pending_one": "{{count}} security update pending",
+      "pending_other": "{{count}} security updates pending",
+      "securityOnly": "Security updates only",
+      "title": "Automatic OS updates",
+      "toggle": "Enable automatic OS updates"
+    },
+    "ppaHint": "This PHP version comes from the ondrej/php PPA (pinned signing key). The agent enables the PPA only when needed.",
+    "requires": "Requires: {{keys}}",
+    "running": "Running",
+    "service": "Service",
+    "source": "Source",
+    "sources": {
+      "ubuntu": "Ubuntu",
+      "ppa-ondrej-php": "PPA ondrej/php",
+      "itso": "ITSO"
+    },
+    "stopped": "Stopped",
+    "usedBy": "Used by:",
+    "use": {
+      "website_one": "{{count}} website",
+      "website_other": "{{count}} websites",
+      "compose_project_one": "{{count}} compose project",
+      "compose_project_other": "{{count}} compose projects",
+      "php_pool_one": "{{count}} PHP pool",
+      "php_pool_other": "{{count}} PHP pools",
+      "wordpress_site_one": "{{count}} WordPress site",
+      "wordpress_site_other": "{{count}} WordPress sites"
     }
   },
   "firewall": {
@@ -618,7 +670,77 @@
     "driver": "Driver",
     "inUse": "In use",
     "unused": "Unused",
-    "composeHint": "Deploy multi-container apps with"
+    "composeHint": "Deploy multi-container apps with",
+    "apiVersion": "API",
+    "bindIp": "Default bind",
+    "checks": "Safety checks",
+    "checksFailing_one": "{{count}} check failing",
+    "checksFailing_other": "{{count}} checks failing",
+    "checksHint": "The agent re-reads the configuration on every sync.",
+    "check": {
+      "daemon_json": "daemon.json as expected (bind 127.0.0.1, log rotation)",
+      "docker_group_empty": "docker group has no members",
+      "docker_user_chain": "DOCKER-USER chain blocks undeclared ports",
+      "socket_root_only": "docker.sock readable by root only",
+      "compose_plugin": "docker compose plugin present"
+    },
+    "containersCount_one": "{{count}} container",
+    "containersCount_other": "{{count}} containers",
+    "daemon": "Daemon",
+    "daemonHint": "Managed by the panel in /etc/docker/daemon.json.",
+    "dangling": "Dangling",
+    "delete": "Delete",
+    "deleteVolume": "Delete volume {{name}}",
+    "deleteVolumeHint": "Data in the volume is lost permanently unless backed up. Type the volume name to confirm.",
+    "deleteVolumeTitle": "Delete volume {{name}}?",
+    "enable": {
+      "action": "Enable Docker",
+      "confirm": "Enable Docker on this server?",
+      "confirmHint": "The agent installs Ubuntu's docker.io package, writes daemon.json and adds the DOCKER-USER chain. Requires re-authentication.",
+      "description": "Docker is not installed on this server.",
+      "installing": "Installing Docker…",
+      "saOnly": "Only a Super Admin can enable Docker.",
+      "title": "Enable Docker",
+      "userNote": "Docker is for administrators only. Hosting users cannot access Docker.",
+      "steps": {
+        "package": "Install docker.io and docker-compose-v2 from the Ubuntu archive",
+        "bind": "Bind published ports to 127.0.0.1 by default",
+        "chain": "DOCKER-USER chain blocks every undeclared port",
+        "group": "docker group left empty; only the agent uses the socket",
+        "limits": "Log rotation and live-restore enabled"
+      }
+    },
+    "firewall": "Firewall",
+    "firewallHint": "Container ports reach the outside only when declared here; syncing rewrites the DOCKER-USER chain.",
+    "groupMembers": "docker group has members: {{names}}",
+    "internal": "Internal",
+    "lastBackup": "Last backup",
+    "liveRestore": "Live restore",
+    "logRotate": "Log rotation",
+    "logsHint": "Last 200 lines, sensitive values masked.",
+    "noBackup": "Never backed up",
+    "noOpenPorts": "No container ports are exposed.",
+    "notOk": "Failing",
+    "off": "Off",
+    "ok": "OK",
+    "on": "On",
+    "openInFirewall": "Open in firewall",
+    "portRange": "Port range",
+    "portRangeValue": "{{from}}–{{to}} ({{used}} allocated)",
+    "prune": "Prune unused images",
+    "pruneHint": "Removes dangling images not used by any container. Rollback tags are kept.",
+    "pruneTitle": "Prune unused images?",
+    "rollbackOf": "Rollback of {{image}}",
+    "sync": "Sync firewall",
+    "syncedAt": "Synced at",
+    "updateAvailable": "Update available",
+    "usedBy": "Used by",
+    "userlandProxy": "Userland proxy",
+    "versionLine": "Docker Engine {{engine}} · Compose {{compose}}",
+    "volumeBackupHint": "Volume backups are configured under Backups → Policies, scope compose project.",
+    "volumeInUse": "The volume is in use by a container and cannot be deleted.",
+    "health": "Health",
+    "memLimit": "Memory limit"
   },
   "compose": {
     "title": "Compose projects",
@@ -654,7 +776,67 @@
     "errors": {
       "name": "Lowercase letters, digits, _ and -, up to 63 characters",
       "services": "Missing top-level services: key"
-    }
+    },
+    "added": "added",
+    "adminNoOverride": "Blocking errors found. Only a Super Admin can override; fix compose.yaml or ask a Super Admin.",
+    "attachDomain": "Attach a domain via Nginx",
+    "blocked_one": "{{count}} error blocks deployment",
+    "blocked_other": "{{count}} errors block deployment",
+    "blockedHint": "Fix compose.yaml and check again. Overridable errors are Super Admin only, with a reason, and are audited.",
+    "check": "Check",
+    "checkFirst": "Run Check before deploying.",
+    "current": "Current",
+    "diffHint": "Pick an older revision to compare with the current one.",
+    "diffTitle": "Changes r{{from}} → r{{to}}",
+    "error": "Error",
+    "fromTemplate": "Template: {{name}}",
+    "imageCurrent": "Up to date",
+    "images": "Images",
+    "imagesCurrent": "Up to date",
+    "imagesHint": "Updating pulls the new image and keeps the old one as a rollback tag; a failing healthcheck rolls back automatically.",
+    "localOnly": "127.0.0.1 only",
+    "noPorts": "This project publishes no ports.",
+    "noTemplate": "Custom",
+    "noWebsites": "No domain attached yet.",
+    "notOverridable": "This error cannot be overridden.",
+    "onlyOneRevision": "Only one revision so far.",
+    "overridden": "Overridden",
+    "overrideHint": "Super Admin only. Each rule needs a reason of at least 10 characters, stored with the revision and audited.",
+    "overrideReason": "Reason for overriding {{rule}}",
+    "overrideReasonPh": "E.g. Uptime Kuma needs NET_RAW for ping",
+    "overrideTitle": "Override errors (Super Admin)",
+    "overrides": "Overrides",
+    "overridesCount_one": "{{count}} override",
+    "overridesCount_other": "{{count}} overrides",
+    "passWithNotes": "Valid, see notes below",
+    "pickServerFirst": "Pick a server before checking.",
+    "ports": "Ports",
+    "portsHint": "Ports are allocated from 20000–29999 and bound to 127.0.0.1; they are only exposed when declared in the firewall.",
+    "published": "Published",
+    "rejected": "Rejected",
+    "revN": "r{{n}}",
+    "revisions": "Revisions",
+    "rewrites": "Rewritten by the panel",
+    "rollbackImage": "Roll back image",
+    "rolledBack": "The image update for {{service}} was rolled back because the healthcheck failed.",
+    "stale": "compose.yaml changed since the last check. Check again.",
+    "template": "Template",
+    "updateImage": "Update image",
+    "updates_one": "{{count}} image update",
+    "updates_other": "{{count}} image updates",
+    "volumes": "Volumes",
+    "warning": "Warning",
+    "websites": "Domains",
+    "yamlHintRevision": "Saving creates a new revision; older revisions are kept for comparison.",
+    "confirm": {
+      "update": "Update the image of {{service}}?",
+      "rollback": "Roll back the image of {{service}}?"
+    },
+    "confirmHint": {
+      "update": "Pulls the new image, recreates the container and waits for the healthcheck. On failure it returns to the old tag.",
+      "rollback": "Recreates the container from the saved rollback tag."
+    },
+    "templateHint": "Pick a template to prefill compose.yaml."
   },
   "registries": {
     "title": "Docker registries",
@@ -673,7 +855,12 @@
     "removed": "Registry deleted",
     "errors": {
       "url": "URL must start with https://"
-    }
+    },
+    "lastTest": "Last test",
+    "testOk": "Login OK",
+    "testFail": "Failed",
+    "notTested": "Not tested",
+    "test": "Test login for {{name}}"
   },
   "terminal": {
     "title": "Terminal",
@@ -1270,7 +1457,13 @@
     "certPem": "Certificate (PEM)",
     "certPemHint": "Starts with -----BEGIN CERTIFICATE-----; include the intermediate chain if any.",
     "keyPem": "Private key (PEM)",
-    "keyPemHint": "Starts with -----BEGIN PRIVATE KEY-----, without a passphrase."
+    "keyPemHint": "Starts with -----BEGIN PRIVATE KEY-----, without a passphrase.",
+    "composeProject": "Compose project",
+    "dockerHint": "Nginx proxies to the 127.0.0.1 port allocated to the service; SSL is issued by the panel.",
+    "pickProject": "Pick a project",
+    "pickProjectFirst": "Pick a project first",
+    "pickService": "Pick a service",
+    "service": "Service"
   },
   "dbs": {
     "title": "Databases",
@@ -1625,7 +1818,7 @@
   },
   "wp": {
     "title": "WordPress",
-    "description": "WordPress sites on PHP websites: update core/plugins/themes (with a backup first), harden and create staging copies.",
+    "description": "WordPress sites on PHP websites: selective updates with a snapshot and automatic rollback on failure, hardening, staging, maintenance.",
     "site": "Website",
     "version": "Version",
     "newVersion": "{{v}} available",
@@ -1670,6 +1863,119 @@
       "update": "Update",
       "harden": "Apply",
       "clone-staging": "Create staging"
+    },
+    "adminPassword": "Change admin password",
+    "adminPasswordHint": "The password goes through the agent vault and is never stored in the job or audit log. Requires re-authentication.",
+    "adminPasswordSubmit": "Change password",
+    "adminPasswordTitle": "Change password for {{user}}",
+    "autoOn": "auto-update",
+    "autoPolicy": "Policy",
+    "autoSafety": "Every automatic update takes a snapshot first and rolls back if the homepage fails afterwards.",
+    "autoUpdateHint": "Runs inside the server's time window.",
+    "autoLong": {
+      "off": "Off",
+      "minor": "Patch releases only (6.7.1 → 6.7.2)",
+      "all": "All updates, including plugins/themes"
+    },
+    "basicAuth": "Password protect (basic auth)",
+    "checksumsBad": "Core checksums mismatch",
+    "components": "Core, plugins and themes",
+    "componentsHint": "Pick components with updates to apply.",
+    "confirmSelected_one": "Update {{count}} component on {{name}}?",
+    "confirmSelected_other": "Update {{count}} components on {{name}}?",
+    "confirmSelectedHint": "Steps: snapshot → maintenance on → update → homepage check. If the check fails, the panel restores files and database from the snapshot.",
+    "core": "WordPress core",
+    "detail": "WordPress details",
+    "hardenAll": "Enable all",
+    "hardeningHint": "Applied via WP-CLI under the account UID and Nginx rules.",
+    "history": "Update history",
+    "historyHint": "Each update keeps a snapshot for restore.",
+    "inactive": "inactive",
+    "info": "Information",
+    "lastRolledBack": "The last update was rolled back",
+    "lastRolledBackHint": "At {{at}}. See the Updates tab for the error and the failing component.",
+    "lastUpdate": "Last update",
+    "maintenance": "Maintenance mode",
+    "maintenanceHint": "Visitors see a maintenance page; logged-in administrators still get in.",
+    "maintenanceOn": "Maintenance",
+    "newPassword": "New password",
+    "noHistory": "No updates yet.",
+    "noStaging": "No staging copy yet.",
+    "noindex": "Block search engines (noindex)",
+    "notInRepo": "(not on wordpress.org)",
+    "open": "Open details",
+    "passwordRule": "12–128 characters, no spaces.",
+    "php": "PHP",
+    "rotateSalts": "Rotate",
+    "saveSettings": "Save",
+    "scan": "Scan for WordPress",
+    "selectComponent": "Select {{name}}",
+    "selectOutdated": "Select all updates",
+    "settingsSaved": "Auto-update policy saved",
+    "stagingHint": "Copies files and database to a new subdomain and rewrites URLs in the database.",
+    "stagingQuota": "The staging copy counts toward the package's website quota.",
+    "stagingSites": "Staging copies",
+    "stagingTitle": "Create staging for {{name}}",
+    "state": "State",
+    "steps": "Steps",
+    "subdomain": "Subdomain",
+    "tabs": {
+      "overview": "Overview",
+      "security": "Security",
+      "updates": "Updates"
+    },
+    "updateSelected_one": "Update {{count}} item",
+    "updateSelected_other": "Update {{count}} items",
+    "updating": "Updating; the site is in maintenance mode.",
+    "website": "Website",
+    "window": "Time window",
+    "hd": {
+      "file_edit_disabled": {
+        "title": "Disable file editing in wp-admin",
+        "hint": "DISALLOW_FILE_EDIT in wp-config.php."
+      },
+      "xmlrpc_blocked": {
+        "title": "Block XML-RPC",
+        "hint": "Nginx returns 403 for xmlrpc.php (reduces brute force and pingbacks)."
+      },
+      "php_in_uploads_blocked": {
+        "title": "Block PHP in uploads",
+        "hint": "Nginx won't pass .php files in wp-content/uploads to PHP-FPM."
+      },
+      "wp_config_protected": {
+        "title": "Protect wp-config.php",
+        "hint": "Mode 0400 and blocked from the web."
+      },
+      "version_hidden": {
+        "title": "Hide WordPress version",
+        "hint": "Removes the generator tag and readme.html."
+      },
+      "salts_rotated": {
+        "title": "Rotate security keys (salts)",
+        "hint": "Generates new keys; all current sessions are logged out."
+      }
+    },
+    "step": {
+      "snapshot": "Snapshot",
+      "maintenance": "Maintenance",
+      "update": "Update",
+      "verify": "Verify",
+      "rollback": "Rollback"
+    },
+    "stepState": {
+      "pending": "pending",
+      "running": "running",
+      "done": "done",
+      "failed": "failed",
+      "skipped": "skipped"
+    },
+    "trigger": {
+      "manual": "Manual",
+      "auto": "Automatic"
+    },
+    "type": {
+      "plugin": "Plugin",
+      "theme": "Theme"
     }
   },
   "git": {
@@ -1981,7 +2287,8 @@
     "content": {
       "files": "Files",
       "databases": "Databases",
-      "config": "Config"
+      "config": "Config",
+      "docker_volumes": "Docker volumes"
     },
     "note": "Note",
     "verified": "Verified",
@@ -2015,7 +2322,8 @@
       "server": "One server's config",
       "panel": "Panel config",
       "website": "One website",
-      "database": "One database"
+      "database": "One database",
+      "compose_project": "One compose project"
     },
     "scopeLabel": "Scope",
     "schedule": "Schedule",
@@ -2112,7 +2420,8 @@
       "website": "Website",
       "database": "Database",
       "server_config": "Server config",
-      "panel": "Panel"
+      "panel": "Panel",
+      "compose_project": "Compose project"
     },
     "scopeType": "Backup type",
     "database": "Database",
@@ -2215,7 +2524,15 @@
       "mismatches_other": "{{count}} mismatches",
       "at": "Started"
     },
-    "localHint": "Repositories live in {{path}} on the server (root only). A local disk is not off-site: add another S3/SFTP/rest-server destination."
+    "localHint": "Repositories live in {{path}} on the server (root only). A local disk is not off-site: add another S3/SFTP/rest-server destination.",
+    "pickProject": "Pick a compose project",
+    "volumeConsistency": "Volume consistency",
+    "volumeConsistencyHint": "Pause containers while snapshotting so data (e.g. databases) is not caught mid-write.",
+    "consistency": {
+      "pause": "Pause containers during snapshot (recommended)",
+      "none": "Don't pause (data may be inconsistent)"
+    },
+    "volumes": "Volumes"
   },
   "rs": {
     "title": "Restores",

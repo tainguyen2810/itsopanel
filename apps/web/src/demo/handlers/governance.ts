@@ -622,6 +622,7 @@ function registerBackups() {
         hosting_account: db.data.accounts,
         website: db.data.websites,
         database: db.data.databases,
+        compose_project: db.data.compose as { uuid: string }[],
       }[b.scope_type];
       if (!b.scope_uuid || !rows.some((r) => r.uuid === b.scope_uuid))
         return 'Chọn đối tượng cho phạm vi.';
@@ -659,7 +660,12 @@ function registerBackups() {
       scope_type: b.scope_type as Policy['scope_type'],
       scope_uuid:
         b.scope_type === 'all_accounts' || b.scope_type === 'panel' ? null : (b.scope_uuid ?? null),
-      contents: b.contents ?? ['files', 'databases', 'config'],
+      contents:
+        b.scope_type === 'compose_project'
+          ? ['docker_volumes']
+          : (b.contents ?? ['files', 'databases', 'config']),
+      volume_consistency:
+        b.scope_type === 'compose_project' ? (b.volume_consistency ?? 'pause') : null,
       excludes: b.excludes ?? [],
       schedule: b.schedule as string,
       destination_uuids: b.destination_uuids as string[],
@@ -706,6 +712,7 @@ function registerBackups() {
       'scope_type',
       'scope_uuid',
       'contents',
+      'volume_consistency',
       'excludes',
       'schedule',
       'destination_uuids',
@@ -875,6 +882,7 @@ export function registerBackupAccess(realm: 'admin' | 'portal') {
               (r) => r.hosting_account?.uuid === a.uuid && r.destination.uuid === dest.uuid,
             )?.uuid ?? null,
           website: null,
+          volumes: [],
           databases: contents.includes('databases')
             ? db.data.databases.filter((x) => x.hosting_account.uuid === a.uuid).map((x) => x.name)
             : [],
