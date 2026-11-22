@@ -81,7 +81,11 @@
     "rolled_back": "Rolled back",
     "deleting": "Deleting",
     "denied": "Denied",
-    "acknowledged": "Acknowledged"
+    "acknowledged": "Acknowledged",
+    "unreachable": "Unreachable",
+    "waiting_agent": "Waiting for node",
+    "holding": "Holding source",
+    "revoked": "Revoked"
   },
   "table": {
     "selected_one": "{{count}} row selected",
@@ -173,9 +177,10 @@
       "update": "Update hosting account",
       "schedule_purge": "Schedule account purge",
       "confirm_purge": "Confirm account purge",
-      "migrate_preflight": "Server move dry run",
+      "migrate_preflight": "Server move preflight",
       "migrate_cutover": "Server move cutover",
-      "migrate_rollback": "Server move rollback"
+      "migrate_rollback": "Server move rollback",
+      "migrate_cleanup": "Source cleanup after move"
     },
     "hosting_package": {
       "update": "Hosting package updated",
@@ -189,7 +194,10 @@
     "server": {
       "update": "Server updated",
       "reboot": "Server reboot",
-      "enroll": "Create server enrollment token"
+      "enroll": "Create server enrollment token",
+      "revoke": "Revoke node",
+      "join": "Node joined the control plane",
+      "cert_rotate": "Node certificate rotated"
     },
     "service": {
       "restart": "Service restarted",
@@ -389,6 +397,14 @@
       "update": "Update cron job",
       "delete": "Delete cron job",
       "run": "Run cron job"
+    },
+    "migration": {
+      "sync": "Sync data to target server",
+      "cutover": "Server move cutover",
+      "cutover_target": "Start account on target server",
+      "rollback": "Server move rollback",
+      "rollback_source": "Reopen account on source server",
+      "cleanup": "Source cleanup after move"
     }
   },
   "ops": {

@@ -190,7 +190,7 @@ final class BackupService
     public function ensureIdle(HostingAccount $a): void
     {
         if (Job::query()->whereIn('type', ['backup.run', 'backup.restore', 'backup.verify', 'backup.forget'])->where('resource_type', 'hosting_account')
-            ->where('resource_id', $a->id)->whereIn('state', ['queued', 'running', 'cancel_requested'])->exists()) {
+            ->where('resource_id', $a->id)->whereIn('state', ['queued', 'running', 'cancel_requested', 'waiting_agent'])->exists()) {
             throw new ApiProblem(409, 'resource_locked', 'Đang có tác vụ backup', 'Chờ tác vụ backup/khôi phục hiện tại của account xong.');
         }
     }
@@ -476,7 +476,7 @@ final class BackupService
     public function browse(User $actor, BackupSnapshot $s, string $path, int $limit): array
     {
         $path = DataSpec::relPath($path, 'path');
-        $d = $this->sync($actor, 'backup.browse', ['repo' => BackupSpec::repo($s->repository), 'snapshot_id' => $s->restic_snapshot_id,
+        $d = $this->sync($actor, $s->repository->server_id, 'backup.browse', ['repo' => BackupSpec::repo($s->repository), 'snapshot_id' => $s->restic_snapshot_id,
             'path' => $path, 'limit' => $limit]);
         $owner = $s->account->username ?? 'root';
 
@@ -526,7 +526,7 @@ final class BackupService
     /** @return array{data: string, size: int, eof: bool} */
     public function chunk(User $actor, BackupSnapshot $s, string $path, int $offset): array
     {
-        $d = $this->sync($actor, 'backup.file.read', ['repo' => BackupSpec::repo($s->repository), 'snapshot_id' => $s->restic_snapshot_id,
+        $d = $this->sync($actor, $s->repository->server_id, 'backup.file.read', ['repo' => BackupSpec::repo($s->repository), 'snapshot_id' => $s->restic_snapshot_id,
             'path' => $path, 'offset' => $offset, 'max_bytes' => self::READ_CHUNK]);
 
         return ['data' => base64_decode((string) ($d['content_b64'] ?? ''), true) ?: '', 'size' => (int) ($d['size'] ?? 0),
@@ -539,10 +539,10 @@ final class BackupService
      * @param  array<string, mixed>  $params
      * @return array<string, mixed>
      */
-    private function sync(User $actor, string $op, array $params): array
+    private function sync(User $actor, ?int $serverId, string $op, array $params): array
     {
         try {
-            $res = $this->agent->call($op, $this->secrets->resolve($params), (string) Str::uuid7().':1:1',
+            $res = $this->agent->forServer($serverId)->call($op, $this->secrets->resolve($params), (string) Str::uuid7().':1:1',
                 ['user_uuid' => $actor->uuid, 'role' => $actor->roleKey() ?? 'SYSTEM'], 60.0);
         } catch (AgentUnavailable $e) {
             throw new ApiProblem(503, 'agent_unavailable', 'Agent không kết nối được', mb_substr($e->getMessage(), 0, 200));

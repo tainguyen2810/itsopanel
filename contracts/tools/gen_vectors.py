@@ -338,6 +338,31 @@ V = {
         ({"type": "rest", "destination_uuid": "0193aa10-0001-7000-8000-000000000001", "url": "https://rest.itso.local/itso", "user": "itso", "password": "x"}, R, "schema", "Mật khẩu rest quá ngắn"),
         ({"type": "local", "destination_uuid": "0193aa10-0001-7000-8000-000000000001", "path": "/"}, R, "schema", "local không nhận đường dẫn (cố định /var/backups/itso/repos)"),
     ]),
+    # Phase 9 (D-88…D-93)
+    "csr_pem": ("CsrPem", [
+        ('-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\nMDAwMjAwMDAwNDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA==\n-----END CERTIFICATE REQUEST-----\n', A, "schema", "CSR PEM đúng khung"),
+        ("-----BEGIN CERTIFICATE REQUEST-----\nMIIB\n-----END CERTIFICATE REQUEST-----\n-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----\n", R, "schema", "Kèm khóa riêng sau CSR"),
+        ("-----BEGIN CERTIFICATE REQUEST-----\nMIIB;id\n-----END CERTIFICATE REQUEST-----\n", R, "schema", "Ký tự ngoài base64"),
+        ("MIIBszCCARwCAQAw", R, "schema", "Thiếu khung PEM"),
+        ('-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\nMDAwMjAwMDAwNDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA==\n-----END CERTIFICATE REQUEST-----\n', A, "semantic", "CN khác server_uuid được token cấp: pki.sign_csr từ chối (enrollment_invalid)"),
+        ('-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\nMDAwMjAwMDAwNDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA==\n-----END CERTIFICATE REQUEST-----\n', A, "semantic", "Khóa RSA/khóa yếu hoặc có SAN/IsCA: pki.sign_csr chỉ nhận ECDSA P-256, bỏ mọi extension xin thêm"),
+    ]),
+    "http_check_path": ("HttpCheckPath", [
+        ("/", A, "schema", "Trang chủ"),
+        ("/wp-login.php", A, "schema", "Đường dẫn file"),
+        ("/../../etc/passwd", R, "schema", "Traversal"),
+        ("/%2e%2e/etc/passwd", R, "schema", "Traversal mã hóa %2e"),
+        ("//169.254.169.254/latest", R, "schema", "Hai gạch đầu (URL không scheme tới host khác)"),
+        ("http://evil.example/", R, "schema", "URL tuyệt đối"),
+        ("/x\r\nHost: evil", R, "schema", "Chèn header qua CRLF"),
+    ]),
+    "http_check_host": ("Domain", [
+        ("lehoa.vn", A, "schema", "Host header là domain account"),
+        ("lehoa.vn\r\nX-Evil: 1", R, "schema", "Chèn header vào Host"),
+        ("127.0.0.1:22", R, "schema", "Host:port tới dịch vụ khác"),
+        ("localhost", R, "schema", "Không phải FQDN"),
+        ("admin.itso.local", A, "semantic", "Domain không thuộc account: panel chỉ gửi domain của website account; agent luôn kết nối 127.0.0.1"),
+    ]),
     "age_recipient": ("AgeRecipient", [
         ("age1" + "q" * 58, A, "schema", "Khóa công khai age đúng độ dài"),
         ("age1" + "b" * 58, R, "schema", "Ký tự ngoài bảng bech32"),

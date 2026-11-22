@@ -9,6 +9,7 @@ use App\Domain\Notifications\Notifier;
 use App\Infrastructure\Agent\AgentClient;
 use App\Infrastructure\Agent\AgentResult;
 use App\Infrastructure\Agent\AgentUnavailable;
+use App\Infrastructure\Agent\AgentUnreachable;
 use App\Jobs\RunJob;
 use App\Models\Job;
 use App\Models\JobLog;
@@ -90,8 +91,13 @@ final class JobRunner
                 } else {
                     // Bí mật chỉ được thay vào bản gửi đi; params_redacted giữ nguyên tham chiếu.
                     $params = $this->secrets->resolve($step->params_redacted);
-                    $res = $this->agent->call($step->op, $params, $step->op_id, $requestedBy, (float) min($remaining, 300));
+                    $res = $this->agent->forServer($job->server_id)
+                        ->call($step->op, $params, $step->op_id, $requestedBy, (float) min($remaining, 300));
                 }
+            } catch (AgentUnreachable $e) {
+                $this->waitForAgent($job, $step, mb_substr($e->getMessage(), 0, 300));
+
+                return;
             } catch (AgentUnavailable $e) {
                 $this->stepFailed($job, $step, 'agent_unavailable', mb_substr($e->getMessage(), 0, 300), true);
 
@@ -106,6 +112,10 @@ final class JobRunner
                 $this->stepFailed($job, $step, $err['code'], $err['message'], $err['retryable'] || $err['code'] === 'deadline_exceeded');
 
                 return;
+            }
+            if ($job->agent_deadline_at !== null) {
+                Job::query()->whereKey($job->id)->update(['agent_deadline_at' => null]);
+                $job->agent_deadline_at = null;
             }
             $step->state = 'succeeded';
             $step->result = $res->data !== null ? AuditLogger::redact($res->data) : null;
@@ -125,7 +135,7 @@ final class JobRunner
         return DB::transaction(function () use ($job): Job {
             /** @var Job $j */
             $j = Job::query()->lockForUpdate()->findOrFail($job->id);
-            if ($j->state === 'queued') {
+            if (in_array($j->state, ['queued', 'waiting_agent'], true)) {
                 $this->finish($j, 'cancelled', null, null, null);
             } elseif ($j->state === 'running') {
                 $j->state = 'cancel_requested';
@@ -150,6 +160,42 @@ final class JobRunner
         RunJob::dispatch($job->id)->afterCommit();
 
         return $job->refresh();
+    }
+
+    /** Op đọc (chờ ngắn); còn lại là op ghi (D-91: 2 phút / 30 phút). */
+    public static function isReadOp(string $op): bool
+    {
+        return in_array($op, ['system.ping', 'system.info', 'metrics.snapshot', 'quota.report', 'pty.list'], true)
+            || preg_match('/\.(status|list|inspect|report|snapshots|stats|browse|tail|check)$/', $op) === 1;
+    }
+
+    /**
+     * Node không kết nối với relay (D-91): job chuyển waiting_agent tới agent_deadline_at, không tính một lần thử;
+     * node kết nối lại → itso:relay-sync chạy tiếp với cùng op_id. Quá hạn → failed agent_unreachable.
+     */
+    private function waitForAgent(Job $job, JobStep $step, string $message): void
+    {
+        $job->refresh();
+        $deadline = $job->agent_deadline_at;
+        if ($deadline === null) {
+            $sec = self::isReadOp($step->op) ? (int) config('itso.relay.wait_read_sec', 120) : (int) config('itso.relay.wait_write_sec', 1800);
+            $deadline = Carbon::now()->addSeconds(max(1, $sec));
+        }
+        if ($deadline->isPast()) {
+            $this->stepFailed($job, $step, 'agent_unreachable', 'Node không kết nối lại trước hạn chờ: '.$message, false);
+
+            return;
+        }
+        $step->state = 'pending';
+        $step->save();
+        $job->state = 'waiting_agent';
+        $job->attempts = max(0, $job->attempts - 1);
+        $job->started_at = null; // thời gian chạy tính lại khi node quay lại
+        $job->agent_deadline_at = $deadline;
+        $job->error_code = 'agent_unreachable';
+        $job->error_message = $message;
+        $job->save();
+        $this->log($job, 'warn', 'Node mất kết nối: chờ tới '.$deadline->toIso8601String().' rồi chạy tiếp bước '.$step->seq.'.', $step);
     }
 
     private function stepFailed(Job $job, JobStep $step, string $code, string $message, bool $retryable): void
@@ -185,6 +231,7 @@ final class JobRunner
             }
             $job->state = $state;
             $job->finished_at = Carbon::now();
+            $job->agent_deadline_at = null;
             if ($state === 'succeeded') {
                 $job->progress = 100;
                 $job->error_code = null;

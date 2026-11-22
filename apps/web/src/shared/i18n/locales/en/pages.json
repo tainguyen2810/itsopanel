@@ -30,6 +30,7 @@
     "accountsTerminated": "Pending purge",
     "accountDetail": "Account details",
     "accountMigrate": "Migrate server",
+    "accountMigrations": "Server migrations",
     "websites": "Websites",
     "websiteDetail": "Website details",
     "databases": "Databases",

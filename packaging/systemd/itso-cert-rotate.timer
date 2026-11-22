@@ -1,0 +1,11 @@
+[Unit]
+Description=ITSO Panel xoay chứng chỉ node mỗi ngày
+PartOf=itso.target
+
+[Timer]
+OnCalendar=*-*-* 03:17:00
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=itso.target

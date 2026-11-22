@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $parent_job_id
  * @property Carbon|null $started_at
  * @property Carbon|null $finished_at
+ * @property Carbon|null $agent_deadline_at hạn chờ node kết nối lại khi state=waiting_agent (D-91)
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -50,6 +51,7 @@ class Job extends Model
             'progress' => 'integer',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
+            'agent_deadline_at' => 'datetime',
         ];
     }
 

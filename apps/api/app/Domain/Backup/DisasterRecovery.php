@@ -175,7 +175,7 @@ final class DisasterRecovery
         if ($server === null) {
             throw new ApiProblem(409, 'precondition_failed', 'Chưa có server', 'Agent trên máy cài panel chưa đăng ký server.');
         }
-        if (Job::query()->where('type', self::JOB_TYPE)->whereIn('state', ['queued', 'running', 'cancel_requested'])->exists()) {
+        if (Job::query()->where('type', self::JOB_TYPE)->whereIn('state', ['queued', 'running', 'cancel_requested', 'waiting_agent'])->exists()) {
             throw ApiProblem::conflict('Đang có một lần khôi phục panel chạy; chờ job đó xong.');
         }
         $id = (string) Str::uuid7();
@@ -276,7 +276,7 @@ final class DisasterRecovery
             }
             // Chờ job đồng bộ (itso:reconcile) của account xong: home/website/DB phải có trước khi chép dữ liệu.
             if (Job::query()->where('resource_type', 'hosting_account')->where('resource_id', $a->id)
-                ->whereIn('state', ['queued', 'running', 'cancel_requested'])->exists()) {
+                ->whereIn('state', ['queued', 'running', 'cancel_requested', 'waiting_agent'])->exists()) {
                 $lines[] = "{$a->username}: chờ job đồng bộ";
 
                 continue;

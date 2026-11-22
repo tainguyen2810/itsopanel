@@ -1212,6 +1212,39 @@
       "status": "specified"
     },
     {
+      "op": "pki.sign_csr",
+      "domain": "pki",
+      "risk": "critical",
+      "default_enabled": true,
+      "phase": 9,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/pki.sign_csr.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "agent.cert.rotate",
+      "domain": "pki",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 9,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/agent.cert.rotate.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "http.check",
+      "domain": "web",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 9,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/http.check.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "migrate.preflight",
       "domain": "migrate",
       "risk": "high",
@@ -1220,17 +1253,6 @@
       "runs_as": "root",
       "timeout_sec": 600,
       "schema": "ops/migrate.preflight.schema.json",
-      "status": "specified"
-    },
-    {
-      "op": "migrate.sync",
-      "domain": "migrate",
-      "risk": "high",
-      "default_enabled": true,
-      "phase": 9,
-      "runs_as": "root",
-      "timeout_sec": 86400,
-      "schema": "ops/migrate.sync.schema.json",
       "status": "specified"
     },
     {

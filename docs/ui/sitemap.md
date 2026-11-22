@@ -42,7 +42,8 @@
 | `/hosting-accounts` | SA, AD | 26 | DataTable account (server, gói, chủ, usage, trạng thái vòng đời) |
 | `/hosting-accounts/new` | SA, AD | 26 | Wizard: chọn user, gói, server (có gợi ý), username |
 | `/hosting-accounts/:id` | SA, AD | 26 | Tabs: Tổng quan + usage, Websites, Databases, SFTP, Cron, Backup, Vòng đời; hành động khóa/mở, đổi gói, chuyển server, xóa |
-| `/hosting-accounts/:id/migrate` | SA | 26 | Wizard chuyển server: preflight, sync, kiểm tra, cutover, rollback |
+| `/hosting-accounts/:id/migrate` | SA, AD | 26 | Wizard chuyển server: preflight, sync, kiểm tra, cutover, rollback, dọn nguồn (AD cần phạm vi cả hai server; dọn sớm trước hạn chỉ SA) |
+| `/hosting-accounts/migrations` | SA, AD | 26 | Danh sách lượt chuyển server (lọc trạng thái), mở wizard của account |
 | `/hosting-accounts/terminated` | SA | 26 | Danh sách chờ purge, đếm ngược 30 ngày, trạng thái backup đã xác minh, xác nhận purge 2 bước |
 | `/websites`, `/websites/:id` | SA, AD | 3 | DataTable; Tabs: Tổng quan, Domain, PHP, SSL, Nginx, WAF, Log, Backup |
 | `/databases` | SA, AD | 6 | DataTable DB và DB user |

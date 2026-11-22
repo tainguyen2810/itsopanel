@@ -13,6 +13,8 @@ interface Props {
   confirmName?: string;
   confirmLabel: string;
   tone?: 'danger' | 'primary';
+  /** Chặn xác nhận (ví dụ điều kiện tiên quyết chưa đạt; lý do nằm trong `description`). */
+  disabled?: boolean;
   onConfirm: () => void | Promise<void>;
 }
 
@@ -25,6 +27,7 @@ export function ConfirmDialog({
   confirmName,
   confirmLabel,
   tone = 'danger',
+  disabled = false,
   onConfirm,
 }: Props) {
   const { t } = useTranslation('common');
@@ -59,7 +62,11 @@ export function ConfirmDialog({
             <Button variant="secondary" onClick={() => change(false)}>
               {t('actions.cancel')}
             </Button>
-            <Button variant={tone} disabled={!matches || busy} onClick={() => void submit()}>
+            <Button
+              variant={tone}
+              disabled={disabled || !matches || busy}
+              onClick={() => void submit()}
+            >
               {confirmLabel}
             </Button>
           </>

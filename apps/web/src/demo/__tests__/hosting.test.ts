@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { dataset } from '../dataset';
-import { resetDb, setStepMs } from '../db';
+import { db, resetDb, setStepMs } from '../db';
 import { limitsError } from '../handlers/hosting';
 import { demoServer } from '../node';
 import { validateResponse } from './openapi';
@@ -227,10 +227,10 @@ const CASES: [string, string, string, unknown, number, string?][] = [
   ],
   [
     'post',
-    '/api/v1/admin/hosting-accounts/{id}:migrate',
-    `/api/v1/admin/hosting-accounts/${SAOMAI}:migrate`,
-    { target_server_uuid: HN1, dry_run: true },
-    202,
+    '/api/v1/admin/hosting-accounts/{id}:migrate-preflight',
+    `/api/v1/admin/hosting-accounts/${SAOMAI}:migrate-preflight`,
+    { target_server_uuid: HN1 },
+    200,
   ],
   [
     'post',
@@ -244,7 +244,7 @@ const CASES: [string, string, string, unknown, number, string?][] = [
     '/api/v1/admin/hosting-accounts/{id}:migrate',
     `/api/v1/admin/hosting-accounts/${ANPHAT}:migrate`,
     { target_server_uuid: HN2 },
-    403,
+    422, // ADMIN được chuyển nhưng server đích ngoài phạm vi (như API thật)
     MINH,
   ],
   [
@@ -397,10 +397,24 @@ describe('API giả lập gói và tài khoản hosting', () => {
     expect(JSON.stringify(r.body)).toMatch(/legal hold/);
   });
 
-  it('chuyển server: sync + kiểm tra → verifying → cutover → account ở server đích', async () => {
+  it('kiểm tra trước: đích mất kết nối → chặn, không tạo lần chuyển', async () => {
+    const pre = data<{ ok: boolean; checks: { key: string; level: string }[] }>(
+      await call('POST', `/api/v1/admin/hosting-accounts/${SAOMAI}:migrate-preflight`, {
+        target_server_uuid: HCM,
+      }),
+    );
+    expect(pre.ok).toBe(false);
+    expect(pre.checks.find((c) => c.key === 'connection')?.level).toBe('block');
+    const r = await call('POST', `/api/v1/admin/hosting-accounts/${SAOMAI}:migrate`, {
+      target_server_uuid: HCM,
+    });
+    expect(r.status).toBe(409);
+    expect((await account(SAOMAI)).lifecycle_state).toBe('active');
+  });
+
+  it('chuyển server: sync + kiểm tra → verifying → cutover → holding → dọn nguồn → completed', async () => {
     const r = await call('POST', `/api/v1/admin/hosting-accounts/${SAOMAI}:migrate`, {
       target_server_uuid: HN1,
-      strategy: 'live_sync',
       keep_source_days: 7,
     });
     expect((await account(SAOMAI)).lifecycle_state).toBe('migrating');
@@ -422,6 +436,59 @@ describe('API giả lập gói và tài khoản hosting', () => {
     const a = await account(SAOMAI);
     expect(a.server.uuid).toBe(HN1);
     expect(a.lifecycle_state).toBe('active');
+    const held = data<{ state: string; cleanup_after: string; verification: unknown[] }>(
+      await call('GET', `/api/v1/admin/account-migrations/${m?.uuid}`),
+    );
+    expect(held.state).toBe('holding');
+    expect(held.cleanup_after).toBeTruthy();
+    expect(held.verification.length).toBeGreaterThan(1);
+    const url = `/api/v1/admin/account-migrations/${m?.uuid}:cleanup`;
+    expect((await call('POST', url, { confirm_username: 'sai' })).status).toBe(422);
+    await finish(await call('POST', url, { confirm_username: 'saomai' }));
+    expect(
+      data<{ state: string }>(await call('GET', `/api/v1/admin/account-migrations/${m?.uuid}`))
+        .state,
+    ).toBe('completed');
+  });
+
+  it('hoàn tác khi đang giữ nguồn đưa account về máy cũ', async () => {
+    await finish(await call('POST', `/api/v1/admin/account-migrations/${MIG}:cutover`, {}));
+    expect((await account(LEHOA)).server.uuid).toBe(HN2);
+    await finish(await call('POST', `/api/v1/admin/account-migrations/${MIG}:rollback`, {}));
+    expect((await account(LEHOA)).server.uuid).toBe(HCM);
+  });
+
+  it('như API thật: kiểm chứng lệch → cutover 409; đang đồng bộ → hoàn tác 409; HTTP chỉ có sau cutover', async () => {
+    const m = db().data.migrations.find((x) => x.uuid === MIG);
+    expect(m).toBeDefined();
+    const saved = m!.verification;
+    m!.verification = [
+      ...saved,
+      { kind: 'database', name: 'lehoa_wp', ok: false, detail: 'sha256 dump lệch' },
+    ];
+    const c = await call('POST', `/api/v1/admin/account-migrations/${MIG}:cutover`, {});
+    expect(c.status).toBe(409);
+    expect((c.body as { code: string }).code).toBe('precondition_failed');
+    m!.verification = saved;
+    const r = await call('POST', `/api/v1/admin/hosting-accounts/${SAOMAI}:migrate`, {
+      target_server_uuid: HN1,
+    });
+    const mig = db().data.migrations.find((x) => x.hosting_account.uuid === SAOMAI);
+    expect(mig?.state).toBe('syncing');
+    expect(
+      (await call('POST', `/api/v1/admin/account-migrations/${mig?.uuid}:rollback`, {})).status,
+    ).toBe(409);
+    // Account đang chuyển → ghi dữ liệu bị chặn như DataJobs của API thật.
+    const cron = await call('POST', '/api/v1/admin/cron-jobs', {
+      hosting_account_uuid: SAOMAI,
+      schedule: '0 3 * * *',
+      command: 'true',
+    });
+    expect(cron.status).toBe(409);
+    await finish(r);
+    expect(mig?.verification.some((v) => v.kind === 'http')).toBe(false);
+    await finish(await call('POST', `/api/v1/admin/account-migrations/${mig?.uuid}:cutover`, {}));
+    expect(mig?.verification.some((v) => v.kind === 'http')).toBe(true);
   });
 
   it('cutover lần chuyển mẫu của lehoa đưa account sang srv-hn-02', async () => {

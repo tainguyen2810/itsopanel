@@ -438,7 +438,54 @@
         "mock": "Mock (fake data)"
       },
       "factsAt": "Updated at"
-    }
+    },
+    "caPin": "CA pin (sha256)",
+    "certDays_one": "Certificate expires in {{count}} day",
+    "certDays_other": "Certificate expires in {{count}} days",
+    "certExpired": "Certificate expired",
+    "lastSeen": "Last seen {{time}}",
+    "nodeRole": "Node type",
+    "nodeRoles": {
+      "all_in_one": "All-in-one",
+      "control_plane": "Control plane",
+      "node": "Node"
+    },
+    "transports": {
+      "local": "Local (unix socket)",
+      "mtls": "mTLS via relay"
+    },
+    "offline": {
+      "degraded": "{{name}} is responding intermittently",
+      "unreachable": "{{name}} is unreachable",
+      "hint": "Agent last seen: {{time}}. New operations for this server wait for the node to reconnect and fail after the deadline. Websites keep running if the machine is up.",
+      "jobs": "View waiting jobs",
+      "revoked": "{{name}} has been revoked",
+      "revokedHint": "The node certificate is blocked and the relay refuses its connection. To reuse the machine, reinstall it with a new token."
+    },
+    "channel": {
+      "title": "Agent channel",
+      "hint": {
+        "local": "The agent runs on the panel machine and talks over a unix socket.",
+        "mtls": "The node dials out to the panel relay (port 28444, TLS 1.3, mutual authentication with internal CA certificates)."
+      },
+      "transport": "Transport",
+      "lastSeen": "Last heartbeat",
+      "fingerprint": "Certificate fingerprint",
+      "validity": "Validity",
+      "expires": "Expires",
+      "rotated": "Last rotated",
+      "rotateHint": "Certificates last 30 days; the agent renews after 2/3 of the lifetime. Revoking the node blocks its certificate immediately."
+    },
+    "revoke": "Revoke node",
+    "revokeTitle": "Revoke {{name}}?",
+    "revokeBlocked_one": "The server still has {{count}} account. Move all accounts elsewhere before revoking.",
+    "revokeBlocked_other": "The server still has {{count}} accounts. Move all accounts elsewhere before revoking.",
+    "revokeHint": "The node certificate is revoked; the relay drops and refuses its connection. Reusing the machine requires a reinstall with a new token. Type the server name to confirm.",
+    "tokenExpiresLabel": "Token expires",
+    "tokenOnce": "The token works once and is shown only now. The command verifies the CA pin before sending the token.",
+    "offlineBanner_one": "{{count}} server is disconnected: {{names}}",
+    "offlineBanner_other": "{{count}} servers are disconnected: {{names}}",
+    "offlineBannerHint": "Jobs for these servers wait for the node to reconnect (up to 30 minutes for writes) before failing."
   },
   "nginx": {
     "title": "Nginx",
@@ -934,34 +981,29 @@
       "username": "3–16 characters starting with a letter; lowercase letters and digits",
       "reserved": "This name is reserved by the system",
       "domain": "Invalid domain"
-    }
+    },
+    "commit": "{{pct}}% committed",
+    "excluded": "Not eligible",
+    "noEligible": "No server is eligible for this package.",
+    "notAccepting": "Not accepting new accounts"
   },
   "migrate": {
     "title": "Move server",
     "titleFor": "Move {{name}} to another server",
-    "description": "Copy data while the account keeps running, verify, then cut over. You can roll back until it finishes; the source keeps data for the chosen days.",
+    "description": "Preflight, copy through the backup repository while the account keeps running, verify on the target, then cut over. The source stays intact for rollback until cleanup.",
     "wizard": "Server move steps",
     "steps": {
       "preflight": "Preflight",
       "sync": "Sync",
       "verify": "Verify",
       "cutover": "Cutover",
-      "done": "Done"
+      "done": "Done",
+      "holding": "Holding"
     },
-    "preflightHint": "Currently on {{server}}. Pick a target; \"Dry run\" only checks capacity, PHP versions and UID conflicts without changing anything.",
+    "preflightHint": "Currently on {{server}}. Pick a target and run the preflight: agent connection, disk, UID, PHP, DB version. Nothing is changed.",
     "target": "Target server",
-    "strategy": "Strategy",
-    "strategies": {
-      "live_sync": "Live sync",
-      "offline": "Offline"
-    },
-    "strategyHints": {
-      "live_sync": "Copies in several passes while sites run; only seconds of downtime at cutover.",
-      "offline": "Locks the account while copying; simpler, longer downtime."
-    },
     "keepDays": "Keep data on source (days)",
     "keepDaysHint": "Between 1 and 30 days, for rollback if needed.",
-    "dryRun": "Dry run",
     "start": "Start move",
     "from": "From",
     "to": "To",
@@ -973,26 +1015,61 @@
     "checks": "Checks",
     "check": {
       "files": "Files",
-      "databases": "Databases",
       "ssl": "SSL",
       "cron": "Cron",
-      "ownership": "Ownership"
+      "ownership": "Ownership",
+      "database": "Database",
+      "http": "HTTP"
     },
-    "filesChecked": "{{checked}} files, {{mismatched}} mismatched",
     "cutover": "Cut over",
     "cutoverTitle": "Cut over to {{server}}?",
-    "cutoverHint": "Sites pause for a few seconds during the final sync and switch. Type the username to confirm.",
+    "cutoverHint": "The account is locked on the source, a final sync runs, then it starts on the target. Expected downtime about {{seconds}} seconds. Type the username to confirm.",
     "rollback": "Roll back",
     "rollbackTitle": "Roll back this move?",
     "rollbackHint": "The account stays on {{server}}; data copied to the target is removed.",
     "completed": "Moved to {{server}}",
-    "completedHint": "Downtime {{seconds}} s. The source keeps data until {{date}}, then cleans up.",
+    "completedHint": "Downtime {{seconds}} seconds. The source has been cleaned up.",
     "ended": "Move ended ({{state}})",
     "rolledBackHint": "The account stays on {{server}}.",
     "requestedBy": "Requested by",
     "updatedAt": "Updated",
     "again": "Start a new move",
-    "backToAccount": "Back to account"
+    "backToAccount": "Back to account",
+    "runPreflight": "Run preflight",
+    "preflightResult": "Preflight against {{server}}",
+    "estimate": "About {{size}} of data; expected cutover downtime about {{seconds}} seconds.",
+    "levels": {
+      "ok": "OK",
+      "warn": "Warning",
+      "block": "Blocked"
+    },
+    "blocked": "Cannot migrate to this server yet",
+    "blockedHint": "Fix the blocked items and run the preflight again, or pick another server.",
+    "dns": "DNS",
+    "dnsAuto": "The panel updates records in zone {{zone}}:",
+    "dnsManual": "DNS is not managed by the panel. Change these records at your DNS provider:",
+    "running": "The account is running on {{server}}",
+    "holdingHint_one": "{{server}} keeps the locked old copy for {{count}} more day, until {{date}}. You can roll back until then; afterwards the panel cleans up the source.",
+    "holdingHint_other": "{{server}} keeps the locked old copy for {{count}} more days, until {{date}}. You can roll back until then; afterwards the panel cleans up the source.",
+    "cutoverAt": "Cut over at",
+    "downtime": "Actual downtime",
+    "seconds_one": "{{count}} second",
+    "seconds_other": "{{count}} seconds",
+    "cleanupAt": "Source cleanup at",
+    "cleanupNow": "Clean up source now",
+    "cleanupTitle": "Delete the old copy on {{server}}?",
+    "cleanupHint": "Removes the account user, home, databases and vhosts on {{server}}. Rollback is no longer possible afterwards. Type the username to confirm.",
+    "rollbackHoldingHint": "The account runs on {{server}} again and DNS is restored. Changes made on the target after cutover are lost. Type the username to confirm.",
+    "mismatch": "Verification on {{server}} does not match",
+    "mismatchHint": "Cutover is blocked while any check fails. Roll back, fix the cause, then migrate again.",
+    "tlsNote": "HTTPS: certificates are not copied; the panel issues new ones on the target once DNS points to it.",
+    "waitingNode": "The server for this stage is disconnected",
+    "waitingNodeHint": "The stage waits for the node to reconnect and then continues; if the wait expires the migration fails.",
+    "failed": "Migration failed",
+    "failedLocked": "The account is locked after cutover. Roll back to run it on {{server}} again.",
+    "failedActive": "The account keeps running on {{server}}; you can migrate again after fixing the error.",
+    "earlyOnlySa": "Before {{date}} only a Super Admin can clean up the source early.",
+    "listLink": "Migrations"
   },
   "terminated": {
     "title": "Terminated accounts",
@@ -2643,6 +2720,25 @@
     "findingsHint": "You can quarantine or delete files. To restore a quarantined file, contact an admin.",
     "deleteFile": "Delete file",
     "deleteFileTitle": "Delete suspicious file?",
-    "deleteFileHint": "Permanently delete {{path}} from the account. This cannot be undone (except from backups)."
+    "deleteFileHint": "Permanently delete {{path}} from the account. This cannot be undone (except from backups).",
+    "migratingTitle": "This account is being moved to a new server",
+    "migratingHint": "Websites keep running during the move, but the account is read-only for now: creating, editing and deleting are refused. Everything works as before once the move finishes."
+  },
+  "migrations": {
+    "title": "Server migrations",
+    "description": "Account moves between servers in your scope: syncing, waiting for cutover, holding the source and finished.",
+    "account": "Account",
+    "route": "From → to",
+    "to": "to",
+    "empty": "No migrations yet.",
+    "states": {
+      "syncing": "Syncing",
+      "verifying": "Waiting for cutover",
+      "cutover": "Cutting over",
+      "holding": "Holding source",
+      "completed": "Completed",
+      "rolled_back": "Rolled back",
+      "failed": "Failed"
+    }
   }
 }

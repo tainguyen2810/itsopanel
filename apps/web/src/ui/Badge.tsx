@@ -83,7 +83,11 @@ export type StatusKey =
   | 'rolled_back'
   | 'deleting'
   | 'denied'
-  | 'acknowledged';
+  | 'acknowledged'
+  | 'unreachable'
+  | 'revoked'
+  | 'waiting_agent'
+  | 'holding';
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
@@ -137,6 +141,10 @@ const TONE: Record<StatusKey, Tone> = {
   deleting: 'warning',
   denied: 'danger',
   acknowledged: 'info',
+  unreachable: 'danger',
+  revoked: 'neutral',
+  waiting_agent: 'warning',
+  holding: 'info',
 };
 
 /** Trạng thái có trong bảng (dữ liệu API có thể có giá trị mới: hiện nguyên văn, tông trung tính). */

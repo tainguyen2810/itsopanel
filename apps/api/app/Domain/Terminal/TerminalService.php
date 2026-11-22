@@ -46,6 +46,7 @@ final class TerminalService
     /** @return array{ticket: string, expires_at: string, unix_user: string, session: TerminalSession} */
     public function open(User $actor, HostingAccount $a, int $cols = 120, int $rows = 32): array
     {
+        self::localOnly($a->server_id);
         if ($a->lifecycle_state !== 'active') {
             throw new ApiProblem(409, 'invalid_state_transition', 'Account không hoạt động', "Account đang {$a->lifecycle_state}: không mở terminal.");
         }
@@ -55,7 +56,7 @@ final class TerminalService
         $s = TerminalSession::query()->create(['user_id' => $actor->id, 'server_id' => $a->server_id, 'hosting_account_id' => $a->id,
             'unix_uid' => $a->uid, 'mode' => 'account', 'started_at' => Carbon::now()]);
         try {
-            $res = $this->agent->call('pty.open', ['account' => DataSpec::acct($a), 'session_uuid' => $s->uuid, 'cols' => $cols,
+            $res = $this->agent->forServer($a->server_id)->call('pty.open', ['account' => DataSpec::acct($a), 'session_uuid' => $s->uuid, 'cols' => $cols,
                 'rows' => $rows, 'idle_timeout_sec' => self::IDLE_SEC], (string) Str::uuid7().':1:1',
                 ['user_uuid' => $actor->uuid, 'role' => $actor->roleKey() ?? 'SYSTEM'], 15.0);
         } catch (AgentUnavailable $e) {
@@ -88,10 +89,11 @@ final class TerminalService
      */
     public function openRoot(User $actor, Server $server, string $clientIp, int $cols = 120, int $rows = 32): array
     {
+        self::localOnly($server->id);
         $s = TerminalSession::query()->create(['user_id' => $actor->id, 'server_id' => $server->id, 'hosting_account_id' => null,
             'unix_uid' => 0, 'mode' => 'root', 'started_at' => Carbon::now()]);
         try {
-            $res = $this->agent->call('pty.open.root', ['session_uuid' => $s->uuid, 'cols' => $cols, 'rows' => $rows,
+            $res = $this->agent->forServer($server->id)->call('pty.open.root', ['session_uuid' => $s->uuid, 'cols' => $cols, 'rows' => $rows,
                 'idle_timeout_sec' => self::IDLE_SEC], (string) Str::uuid7().':1:1',
                 ['user_uuid' => $actor->uuid, 'role' => $actor->roleKey() ?? 'SYSTEM'], 15.0);
         } catch (AgentUnavailable $e) {
@@ -124,6 +126,18 @@ final class TerminalService
             'unix_user' => 'root', 'session' => $s];
     }
 
+    /**
+     * Terminal đi qua socket stream của agent cục bộ + itso-gateway (D-75); kênh relay chưa mang stream (Phase 9)
+     * nên server node từ xa chưa mở được terminal.
+     */
+    private static function localOnly(?int $serverId): void
+    {
+        if (AgentClient::isRemote($serverId)) {
+            throw new ApiProblem(409, 'precondition_failed', 'Chưa hỗ trợ terminal trên node',
+                'Terminal web hiện chỉ có trên máy panel; node từ xa dùng SSH/SFTP của account.');
+        }
+    }
+
     /** @return array<string, mixed> TerminalPolicy (không có server; controller thêm) */
     public function policy(): array
     {
@@ -145,7 +159,7 @@ final class TerminalService
         if (! $rec instanceof TerminalRecording) {
             throw new ApiProblem(404, 'not_found', 'Phiên không có bản ghi', 'Phiên này không được ghi (policy record_user tắt).');
         }
-        $res = $this->agent->call('pty.recording.read', ['session_uuid' => $s->uuid, 'offset' => $offset, 'max_bytes' => self::RECORDING_PAGE],
+        $res = $this->agent->forServer($s->server_id)->call('pty.recording.read', ['session_uuid' => $s->uuid, 'offset' => $offset, 'max_bytes' => self::RECORDING_PAGE],
             null, null, 30.0);
         if (! $res->ok) {
             $code = (string) ($res->error['code'] ?? 'internal');

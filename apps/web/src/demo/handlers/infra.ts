@@ -79,6 +79,19 @@ export function registerInfra() {
         role_tags: e.role_tags,
         agent_connected: true,
         accepting_new_accounts: true,
+        // Node mới join qua relay bằng mTLS, chứng chỉ 30 ngày do CA nội bộ cấp (D-89, D-90).
+        node_role: 'node',
+        transport: 'mtls',
+        connection: 'online',
+        last_seen_at: db.now(),
+        cert: {
+          fingerprint_sha256: (uuid.replace(/-/g, '') + uuid.replace(/-/g, '')).slice(0, 64),
+          not_before: db.now(),
+          not_after: new Date(Date.now() + 30 * 86_400_000 + 7 * 3600_000)
+            .toISOString()
+            .replace(/\.\d{3}Z$/, '+07:00'),
+          rotated_at: db.now(),
+        },
         account_count: 0,
         resources: { ...tpl.resources, cpu_pct: 3.2, ram_used_mb: 1800, disk_used_mb: 24000 },
         status: 'ready',
@@ -162,6 +175,39 @@ export function registerInfra() {
       resource: { type: 'server', uuid: s.uuid },
       server: ref(s),
       changes: b as Record<string, unknown>,
+    });
+    return ok(s);
+  });
+
+  // Thu hồi node (D-90): chỉ khi không còn account; chứng chỉ bị chặn, relay ngắt kết nối.
+  on('post', '/api/v1/admin/servers/{id}:revoke', (ctx) => {
+    const deny = SA_ONLY(ctx);
+    if (deny) return deny;
+    const s = serverOf(ctx);
+    if (isReply(s)) return s;
+    if (s.node_role !== 'node')
+      return problem(409, 'conflict', 'Chỉ thu hồi được node, không thu hồi máy panel');
+    const b = (ctx.body ?? {}) as { confirm_name?: string };
+    if (b.confirm_name !== s.name) return invalid('Gõ đúng tên server để xác nhận.');
+    if (s.account_count > 0)
+      return problem(
+        409,
+        'precondition_failed',
+        'Server còn account',
+        `Còn ${s.account_count} account; chuyển hết sang server khác trước khi thu hồi.`,
+      );
+    Object.assign(s, {
+      connection: 'revoked',
+      agent_connected: false,
+      accepting_new_accounts: false,
+      cert: null,
+      updated_at: ctx.db.now(),
+    });
+    ctx.db.audit({
+      actor: actorRef(ctx),
+      action: 'server.revoke',
+      resource: { type: 'server', uuid: s.uuid },
+      server: ref(s),
     });
     return ok(s);
   });

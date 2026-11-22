@@ -90,8 +90,8 @@ final class PurgeService
         return DB::transaction(function () use ($actor, $a, $pr, $snap): Job {
             $pr->forceFill(['confirmed_by_user_id' => $actor->id])->save();
             $spec = (new JobSpec('hosting_account.purge', $a, $a->server_id, 1, 1800))
-                ->step('account.remove', ['account' => DataSpec::acct($a), 'purge_uuid' => $pr->uuid, 'final_snapshot_id' => $snap->restic_snapshot_id,
-                    'confirm_username' => $a->username]);
+                ->step('account.remove', ['account' => DataSpec::acct($a), 'reason' => 'purge', 'ref_uuid' => $pr->uuid,
+                    'final_snapshot_id' => $snap->restic_snapshot_id, 'confirm_username' => $a->username, 'confirm' => true]);
             $job = $this->jobs->dispatch($spec, $actor);
             $this->audit->record('hosting_account.confirm_purge', $a, ['purge' => $pr->uuid, 'final_snapshot' => $snap->uuid], 'success',
                 $a->server_id, $job->id, $actor);

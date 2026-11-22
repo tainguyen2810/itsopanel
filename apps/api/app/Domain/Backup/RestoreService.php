@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\Domain\Backup;
 
+use App\Auth\Access;
+use App\Auth\Realm;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Data\DataSpec;
+use App\Domain\Hosting\ProvisioningService;
 use App\Domain\Hosting\QuotaService;
 use App\Domain\Jobs\JobDispatcher;
 use App\Domain\Jobs\JobSpec;
 use App\Exceptions\ApiProblem;
+use App\Http\Presenters\ServerPresenter;
+use App\Models\Agent;
 use App\Models\BackupSnapshot;
 use App\Models\Database;
 use App\Models\HostingAccount;
@@ -30,7 +35,7 @@ use Illuminate\Support\Facades\DB;
 final class RestoreService
 {
     public function __construct(private readonly JobDispatcher $jobs, private readonly AuditLogger $audit,
-        private readonly QuotaService $quota, private readonly BackupService $backups) {}
+        private readonly QuotaService $quota, private readonly BackupService $backups, private readonly Access $access) {}
 
     /** @param  list<string>  $items */
     public function create(User $actor, BackupSnapshot $s, string $mode, array $items, ?string $confirm, ?Server $target): RestoreJob
@@ -39,8 +44,20 @@ final class RestoreService
         if (! $a instanceof HostingAccount) {
             throw ApiProblem::field('snapshot_uuid', 'Snapshot cấu hình máy chủ/panel không khôi phục qua đây: dùng "itso backup panel-restore" (DR).');
         }
-        if ($target !== null && $target->id !== $a->server_id) {
-            throw ApiProblem::field('target_server_uuid', 'Khôi phục sang máy chủ khác: Phase 9 (chuyển account).');
+        $cross = $target !== null && $target->id !== $a->server_id;
+        if ($cross) {
+            // ADR 0038 §3: khôi phục sang server khác = bản sao để kiểm tra/xuất (account.ensure + restore ở đích),
+            // chỉ Admin, chỉ bản mới; account vẫn thuộc server cũ (chuyển hẳn: dùng chuyển account).
+            if ($actor->realm !== Realm::ADMIN || ! $this->access->servers($actor)->whereKey($target->id)->exists()) {
+                throw ApiProblem::field('target_server_uuid', 'Không có quyền khôi phục sang máy chủ này.');
+            }
+            if ($mode !== 'new') {
+                throw ApiProblem::field('mode', 'Khôi phục sang máy chủ khác chỉ ra bản mới (mode=new).');
+            }
+            $ag = Agent::query()->where('server_id', $target->id)->first();
+            if (! $ag instanceof Agent || ServerPresenter::connection($ag) !== 'online') {
+                throw new ApiProblem(409, 'agent_unreachable', 'Máy chủ đích không kết nối', "{$target->name} đang mất kết nối agent.");
+            }
         }
         if ($a->lifecycle_state !== 'active') {
             throw new ApiProblem(409, 'invalid_state_transition', 'Account không hoạt động', "Account đang {$a->lifecycle_state}: kích hoạt lại trước khi khôi phục.");
@@ -83,7 +100,9 @@ final class RestoreService
                 $engine = Database::withTrashed()->where('hosting_account_id', $a->id)->where('name', $val)->value('engine');
                 $engine = $engine === 'postgresql' ? 'postgresql' : 'mariadb';
                 $targetName = $mode === 'overwrite' ? $val : mb_substr($val, 0, $engine === 'postgresql' ? 57 : 58).'_r'.$ts;
-                if ($mode === 'new') {
+                if ($mode === 'new' && $cross) {
+                    $newDbs[] = [$engine, $targetName, true];
+                } elseif ($mode === 'new') {
                     if (Database::query()->where('server_id', $a->server_id)->where('engine', $engine)->where('name', $targetName)->exists()) {
                         throw new ApiProblem(409, 'conflict', 'Database đích đã có', "Đã có database $targetName: thử lại sau một phút.");
                     }
@@ -97,24 +116,40 @@ final class RestoreService
             }
         }
 
-        return DB::transaction(function () use ($actor, $s, $a, $mode, $items, $agentItems, $newDbs): RestoreJob {
+        $serverId = $cross ? $target->id : $a->server_id;
+
+        return DB::transaction(function () use ($actor, $s, $a, $mode, $items, $agentItems, $newDbs, $cross, $serverId): RestoreJob {
             /** @var HostingAccount $acc */
             $acc = HostingAccount::query()->lockForUpdate()->findOrFail($a->id);
-            foreach ($newDbs as [$engine, $name]) {
+            foreach ($newDbs as $nd) {
+                [$engine, $name] = $nd;
+                if ($cross) {
+                    continue; // bản sao ở server khác: không thành DB được quản lý của account
+                }
                 $this->quota->ensureCanAdd($acc, 'databases');
                 Database::query()->create(['hosting_account_id' => $acc->id, 'server_id' => $acc->server_id, 'engine' => $engine, 'name' => $name,
                     'charset' => $engine === 'postgresql' ? 'UTF8' : 'utf8mb4', 'status' => 'provisioning', 'size_mb' => 0]);
             }
             $rj = RestoreJob::query()->create(['snapshot_id' => $s->id, 'hosting_account_id' => $acc->id, 'target_type' => 'hosting_account',
-                'target_id' => $acc->id, 'target_server_id' => $acc->server_id, 'mode' => $mode, 'items' => $items, 'status' => 'queued',
+                'target_id' => $acc->id, 'target_server_id' => $serverId, 'mode' => $mode, 'items' => $items, 'status' => 'queued',
                 'requested_by_user_id' => $actor->id]);
-            $spec = (new JobSpec('backup.restore', $acc, $acc->server_id, 1, 4 * 3600))
-                ->step('backup.restore', ['repo' => BackupSpec::repo($s->repository), 'snapshot_id' => $s->restic_snapshot_id, 'restore_uuid' => $rj->uuid,
-                    'account' => DataSpec::acct($acc), 'mode' => $mode, 'items' => $agentItems, 'pre_restore_tags' => ['account:'.$acc->uuid]]);
+            $spec = new JobSpec('backup.restore', $acc, $serverId, 1, 4 * 3600);
+            if ($cross) {
+                $limits = $this->quota->limits($acc);
+                $spec->step('account.ensure', ['account' => ProvisioningService::ref($acc), 'home_path' => $acc->home_path,
+                    'shell' => '/usr/sbin/nologin', 'limits' => ProvisioningService::agentLimits($limits)]);
+                foreach ($newDbs as [$engine, $name]) {
+                    $spec->step(DataSpec::op($engine, 'owner_ensure'), ['account' => DataSpec::acct($acc)])
+                        ->step(DataSpec::op($engine, 'create'), ['account' => DataSpec::acct($acc), 'name' => $name,
+                            'charset' => $engine === 'postgresql' ? 'UTF8' : 'utf8mb4']);
+                }
+            }
+            $spec->step('backup.restore', ['repo' => BackupSpec::repo($s->repository), 'snapshot_id' => $s->restic_snapshot_id, 'restore_uuid' => $rj->uuid,
+                'account' => DataSpec::acct($acc), 'mode' => $mode, 'items' => $agentItems, 'pre_restore_tags' => ['account:'.$acc->uuid]]);
             $job = $this->jobs->dispatch($spec, $actor);
             $rj->forceFill(['job_id' => $job->id])->save();
-            $this->audit->record('backup.restore', $acc, ['snapshot' => $s->uuid, 'mode' => $mode, 'items' => $items], 'success',
-                $acc->server_id, $job->id, $actor);
+            $this->audit->record('backup.restore', $acc, ['snapshot' => $s->uuid, 'mode' => $mode, 'items' => $items,
+                'target_server' => $cross ? Server::query()->find($serverId)?->name : null], 'success', $serverId, $job->id, $actor);
 
             return $rj->refresh();
         });

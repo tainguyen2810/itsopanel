@@ -9,13 +9,49 @@
         "account": {
           "$ref": "../defs.schema.json#/$defs/Account"
         },
-        "target_server_uuid": {
+        "migration_uuid": {
           "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "need_bytes": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "php_versions": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/PhpVersion"
+          },
+          "maxItems": 10,
+          "uniqueItems": true
+        },
+        "databases": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/BackupDb"
+          },
+          "maxItems": 100
+        },
+        "sites": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Domain"
+          },
+          "maxItems": 100
+        },
+        "enforce": {
+          "type": "boolean"
         }
       },
       "required": [
         "account",
-        "target_server_uuid"
+        "migration_uuid",
+        "repo",
+        "need_bytes",
+        "php_versions",
+        "databases",
+        "sites"
       ],
       "additionalProperties": false
     },
@@ -31,22 +67,30 @@
             "type": "object",
             "properties": {
               "key": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^[a-z_]{2,32}$"
               },
-              "ok": {
-                "type": "boolean"
+              "level": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "warn",
+                  "block"
+                ]
               },
-              "detail": {
-                "type": "string"
+              "message": {
+                "type": "string",
+                "maxLength": 500
               }
             },
             "required": [
               "key",
-              "ok",
-              "detail"
+              "level",
+              "message"
             ],
             "additionalProperties": false
-          }
+          },
+          "maxItems": 50
         }
       },
       "required": [

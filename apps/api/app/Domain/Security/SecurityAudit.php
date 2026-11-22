@@ -30,7 +30,7 @@ final class SecurityAudit
     {
         $set = SecuritySetting::for($s->id);
         try {
-            $r = $this->agent->call('security.audit', [], null, null, 60.0);
+            $r = $this->agent->forServer($s->id)->call('security.audit', [], null, null, 60.0);
             if ($r->ok) {
                 $set->audit_facts = (array) $r->data;
                 $set->audited_at = Carbon::now();
@@ -69,7 +69,7 @@ final class SecurityAudit
     public function fimCheck(Server $s): int
     {
         try {
-            $r = $this->agent->call('fim.check', [], null, null, 120.0);
+            $r = $this->agent->forServer($s->id)->call('fim.check', [], null, null, 120.0);
         } catch (AgentUnavailable) {
             return 0;
         }

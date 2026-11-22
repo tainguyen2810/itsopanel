@@ -69,7 +69,7 @@ test('thêm server: tạo token → lệnh cài agent → agent kết nối → 
   await page.goto('/admin/servers/new');
   await page.getByLabel('Tên').fill('srv-hcm-02');
   await page.getByRole('button', { name: 'Tạo token đăng ký' }).click();
-  await expect(page.getByText(/--join itso_enr_/)).toBeVisible();
+  await expect(page.getByText(/--token itso_enr_\w+ --ca-sha256 [0-9a-f]{64}/)).toBeVisible();
   await expect(page.getByText('Máy chủ srv-hcm-02 đã kết nối')).toBeVisible({ timeout: 15_000 });
   await page.getByRole('link', { name: 'Mở máy chủ' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('srv-hcm-02');

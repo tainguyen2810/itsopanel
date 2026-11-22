@@ -50,7 +50,7 @@ type Step struct {
 }
 
 var systemGroups = []string{"itso-agent-clients", "itso-proc", "itso-ssh", "itso-sftp", "itso-suspended"}
-var systemUsers = []string{"itso", "itso-gw", "itso-redis"}
+var systemUsers = []string{"itso", "itso-gw", "itso-redis", "itso-relay"}
 
 // basePackages: gói tối thiểu từ kho Ubuntu (10 §4 bước 2). Nginx/PHP/MySQL do Wizard chọn.
 var basePackages = []string{"postgresql-16", "redis-server", "nftables", "acl", "quota", "ca-certificates"}
@@ -73,6 +73,23 @@ func (e *Env) Install(ctx context.Context, o Options) error {
 	if o.Port == 0 {
 		o.Port = 28443
 	}
+	if o.Role == "" {
+		o.Role = RoleAllInOne
+	}
+	if !ValidRole(o.Role) {
+		return fmt.Errorf("--role %q: chỉ nhận all-in-one | control-plane | node", o.Role)
+	}
+	if prev := e.Role(); e.CurrentVersion() != "" && prev != o.Role {
+		return fmt.Errorf("máy đã cài vai trò %s: không đổi vai trò tại chỗ (gỡ rồi cài lại)", prev)
+	}
+	if o.Role == RoleNode {
+		if err := ValidateJoin(JoinOptions{URL: o.Join, Token: o.Token, CASHA256: o.CASHA256}); err != nil {
+			return err
+		}
+	} else if o.Join != "" || o.Token != "" {
+		return errors.New("--join/--token chỉ dùng với --role node")
+	}
+	steps := StepsFor(o.Role)
 	e.printf("Kiểm tra trước khi cài (preflight):\n")
 	cs := e.Preflight(ctx, o)
 	e.PrintChecks(cs)
@@ -85,7 +102,7 @@ func (e *Env) Install(ctx context.Context, o Options) error {
 	}
 	if o.DryRun {
 		e.printf("\n--dry-run: các bước sẽ chạy (không thay đổi gì):\n")
-		for i, s := range Steps {
+		for i, s := range steps {
 			mark := "chờ"
 			if st.Steps[s.Name] != "" {
 				mark = "đã xong " + st.Steps[s.Name]
@@ -111,12 +128,12 @@ func (e *Env) Install(ctx context.Context, o Options) error {
 	if err != nil {
 		return err
 	}
-	for i, s := range Steps {
+	for i, s := range steps {
 		if st.Steps[s.Name] != "" {
-			e.printf("[%d/%d] %s: đã xong (%s), bỏ qua\n", i+1, len(Steps), s.Title, st.Steps[s.Name])
+			e.printf("[%d/%d] %s: đã xong (%s), bỏ qua\n", i+1, len(steps), s.Title, st.Steps[s.Name])
 			continue
 		}
-		e.printf("[%d/%d] %s…\n", i+1, len(Steps), s.Title)
+		e.printf("[%d/%d] %s…\n", i+1, len(steps), s.Title)
 		if err := s.Run(ctx, e, o, r); err != nil {
 			return fmt.Errorf("bước %s lỗi: %w (sửa rồi chạy lại itso install: các bước đã xong được giữ)", s.Name, err)
 		}
@@ -127,6 +144,14 @@ func (e *Env) Install(ctx context.Context, o Options) error {
 		if err := e.saveState(&st); err != nil {
 			return err
 		}
+	}
+	if o.Role == RoleNode {
+		n, _ := e.nodeInfo()
+		e.printf("\nITSO node %s đã cài và join control plane\n", st.Version)
+		e.printf("Server UUID:  %s\nRelay:        %s\n", n.ServerUUID, n.RelayURL)
+		e.printf("Node chỉ kết nối RA cổng %d của control plane; không mở cổng quản trị inbound.\n", RelayPort)
+		e.printf("Lệnh quản trị: itso node status | itso node rejoin | itso node leave\n")
+		return nil
 	}
 	mode := ""
 	if o.Restore {
@@ -145,6 +170,9 @@ func (e *Env) Install(ctx context.Context, o Options) error {
 	if o.Restore {
 		e.printf("Chế độ khôi phục: mở URL, nhập mã thiết lập rồi chọn \"Khôi phục từ backup\" với bộ khôi phục\n")
 		e.printf("              (đích, repo server + mật khẩu, khóa riêng age). Runbook: docs/runbooks/disaster-recovery.md\n")
+	}
+	if pin, err := e.CAPin(); err == nil {
+		e.printf("CA nội bộ:    sha256 %s (dùng cho --ca-sha256 khi join node, relay cổng %d)\n", pin, RelayPort)
 	}
 	e.printf("Lệnh quản trị: itso status | itso doctor | itso help\n")
 	return nil
@@ -166,7 +194,8 @@ func stepUsers(ctx context.Context, e *Env, _ Options, _ *Release) error {
 		}
 	}
 	// itso gọi agent (socket group) và Redis (socket group itso-redis).
-	for _, m := range [][2]string{{"itso", "itso-agent-clients"}, {"itso", "itso-redis"}, {"itso-gw", "itso-agent-clients"}} {
+	for _, m := range [][2]string{{"itso", "itso-agent-clients"}, {"itso", "itso-redis"}, {"itso-gw", "itso-agent-clients"},
+		{"itso", "itso-relay"}} {
 		if !e.inGroup(m[0], m[1]) {
 			if _, err := e.cmd(ctx, "gpasswd", "-a", m[0], m[1]); err != nil {
 				return err
@@ -515,7 +544,12 @@ func stepFirewall(_ context.Context, e *Env, o Options, _ *Release) error {
 		e.printf("  --no-firewall: bỏ qua\n")
 		return nil
 	}
-	// Tường lửa có safe-apply + rollback là op firewall.apply (Phase 7); installer không tự đóng port.
-	e.printf("  Chưa áp dụng ở Phase 4: tường lửa có safe-apply làm ở Phase 7. Hãy mở port panel và 80/443 nếu đang có tường lửa.\n")
+	// Tường lửa có safe-apply + rollback là op firewall.apply (Phase 7); installer không tự mở/đóng port.
+	switch o.Role {
+	case RoleNode:
+		e.printf("  Node: KHÔNG mở cổng quản trị inbound; chỉ cần đi ra cổng %d tới control plane (và 80/443 cho website).\n", RelayPort)
+	default:
+		e.printf("  Nếu đang có tường lửa: mở cổng panel %d, cổng relay %d/tcp (node kết nối vào) và 80/443.\n", o.Port, RelayPort)
+	}
 	return nil
 }

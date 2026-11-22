@@ -21,6 +21,7 @@ var Bins = map[string]string{
 	"usermod":     "/usr/sbin/usermod",
 	"userdel":     "/usr/sbin/userdel",
 	"groupadd":    "/usr/sbin/groupadd",
+	"groupdel":    "/usr/sbin/groupdel",
 	"gpasswd":     "/usr/bin/gpasswd",
 	"setfacl":     "/usr/bin/setfacl",
 	"getfacl":     "/usr/bin/getfacl",

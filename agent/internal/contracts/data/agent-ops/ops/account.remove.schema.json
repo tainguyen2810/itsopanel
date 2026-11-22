@@ -9,22 +9,33 @@
         "account": {
           "$ref": "../defs.schema.json#/$defs/Account"
         },
-        "purge_uuid": {
+        "reason": {
+          "type": "string",
+          "enum": [
+            "purge",
+            "migrated"
+          ]
+        },
+        "ref_uuid": {
           "$ref": "../defs.schema.json#/$defs/Uuid"
         },
         "final_snapshot_id": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{8,64}$"
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
         },
         "confirm_username": {
           "$ref": "../defs.schema.json#/$defs/Username"
+        },
+        "confirm": {
+          "const": true
         }
       },
       "required": [
         "account",
-        "purge_uuid",
+        "reason",
+        "ref_uuid",
         "final_snapshot_id",
-        "confirm_username"
+        "confirm_username",
+        "confirm"
       ],
       "additionalProperties": false
     },

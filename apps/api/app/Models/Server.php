@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property string $name
  * @property string $hostname
+ * @property string $node_role all_in_one|control_plane|node (Phase 9, D-88)
  * @property array<array-key, mixed> $ip_addresses
  * @property list<string> $role_tags
  * @property string|null $os

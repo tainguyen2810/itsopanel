@@ -4,6 +4,8 @@ use App\Domain\Backup\BackupJobHandler;
 use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
 use App\Domain\Hosting\AccountJobHandler;
+use App\Domain\Migration\MigrationJobHandler;
+use App\Domain\Migration\MigrationService;
 use App\Domain\Security\FirewallApplyStep;
 use App\Domain\Security\FirewallConfirmStep;
 use App\Domain\Security\SecurityJobHandler;
@@ -38,6 +40,31 @@ return [
         'connected_window_sec' => (int) env('ITSO_AGENT_CONNECTED_WINDOW', 300),
     ],
 
+    // Kênh node từ xa qua itso-relay (Phase 9, D-89/D-91): heartbeat 20 giây.
+    // CA nội bộ (D-90): Laravel chỉ đọc chứng chỉ công khai để in pin; khóa CA chỉ agent local đọc.
+    // Vai trò cài đặt do `itso install --role` ghi (D-88); server local lấy node_role từ đây.
+    'node_identity_file' => env('ITSO_NODE_IDENTITY_FILE', '/etc/itso/node.json'),
+
+    'pki' => [
+        'ca_file' => env('ITSO_PKI_CA_FILE', '/etc/itso/pki/ca.pem'),
+        // URL tải install.sh in trong lệnh join (trống = chỉ in `sudo bash install.sh …`).
+        'install_url' => env('ITSO_INSTALL_URL'),
+    ],
+
+    'relay' => [
+        // Unix socket của itso-relay (Laravel gửi envelope cho node mtls qua đây).
+        'socket' => env('ITSO_RELAY_SOCKET', '/run/itso-relay/relay.sock'),
+        // URL node quay số tới (in trong lệnh join). Trống = https://<host của panel>:28444.
+        'public_url' => env('ITSO_RELAY_PUBLIC_URL'),
+        // Job tới node mất kết nối chờ tối đa (D-91): op ghi 30 phút, op đọc 2 phút.
+        'wait_write_sec' => (int) env('ITSO_RELAY_WAIT_WRITE', 1800),
+        'wait_read_sec' => (int) env('ITSO_RELAY_WAIT_READ', 120),
+        // Khóa ký yêu cầu enroll mà relay chuyển tiếp (dùng chung với itso-relay --relay-key-file).
+        'enroll_key_file' => env('ITSO_RELAY_ENROLL_KEY_FILE', '/etc/itso/relay/enroll.key'),
+        'degraded_after_sec' => (int) env('ITSO_RELAY_DEGRADED_AFTER', 60),
+        'unreachable_after_sec' => (int) env('ITSO_RELAY_UNREACHABLE_AFTER', 300),
+    ],
+
     // Hook theo loại job (App\Domain\Jobs\JobHandler): cập nhật observed state khi job kết thúc.
     'job_handlers' => array_fill_keys([
         'hosting_account.create', 'hosting_account.suspend', 'hosting_account.unsuspend', 'hosting_account.restore',
@@ -54,7 +81,8 @@ return [
           CertificateJobHandler::class)
       + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class)
       + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class)
-      + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class),
+      + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class)
+      + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class),
 
     // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
     'panel_steps' => [

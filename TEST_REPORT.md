@@ -2,6 +2,137 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 9 / Prompt 9.8 (tích hợp: e2e 2 agent qua relay, VM, review, make check) — nhánh `phase-9`
+
+Phạm vi: `apps/web/e2e-real/phase9.spec.ts` (mới), sửa lỗi tìm ra nhờ e2e (`MigrationService` preflight repo chưa khởi tạo → cảnh báo; contract `migrate.preflight` thêm `enforce`, agent trả `precondition_failed`, chặng đích gửi `enforce=true`; `JobController` lọc `waiting_agent`), sandbox (`migrate.go` ownership/HTTP, `scripts/dev.sh` CA + URL relay, `Placement` cho chọn server bị loại ở wizard chuyển), `tests/vm/phase9.sh` + `tests/vm/lib/panel_api.php`, `docs/security/multi-server-review.md`, runbook §5, báo cáo `docs/reports/phase-9.md`. Commit 45ebccd.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 9 | `pnpm -s exec playwright test -c playwright.real.config.ts --trace off e2e-real/phase9.spec.ts` (`make dev`: relay thật, agent local + node sandbox, restic thật) | **4/4 PASS** (5,0 phút). Các lần đầu lỗi: wizard bị drawer theo dõi job (modal) che khỏi cây a11y → test đóng drawer; toast "Đã xong" đè nút khi chuột đứng trên → dời chuột; trang Tác vụ `?state=waiting_agent` → 422 (**lỗi API**, sửa); lượt chuyển thứ hai lỗi `Unknown database` vì sandbox dùng chung MariaDB nên hoàn tác xóa luôn DB nguồn → lượt hoàn tác dùng account không DB. Trước đó (đầu 9.8): preflight chặn account chưa backup (**lỗi API**, sửa), ownership/HTTP trong sandbox, server local bị loại vì đĩa |
+| Toàn bộ e2e stack thật | `ITSO_ACME_EMAIL=ops@itso.local make dev` + `migrate:fresh --seed` + `DemoSeeder` + `make test-e2e-real` | **23/23 PASS** (17,1 phút). Hai lần chạy trước: 21/23 (Phase 3 tạo account: server local bị loại vì đĩa container < 15 % sau cấp → dọn 17 GB clone cũ trong scratchpad; Phase 5 SSL phụ thuộc) và 22/23 (quên `ITSO_ACME_EMAIL` nên SSL sandbox không cấp) |
+| Pest mới | `pest tests/Feature/Phase9/MigrationTest.php` · `NodeTest.php` | 7/7 (271 assertion; mới: repo chưa khởi tạo → cảnh báo, chặng đích `enforce` chặn → `failed`, không `account.ensure`) · 9/9 (thêm lọc `waiting_agent`) |
+| Go | `go test -race ./internal/ops -run 'TestMigrate\|TestHTTPCheck\|TestBackupRestore'` · `go test ./...` | PASS (mới: `enforce` → `precondition_failed`) · PASS |
+| `make check` | `make check` (1 143 s) | **19 PASS · 1 SKIP (staticcheck) · 3 FAIL** lần đầu: `test-e2e` 548/549 (`demo-admin2` còn giả định không có ô "Máy chủ đích" — Phase 9 thêm khôi phục sang server khác → sửa test, chạy lại 3/3), `test-fuzz` (`FuzzFirewallRule` tìm comment `";"` hợp lệ theo contract làm bất biến đếm `;` sai → đếm ngoài chuỗi trích dẫn, giữ input làm corpus; chạy lại `make test-fuzz` PASS), `git-clean` (do corpus fuzz mới, nay commit) |
+| Còn lại trong `make check` | structure, docs-check, check-ci, db-verify (98), contracts-check, codegen-check, tokens-check, lint-web, test-web (562), build-web, build-demo, lint-api, test-api (483), no-exec, lint-agent, test-agent (19 gói), build-agent, units-check, test-installer | PASS |
+| Ảnh Phase 9 | `SCREENSHOT_DIR_P9=… playwright test e2e/screenshots-phase9.spec.ts` | 52/52 (chụp lại wizard sau đổi `Placement`) |
+| Script VM | `bash -n tests/vm/phase9.sh` · `lib/panel_api.php` thử với DB dev (GET servers 200, preflight 422 đúng) | OK (không có shellcheck). **Chờ VM:** N0 3 server online, N1 node không nghe TCP, N2 nftables → `waiting_agent`/`agent_unreachable`, N3 xoay chứng chỉ, N4 WordPress + 2 GB (checksum + HTTP 200, downtime ≤ 300 s), N5 rollback sau cutover, N6 thu hồi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase9.sh` (Phase 8 DR 2 VM, Phase 9 3 VM).
+
+## 2026-11-21 — Phase 9 / Prompt 9.7 (UI multi-server khớp API thật) — nhánh `phase-9`
+
+Phạm vi: trang mới **Lượt chuyển máy chủ** (`/admin/hosting-accounts/migrations`, lọc trạng thái, mở wizard); wizard chuyển account: ADMIN (có phạm vi cả hai server) vào được như API, kiểm chứng lệch → cảnh báo + khóa nút cutover, lượt chuyển lỗi → hiện lỗi + hoàn tác (account khóa sau cutover) hoặc chuyển lại, chặng chờ node mất kết nối (`waiting_agent`), dọn nguồn sớm chỉ SA, ghi chú HTTPS cấp lại ở đích; banner danh sách server khi node mất kết nối; Portal: banner "đang chuyển" + cảnh báo tổng quan `account_migrating` (API + MSW); nhãn job `migration.*`; `JobProgress` khóa theo vị trí bước (job thật có thể lặp op `backup.run`). MSW theo hành vi API: quyền ADMIN + phạm vi đích, chỉ account active, `connection`/`accepting` (warn), HTTP chỉ có sau cutover, cutover 409 khi lệch, hoàn tác 409 lúc đang đồng bộ, dọn sớm ADMIN 403, account `migrating` → ghi dữ liệu 409. API: link thông báo lượt chuyển trỏ về wizard của account. Commit b2ef24d.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest | `pnpm -s vitest run` | **562/562 PASS** (lần đầu 2 lỗi ở `demo/__tests__/hosting.test.ts` do MSW đổi theo API: ADMIN chuyển sang đích ngoài phạm vi 403 → 422, khóa kiểm tra `agent` → `connection`; sửa test, thêm 1 test hành vi mới) |
+| Playwright demo | `playwright test e2e/demo-hosting.spec.ts e2e/demo-infra.spec.ts e2e/demo-backup8.spec.ts e2e/demo-portal.spec.ts` | **20/20 PASS** (mới: danh sách lượt chuyển → wizard; banner node mất kết nối). Lần đầu 1 lỗi: cảnh báo React trùng key khi job có 2 bước `backup.run` → sửa `JobProgress` |
+| axe + 390px + EN | `playwright test e2e/demo-audit.spec.ts` (mọi route, gồm route mới) | **77/77 PASS** |
+| Ảnh Phase 9 | `SCREENSHOT_DIR_P9=docs/screenshots/phase-9 playwright test e2e/screenshots-phase9.spec.ts` | 52/52 (thêm `admin-migrations`, chụp lại wizard) |
+| API | `vendor/bin/pest tests/Feature/Phase9` · `tests/Feature/Hosting` · `make lint-api` · `make no-exec` | 20/20 · 25/25 · sạch · OK |
+| Lint web | `pnpm -s lint` · `tsc -b` | sạch (i18n 2999 key, vi = en) |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** dữ liệu demo giữ `lehoa` ở `suspended` (mockup Phase 2) dù đang có lượt chuyển; API thật chỉ chuyển account active.
+
+## 2026-11-21 — Phase 9 / Prompt 9.6 (điều phối chuyển account, khôi phục chéo server) — nhánh `phase-9`
+
+Phạm vi: `app/Domain/Migration/{MigrationService,MigrationJobHandler}.php`, `Models/AccountMigration.php`, `Admin/AccountMigrationController.php` (preflight, migrate, danh sách/chi tiết, cutover, rollback, cleanup), `RestoreService` (khôi phục sang server khác), lệnh `itso:migrations-cleanup` (hàng giờ), route Phase 9 (`accounts.write` + step-up: SA/ADMIN có phạm vi cả 2 server), contracts (bỏ 501 của `:migrate`). Commit 8dfa8c2.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Chuyển account | `vendor/bin/pest tests/Feature/Phase9/MigrationTest.php` (PG 16 + Redis thật; nguồn = agent giả, đích = node mTLS qua relay giả, params/result kiểm theo `contracts/agent-ops`) | **6/6 PASS, 245 assertion**. Luồng trọn vẹn: preflight (ước lượng downtime, cùng server/ADMIN không phạm vi đích → 422, ngoài phạm vi → 404) → backup nguồn → đích account.ensure → DB → site → restore → cấu hình → verify → `verifying`; Portal thấy `migrating`, ghi → 409; lượt thứ hai → 409; dọn trước cutover → 409; cutover: nguồn khóa + backup `final` → đích restore lượt cuối, verify, mở, `http.check` → `holding`, account/site/DB đổi `server_id`, UID cấp ở đích, đo downtime, Portal ghi lại được (job chạy ở node mới); dọn sớm: sai username 422, ADMIN 403, SA → `account.remove reason=migrated` → `completed`, nhả UID nguồn; sau dọn không hoàn tác được. Preflight chặn: thiếu đích backup, PHP/đĩa/domain ở đích, node mất kết nối, account không active → 409 `precondition_failed`, không tạo lượt chuyển. Kiểm chứng lệch → cutover 409; hoàn tác ở verifying (đích khóa → nguồn mở) → `rolled_back`. DNS tự động (Cloudflare giả): TTL 3600 → 60 lúc đồng bộ, A đổi sang IP đích lúc cutover, hoàn tác sau cutover trả A + account/site về nguồn, nhả UID đích. Node đích rơi giữa chặng đồng bộ → `waiting_agent` có hạn, hoàn tác chen ngang → 409, quá hạn → job `agent_unreachable`, lượt chuyển `failed`, account active ở nguồn, có thông báo. Khôi phục chéo: job chạy ở node (account.ensure → backup.restore), account vẫn ở nguồn; ghi đè sang server khác 422, ADMIN không phạm vi 422, node offline 409 |
+| Phase 9 API | `vendor/bin/pest tests/Feature/Phase9` | 20/20 PASS |
+| Toàn bộ Pest | `scripts/pest-pg.sh --parallel` | 480/482 lần đầu: 2 test cũ còn giả định `:migrate`/`account-migrations` chưa có route; sửa test (gửi đủ Idempotency-Key; endpoint "chưa có ở bản này" đổi sang `compose-projects`) → chạy lại `tests/Feature/Platform` 20/20 PASS |
+| Lint | `make lint-api` (pint + phpstan) · `make no-exec` · `make docs-check` · `pnpm -s lint` (web) | sạch · OK · OK · sạch (i18n 2964 key vi = en) |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** chứng chỉ TLS không mang sang đích (khóa ACME ở agent nguồn) → vhost đích chỉ HTTP, cấp lại sau khi DNS trỏ về đích; chế độ DNS tay chỉ hiện bản ghi cần đổi. **Chờ VM:** chuyển account thật giữa 2 VM, đo downtime thật (`tests/vm/phase9.sh`, 9.8).
+
+## 2026-11-21 — Phase 9 / Prompt 9.5 (agent: migrate.*, http.check, account.remove) — nhánh `phase-9`
+
+Phạm vi: `agent/internal/ops/{migrate.go,account_remove.go}` (+ `migrate_test.go`), `ops/sandbox*.go` (Sim `userdel`, `groupdel`, `pure-pw list`, đếm bảng), `platform/runner.go` (thêm `groupdel` vào bảng lệnh cho phép), `ops.Deps.HTTPAddrs` (test).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Op mới | `go test ./internal/ops/ -run 'TestHTTPCheck\|TestAccountRemove\|TestMigrate\|TestBackupRestoreCrossServer'` | **PASS** (restic 0.16.4 thật, 2 gốc sandbox). `http.check`: Host header đúng, không theo redirect, 6 path độc + host có cổng bị chặn, không kết nối được → status 0. `account.remove`: sai confirm/uid/user hệ thống bị chặn; xóa đủ 11 loại đối tượng đúng thứ tự vhost → pool → cron → SFTP → DB → user; symlink trong home trỏ sang account khác không bị theo; vhost/pool/DB/user của account khác còn nguyên; chạy lại trả rỗng. Chuyển account: preflight ok và 5 mục `block` (username/uid, đĩa, PHP, domain, mật khẩu repo); backup ở nguồn → restore ở đích → verify khớp (file mẫu, chủ, DB 2/2 bảng, HTTP); sửa file sau lượt đầu → verify báo lệch → lượt cuối mang theo → khớp; cutover nguồn dừng pool/timer, gỡ SFTP, bật bảo trì, chạy lại không lặp; cutover đích bật pool; rollback đích khóa, nguồn mở lại đúng, rollback lần 2 trả false. Khôi phục sang server khác ra bản mới đúng nội dung |
+| Go toàn bộ | `go test -race ./...` · `make lint-agent` · `make no-exec` | PASS · sạch · OK |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** verify DB so số bảng với dump (MariaDB); PostgreSQL (-Fc) chỉ báo số bảng ở đích; chưa so số dòng/checksum từng bảng (để `tests/vm/phase9.sh` với MariaDB thật). **Chờ VM:** nginx/systemd/userdel thật, đo downtime.
+
+## 2026-11-21 — Phase 9 / Prompt 9.4 (enroll, thu hồi, job chờ node, xoay chứng chỉ) — nhánh `phase-9`
+
+Phạm vi: `apps/api/app/Domain/Servers/{NodeEnrollment,RelaySync,CertRotation}.php`, `Infrastructure/Agent/RelayClient.php`, `Http/Controllers/Api/V1/Internal/NodeEnrollController.php`, `ServerController` (token, thu hồi), `JobRunner` (`waiting_agent`), lệnh `itso:relay-sync`, `itso:certs-rotate`, model `AgentEnrollmentToken`, `AgentCertificate`; mọi service gọi agent qua `forServer`; contracts (ErrorCode `agent_unreachable`, `enrollment_invalid`; CSR CN `itso-enroll`); `agent/internal/install/node.go` đọc phản hồi enroll dạng `{data}`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest Phase 9 | `vendor/bin/pest tests/Feature/Phase9` (PostgreSQL + Redis thật) | **14/14**. Mới (`NodeTest.php`): token một lần (DB chỉ sha256, ADMIN bị chặn, thiếu CA → 409); enroll tạo server/agent/chứng chỉ/khóa mã hóa, token dùng lại/hết hạn bị từ chối; thiếu/sai chữ ký relay → 401, CSR CN lạ → 422 không tạo server, sai > 10 lần → 429; thu hồi (còn account 409, sai tên 422, máy panel 409, đúng → revoked + đẩy relay); job chờ node → relay-sync chạy tiếp cùng op_id, quá hạn → `failed agent_unreachable`; relay-sync thông báo mất/kết nối lại; xoay chứng chỉ 2/3 hạn; gợi ý server có lý do loại; ma trận quyền ADMIN |
+| Pest toàn bộ | `bash scripts/pest-pg.sh --parallel` | **476/476** |
+| Installer Go | `go test -race ./internal/install/` | PASS |
+| Lint · no-exec · contracts | `make lint-api` · `make no-exec` · `make codegen-check` | PASS · OK · OK |
+| Web | `pnpm lint` · `pnpm vitest run` | sạch (i18n 2964 key, vi = en) · **561/561** |
+| Docs | `make docs-check` | 0 lỗi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** enroll node thật qua relay, mất mạng thật giữa node và control plane (9.8 `tests/vm/phase9.sh`).
+
+## 2026-11-21 — Phase 9 / Prompt 9.3 (installer theo vai trò, `itso node`) — nhánh `phase-9`
+
+Phạm vi: `agent/internal/install/{node.go,steps.go,manage.go,release.go,env.go,preflight.go}` (+ `node_test.go`), `agent/internal/pki` (CSR join CN `itso-enroll`), `agent/cmd/itso` (`--role/--join/--token/--ca-sha256`, `pki`, `node`), `packaging/systemd/{itso-relay,itso-agent-node,itso-cert-rotate}.*`, `itso.target`, `packaging/Caddyfile`, `packaging/install.sh.in`, `scripts/release.sh` (build `itso-relay`), `tests/installer/install_sh_test.sh`, `docs/runbooks/multi-server.md`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Installer Go (gốc giả + runner giả) | `go test ./internal/install/` | **PASS**. Mới: control plane tạo CA/relay/enroll đúng quyền + chủ, unit relay + timer xoay, chạy lại không ghi gì và không sinh lại CA, đổi vai trò tại chỗ bị từ chối; node join với control plane giả (TLS do CA nội bộ cấp): không cài postgresql/redis/artisan/itso.target, file 0600/0644/0700, khóa HMAC riêng, output không lộ token/khóa, token không xuống đĩa; pin sai → dừng và **không gửi token**; token sai → `enrollment_invalid`; chứng chỉ trả về cho khóa khác → từ chối; tham số sai bị chặn trước mọi kết nối; `node status`/`leave --yes` (thiếu `--yes` lỗi)/`rejoin` (khóa mới, restart agent node); `update`/`rollback` trên node chỉ đổi release + restart `itso-agent-node`; `doctor` trên node kiểm chứng chỉ node, không kiểm dịch vụ panel |
+| PKI | `go test ./internal/pki/` | PASS (CSR join `itso-enroll` → chứng chỉ CN = server_uuid) |
+| Go toàn bộ | `go test -race ./...` · `make lint-agent` · `make no-exec` | PASS · sạch · OK |
+| Unit systemd | `make units-check` | `verify-units: OK (18 unit)` (mới: `itso-relay.service`, `itso-agent-node.service`, `itso-cert-rotate.service/.timer`) |
+| install.sh | `make test-installer` | **11/11** (mới: `--role node --join --token --ca-sha256` và `--role control-plane` chuyển nguyên cho `itso install`) |
+| Lint API · Docs | `make lint-api` · `make docs-check` | PASS · 0 lỗi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** cài control plane + join node thật, tường lửa, `systemctl` thật (9.8 `tests/vm/phase9.sh`). Lệnh `itso:certs-rotate` mà timer gọi được hiện thực ở 9.4.
+
+## 2026-11-21 — Phase 9 / Prompt 9.2 (CA nội bộ, itso-relay, agent node) — nhánh `phase-9`
+
+Phạm vi: `agent/internal/pki`, `agent/internal/ops/pki.go` (+ `pki_test.go`), `agent/internal/relay/{frame,hub,node,server}.go` (+ `relay_test.go`), `agent/cmd/itso-relay`, `agent/cmd/itso-agent` (`--mode node`); Laravel `AgentClient::forServer`, `AgentUnreachable`, `JobRunner`, `config/itso.php` (`relay.socket`, `relay.enroll_key_file`); `scripts/dev.sh` (relay + node sandbox).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go relay + PKI | `go test -race -count=5 ./internal/relay/` · `go test -race ./internal/pki/` | **PASS** (5 lần liền, không flaky). Kiểm: khứ hồi qua relay + `/v1/status`; envelope ký sai khóa server bị agent trả `unauthorized_caller` dù qua relay (handler không chạy); node chưa kết nối → 503; chứng chỉ CA khác / hết hạn / CN không phải uuid bị từ chối, thiếu chứng chỉ client → 401, `/v1/ca` trả đúng CA; thu hồi cắt kết nối ngay, chặn quay lại, lưu xuống đĩa; mất kết nối → node tự nối lại, gửi lại cùng op_id → kết quả cache, handler chạy đúng 1 lần; enroll chuyển tiếp có chữ ký relay đúng + IP client, lần 11 trong 10 phút → 429 |
+| Go op PKI | `go test ./internal/ops/ -run 'Pki\|CertRotate'` | PASS: chưa có CA → `precondition_failed`; ký đúng (CN, hạn ≤ 30 ngày, fingerprint khớp); CSR server khác → `enrollment_invalid`; chế độ node → `op_disabled`; xoay hai pha: chứng chỉ không khớp khóa chờ / CA khác → từ chối, đúng → thay `node.pem` + `node.key` nguyên tử |
+| Go toàn bộ | `go test -race ./...` · `make lint-agent` · `make no-exec` | PASS · gofmt + vet sạch · OK |
+| Smoke dev | `itso-relay dev-init/dev-issue` → relay `127.0.0.1:28455` + `itso-agent --sandbox --mode node` → `curl --unix-socket relay.sock /v1/status` + `system.ping` ký HMAC qua `/v1/nodes/{uuid}/ops` | node `connected:true`, ping `ok:true` |
+| Pest | `bash scripts/pest-pg.sh tests/Feature/Phase9 tests/Unit/AgentClientTest.php` rồi `--parallel` toàn bộ (467/467 PASS) | Lần đầu 1 lỗi (test tự tạo `job_steps` thiếu `op_id`) → dùng `JobDispatcher` → **10/10 PASS**. Mới: local/không agent → socket cục bộ; mtls → `http://relay/v1/nodes/{uuid}/ops`, chữ ký bằng khóa riêng node trên `/v1/ops`, khóa lưu mã hóa; 503 → `AgentUnreachable`; node bị thu hồi / chưa có khóa → `AgentUnavailable`; `JobRunner` gửi tới relay theo `server_id`, lỗi `agent_unreachable` |
+| Lint API | `make lint-api` | Lần đầu Pint báo import thừa → sửa → Pint PASS · PHPStan 0 lỗi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** relay + node trên 2 máy thật (9.8, `tests/vm/phase9.sh`).
+
+## 2026-11-21 — Phase 9 / Prompt 9.1 (ADR, contracts, migration) — nhánh `phase-9`
+
+Phạm vi: `docs/adr/0034–0038`; `contracts/tools/{gen_agent_ops,gen_vectors,schemas,gen_openapi,demo,check_contracts}.py`; `database/tools/{gen_dbml,gen_migrations}.py` (hỗ trợ đánh dấu `/* phase:N */` cho ALTER bảng Phase trước), `database/schema/extras.sql`, migration `2026_11_20_000009_phase_9_schema.php` (sinh), `database/tests/80_multiserver.sql`; Laravel: `PurgeService`/`BackupJobHandler` theo tham số `account.remove` mới, `ServerPresenter` (`node_role`, `transport`, `connection`, `last_seen_at`, `cert`), gợi ý server (`eligible`, `excluded_reasons`, `commit_pct`), `config/itso.php` (`relay.*`); mock agent theo `account.remove` mới.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | Lần đầu 1 lỗi (`/api/v1/internal/nodes:enroll` ngoài prefix admin cho phép) → thêm prefix `internal` vào kiểm tra → **PASS** (admin 270 operation, 117 op agent có schema, 251 vector độc, RE2 90 pattern) · OK |
+| Schema | `make db-schema` · `gen_migrations.py 3…8 --check` · `make db-verify` | Lần đầu lỗi trùng `agents_transport_chk` (đã có từ Phase 3) → bỏ câu trùng → migration Phase 3–8 khớp đặc tả (không sửa), Phase 3 → 11 áp lần lượt = itso.sql + extras.sql; **98 test SQL PASS** (mới 20: vai trò node, kết nối, chứng chỉ trùng/sai định dạng, token lưu rõ bị chặn, job `waiting_agent`, một lần chuyển mở mỗi account, `holding`, giữ nguồn ≤ 30 ngày) |
+| Pest | `bash scripts/pest-pg.sh --parallel` | Lần đầu 4 lỗi (bảng Phase 9 mới; Server/gợi ý thiếu trường contract mới) → cập nhật `SchemaTest` + presenter + gợi ý → **462/462 PASS** |
+| Lint API | `make lint-api` | Pint PASS · PHPStan 0 lỗi |
+| Go | `go vet ./...` · `go test ./...` | PASS (mock: `account.remove` thiếu `confirm` → `invalid_params`, sai username → `precondition_failed`) |
+| Docs | `make docs-check` | 0 lỗi markdownlint, link, mermaid |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-21 — Phase 9 / Prompt 9.0 (mockup multi-server & chuyển tài khoản) — nhánh `phase-9`
+
+Phạm vi: chỉ bản demo. Contracts (`schemas.py`, `gen_openapi.py`, `demo.py`): `JobState` thêm `waiting_agent`; `Server` thêm `node_role`, `transport`, `connection` (`online/degraded/unreachable/pending/revoked`), `last_seen_at`, `cert`; `EnrollmentToken.ca_sha256`; `PlacementSuggestion` thêm `eligible`, `excluded_reasons`, `commit_pct`; `MigrateRequest` bỏ `strategy`/`dry_run`; mới `MigrationPreflight`, `POST /hosting-accounts/{id}:migrate-preflight`, `POST /account-migrations/{id}:cleanup`, `POST /servers/{id}:revoke`; `AccountMigration` thêm `holding`, `verification` dạng danh sách, `dns`, `downtime_estimate_sec`, `cutover_at`, `error`; demo có 2 job trên node mất kết nối. UI: `servers/*` (vai trò/kênh/kết nối/chứng chỉ, banner offline, thẻ Kênh, thu hồi), `hosting/Placement` (dùng ở tạo account và chuyển account), `AccountMigratePage` (6 bước, giữ nguồn + dọn nguồn), `backups/RestoreNewPage` (chọn server đích), `pages/JobsPage` (lọc `waiting_agent`); MSW `admin.ts` (gợi ý D-92), `hosting.ts` (preflight/migrate/cutover → holding/rollback/cleanup), `infra.ts` (node join mTLS, revoke), `governance.ts` (khôi phục sang server khác: chỉ ra bản mới, đích phải online, `account.ensure` + `backup.restore`).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS (admin 269 operation, portal 114) · OK |
+| Dữ liệu demo | `python3 contracts/tools/check_demo.py` | OK — 13 account, 21 website, 10 database, 12 job |
+| Type + lint + i18n | `pnpm tsc -b --noEmit` · `pnpm lint` | PASS · PASS; `check-i18n: OK — 6 namespace, 2962 key, 0 thiếu (vi = en)` |
+| Vitest | `pnpm exec vitest run` | Lần đầu 3 lỗi (schema gợi ý server thiếu trường mới; preflight trả body thiếu `data`; test khôi phục còn chờ 422 khi sang server khác). Sửa MSW + test → **561/561 PASS** (37 file). Mới: preflight đích mất kết nối → chặn + migrate 409; migrate → verifying → cutover → holding → cleanup (sai username 422) → completed; rollback khi đang giữ nguồn đưa account về máy cũ; khôi phục sang server khác (ghi đè 422, node mất kết nối 409, đúng → `account.ensure`, `backup.restore`) |
+| Playwright demo | `pnpm exec playwright test --trace off e2e/demo-audit.spec.ts e2e/demo-backup8.spec.ts e2e/demo-hosting.spec.ts e2e/demo-infra.spec.ts` | Lần đầu 2 lỗi (lệnh join đổi sang `--token … --ca-sha256`; luồng chuyển có thêm bước giữ nguồn), sửa test → **92/92 PASS** (gồm axe) |
+| Ảnh mockup | `SCREENSHOT_DIR_P9=docs/screenshots/phase-9 pnpm exec playwright test --trace off e2e/screenshots-phase9.spec.ts` | 48/48 → 48 ảnh (12 màn × 1440/390 × light/dark); `make screenshots` có `SCREENSHOT_DIR_P9` |
+
+**Test bị bỏ qua:** không. **Chờ VM:** không áp dụng (chỉ demo).
+
 ## 2026-11-21 — Phase 8 / Prompt 8.7 (e2e, VM, review, release v0.1.0-alpha) — nhánh `phase-8`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue + Vite + itso-agent `--sandbox` dùng **restic 0.16.4 thật** + itso-gateway, `ITSO_ACME_EMAIL=ops@itso.local`), DB `migrate:fresh --seed` + `DemoSeeder`, gốc sandbox `.dev/agent-sandbox/root` xóa cùng lúc.

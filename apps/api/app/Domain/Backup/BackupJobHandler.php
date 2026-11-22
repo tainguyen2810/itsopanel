@@ -333,7 +333,11 @@ final class BackupJobHandler implements JobHandler
      */
     private function purged(Job $job, array $p, array $res, Carbon $now): void
     {
-        $pr = is_string($p['purge_uuid'] ?? null) ? PurgeRecord::query()->where('uuid', $p['purge_uuid'])->first() : null;
+        // account.remove dùng chung cho purge và dọn nguồn sau chuyển account (Phase 9): chỉ xử lý purge ở đây.
+        if (($p['reason'] ?? null) !== 'purge') {
+            return;
+        }
+        $pr = is_string($p['ref_uuid'] ?? null) ? PurgeRecord::query()->where('uuid', $p['ref_uuid'])->first() : null;
         $a = $pr instanceof PurgeRecord ? HostingAccount::withTrashed()->find($pr->hosting_account_id) : null;
         if (! $pr instanceof PurgeRecord || ! $a instanceof HostingAccount) {
             return;

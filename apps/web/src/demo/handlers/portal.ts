@@ -197,6 +197,12 @@ export function registerPortal() {
           message: `${a.username}: đã dùng hết ${u.websites.limit} website của gói`,
           severity: 'medium',
         });
+      if (a.lifecycle_state === 'migrating')
+        warnings.push({
+          code: 'account_migrating',
+          message: `${a.username}: đang chuyển sang máy chủ mới, tạm thời chỉ xem (không thay đổi được)`,
+          severity: 'medium',
+        });
       if (a.lifecycle_state === 'suspended')
         warnings.push({
           code: 'suspended',

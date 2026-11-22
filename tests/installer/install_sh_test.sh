@@ -42,6 +42,18 @@ if run "$T/dr" --restore --yes && grep -q "FAKE-ITSO install --release-dir $T/bo
   ok "--restore (khôi phục thảm họa) được chuyển nguyên cho itso install"
 else ko "--restore: $(cat "$T/out")"; fi
 
+mkrel "$T/node"
+PIN=$(printf '%064d' 0 | tr 0 a)
+if run "$T/node" --role node --join https://cp.itso.local:28444 --token itso_enr_abcdefghijklmnopqrstuvwxyz0123456789AB --ca-sha256 "$PIN" --yes \
+  && grep -q "FAKE-ITSO install --release-dir $T/boot-node --role node --join https://cp.itso.local:28444 --token itso_enr_abcdefghijklmnopqrstuvwxyz0123456789AB --ca-sha256 $PIN --yes" "$T/node/ran" 2>/dev/null; then
+  ok "--role node --join --token --ca-sha256 được chuyển nguyên cho itso install"
+else ko "--role node: $(cat "$T/out")"; fi
+
+mkrel "$T/cp"
+if run "$T/cp" --role control-plane --yes && grep -q "FAKE-ITSO install --release-dir $T/boot-cp --role control-plane --yes" "$T/cp/ran" 2>/dev/null; then
+  ok "--role control-plane được chuyển nguyên cho itso install"
+else ko "--role control-plane: $(cat "$T/out")"; fi
+
 mkrel "$T/badsig"; printf 'x' >> "$T/badsig/manifest.json"
 if ! run "$T/badsig" && grep -q "chữ ký manifest KHÔNG hợp lệ" "$T/out" && [ ! -e "$T/badsig/ran" ]; then ok "manifest bị sửa → từ chối"; else ko "chữ ký sai: $(cat "$T/out")"; fi
 

@@ -173,6 +173,8 @@ components:
       - invalid_state_transition
       - server_not_accepting
       - agent_unavailable
+      - agent_unreachable
+      - enrollment_invalid
       - job_failed
       - legal_hold_active
       - retention_not_elapsed
@@ -276,12 +278,15 @@ components:
       type: string
       enum:
       - queued
+      - waiting_agent
       - running
       - succeeded
       - failed
       - cancel_requested
       - cancelled
       - timed_out
+      description: '`waiting_agent`: server của job đang mất kết nối, job chờ tới hạn rồi `failed` mã `agent_unreachable`
+        (D-91).'
     JobStep:
       type: object
       properties:
@@ -2513,6 +2518,8 @@ components:
           - string
           - 'null'
           format: uuid
+          description: 'Chỉ Admin, chỉ mode=new (Phase 9, D-93): khôi phục sang server khác đọc cùng repo; account được tạo
+            ở đích nếu chưa có. Đích phải trực tuyến, nếu không 409 `agent_unreachable`.'
         confirm:
           type:
           - string

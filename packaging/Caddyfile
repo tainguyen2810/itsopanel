@@ -24,6 +24,11 @@
 		reverse_proxy 127.0.0.1:{$ITSO_GATEWAY_PORT:7811}
 	}
 
+	# Endpoint nội bộ (enroll node) chỉ nhận qua listener loopback dưới đây, từ itso-relay.
+	handle /api/v1/internal/* {
+		respond 404
+	}
+
 	@api path /api/* /sanctum/* /up
 	handle @api {
 		root * /opt/itso/current/api/public
@@ -38,5 +43,18 @@
 		root * /opt/itso/current/web
 		try_files {path} /admin/index.html
 		file_server
+	}
+}
+
+# Loopback cho itso-relay chuyển tiếp yêu cầu enroll node (ADR 0035); Laravel còn kiểm chữ ký relay.
+http://127.0.0.1:28480 {
+	bind 127.0.0.1
+	@enroll path /api/v1/internal/nodes:enroll
+	handle @enroll {
+		root * /opt/itso/current/api/public
+		php_server
+	}
+	handle {
+		respond 404
 	}
 }

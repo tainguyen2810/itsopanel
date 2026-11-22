@@ -43,6 +43,7 @@ var (
 	reSimEq         = regexp.MustCompile(`(?:User|rolname|schema_name|datname)='([a-z0-9_]+)'`)
 	reSimLike       = regexp.MustCompile(`LIKE '([a-z0-9]+)\\{1,2}_%'`)
 	reSimHost       = regexp.MustCompile(`Host='([^']+)'`)
+	reSimTable      = regexp.MustCompile(`table_(?:schema|catalog)='([a-z0-9_]+)'`)
 )
 
 func (s *dbSim) sql(bin, stmt string) platform.Result {
@@ -113,6 +114,20 @@ func (s *dbSim) query(bin, q string) string {
 	match := func(n string) bool {
 		return (eq != nil && n == eq[1]) || (like != nil && strings.HasPrefix(n, like[1]+"_"))
 	}
+	if strings.Contains(q, "COUNT(*) FROM information_schema.tables") { // migrate.verify: số bảng = số CREATE TABLE trong dump đã nạp
+		all := reSimTable.FindAllStringSubmatch(q, -1)
+		if all == nil {
+			return "0\n"
+		}
+		m := all[len(all)-1] // PG: table_schema='public' AND table_catalog='<db>'
+		n := 0
+		for _, l := range strings.Split(string(s.dumps[bin+"/"+m[1]]), "\n") {
+			if strings.HasPrefix(l, "CREATE TABLE") {
+				n++
+			}
+		}
+		return fmt.Sprintf("%d\n", n)
+	}
 	if strings.HasPrefix(q, "SELECT COUNT(*)") {
 		c := 0
 		for _, n := range names {
@@ -156,6 +171,13 @@ func (s *dbSim) query(bin, q string) string {
 func (s *dbSim) purePw(a []string) platform.Result {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if len(a) == 1 && a[0] == "list" {
+		var b strings.Builder
+		for _, n := range sortedKeys(s.pure) {
+			fmt.Fprintf(&b, "%s\t%s/./\n", n, s.pure[n][2])
+		}
+		return ok(b.String())
+	}
 	if len(a) < 2 {
 		return fail(1, "pure-pw: thiếu tham số")
 	}

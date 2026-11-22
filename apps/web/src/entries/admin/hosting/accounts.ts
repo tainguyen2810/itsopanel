@@ -68,7 +68,14 @@ export function daysLeft(until: string | null, now = Date.now()): number | null 
 }
 
 /** Bước hiện tại của wizard chuyển server theo trạng thái lần chuyển. */
-export const MIGRATION_STEPS = ['preflight', 'sync', 'verify', 'cutover', 'done'] as const;
+export const MIGRATION_STEPS = [
+  'preflight',
+  'sync',
+  'verify',
+  'cutover',
+  'holding',
+  'done',
+] as const;
 export type MigrationStep = (typeof MIGRATION_STEPS)[number];
 
 export function migrationStep(m: Pick<Migration, 'state'> | null | undefined): MigrationStep {
@@ -83,6 +90,9 @@ export function migrationStep(m: Pick<Migration, 'state'> | null | undefined): M
       return 'verify';
     case 'cutover':
       return 'cutover';
+    // Đã chạy ở đích, nguồn bị khóa và giữ tới `cleanup_after` (D-93); còn hoàn tác được.
+    case 'holding':
+      return 'holding';
     default:
       return 'done';
   }

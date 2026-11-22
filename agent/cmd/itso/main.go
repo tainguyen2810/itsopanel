@@ -34,6 +34,9 @@ const usage = `itso — quản trị ITSO Panel
 Dùng: itso [--root DIR --sandbox] <lệnh> [tùy chọn]
 
   install [--release-dir D] [--port N] [--no-firewall] [--yes] [--dry-run] [--restore]
+          [--role all-in-one|control-plane|node] [--join https://CP:28444 --token T --ca-sha256 PIN]
+  pki init | pki pin                               (control plane: CA nội bộ + chứng chỉ relay; in pin cho node)
+  node status | node rejoin --token T --ca-sha256 PIN [--join URL] | node leave --yes
   preflight [--release-dir D] [--port N]
   status | doctor | url | setup-code | version
   admin reset-password|reset-mfa <email>
@@ -58,6 +61,11 @@ func main() {
 // readOnly là lệnh không cần root.
 var readOnly = map[string]bool{"preflight": true, "status": true, "url": true, "version": true, "help": true, "doctor": true}
 
+// readOnlySub: lệnh con chỉ đọc (itso node status, itso pki pin).
+func readOnlySub(cmd string, rest []string) bool {
+	return len(rest) == 1 && ((cmd == "node" && rest[0] == "status") || (cmd == "pki" && rest[0] == "pin"))
+}
+
 func run(ctx context.Context, args []string, out, errw io.Writer) int {
 	g := flag.NewFlagSet("itso", flag.ContinueOnError)
 	g.SetOutput(errw)
@@ -78,7 +86,7 @@ func run(ctx context.Context, args []string, out, errw io.Writer) int {
 		return 2
 	}
 	dry := cmd == "install" && contains(rest, "--dry-run")
-	if !*sandbox && !readOnly[cmd] && !dry && os.Geteuid() != 0 {
+	if !*sandbox && !readOnly[cmd] && !readOnlySub(cmd, rest) && !dry && os.Geteuid() != 0 {
 		fmt.Fprintf(errw, "itso %s cần quyền root (sudo itso %s)\n", cmd, cmd)
 		return 1
 	}
@@ -141,9 +149,16 @@ func installFlags(name string, args []string) (install.Options, error) {
 	fs.BoolVar(&o.DryRun, "dry-run", false, "chỉ preflight + liệt kê bước")
 	if name == "install" {
 		fs.BoolVar(&o.Restore, "restore", false, "cài như mới rồi vào chế độ khôi phục từ backup (DR)")
+		fs.StringVar(&o.Role, "role", install.RoleAllInOne, "all-in-one | control-plane | node")
+		fs.StringVar(&o.Join, "join", "", "node: URL relay của control plane (https://CP:28444)")
+		fs.StringVar(&o.Token, "token", "", "node: token join một lần (hoặc biến môi trường ITSO_JOIN_TOKEN)")
+		fs.StringVar(&o.CASHA256, "ca-sha256", "", "node: sha256 CA nội bộ (ghim trước khi gửi token)")
 	}
 	if err := fs.Parse(args); err != nil {
 		return o, errUsage
+	}
+	if o.Role == install.RoleNode && o.Token == "" {
+		o.Token = os.Getenv("ITSO_JOIN_TOKEN")
 	}
 	if o.Port < 1024 || o.Port > 65535 {
 		return o, fmt.Errorf("--port phải trong 1024–65535")
@@ -267,6 +282,61 @@ func dispatch(ctx context.Context, e *install.Env, cmd string, args []string) er
 		return e.Logs(ctx, args[0], *n)
 	case "backup":
 		return backupCmd(ctx, e, args)
+	case "pki":
+		switch {
+		case len(args) == 1 && args[0] == "init":
+			if e.Role() == install.RoleNode {
+				return errors.New("node không giữ CA (CA chỉ ở control plane)")
+			}
+			if err := e.PKIInit(); err != nil {
+				return err
+			}
+			fallthrough
+		case len(args) == 1 && args[0] == "pin":
+			pin, err := e.CAPin()
+			if err != nil {
+				return fmt.Errorf("chưa có CA nội bộ (itso pki init): %w", err)
+			}
+			fmt.Fprintf(e.Out, "CA nội bộ sha256: %s\n", pin)
+			return nil
+		}
+		return errUsage
+	case "node":
+		return nodeCmd(ctx, e, args)
 	}
 	return fmt.Errorf("%w: lệnh lạ %q", errUsage, cmd)
+}
+
+func nodeCmd(ctx context.Context, e *install.Env, args []string) error {
+	if len(args) == 0 {
+		return errUsage
+	}
+	switch args[0] {
+	case "status":
+		if len(args) != 1 {
+			return errUsage
+		}
+		return e.NodeStatus(ctx)
+	case "rejoin":
+		fs := flag.NewFlagSet("node rejoin", flag.ContinueOnError)
+		var j install.JoinOptions
+		fs.StringVar(&j.URL, "join", "", "URL relay (mặc định: relay trong /etc/itso/node.json)")
+		fs.StringVar(&j.Token, "token", "", "token join một lần (hoặc ITSO_JOIN_TOKEN)")
+		fs.StringVar(&j.CASHA256, "ca-sha256", "", "sha256 CA nội bộ")
+		if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 {
+			return errUsage
+		}
+		if j.Token == "" {
+			j.Token = os.Getenv("ITSO_JOIN_TOKEN")
+		}
+		return e.NodeRejoin(ctx, j)
+	case "leave":
+		fs := flag.NewFlagSet("node leave", flag.ContinueOnError)
+		yes := fs.Bool("yes", false, "xác nhận rời control plane")
+		if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 {
+			return errUsage
+		}
+		return e.NodeLeave(ctx, *yes)
+	}
+	return errUsage
 }

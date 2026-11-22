@@ -1740,7 +1740,7 @@ export interface components {
             expires_at: string;
         };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "agent_unreachable" | "enrollment_invalid" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -1920,8 +1920,11 @@ export interface components {
             contents: ("files" | "databases" | "config")[];
             note?: string | null;
         };
-        /** @enum {string} */
-        JobState: "queued" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled" | "timed_out";
+        /**
+         * @description `waiting_agent`: server của job đang mất kết nối, job chờ tới hạn rồi `failed` mã `agent_unreachable` (D-91).
+         * @enum {string}
+         */
+        JobState: "queued" | "waiting_agent" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled" | "timed_out";
         ResourceRef: {
             type: string;
             /** Format: uuid */
@@ -2475,7 +2478,10 @@ export interface components {
             /** @enum {string} */
             mode: "new" | "overwrite";
             items: string[];
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Chỉ Admin, chỉ mode=new (Phase 9, D-93): khôi phục sang server khác đọc cùng repo; account được tạo ở đích nếu chưa có. Đích phải trực tuyến, nếu không 409 `agent_unreachable`.
+             */
             target_server_uuid?: string | null;
             confirm?: string | null;
         };

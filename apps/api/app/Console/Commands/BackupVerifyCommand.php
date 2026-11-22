@@ -67,6 +67,6 @@ final class BackupVerifyCommand extends Command
         $res = $r->hosting_account_id !== null ? ['hosting_account', $r->hosting_account_id] : ['server', $r->server_id];
 
         return Job::query()->whereIn('type', BackupService::JOB_TYPES)->where('resource_type', $res[0])->where('resource_id', $res[1])
-            ->whereIn('state', ['queued', 'running', 'cancel_requested'])->exists();
+            ->whereIn('state', ['queued', 'running', 'cancel_requested', 'waiting_agent'])->exists();
     }
 }

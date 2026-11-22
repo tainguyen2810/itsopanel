@@ -126,7 +126,8 @@ for name in ("itso-admin-v1", "itso-portal-v1"):
             if bad:
                 fail(f"portal chứa tài nguyên admin-only {sorted(bad)}: {path}")
         else:
-            if not re.match(r"^/api/v1/(admin|auth|system)(/|$)", path):
+            # /api/v1/internal: chỉ itso-relay gọi qua loopback (Phase 9, enroll node).
+            if not re.match(r"^/api/v1/(admin|auth|system|internal)(/|$)", path):
                 fail(f"admin có path ngoài prefix cho phép: {path}")
         for method in METHODS:
             if method not in item:

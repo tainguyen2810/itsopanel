@@ -112,6 +112,21 @@
       "description": "Host key SFTP khác bản đã ghim (D-83)"
     },
     {
+      "code": "agent_unreachable",
+      "retryable": true,
+      "description": "Node không kết nối tới relay trong hạn chờ của job (D-91)"
+    },
+    {
+      "code": "cert_expired",
+      "retryable": false,
+      "description": "Chứng chỉ mTLS của node hết hạn hoặc bị thu hồi (D-90)"
+    },
+    {
+      "code": "enrollment_invalid",
+      "retryable": false,
+      "description": "Token join sai, hết hạn, đã dùng, hoặc CSR không hợp lệ (D-90)"
+    },
+    {
       "code": "internal",
       "retryable": true,
       "description": "Lỗi nội bộ agent"

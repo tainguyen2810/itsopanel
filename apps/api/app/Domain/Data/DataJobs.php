@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class DataJobs
 {
-    public const ACTIVE = ['queued', 'running', 'cancel_requested'];
+    public const ACTIVE = ['queued', 'running', 'cancel_requested', 'waiting_agent'];
 
     /** Tài nguyên có cột last_job_id (job gần nhất áp desired state). */
     private const TRACKED = [Database::class, DatabaseUser::class, SftpAccount::class, CronJob::class];

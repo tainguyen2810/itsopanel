@@ -120,6 +120,16 @@ DEFS = {
         obj({"type": {"const": "rest"}, "destination_uuid": d("Uuid"), "url": d("HttpsUrl"), "user": d("RemoteUser"),
              "password": {**s(minLength=8, maxLength=256, pattern="^[\\x21-\\x7e]+$"), "writeOnly": True}}),
     ], "description": "Đích kiểu hóa (D-83): agent dựng URL repo (local:/var/backups/itso/repos/…, sftp:user@host:path/…, s3:endpoint/bucket/…, rest:https://user@host/…); credential chỉ là credential GHI, tới agent qua tham chiếu bí mật."},
+    # Phase 9 (D-88…D-93)
+    "CsrPem": s(maxLength=8192, pattern="^-----BEGIN CERTIFICATE REQUEST-----\\n[A-Za-z0-9+/=\\n]+-----END CERTIFICATE REQUEST-----\\n?$",
+                description="CSR PEM (ECDSA P-256) do node tự sinh; khóa riêng không rời node (D-90)."),
+    "CertPem": s(maxLength=16384, pattern="^(-----BEGIN CERTIFICATE-----\\n[A-Za-z0-9+/=\\n]+-----END CERTIFICATE-----\\n?)+$",
+                 description="Chứng chỉ PEM (có thể kèm chuỗi CA)."),
+    "HttpCheckPath": s(maxLength=512, pattern="^/[A-Za-z0-9._~%/-]*$", **{"not": {"pattern": "(^|/)\\.{1,2}(/|$)|%2[eEfF]|//"}},
+                       description="Đường dẫn tương đối gửi tới 127.0.0.1 của node (http.check); cấm traversal, mã hóa %2e/%2f, //."),
+    "MigrationRole": enum("source", "target"),
+    "MigrationCheck": obj({"kind": enum("files", "database", "http", "ssl", "cron", "ownership"), "name": s(maxLength=255),
+                           "ok": b(), "detail": s(maxLength=500)}),
     "BackupRepo": obj({"repo_uuid": d("Uuid"), "path": d("BackupRepoPath"), "destination": d("BackupDestination"),
                        "password": d("RepoPassword")}),
     "BackupDb": obj({"engine": d("DbEngine"), "name": d("DbName")}),
@@ -170,7 +180,8 @@ OPS = [
     ("account.suspend", "account", "high", True, 4, "root", 60, obj({"account": A, "reason": s(maxLength=200)}), obj({"suspended": b()})),
     ("account.unsuspend", "account", "high", True, 4, "root", 60, obj({"account": A}), obj({"suspended": b()})),
     ("account.remove", "account", "critical", True, 8, "root", 1800,
-     obj({"account": A, "purge_uuid": d("Uuid"), "final_snapshot_id": s(pattern="^[0-9a-f]{8,64}$"), "confirm_username": d("Username")}),
+     obj({"account": A, "reason": enum("purge", "migrated"), "ref_uuid": d("Uuid"), "final_snapshot_id": d("ResticSnapshotId"),
+          "confirm_username": d("Username"), "confirm": {"const": True}}),
      obj({"removed_objects": arr(obj({"kind": s(), "name": s(), "sha256": {"type": ["string", "null"]}}))})),
     ("account.limits.apply", "account", "high", True, 4, "root", 60, obj({"account": A, "limits": d("Limits")}),
      obj({"applied": b(), "slice": s(pattern="^itso-acct-[0-9]{5}\\.slice$")})),
@@ -494,14 +505,46 @@ OPS = [
      obj({"repo": d("BackupRepo"), "snapshot_ids": arr(d("ResticSnapshotId"), minItems=1, maxItems=1000, uniqueItems=True),
           "prune": b()}),
      obj({"forgotten": i(minimum=0), "pruned": b()})),
-    # -- migrate (D-48)
-    ("migrate.preflight", "migrate", "high", True, 9, "root", 600, obj({"account": A, "target_server_uuid": d("Uuid")}),
-     obj({"ok": b(), "checks": arr(obj({"key": s(), "ok": b(), "detail": s()}))})),
-    ("migrate.sync", "migrate", "high", True, 9, "root", 86400, obj({"account": A, "target_server_uuid": d("Uuid"), "pass": i(minimum=1, maximum=10)}), obj({"bytes": d("Bytes")})),
-    ("migrate.verify", "migrate", "high", True, 9, "root", 3600, obj({"account": A, "target_server_uuid": d("Uuid")}),
-     obj({"files_checked": i(), "mismatched": i(), "databases": {"type": "object", "additionalProperties": s()}})),
-    ("migrate.cutover", "migrate", "critical", True, 9, "root", 1800, obj({"account": A, "target_server_uuid": d("Uuid")}), obj({"downtime_sec": i()})),
-    ("migrate.rollback", "migrate", "high", True, 9, "root", 1800, obj({"account": A, "source_server_uuid": d("Uuid")}), obj({"rolled_back": b()})),
+    # -- multi-server (D-89, D-90): CA chỉ ở agent local của control plane
+    ("pki.sign_csr", "pki", "critical", True, 9, "root", 30,
+     obj({"server_uuid": d("Uuid"), "csr": d("CsrPem"), "ttl_days": i(minimum=1, maximum=30), "serial_hint": s(pattern="^[0-9a-f]{16,40}$")},
+         required=["server_uuid", "csr", "ttl_days"]),
+     obj({"cert_pem": d("CertPem"), "chain_pem": d("CertPem"), "serial": s(pattern="^[0-9a-f]{16,40}$"),
+          "fingerprint_sha256": d("Sha256"), "not_before": s(format="date-time"), "not_after": s(format="date-time")})),
+    # Hai pha: không có cert_pem → node sinh khóa mới + trả CSR; có cert_pem → cài chứng chỉ khớp khóa đang chờ.
+    ("agent.cert.rotate", "pki", "high", True, 9, "root", 60,
+     obj({"server_uuid": d("Uuid"), "cert_pem": {"oneOf": [d("CertPem"), {"type": "null"}]}}),
+     obj({"csr": {"oneOf": [d("CsrPem"), {"type": "null"}]}, "installed": b(),
+          "fingerprint_sha256": {"oneOf": [d("Sha256"), {"type": "null"}]}})),
+    ("http.check", "web", "low", True, 9, "root", 30,
+     obj({"host": d("Domain"), "path": d("HttpCheckPath"), "scheme": enum("http", "https"),
+          "expect_status": arr(i(minimum=100, maximum=599), minItems=1, maxItems=10, uniqueItems=True)}),
+     obj({"status": i(minimum=0, maximum=599), "ok": b(), "duration_ms": i(minimum=0),
+          "body_sha256": {"oneOf": [d("Sha256"), {"type": "null"}]}})),
+    # -- chuyển account (D-93): dữ liệu đi qua repo restic (backup.run ở nguồn, backup.restore ở đích),
+    # không op nào nhận host/đường dẫn tự do; vai trò quyết định agent làm gì trên máy của mình.
+    ("migrate.preflight", "migrate", "high", True, 9, "root", 600,
+     obj({"account": A, "migration_uuid": d("Uuid"), "repo": d("BackupRepo"), "need_bytes": d("Bytes"),
+          "php_versions": arr(d("PhpVersion"), maxItems=10, uniqueItems=True), "databases": arr(d("BackupDb"), maxItems=100),
+          "sites": arr(d("Domain"), maxItems=100),
+          # enforce: chạy ở đầu chặng đích của lượt chuyển: còn mục block → op lỗi precondition_failed (dừng job).
+          "enforce": b()},
+         ["account", "migration_uuid", "repo", "need_bytes", "php_versions", "databases", "sites"]),
+     obj({"ok": b(), "checks": arr(obj({"key": s(pattern="^[a-z_]{2,32}$"), "level": enum("ok", "warn", "block"),
+                                        "message": s(maxLength=500)}), maxItems=50)})),
+    ("migrate.verify", "migrate", "high", True, 9, "root", 3600,
+     obj({"account": A, "migration_uuid": d("Uuid"), "repo": d("BackupRepo"), "snapshot_id": d("ResticSnapshotId"),
+          "databases": arr(d("BackupDb"), maxItems=100), "sites": arr(d("Domain"), maxItems=100)}),
+     obj({"ok": b(), "checks": arr(d("MigrationCheck"), maxItems=500)})),
+    # source: khóa account (dừng PHP-FPM/cron/SFTP, trang bảo trì) trước lượt sync cuối;
+    # target: bật pool/vhost/cron/SFTP đã restore.
+    ("migrate.cutover", "migrate", "critical", True, 9, "root", 1800,
+     obj({"account": A, "migration_uuid": d("Uuid"), "role": d("MigrationRole")}),
+     obj({"done": b(), "at": s(format="date-time")})),
+    # source: mở khóa account; target: gỡ bản đã restore (chỉ khi migration chưa dọn nguồn).
+    ("migrate.rollback", "migrate", "high", True, 9, "root", 1800,
+     obj({"account": A, "migration_uuid": d("Uuid"), "role": d("MigrationRole")}),
+     obj({"rolled_back": b()})),
 ]
 
 # Op của Phase 8–10: chỉ khai báo tên, rủi ro, mặc định (schema chi tiết viết ở Phase tương ứng).
@@ -536,6 +579,9 @@ ERRORS = [
     ("repo_not_initialized", False, "Repo restic chưa khởi tạo ở đích"),
     ("repo_auth_failed", False, "Sai mật khẩu repo hoặc credential đích"),
     ("host_key_mismatch", False, "Host key SFTP khác bản đã ghim (D-83)"),
+    ("agent_unreachable", True, "Node không kết nối tới relay trong hạn chờ của job (D-91)"),
+    ("cert_expired", False, "Chứng chỉ mTLS của node hết hạn hoặc bị thu hồi (D-90)"),
+    ("enrollment_invalid", False, "Token join sai, hết hạn, đã dùng, hoặc CSR không hợp lệ (D-90)"),
     ("internal", True, "Lỗi nội bộ agent"),
 ]
 

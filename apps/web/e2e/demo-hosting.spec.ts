@@ -104,7 +104,7 @@ test('sửa giới hạn gói tạo phiên bản mới (D-43) và so sánh đư�
   expect(errors).toEqual([]);
 });
 
-test('chuyển máy chủ: kiểm tra xong → cutover → tài khoản ở máy đích', async ({ page }) => {
+test('chuyển máy chủ: kiểm tra xong → cutover → giữ nguồn → dọn nguồn', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`/admin/hosting-accounts/${LEHOA}/migrate`);
   await expect(page.getByRole('heading', { name: 'Kiểm tra dữ liệu' })).toBeVisible();
@@ -114,9 +114,46 @@ test('chuyển máy chủ: kiểm tra xong → cutover → tài khoản ở máy
   await dlg.getByRole('button', { name: 'Cutover' }).click();
   await expect(page.getByText('Đã xong: Cutover chuyển máy chủ')).toBeVisible({ timeout: 15_000 });
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading', { name: 'Giữ nguồn' })).toBeVisible();
+  await expect(page.getByText('Account đang chạy ở srv-hn-02')).toBeVisible();
+  await expect(page.getByText('lehoa.vn A 10.10.1.12', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Dọn nguồn ngay' }).click();
+  const clean = page.getByRole('alertdialog', { name: /Xóa bản cũ trên srv-hcm-01/ });
+  await clean.getByRole('textbox').fill('lehoa');
+  await clean.getByRole('button', { name: 'Dọn nguồn ngay' }).click();
+  await expect(page.getByText('Đã xong: Dọn máy nguồn sau khi chuyển')).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.keyboard.press('Escape');
   await expect(page.getByText('Đã chuyển sang srv-hn-02')).toBeVisible();
   await page.getByRole('link', { name: 'Về tài khoản' }).click();
   await expect(page.getByRole('heading', { name: 'lehoa' })).toBeVisible();
   await expect(page.getByText(/Lê Hoa · srv-hn-02/)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('danh sách lượt chuyển → mở wizard; ADMIN cũng vào được wizard chuyển (cần phạm vi cả hai server)', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await page.goto('/admin/hosting-accounts');
+  await page.getByRole('link', { name: 'Lượt chuyển' }).click();
+  await expect(page.getByRole('heading', { name: 'Lượt chuyển máy chủ' })).toBeVisible();
+  const row = page.getByRole('row', { name: /lehoa/ });
+  await expect(row).toContainText('srv-hcm-01');
+  await expect(row).toContainText('srv-hn-02');
+  await row.getByRole('link', { name: 'lehoa' }).click();
+  await expect(page.getByRole('heading', { name: 'Kiểm tra dữ liệu' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('máy chủ mất kết nối: banner ở danh sách server dẫn tới job đang chờ node', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await page.goto('/admin/servers');
+  const banner = page.getByRole('alert').filter({ hasText: /đang mất kết nối/ });
+  await expect(banner).toContainText('srv-hcm-01');
+  await expect(banner.getByRole('link', { name: /job/i })).toBeVisible();
   expect(errors).toEqual([]);
 });

@@ -35,7 +35,7 @@ final class JobController
 
     public function index(Request $request): JsonResponse
     {
-        $request->validate(['filter.state' => ['sometimes', 'in:queued,running,succeeded,failed,cancel_requested,cancelled,timed_out']]);
+        $request->validate(['filter.state' => ['sometimes', 'in:queued,running,succeeded,failed,cancel_requested,cancelled,timed_out,waiting_agent']]);
         $q = $this->access->jobs($this->user($request));
         $state = $request->input('filter.state');
         if (is_string($state)) {

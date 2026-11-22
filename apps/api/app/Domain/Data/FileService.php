@@ -41,7 +41,7 @@ final class FileService
     public function list(User $actor, HostingAccount $a, string $path): array
     {
         $path = DataSpec::relPath($path);
-        $d = $this->call($actor, 'fs.list', ['account' => DataSpec::acct($a), 'path' => $path, 'show_hidden' => true, 'limit' => 5000]);
+        $d = $this->call($actor, $a, 'fs.list', ['account' => DataSpec::acct($a), 'path' => $path, 'show_hidden' => true, 'limit' => 5000]);
         $out = [];
         foreach ((array) ($d['entries'] ?? []) as $e) {
             $name = (string) ($e['name'] ?? '');
@@ -58,7 +58,7 @@ final class FileService
     public function read(User $actor, HostingAccount $a, string $path): array
     {
         $path = DataSpec::relPath($path, 'path', false);
-        $st = $this->call($actor, 'fs.stat', ['account' => DataSpec::acct($a), 'path' => $path]);
+        $st = $this->call($actor, $a, 'fs.stat', ['account' => DataSpec::acct($a), 'path' => $path]);
         if (($st['exists'] ?? false) !== true) {
             throw new ApiProblem(404, 'not_found', 'Không tìm thấy file', "Không có $path trong home.");
         }
@@ -68,7 +68,7 @@ final class FileService
         if ((int) ($st['size'] ?? 0) > self::MAX_EDIT) {
             throw ApiProblem::field('path', 'File lớn hơn 2 MiB: dùng tải xuống thay vì mở trong editor.');
         }
-        $d = $this->call($actor, 'fs.read', ['account' => DataSpec::acct($a), 'path' => $path, 'max_bytes' => self::MAX_EDIT]);
+        $d = $this->call($actor, $a, 'fs.read', ['account' => DataSpec::acct($a), 'path' => $path, 'max_bytes' => self::MAX_EDIT]);
         $raw = base64_decode((string) ($d['content_b64'] ?? ''), true) ?: '';
         $utf8 = mb_check_encoding($raw, 'UTF-8') && ! str_contains($raw, "\0");
         $etag = '"'.((string) ($d['file_sha256'] ?? $d['sha256'] ?? '')).'"';
@@ -103,13 +103,13 @@ final class FileService
             }
             $params['if_sha256'] = $sha;
         }
-        $res = $this->raw($actor, 'fs.write', $params);
+        $res = $this->raw($actor, $a, 'fs.write', $params);
         if (! $res->ok && ($res->error['code'] ?? '') === 'precondition_failed') {
             throw new ApiProblem(412, 'precondition_failed', 'File đã bị sửa nơi khác', 'Tải lại file rồi sửa lại.');
         }
         $this->ensureOk($res);
         $this->log($actor, $a, 'write', [$path], null, 'succeeded');
-        $st = $this->call($actor, 'fs.stat', ['account' => DataSpec::acct($a), 'path' => $path]);
+        $st = $this->call($actor, $a, 'fs.stat', ['account' => DataSpec::acct($a), 'path' => $path]);
 
         return ['name' => basename($path), 'path' => $path, 'type' => 'file', 'size' => (int) ($st['size'] ?? strlen($content)),
             'mode' => self::mode((string) ($st['mode'] ?? '0644')), 'owner' => $a->username,
@@ -307,7 +307,7 @@ final class FileService
             || ! hash_equals(self::sign($a, $path, (int) $exp, $actor), $sig)) {
             throw new ApiProblem(403, 'forbidden', 'Link tải xuống không hợp lệ hoặc đã hết hạn', 'Tạo link mới.');
         }
-        $st = $this->call($actor, 'fs.stat', ['account' => DataSpec::acct($a), 'path' => $path]);
+        $st = $this->call($actor, $a, 'fs.stat', ['account' => DataSpec::acct($a), 'path' => $path]);
         if (($st['exists'] ?? false) !== true || ($st['type'] ?? '') !== 'file') {
             throw new ApiProblem(404, 'not_found', 'Không tìm thấy file', "Không có file $path.");
         }
@@ -319,7 +319,7 @@ final class FileService
     /** Đọc một khúc (dùng trong StreamedResponse). */
     public function chunkAt(User $actor, HostingAccount $a, string $path, int $offset): string
     {
-        $d = $this->call($actor, 'fs.read', ['account' => DataSpec::acct($a), 'path' => $path, 'max_bytes' => self::READ_CHUNK, 'offset' => $offset]);
+        $d = $this->call($actor, $a, 'fs.read', ['account' => DataSpec::acct($a), 'path' => $path, 'max_bytes' => self::READ_CHUNK, 'offset' => $offset]);
 
         return base64_decode((string) ($d['content_b64'] ?? ''), true) ?: '';
     }
@@ -342,10 +342,10 @@ final class FileService
     }
 
     /** @param  array<string, mixed>  $params */
-    private function raw(User $actor, string $op, array $params): AgentResult
+    private function raw(User $actor, HostingAccount $a, string $op, array $params): AgentResult
     {
         try {
-            return $this->agent->call($op, $params, (string) Str::uuid7().':1:1',
+            return $this->agent->forServer($a->server_id)->call($op, $params, (string) Str::uuid7().':1:1',
                 ['user_uuid' => $actor->uuid, 'role' => $actor->roleKey() ?? 'SYSTEM'], 30.0);
         } catch (AgentUnavailable $e) {
             throw new ApiProblem(503, 'agent_unavailable', 'Agent không kết nối', mb_substr($e->getMessage(), 0, 200));
@@ -356,9 +356,9 @@ final class FileService
      * @param  array<string, mixed>  $params
      * @return array<string, mixed>
      */
-    private function call(User $actor, string $op, array $params): array
+    private function call(User $actor, HostingAccount $a, string $op, array $params): array
     {
-        $res = $this->raw($actor, $op, $params);
+        $res = $this->raw($actor, $a, $op, $params);
         $this->ensureOk($res);
 
         return (array) $res->data;

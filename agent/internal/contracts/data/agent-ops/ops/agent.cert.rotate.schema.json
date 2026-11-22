@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/agent.cert.rotate.schema.json",
+  "title": "agent.cert.rotate",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "server_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "cert_pem": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/CertPem"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "server_uuid",
+        "cert_pem"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "csr": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/CsrPem"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "installed": {
+          "type": "boolean"
+        },
+        "fingerprint_sha256": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "csr",
+        "installed",
+        "fingerprint_sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

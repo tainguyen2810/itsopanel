@@ -8,6 +8,7 @@ import { InfoList } from '@/shared/page/InfoList';
 import { PageHeader } from '@/shared/page/PageHeader';
 import { ErrorState, PageSkeleton, TableSkeleton } from '@/shared/page/states';
 import { useCrumbName } from '@/shared/routing/crumbs';
+import { Alert } from '@/ui/Alert';
 import { AppLink } from '@/ui/AppLink';
 import { Badge, StatusBadge } from '@/ui/Badge';
 import { Card, CardContent, CardHeader } from '@/ui/Card';
@@ -49,6 +50,11 @@ export default function AccountDetailPage() {
         meta={<StatusBadge status={a.lifecycle_state} />}
         description={t('pt.accountHint', { name: a.package.name })}
       />
+      {a.lifecycle_state === 'migrating' && (
+        <Alert tone="info" title={t('pt.migratingTitle')} className="mb-4">
+          {t('pt.migratingHint')}
+        </Alert>
+      )}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
           <Card>

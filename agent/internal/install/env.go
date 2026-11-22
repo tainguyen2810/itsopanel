@@ -7,11 +7,13 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"runtime"
 	"strconv"
 	"strings"
@@ -61,6 +63,8 @@ type Env struct {
 	// HealthWait: số lần kiểm sức khỏe sau update (mỗi lần cách HealthDelay).
 	HealthTries int
 	HealthDelay time.Duration
+	// HTTP (test) dựng client HTTPS cho join node; mặc định http.Client thường với cấu hình TLS cho trước.
+	HTTP func(*tls.Config) *http.Client
 	// IP trả địa chỉ in trong URL (mặc định: IPv4 đầu tiên không phải loopback).
 	IP func() string
 }

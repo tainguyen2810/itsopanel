@@ -119,6 +119,18 @@ export async function dispatch(request: Request): Promise<Reply | null> {
     const realm = url.pathname.startsWith('/api/v1/portal/') ? 'portal' : 'admin';
     const store = db();
     store.tick();
+    // Như API thật (DataJobs): account đang chuyển server → mọi thao tác ghi dữ liệu của account bị chặn 409.
+    const accUuid = (body as { hosting_account_uuid?: unknown } | undefined)?.hosting_account_uuid;
+    if (method !== 'get' && typeof accUuid === 'string') {
+      const acc = store.data.accounts.find((a) => a.uuid === accUuid);
+      if (acc?.lifecycle_state === 'migrating')
+        return problem(
+          409,
+          'invalid_state_transition',
+          'Account đang chuyển máy chủ',
+          `Account ${acc.username} đang chuyển sang máy chủ mới: tạm thời chỉ xem.`,
+        );
+    }
     return r.fn({
       db: store,
       params,

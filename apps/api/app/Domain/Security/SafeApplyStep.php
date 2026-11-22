@@ -99,7 +99,7 @@ abstract class SafeApplyStep implements PanelStep
         $u = $job->requested_by_user_id !== null ? User::query()->find($job->requested_by_user_id) : null;
         $by = $u instanceof User ? ['user_uuid' => $u->uuid, 'role' => $u->roleKey() ?? 'SYSTEM'] : null;
         try {
-            return $this->agent->call($this->op(), $params, $job->uuid.':'.max(1, $seq).':0', $by, 60.0);
+            return $this->agent->forServer($job->server_id)->call($this->op(), $params, $job->uuid.':'.max(1, $seq).':0', $by, 60.0);
         } catch (AgentUnavailable $e) {
             throw new PanelStepFailed('agent_unavailable', mb_substr($e->getMessage(), 0, 300), true);
         }

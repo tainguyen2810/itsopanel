@@ -37,5 +37,10 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0031](0031-backup-content-consistency.md) | Nội dung backup, dump DB nhất quán, backup panel mã hóa age | Accepted | D-84 |
 | [0032](0032-restore-staging.md) | Khôi phục qua staging root rồi helper uid account | Accepted | D-85 |
 | [0033](0033-backup-verify-dr.md) | Lịch, quota, kiểm chứng 3-2-1-1-0, khôi phục thảm họa | Accepted | D-86, D-87 |
+| [0034](0034-roles-topology.md) | Vai trò cài đặt all-in-one / control-plane / node | Accepted | D-88 |
+| [0035](0035-agent-relay-mtls.md) | itso-relay mTLS, node kết nối ra, khóa HMAC mỗi server | Accepted | D-89 |
+| [0036](0036-internal-ca.md) | CA nội bộ, chứng chỉ node 30 ngày, token join | Accepted | D-90 |
+| [0037](0037-jobs-offline-placement.md) | Job chờ node, trạng thái kết nối, gợi ý server | Accepted | D-91, D-92 |
+| [0038](0038-account-migration.md) | Chuyển account qua repo restic, giữ nguồn, dọn dẹp | Accepted | D-93 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

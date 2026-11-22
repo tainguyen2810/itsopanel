@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 233,
+  "total": 251,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -1679,6 +1679,129 @@
           "expect": "reject",
           "layer": "schema",
           "note": "local không nhận đường dẫn (cố định /var/backups/itso/repos)"
+        }
+      ]
+    },
+    "csr_pem": {
+      "schema": "agent-ops/defs.schema.json#/$defs/CsrPem",
+      "vectors": [
+        {
+          "input": "-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\nMDAwMjAwMDAwNDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA==\n-----END CERTIFICATE REQUEST-----\n",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "CSR PEM đúng khung"
+        },
+        {
+          "input": "-----BEGIN CERTIFICATE REQUEST-----\nMIIB\n-----END CERTIFICATE REQUEST-----\n-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----\n",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Kèm khóa riêng sau CSR"
+        },
+        {
+          "input": "-----BEGIN CERTIFICATE REQUEST-----\nMIIB;id\n-----END CERTIFICATE REQUEST-----\n",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự ngoài base64"
+        },
+        {
+          "input": "MIIBszCCARwCAQAw",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Thiếu khung PEM"
+        },
+        {
+          "input": "-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\nMDAwMjAwMDAwNDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA==\n-----END CERTIFICATE REQUEST-----\n",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "CN khác server_uuid được token cấp: pki.sign_csr từ chối (enrollment_invalid)"
+        },
+        {
+          "input": "-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\nMDAwMjAwMDAwNDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA==\n-----END CERTIFICATE REQUEST-----\n",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Khóa RSA/khóa yếu hoặc có SAN/IsCA: pki.sign_csr chỉ nhận ECDSA P-256, bỏ mọi extension xin thêm"
+        }
+      ]
+    },
+    "http_check_path": {
+      "schema": "agent-ops/defs.schema.json#/$defs/HttpCheckPath",
+      "vectors": [
+        {
+          "input": "/",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Trang chủ"
+        },
+        {
+          "input": "/wp-login.php",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Đường dẫn file"
+        },
+        {
+          "input": "/../../etc/passwd",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal"
+        },
+        {
+          "input": "/%2e%2e/etc/passwd",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal mã hóa %2e"
+        },
+        {
+          "input": "//169.254.169.254/latest",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Hai gạch đầu (URL không scheme tới host khác)"
+        },
+        {
+          "input": "http://evil.example/",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "URL tuyệt đối"
+        },
+        {
+          "input": "/x\r\nHost: evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn header qua CRLF"
+        }
+      ]
+    },
+    "http_check_host": {
+      "schema": "agent-ops/defs.schema.json#/$defs/Domain",
+      "vectors": [
+        {
+          "input": "lehoa.vn",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Host header là domain account"
+        },
+        {
+          "input": "lehoa.vn\r\nX-Evil: 1",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn header vào Host"
+        },
+        {
+          "input": "127.0.0.1:22",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Host:port tới dịch vụ khác"
+        },
+        {
+          "input": "localhost",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Không phải FQDN"
+        },
+        {
+          "input": "admin.itso.local",
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Domain không thuộc account: panel chỉ gửi domain của website account; agent luôn kết nối 127.0.0.1"
         }
       ]
     },

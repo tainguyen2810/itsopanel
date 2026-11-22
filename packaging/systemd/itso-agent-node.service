@@ -1,0 +1,36 @@
+# itso-agent chế độ node (D-88/D-89): quay số RA itso-relay bằng mTLS, không mở cổng inbound. Envelope vẫn qua
+# HMAC khóa riêng của server + policy + schema như agent local. Socket local giữ cho `itso` CLI trên node.
+[Unit]
+Description=ITSO Panel agent (node)
+Conflicts=itso-agent.service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/itso/current/bin/itso-agent --mode node --listen unix:/run/itso/agent.sock --key-file /etc/itso/agent.key --policy /etc/itso/agent-policy.yaml --audit-log /var/log/itso/agent-audit.jsonl --allow-uid root --socket-group root --stream-listen ""
+Restart=always
+RestartSec=5s
+User=root
+RuntimeDirectory=itso
+RuntimeDirectoryMode=0755
+UMask=0027
+NoNewPrivileges=no
+ProtectHome=no
+ProtectControlGroups=no
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service @privileged @mount @chown
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

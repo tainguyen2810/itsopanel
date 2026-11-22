@@ -33,8 +33,12 @@ ALTER TABLE hosting_package_versions ADD CONSTRAINT hpv_positive_chk CHECK (
 );
 
 ALTER TABLE account_migrations ADD CONSTRAINT account_migrations_state_chk CHECK (
-  state IN ('preflight', 'syncing', 'verifying', 'cutover', 'completed', 'rolled_back', 'failed')
+  state IN ('preflight', 'syncing', 'verifying', 'cutover', 'holding', 'completed', 'rolled_back', 'failed')
 );
+ALTER TABLE account_migrations ADD CONSTRAINT account_migrations_keep_chk CHECK (keep_source_days BETWEEN 1 AND 30);
+-- Mỗi account chỉ có một lần chuyển chưa kết thúc (D-93).
+CREATE UNIQUE INDEX account_migrations_one_open ON account_migrations (hosting_account_id)
+  WHERE state IN ('preflight', 'syncing', 'verifying', 'cutover', 'holding');
 ALTER TABLE account_migrations ADD CONSTRAINT account_migrations_diff_server_chk
   CHECK (source_server_id <> target_server_id);
 
@@ -248,3 +252,25 @@ BEGIN
   EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF waf_events FOR VALUES FROM (%L) TO (%L)', part, start_d, end_d);
   RETURN part;
 END $$;
+
+-- ============================================================ Phase 9: Multi-server (D-88…D-93)
+-- Bảng của Phase trước: ALTER đánh dấu /* phase:9 */ để sinh vào migration Phase 9 (migration đã phát hành giữ nguyên).
+/* phase:9 */ ALTER TABLE servers ADD COLUMN node_role text NOT NULL DEFAULT 'all_in_one';
+/* phase:9 */ ALTER TABLE servers ADD CONSTRAINT servers_node_role_chk CHECK (node_role IN ('all_in_one', 'control_plane', 'node'));
+/* phase:9 */ ALTER TABLE agents ADD COLUMN connection text NOT NULL DEFAULT 'pending';
+/* phase:9 */ ALTER TABLE agents ADD CONSTRAINT agents_connection_chk
+  CHECK (connection IN ('online', 'degraded', 'unreachable', 'pending', 'revoked'));
+-- Khóa HMAC riêng mỗi server (D-89), mã hóa bằng APP_KEY; null với agent local (dùng /etc/itso/agent.key).
+/* phase:9 */ ALTER TABLE agents ADD COLUMN hmac_key_encrypted bytea;
+/* phase:9 */ ALTER TABLE agents ADD COLUMN cert_not_before timestamptz;
+/* phase:9 */ ALTER TABLE agents ADD COLUMN cert_rotated_at timestamptz;
+/* phase:9 */ ALTER TABLE agents ADD COLUMN revoked_at timestamptz;
+-- Job chờ node kết nối lại tới hạn rồi lỗi agent_unreachable (D-91).
+/* phase:9 */ ALTER TABLE jobs DROP CONSTRAINT jobs_state_chk;
+/* phase:9 */ ALTER TABLE jobs ADD CONSTRAINT jobs_state_chk CHECK (
+  state IN ('queued', 'waiting_agent', 'running', 'succeeded', 'failed', 'cancel_requested', 'cancelled', 'timed_out')
+);
+/* phase:9 */ ALTER TABLE jobs ADD COLUMN agent_deadline_at timestamptz;
+ALTER TABLE agent_certificates ADD CONSTRAINT agent_certificates_reason_chk CHECK (issued_reason IN ('enroll', 'rotate', 'rejoin'));
+ALTER TABLE agent_certificates ADD CONSTRAINT agent_certificates_fp_chk CHECK (fingerprint_sha256 ~ '^[0-9a-f]{64}$');
+ALTER TABLE agent_enrollment_tokens ADD CONSTRAINT agent_enrollment_tokens_hash_chk CHECK (token_hash ~ '^[0-9a-f]{64}$');

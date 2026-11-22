@@ -36,6 +36,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/account-migrations/{id}:cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dọn dẹp server nguồn (sau hạn giữ, hoặc sớm khi xác nhận)
+         * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+         *
+         *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["cleanupAccountMigration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/account-migrations/{id}:cutover": {
         parameters: {
             query?: never;
@@ -1512,10 +1534,25 @@ export interface paths {
          * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
          *
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
-         *
-         *     Phase 3: trả `501` mã `migration_not_available` (hiện thực ở Phase 9).
          */
         post: operations["migrateHostingAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/hosting-accounts/{id}:migrate-preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kiểm tra trước khi chuyển server (đồng bộ, không đổi gì) */
+        post: operations["preflightHostingAccountMigration"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2837,6 +2874,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/servers/{id}:revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Thu hồi node: chặn chứng chỉ ngay, agent không kết nối lại được (chỉ khi không còn account)
+         * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+         */
+        post: operations["revokeServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/settings/{group}": {
         parameters: {
             query?: never;
@@ -3983,6 +4040,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/internal/nodes:enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Node join bằng token: ký CSR, tạo server + khóa HMAC (chỉ itso-relay gọi qua loopback)
+         * @description itso-relay nhận yêu cầu của node trên cổng 28444 (TLS, node ghim `ca_sha256`) rồi chuyển tiếp tới route này qua 127.0.0.1 kèm header `X-Itso-Relay-Signature` (HMAC bằng khóa relay). Token sai/hết hạn/đã dùng → 422 `enrollment_invalid` (đếm vào giới hạn 10 lần/10 phút/IP). CSR phải là ECDSA P-256 với CN `itso-enroll` (node chưa biết uuid); chứng chỉ cấp ra có CN = `server_uuid`.
+         */
+        post: operations["enrollNode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/health": {
         parameters: {
             query?: never;
@@ -4118,6 +4195,27 @@ export interface components {
             agent_version: string | null;
             agent_connected: boolean;
             accepting_new_accounts: boolean;
+            /** @enum {string} */
+            node_role: "all_in_one" | "control_plane" | "node";
+            /** @enum {string} */
+            transport: "local" | "mtls";
+            /**
+             * @description Kênh agent (D-91): 3 nhịp lỡ → degraded, 5 phút → unreachable; pending = chưa từng kết nối; revoked = chứng chỉ đã thu hồi (D-90).
+             * @enum {string}
+             */
+            connection: "online" | "degraded" | "unreachable" | "pending" | "revoked";
+            /** Format: date-time */
+            last_seen_at: string | null;
+            /** @description Chứng chỉ mTLS của node (D-90); null với kênh local. */
+            cert: {
+                fingerprint_sha256: string;
+                /** Format: date-time */
+                not_before: string;
+                /** Format: date-time */
+                not_after: string;
+                /** Format: date-time */
+                rotated_at: string | null;
+            } | null;
             resources: {
                 cpu_cores: number;
                 ram_mb: number;
@@ -4166,15 +4264,45 @@ export interface components {
             role_tags?: ("web" | "db" | "backup" | "docker")[];
             accepting_new_accounts?: boolean;
         };
+        /** @description Token chỉ trả một lần, dùng một lần (D-90); lệnh join ghim `ca_sha256`. */
         EnrollmentToken: {
             /** Format: uuid */
             uuid: string;
             token: string;
             command: string;
+            ca_sha256: string;
             /** Format: date-time */
             expires_at: string;
             /** Format: date-time */
             created_at: string;
+        };
+        /** @description Node gửi khi join (qua itso-relay, TLS ghim CA). Token 32 byte dùng một lần, hạn 1 giờ (D-90). */
+        NodeEnrollRequest: {
+            token: string;
+            csr: string;
+            hostname: string;
+            ip_addresses: string[];
+            facts: {
+                os: string;
+                kernel: string;
+                /** @enum {string} */
+                arch: "amd64" | "arm64";
+                agent_version: string;
+            };
+        };
+        /** @description Chứng chỉ mTLS 30 ngày + khóa HMAC riêng; node ghi vào /etc/itso (0600) rồi kết nối relay. */
+        NodeEnrollment: {
+            /** Format: uuid */
+            server_uuid: string;
+            cert_pem: string;
+            chain_pem: string;
+            ca_sha256: string;
+            /** @description Khóa HMAC riêng của server (base64url 32 byte). Chỉ trả MỘT lần. */
+            hmac_key: string;
+            /** Format: uri */
+            relay_url: string;
+            /** Format: date-time */
+            cert_not_after: string;
         };
         EnrollmentRequest: {
             name: string;
@@ -4263,11 +4391,15 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        /** @description Chỉ gợi ý (D-92): server không đủ điều kiện vẫn trả về với `eligible=false` và lý do loại. */
         PlacementSuggestion: {
             server: components["schemas"]["ServerRef"];
             score: number;
             reasons: string[];
             accepting_new: boolean;
+            eligible: boolean;
+            excluded_reasons: string[];
+            commit_pct: number;
         };
         PackageLimits: {
             disk_mb: number;
@@ -4366,10 +4498,22 @@ export interface components {
         MigrateRequest: {
             /** Format: uuid */
             target_server_uuid: string;
-            /** @enum {string} */
-            strategy?: "live_sync" | "offline";
             keep_source_days?: number;
-            dry_run?: boolean;
+        };
+        /** @description Kiểm tra trước khi chuyển (D-93): phiên bản PHP/DB, đĩa, username/UID, domain; `block` thì không bắt đầu được. */
+        MigrationPreflight: {
+            ok: boolean;
+            target_server: components["schemas"]["ServerRef"];
+            checks: {
+                key: string;
+                /** @enum {string} */
+                level: "ok" | "warn" | "block";
+                message: string;
+            }[];
+            estimate: {
+                bytes: number;
+                downtime_sec: number;
+            };
         };
         /** @description `confirm_username` phải trùng username account. */
         TerminateRequest: {
@@ -4386,6 +4530,7 @@ export interface components {
             purge_uuid: string;
             confirm_username: components["schemas"]["Username"];
         };
+        /** @description D-93: preflight → syncing → verifying → cutover → holding (giữ nguồn) → completed; rollback được tới trước dọn dẹp. */
         AccountMigration: {
             /** Format: uuid */
             uuid: string;
@@ -4393,17 +4538,35 @@ export interface components {
             source_server: components["schemas"]["ServerRef"];
             target_server: components["schemas"]["ServerRef"];
             /** @enum {string} */
-            state: "preflight" | "syncing" | "verifying" | "cutover" | "completed" | "rolled_back" | "failed";
+            state: "preflight" | "syncing" | "verifying" | "cutover" | "holding" | "completed" | "rolled_back" | "failed";
             bytes_synced: number;
             downtime_sec: number | null;
+            downtime_estimate_sec: number | null;
             verification: {
-                [key: string]: unknown;
-            };
+                /** @enum {string} */
+                kind: "files" | "database" | "http" | "ssl" | "cron" | "ownership";
+                name: string;
+                ok: boolean;
+                detail: string;
+            }[];
+            dns: {
+                /** @enum {string} */
+                mode: "auto" | "manual";
+                zone: string | null;
+                records: {
+                    type: string;
+                    name: string;
+                    value: string;
+                }[];
+            } | null;
             /** Format: uuid */
             job_uuid: string | null;
             requested_by: components["schemas"]["UserRef"];
             /** Format: date-time */
+            cutover_at: string | null;
+            /** Format: date-time */
             cleanup_after: string | null;
+            error: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -5386,7 +5549,7 @@ export interface components {
             email: string;
         };
         /** @enum {string} */
-        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
+        ErrorCode: "bad_request" | "unauthenticated" | "forbidden" | "not_found" | "conflict" | "idempotency_key_reused" | "precondition_failed" | "validation_failed" | "rate_limited" | "mfa_required" | "mfa_step_up_required" | "ip_not_allowed" | "csrf_mismatch" | "quota_exceeded" | "package_limit_reached" | "resource_locked" | "invalid_state_transition" | "server_not_accepting" | "agent_unavailable" | "agent_unreachable" | "enrollment_invalid" | "job_failed" | "legal_hold_active" | "retention_not_elapsed" | "backup_not_verified" | "confirmation_mismatch" | "purge_not_available" | "migration_not_available" | "setup_code_used" | "setup_code_expired" | "setup_not_verified" | "setup_completed" | "captcha_required" | "would_lock_out" | "internal_error";
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -5401,8 +5564,11 @@ export interface components {
                 [key: string]: string[];
             };
         };
-        /** @enum {string} */
-        JobState: "queued" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled" | "timed_out";
+        /**
+         * @description `waiting_agent`: server của job đang mất kết nối, job chờ tới hạn rồi `failed` mã `agent_unreachable` (D-91).
+         * @enum {string}
+         */
+        JobState: "queued" | "waiting_agent" | "running" | "succeeded" | "failed" | "cancel_requested" | "cancelled" | "timed_out";
         ResourceRef: {
             type: string;
             /** Format: uuid */
@@ -6023,7 +6189,10 @@ export interface components {
             /** @enum {string} */
             mode: "new" | "overwrite";
             items: string[];
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Chỉ Admin, chỉ mode=new (Phase 9, D-93): khôi phục sang server khác đọc cùng repo; account được tạo ở đích nếu chưa có. Đích phải trực tuyến, nếu không 409 `agent_unreachable`.
+             */
             target_server_uuid?: string | null;
             confirm?: string | null;
         };
@@ -6696,17 +6865,54 @@ export interface operations {
                      *           "state": "verifying",
                      *           "bytes_synced": 2201000000,
                      *           "downtime_sec": null,
-                     *           "verification": {
-                     *             "files": {
-                     *               "checked": 50300,
-                     *               "mismatched": 0
+                     *           "downtime_estimate_sec": 95,
+                     *           "verification": [
+                     *             {
+                     *               "kind": "files",
+                     *               "name": "sites/",
+                     *               "ok": true,
+                     *               "detail": "50.300 file, sha256 khớp"
                      *             },
-                     *             "databases": {
-                     *               "lehoa_wp": "checksum khớp"
+                     *             {
+                     *               "kind": "database",
+                     *               "name": "lehoa_wp",
+                     *               "ok": true,
+                     *               "detail": "12 bảng, 48.211 dòng, checksum khớp"
                      *             },
-                     *             "ssl": "đã sao chép",
-                     *             "cron": "0 job",
-                     *             "ownership": "đã chown theo UID 20004"
+                     *             {
+                     *               "kind": "ownership",
+                     *               "name": "lehoa.vn",
+                     *               "ok": true,
+                     *               "detail": "Chủ sở hữu file đúng UID account"
+                     *             },
+                     *             {
+                     *               "kind": "cron",
+                     *               "name": "cron",
+                     *               "ok": true,
+                     *               "detail": "2 job"
+                     *             },
+                     *             {
+                     *               "kind": "ownership",
+                     *               "name": "UID",
+                     *               "ok": true,
+                     *               "detail": "Giữ UID 20004"
+                     *             }
+                     *           ],
+                     *           "dns": {
+                     *             "mode": "auto",
+                     *             "zone": "lehoa.vn",
+                     *             "records": [
+                     *               {
+                     *                 "type": "A",
+                     *                 "name": "lehoa.vn",
+                     *                 "value": "10.10.1.12"
+                     *               },
+                     *               {
+                     *                 "type": "A",
+                     *                 "name": "www.lehoa.vn",
+                     *                 "value": "10.10.1.12"
+                     *               }
+                     *             ]
                      *           },
                      *           "job_uuid": "01938a0f-0003-7000-8000-00000f000003",
                      *           "requested_by": {
@@ -6714,7 +6920,9 @@ export interface operations {
                      *             "name": "Quản trị hệ thống",
                      *             "email": "superadmin@itso.local"
                      *           },
+                     *           "cutover_at": null,
                      *           "cleanup_after": null,
+                     *           "error": null,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
@@ -6774,17 +6982,54 @@ export interface operations {
                      *         "state": "verifying",
                      *         "bytes_synced": 2201000000,
                      *         "downtime_sec": null,
-                     *         "verification": {
-                     *           "files": {
-                     *             "checked": 50300,
-                     *             "mismatched": 0
+                     *         "downtime_estimate_sec": 95,
+                     *         "verification": [
+                     *           {
+                     *             "kind": "files",
+                     *             "name": "sites/",
+                     *             "ok": true,
+                     *             "detail": "50.300 file, sha256 khớp"
                      *           },
-                     *           "databases": {
-                     *             "lehoa_wp": "checksum khớp"
+                     *           {
+                     *             "kind": "database",
+                     *             "name": "lehoa_wp",
+                     *             "ok": true,
+                     *             "detail": "12 bảng, 48.211 dòng, checksum khớp"
                      *           },
-                     *           "ssl": "đã sao chép",
-                     *           "cron": "0 job",
-                     *           "ownership": "đã chown theo UID 20004"
+                     *           {
+                     *             "kind": "ownership",
+                     *             "name": "lehoa.vn",
+                     *             "ok": true,
+                     *             "detail": "Chủ sở hữu file đúng UID account"
+                     *           },
+                     *           {
+                     *             "kind": "cron",
+                     *             "name": "cron",
+                     *             "ok": true,
+                     *             "detail": "2 job"
+                     *           },
+                     *           {
+                     *             "kind": "ownership",
+                     *             "name": "UID",
+                     *             "ok": true,
+                     *             "detail": "Giữ UID 20004"
+                     *           }
+                     *         ],
+                     *         "dns": {
+                     *           "mode": "auto",
+                     *           "zone": "lehoa.vn",
+                     *           "records": [
+                     *             {
+                     *               "type": "A",
+                     *               "name": "lehoa.vn",
+                     *               "value": "10.10.1.12"
+                     *             },
+                     *             {
+                     *               "type": "A",
+                     *               "name": "www.lehoa.vn",
+                     *               "value": "10.10.1.12"
+                     *             }
+                     *           ]
                      *         },
                      *         "job_uuid": "01938a0f-0003-7000-8000-00000f000003",
                      *         "requested_by": {
@@ -6792,7 +7037,9 @@ export interface operations {
                      *           "name": "Quản trị hệ thống",
                      *           "email": "superadmin@itso.local"
                      *         },
+                     *         "cutover_at": null,
                      *         "cleanup_after": null,
+                     *         "error": null,
                      *         "created_at": "2026-11-18T09:30:00+07:00",
                      *         "updated_at": "2026-11-19T14:05:00+07:00"
                      *       }
@@ -6806,6 +7053,96 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    cleanupAccountMigration: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "confirm_username": "lehoa"
+                 *     }
+                 */
+                "application/json": {
+                    confirm_username: components["schemas"]["Username"];
+                };
+            };
+        };
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0078-7000-8000-00000f000078",
+                     *         "type": "migration.cleanup",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "account_migration",
+                     *           "uuid": "01938a15-0001-7000-8000-000015000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "account.remove",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *           "name": "srv-hcm-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "account_migration",
+                     *         "uuid": "01938a15-0001-7000-8000-000015000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
     };
@@ -8124,7 +8461,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009f-7000-8000-00000f00009f",
+                     *         "uuid": "01938a0f-00a0-7000-8000-00000f0000a0",
                      *         "type": "backup.destination_test",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8158,8 +8495,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8590,7 +8927,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a0-7000-8000-00000f0000a0",
+                     *         "uuid": "01938a0f-00a1-7000-8000-00000f0000a1",
                      *         "type": "backup.policy_run",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8631,8 +8968,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a0-7000-8000-00000f0000a0/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8941,7 +9278,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a2-7000-8000-00000f0000a2",
+                     *         "uuid": "01938a0f-00a3-7000-8000-00000f0000a3",
                      *         "type": "backup.forget",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8975,8 +9312,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -9174,7 +9511,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a1-7000-8000-00000f0000a1",
+                     *         "uuid": "01938a0f-00a2-7000-8000-00000f0000a2",
                      *         "type": "backup.verify",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -9215,8 +9552,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a1-7000-8000-00000f0000a1/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a2-7000-8000-00000f0000a2/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -9371,7 +9708,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0096-7000-8000-00000f000096",
+                     *         "uuid": "01938a0f-0097-7000-8000-00000f000097",
                      *         "type": "backup.run",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -9412,8 +9749,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -9671,7 +10008,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0081-7000-8000-00000f000081",
+                     *         "uuid": "01938a0f-0082-7000-8000-00000f000082",
                      *         "type": "certificate.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -9712,8 +10049,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -9756,7 +10093,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0080-7000-8000-00000f000080",
+                     *         "uuid": "01938a0f-0081-7000-8000-00000f000081",
                      *         "type": "certificate.renew",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -9790,8 +10127,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0081-7000-8000-00000f000081/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -9927,7 +10264,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00af-7000-8000-00000f0000af",
+                     *         "uuid": "01938a0f-00b0-7000-8000-00000f0000b0",
                      *         "type": "compose.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -9968,8 +10305,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -10064,8 +10401,106 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00b1-7000-8000-00000f0000b1",
+                     *         "uuid": "01938a0f-00b2-7000-8000-00000f0000b2",
                      *         "type": "compose.delete",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "compose_project",
+                     *           "uuid": "01938a1e-0001-7000-8000-00001e000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "compose.validate",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 2,
+                     *             "op": "compose.apply",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "compose_project",
+                     *         "uuid": "01938a1e-0001-7000-8000-00001e000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    updateComposeProject: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                /** @description ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412. */
+                "If-Match"?: components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "env": {
+                 *         "TZ": "Asia/Ho_Chi_Minh"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ComposeProjectInputPatch"];
+            };
+        };
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-00b1-7000-8000-00000f0000b1",
+                     *         "type": "compose.update",
                      *         "state": "queued",
                      *         "progress": 0,
                      *         "resource": {
@@ -10122,104 +10557,6 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
-            429: components["responses"]["TooManyRequests"];
-        };
-    };
-    updateComposeProject: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
-                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-                /** @description ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412. */
-                "If-Match"?: components["parameters"]["IfMatch"];
-            };
-            path: {
-                /** @description UUID tài nguyên. */
-                id: components["parameters"]["Id"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                /**
-                 * @example {
-                 *       "env": {
-                 *         "TZ": "Asia/Ho_Chi_Minh"
-                 *       }
-                 *     }
-                 */
-                "application/json": components["schemas"]["ComposeProjectInputPatch"];
-            };
-        };
-        responses: {
-            /** @description Đã nhận, Job được tạo */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    /**
-                     * @example {
-                     *       "job": {
-                     *         "uuid": "01938a0f-00b0-7000-8000-00000f0000b0",
-                     *         "type": "compose.update",
-                     *         "state": "queued",
-                     *         "progress": 0,
-                     *         "resource": {
-                     *           "type": "compose_project",
-                     *           "uuid": "01938a1e-0001-7000-8000-00001e000001"
-                     *         },
-                     *         "steps": [
-                     *           {
-                     *             "seq": 1,
-                     *             "op": "compose.validate",
-                     *             "state": "pending",
-                     *             "started_at": null,
-                     *             "finished_at": null
-                     *           },
-                     *           {
-                     *             "seq": 2,
-                     *             "op": "compose.apply",
-                     *             "state": "pending",
-                     *             "started_at": null,
-                     *             "finished_at": null
-                     *           }
-                     *         ],
-                     *         "attempts": 0,
-                     *         "max_attempts": 3,
-                     *         "timeout_sec": 600,
-                     *         "error": null,
-                     *         "server": {
-                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
-                     *           "name": "srv-hn-01"
-                     *         },
-                     *         "requested_by": {
-                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
-                     *           "name": "Quản trị hệ thống",
-                     *           "email": "superadmin@itso.local"
-                     *         },
-                     *         "created_at": "2026-11-20T08:15:00+07:00",
-                     *         "started_at": null,
-                     *         "finished_at": null,
-                     *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00b0-7000-8000-00000f0000b0/events"
-                     *         }
-                     *       },
-                     *       "resource": {
-                     *         "type": "compose_project",
-                     *         "uuid": "01938a1e-0001-7000-8000-00001e000001"
-                     *       }
-                     *     }
-                     */
-                    "application/json": components["schemas"]["JobAccepted"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
@@ -10249,7 +10586,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00b4-7000-8000-00000f0000b4",
+                     *         "uuid": "01938a0f-00b5-7000-8000-00000f0000b5",
                      *         "type": "compose.down",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -10261,85 +10598,6 @@ export interface operations {
                      *           {
                      *             "seq": 1,
                      *             "op": "compose.down",
-                     *             "state": "pending",
-                     *             "started_at": null,
-                     *             "finished_at": null
-                     *           }
-                     *         ],
-                     *         "attempts": 0,
-                     *         "max_attempts": 3,
-                     *         "timeout_sec": 600,
-                     *         "error": null,
-                     *         "server": {
-                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
-                     *           "name": "srv-hn-01"
-                     *         },
-                     *         "requested_by": {
-                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
-                     *           "name": "Quản trị hệ thống",
-                     *           "email": "superadmin@itso.local"
-                     *         },
-                     *         "created_at": "2026-11-20T08:15:00+07:00",
-                     *         "started_at": null,
-                     *         "finished_at": null,
-                     *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00b4-7000-8000-00000f0000b4",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00b4-7000-8000-00000f0000b4/events"
-                     *         }
-                     *       },
-                     *       "resource": {
-                     *         "type": "compose_project",
-                     *         "uuid": "01938a1e-0001-7000-8000-00001e000001"
-                     *       }
-                     *     }
-                     */
-                    "application/json": components["schemas"]["JobAccepted"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            422: components["responses"]["ValidationFailed"];
-            429: components["responses"]["TooManyRequests"];
-        };
-    };
-    pullComposeProject: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
-                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-            };
-            path: {
-                /** @description UUID tài nguyên. */
-                id: components["parameters"]["Id"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Đã nhận, Job được tạo */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    /**
-                     * @example {
-                     *       "job": {
-                     *         "uuid": "01938a0f-00b5-7000-8000-00000f0000b5",
-                     *         "type": "compose.pull",
-                     *         "state": "queued",
-                     *         "progress": 0,
-                     *         "resource": {
-                     *           "type": "compose_project",
-                     *           "uuid": "01938a1e-0001-7000-8000-00001e000001"
-                     *         },
-                     *         "steps": [
-                     *           {
-                     *             "seq": 1,
-                     *             "op": "compose.pull",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -10383,6 +10641,85 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    pullComposeProject: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-00b6-7000-8000-00000f0000b6",
+                     *         "type": "compose.pull",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "compose_project",
+                     *           "uuid": "01938a1e-0001-7000-8000-00001e000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "compose.pull",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *           "name": "srv-hn-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b6-7000-8000-00000f0000b6",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b6-7000-8000-00000f0000b6/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "compose_project",
+                     *         "uuid": "01938a1e-0001-7000-8000-00001e000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     upComposeProject: {
         parameters: {
             query?: never;
@@ -10407,7 +10744,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00b3-7000-8000-00000f0000b3",
+                     *         "uuid": "01938a0f-00b4-7000-8000-00000f0000b4",
                      *         "type": "compose.up",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -10441,8 +10778,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b4-7000-8000-00000f0000b4",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b4-7000-8000-00000f0000b4/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -10486,7 +10823,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00b2-7000-8000-00000f0000b2",
+                     *         "uuid": "01938a0f-00b3-7000-8000-00000f0000b3",
                      *         "type": "compose.validate",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -10520,8 +10857,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00b2-7000-8000-00000f0000b2/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00b3-7000-8000-00000f0000b3/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -10699,7 +11036,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-008f-7000-8000-00000f00008f",
+                     *         "uuid": "01938a0f-0090-7000-8000-00000f000090",
                      *         "type": "cron.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -10733,8 +11070,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -10777,7 +11114,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0091-7000-8000-00000f000091",
+                     *         "uuid": "01938a0f-0092-7000-8000-00000f000092",
                      *         "type": "cron.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -10811,8 +11148,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -10866,7 +11203,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0090-7000-8000-00000f000090",
+                     *         "uuid": "01938a0f-0091-7000-8000-00000f000091",
                      *         "type": "cron.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -10900,8 +11237,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0090-7000-8000-00000f000090/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0091-7000-8000-00000f000091/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -11003,7 +11340,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0092-7000-8000-00000f000092",
+                     *         "uuid": "01938a0f-0093-7000-8000-00000f000093",
                      *         "type": "cron.run",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -11037,8 +11374,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0092-7000-8000-00000f000092/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -11307,7 +11644,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0086-7000-8000-00000f000086",
+                     *         "uuid": "01938a0f-0087-7000-8000-00000f000087",
                      *         "type": "database_user.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -11341,8 +11678,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -11385,7 +11722,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0087-7000-8000-00000f000087",
+                     *         "uuid": "01938a0f-0088-7000-8000-00000f000088",
                      *         "type": "database_user.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -11419,8 +11756,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0087-7000-8000-00000f000087/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -11481,7 +11818,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0088-7000-8000-00000f000088",
+                     *         "uuid": "01938a0f-0089-7000-8000-00000f000089",
                      *         "type": "database_user.grant",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -11515,8 +11852,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0088-7000-8000-00000f000088/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -11729,7 +12066,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0082-7000-8000-00000f000082",
+                     *         "uuid": "01938a0f-0083-7000-8000-00000f000083",
                      *         "type": "database.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -11777,8 +12114,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0082-7000-8000-00000f000082/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -11880,7 +12217,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0083-7000-8000-00000f000083",
+                     *         "uuid": "01938a0f-0084-7000-8000-00000f000084",
                      *         "type": "database.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -11921,8 +12258,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0083-7000-8000-00000f000083/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -11965,7 +12302,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0084-7000-8000-00000f000084",
+                     *         "uuid": "01938a0f-0085-7000-8000-00000f000085",
                      *         "type": "database.export",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -11999,8 +12336,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0084-7000-8000-00000f000084/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -12055,7 +12392,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0085-7000-8000-00000f000085",
+                     *         "uuid": "01938a0f-0086-7000-8000-00000f000086",
                      *         "type": "database.import",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -12089,8 +12426,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0085-7000-8000-00000f000085/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0086-7000-8000-00000f000086/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -12569,7 +12906,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0093-7000-8000-00000f000093",
+                     *         "uuid": "01938a0f-0094-7000-8000-00000f000094",
                      *         "type": "dns.record.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -12600,8 +12937,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0093-7000-8000-00000f000093/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -12647,7 +12984,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0095-7000-8000-00000f000095",
+                     *         "uuid": "01938a0f-0096-7000-8000-00000f000096",
                      *         "type": "dns.record.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -12678,8 +13015,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0096-7000-8000-00000f000096/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -12735,7 +13072,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0094-7000-8000-00000f000094",
+                     *         "uuid": "01938a0f-0095-7000-8000-00000f000095",
                      *         "type": "dns.record.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -12766,8 +13103,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0094-7000-8000-00000f000094/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0095-7000-8000-00000f000095/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -12859,7 +13196,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009d-7000-8000-00000f00009d",
+                     *         "uuid": "01938a0f-009e-7000-8000-00000f00009e",
                      *         "type": "git.rollback",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -12893,8 +13230,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -13407,7 +13744,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009c-7000-8000-00000f00009c",
+                     *         "uuid": "01938a0f-009d-7000-8000-00000f00009d",
                      *         "type": "git.deploy",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -13441,8 +13778,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009d-7000-8000-00000f00009d/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -14642,7 +14979,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0089-7000-8000-00000f000089",
+                     *         "uuid": "01938a0f-008a-7000-8000-00000f00008a",
                      *         "type": "file.operate",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -14676,8 +15013,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0089-7000-8000-00000f000089/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -15060,9 +15397,7 @@ export interface operations {
                 /**
                  * @example {
                  *       "target_server_uuid": "01938a02-0002-7000-8000-000002000002",
-                 *       "strategy": "live_sync",
-                 *       "keep_source_days": 7,
-                 *       "dry_run": false
+                 *       "keep_source_days": 7
                  *     }
                  */
                 "application/json": components["schemas"]["MigrateRequest"];
@@ -15096,13 +15431,27 @@ export interface operations {
                      *           },
                      *           {
                      *             "seq": 2,
-                     *             "op": "migrate.sync",
+                     *             "op": "account.ensure",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
                      *           },
                      *           {
                      *             "seq": 3,
+                     *             "op": "backup.run",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 4,
+                     *             "op": "backup.restore",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 5,
                      *             "op": "migrate.verify",
                      *             "state": "pending",
                      *             "started_at": null,
@@ -15145,7 +15494,101 @@ export interface operations {
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
-            501: components["responses"]["NotImplemented"];
+        };
+    };
+    preflightHostingAccountMigration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "target_server_uuid": "01938a02-0002-7000-8000-000002000002"
+                 *     }
+                 */
+                "application/json": {
+                    /** Format: uuid */
+                    target_server_uuid: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "ok": true,
+                     *         "target_server": {
+                     *           "uuid": "01938a02-0002-7000-8000-000002000002",
+                     *           "name": "srv-hn-02"
+                     *         },
+                     *         "checks": [
+                     *           {
+                     *             "key": "connection",
+                     *             "level": "ok",
+                     *             "message": "srv-hn-02 đang kết nối (mTLS)"
+                     *           },
+                     *           {
+                     *             "key": "php",
+                     *             "level": "ok",
+                     *             "message": "PHP 8.2 có trên server đích"
+                     *           },
+                     *           {
+                     *             "key": "database",
+                     *             "level": "warn",
+                     *             "message": "MariaDB 11.4 ở đích, 10.11 ở nguồn: dump tương thích, nên kiểm tra site sau khi chuyển"
+                     *           },
+                     *           {
+                     *             "key": "disk",
+                     *             "level": "ok",
+                     *             "message": "Cần 2,2 GB, đích còn 811 GB"
+                     *           },
+                     *           {
+                     *             "key": "username",
+                     *             "level": "ok",
+                     *             "message": "Username lehoa và UID 20004 còn trống ở đích"
+                     *           },
+                     *           {
+                     *             "key": "domain",
+                     *             "level": "ok",
+                     *             "message": "Không trùng domain trên server đích"
+                     *           },
+                     *           {
+                     *             "key": "dns",
+                     *             "level": "ok",
+                     *             "message": "Zone lehoa.vn do panel quản lý: tự đổi bản ghi khi cutover"
+                     *           }
+                     *         ],
+                     *         "estimate": {
+                     *           "bytes": 2201000000,
+                     *           "downtime_sec": 95
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["MigrationPreflight"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     schedulePurgeHostingAccount: {
@@ -16770,7 +17213,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009e-7000-8000-00000f00009e",
+                     *         "uuid": "01938a0f-009f-7000-8000-00000f00009f",
                      *         "type": "website.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -16825,8 +17268,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009e-7000-8000-00000f00009e/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009f-7000-8000-00000f00009f/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -17262,11 +17705,14 @@ export interface operations {
                      *           },
                      *           "score": 92,
                      *           "reasons": [
-                     *             "Còn 89% RAM chưa cấp",
-                     *             "0 account",
-                     *             "Cùng vùng HN"
+                     *             "Đủ PHP 8.3, MariaDB 11.4",
+                     *             "Đĩa còn 87% sau khi cấp",
+                     *             "Cam kết thấp nhất: 12%"
                      *           ],
-                     *           "accepting_new": true
+                     *           "accepting_new": true,
+                     *           "eligible": true,
+                     *           "excluded_reasons": [],
+                     *           "commit_pct": 12
                      *         },
                      *         {
                      *           "server": {
@@ -17275,10 +17721,30 @@ export interface operations {
                      *           },
                      *           "score": 71,
                      *           "reasons": [
-                     *             "Còn 92% RAM chưa cấp",
-                     *             "Disk đã dùng 43%"
+                     *             "Đủ PHP 8.3, MariaDB 11.4",
+                     *             "Đĩa còn 56% sau khi cấp",
+                     *             "Cam kết 38%"
                      *           ],
-                     *           "accepting_new": true
+                     *           "accepting_new": true,
+                     *           "eligible": true,
+                     *           "excluded_reasons": [],
+                     *           "commit_pct": 38
+                     *         },
+                     *         {
+                     *           "server": {
+                     *             "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *             "name": "srv-hcm-01"
+                     *           },
+                     *           "score": 0,
+                     *           "reasons": [],
+                     *           "accepting_new": false,
+                     *           "eligible": false,
+                     *           "excluded_reasons": [
+                     *             "Mất kết nối từ 06:41",
+                     *             "Đang tắt nhận account mới",
+                     *             "Đĩa còn 9% (cần ≥ 15%)"
+                     *           ],
+                     *           "commit_pct": 104
                      *         }
                      *       ],
                      *       "meta": {
@@ -17687,7 +18153,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0097-7000-8000-00000f000097",
+                     *         "uuid": "01938a0f-0098-7000-8000-00000f000098",
                      *         "type": "backup.restore",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -17721,8 +18187,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0097-7000-8000-00000f000097/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -18131,7 +18597,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a9-7000-8000-00000f0000a9",
+                     *         "uuid": "01938a0f-00aa-7000-8000-00000f0000aa",
                      *         "type": "fail2ban.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -18165,8 +18631,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -18295,7 +18761,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00aa-7000-8000-00000f0000aa",
+                     *         "uuid": "01938a0f-00ab-7000-8000-00000f0000ab",
                      *         "type": "fail2ban.unban",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -18329,8 +18795,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00aa-7000-8000-00000f0000aa/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -18630,7 +19096,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a8-7000-8000-00000f0000a8",
+                     *         "uuid": "01938a0f-00a9-7000-8000-00000f0000a9",
                      *         "type": "malware.quarantine",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -18664,8 +19130,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a9-7000-8000-00000f0000a9/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -18940,7 +19406,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ad-7000-8000-00000f0000ad",
+                     *         "uuid": "01938a0f-00ae-7000-8000-00000f0000ae",
                      *         "type": "malware.restore",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -18974,8 +19440,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -19189,7 +19655,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a5-7000-8000-00000f0000a5",
+                     *         "uuid": "01938a0f-00a6-7000-8000-00000f0000a6",
                      *         "type": "sshd.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -19223,8 +19689,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -19268,7 +19734,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a6-7000-8000-00000f0000a6",
+                     *         "uuid": "01938a0f-00a7-7000-8000-00000f0000a7",
                      *         "type": "sshd.confirm",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -19302,8 +19768,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a6-7000-8000-00000f0000a6/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -19366,6 +19832,11 @@ export interface operations {
                      *           "agent_version": "0.1.0",
                      *           "agent_connected": true,
                      *           "accepting_new_accounts": true,
+                     *           "node_role": "all_in_one",
+                     *           "transport": "local",
+                     *           "connection": "online",
+                     *           "last_seen_at": "2026-11-20T08:15:00+07:00",
+                     *           "cert": null,
                      *           "resources": {
                      *             "cpu_cores": 16,
                      *             "ram_mb": 65536,
@@ -19408,6 +19879,16 @@ export interface operations {
                      *           "agent_version": "0.1.0",
                      *           "agent_connected": true,
                      *           "accepting_new_accounts": true,
+                     *           "node_role": "node",
+                     *           "transport": "mtls",
+                     *           "connection": "online",
+                     *           "last_seen_at": "2026-11-20T08:15:00+07:00",
+                     *           "cert": {
+                     *             "fingerprint_sha256": "4be1c09f2d7a5e3816c0b9a4f27d8e15c6a3b0f94d21e78a5c36b9d0e1f2a473",
+                     *             "not_before": "2026-11-10T08:00:00+07:00",
+                     *             "not_after": "2026-12-10T08:00:00+07:00",
+                     *             "rotated_at": "2026-11-10T08:00:00+07:00"
+                     *           },
                      *           "resources": {
                      *             "cpu_cores": 8,
                      *             "ram_mb": 32768,
@@ -19449,8 +19930,18 @@ export interface operations {
                      *           "os": "Ubuntu 24.04.1 LTS",
                      *           "kernel": "6.8.0-45-generic",
                      *           "agent_version": "0.1.0",
-                     *           "agent_connected": true,
+                     *           "agent_connected": false,
                      *           "accepting_new_accounts": false,
+                     *           "node_role": "node",
+                     *           "transport": "mtls",
+                     *           "connection": "unreachable",
+                     *           "last_seen_at": "2026-11-20T06:41:00+07:00",
+                     *           "cert": {
+                     *             "fingerprint_sha256": "9d3f7a21c84b0e65f1a2d9c7b36e40f8a5d12c9e7b04f6a3d81e2c5b9f07a614",
+                     *             "not_before": "2026-10-28T09:00:00+07:00",
+                     *             "not_after": "2026-11-27T09:00:00+07:00",
+                     *             "rotated_at": "2026-10-28T09:00:00+07:00"
+                     *           },
                      *           "resources": {
                      *             "cpu_cores": 8,
                      *             "ram_mb": 16384,
@@ -19523,8 +20014,9 @@ export interface operations {
                      * @example {
                      *       "data": {
                      *         "uuid": "01938a27-0001-7000-8000-000027000001",
-                     *         "token": "itso_enr_7Hk2pQ9xVb3mN6tR",
-                     *         "command": "curl -fsSL https://admin.itso.local/install.sh | sudo bash -s -- --role node --join itso_enr_7Hk2pQ9xVb3mN6tR",
+                     *         "token": "itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga",
+                     *         "command": "curl -fsSLO https://admin.itso.local/install.sh && sudo bash install.sh --role node --join https://admin.itso.local:28444 --token itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga --ca-sha256 e3b7c1d04f9a26b85c71e0d3a4f6b29c8d15e7a03b6c94f21d8e5a7c0b3f9e61",
+                     *         "ca_sha256": "e3b7c1d04f9a26b85c71e0d3a4f6b29c8d15e7a03b6c94f21d8e5a7c0b3f9e61",
                      *         "expires_at": "2026-11-20T09:15:00+07:00",
                      *         "created_at": "2026-11-20T08:15:00+07:00"
                      *       }
@@ -19580,6 +20072,11 @@ export interface operations {
                      *         "agent_version": "0.1.0",
                      *         "agent_connected": true,
                      *         "accepting_new_accounts": true,
+                     *         "node_role": "all_in_one",
+                     *         "transport": "local",
+                     *         "connection": "online",
+                     *         "last_seen_at": "2026-11-20T08:15:00+07:00",
+                     *         "cert": null,
                      *         "resources": {
                      *           "cpu_cores": 16,
                      *           "ram_mb": 65536,
@@ -19669,6 +20166,11 @@ export interface operations {
                      *         "agent_version": "0.1.0",
                      *         "agent_connected": true,
                      *         "accepting_new_accounts": true,
+                     *         "node_role": "all_in_one",
+                     *         "transport": "local",
+                     *         "connection": "online",
+                     *         "last_seen_at": "2026-11-20T08:15:00+07:00",
+                     *         "cert": null,
                      *         "resources": {
                      *           "cpu_cores": 16,
                      *           "ram_mb": 65536,
@@ -19907,7 +20409,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ae-7000-8000-00000f0000ae",
+                     *         "uuid": "01938a0f-00af-7000-8000-00000f0000af",
                      *         "type": "docker.container_control",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -19941,8 +20443,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ae-7000-8000-00000f0000ae/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00af-7000-8000-00000f0000af/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -20153,7 +20655,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a7-7000-8000-00000f0000a7",
+                     *         "uuid": "01938a0f-00a8-7000-8000-00000f0000a8",
                      *         "type": "fim.baseline",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -20187,8 +20689,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a7-7000-8000-00000f0000a7/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a8-7000-8000-00000f0000a8/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -20514,7 +21016,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a3-7000-8000-00000f0000a3",
+                     *         "uuid": "01938a0f-00a4-7000-8000-00000f0000a4",
                      *         "type": "firewall.apply",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -20548,8 +21050,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a3-7000-8000-00000f0000a3/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -20593,7 +21095,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00a4-7000-8000-00000f0000a4",
+                     *         "uuid": "01938a0f-00a5-7000-8000-00000f0000a5",
                      *         "type": "firewall.confirm",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -20627,8 +21129,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00a4-7000-8000-00000f0000a4/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00a5-7000-8000-00000f0000a5/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -21453,6 +21955,100 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    revokeServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "confirm_name": "srv-hcm-01"
+                 *     }
+                 */
+                "application/json": {
+                    confirm_name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *         "name": "srv-hcm-01",
+                     *         "hostname": "srv-hcm-01.itso.local",
+                     *         "ip_addresses": [
+                     *           "10.20.1.21"
+                     *         ],
+                     *         "role_tags": [
+                     *           "web",
+                     *           "backup"
+                     *         ],
+                     *         "os": "Ubuntu 24.04.1 LTS",
+                     *         "kernel": "6.8.0-45-generic",
+                     *         "agent_version": "0.1.0",
+                     *         "agent_connected": false,
+                     *         "accepting_new_accounts": false,
+                     *         "node_role": "node",
+                     *         "transport": "mtls",
+                     *         "connection": "unreachable",
+                     *         "last_seen_at": "2026-11-20T06:41:00+07:00",
+                     *         "cert": {
+                     *           "fingerprint_sha256": "9d3f7a21c84b0e65f1a2d9c7b36e40f8a5d12c9e7b04f6a3d81e2c5b9f07a614",
+                     *           "not_before": "2026-10-28T09:00:00+07:00",
+                     *           "not_after": "2026-11-27T09:00:00+07:00",
+                     *           "rotated_at": "2026-10-28T09:00:00+07:00"
+                     *         },
+                     *         "resources": {
+                     *           "cpu_cores": 8,
+                     *           "ram_mb": 16384,
+                     *           "disk_mb": 476837,
+                     *           "cpu_pct": 81.2,
+                     *           "ram_used_mb": 14900,
+                     *           "disk_used_mb": 431000,
+                     *           "load_1m": 6.8,
+                     *           "uptime_sec": 1728000
+                     *         },
+                     *         "account_count": 1,
+                     *         "platform": null,
+                     *         "status": "degraded",
+                     *         "spec_version": 5,
+                     *         "observed_version": 4,
+                     *         "drift": {
+                     *           "nginx.global": "observed khác desired (worker_connections)"
+                     *         },
+                     *         "observed_at": "2026-11-20T08:15:00+07:00",
+                     *         "created_at": "2026-11-18T09:30:00+07:00",
+                     *         "updated_at": "2026-11-19T14:05:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["Server"];
+                    };
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -22392,7 +22988,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-008a-7000-8000-00000f00008a",
+                     *         "uuid": "01938a0f-008b-7000-8000-00000f00008b",
                      *         "type": "sftp.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -22426,8 +23022,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-008a-7000-8000-00000f00008a/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -22470,7 +23066,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-008c-7000-8000-00000f00008c",
+                     *         "uuid": "01938a0f-008d-7000-8000-00000f00008d",
                      *         "type": "sftp.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -22504,8 +23100,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -22548,7 +23144,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-008b-7000-8000-00000f00008b",
+                     *         "uuid": "01938a0f-008c-7000-8000-00000f00008c",
                      *         "type": "sftp.password",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -22582,8 +23178,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-008b-7000-8000-00000f00008b/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-008c-7000-8000-00000f00008c/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -22695,7 +23291,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-008d-7000-8000-00000f00008d",
+                     *         "uuid": "01938a0f-008e-7000-8000-00000f00008e",
                      *         "type": "ssh_key.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -22729,8 +23325,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-008d-7000-8000-00000f00008d/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -22773,7 +23369,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-008e-7000-8000-00000f00008e",
+                     *         "uuid": "01938a0f-008f-7000-8000-00000f00008f",
                      *         "type": "ssh_key.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -22807,8 +23403,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-008e-7000-8000-00000f00008e/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-008f-7000-8000-00000f00008f/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24033,7 +24629,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0078-7000-8000-00000f000078",
+                     *         "uuid": "01938a0f-0079-7000-8000-00000f000079",
                      *         "type": "website.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -24095,8 +24691,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0078-7000-8000-00000f000078/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24199,7 +24795,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-007a-7000-8000-00000f00007a",
+                     *         "uuid": "01938a0f-007b-7000-8000-00000f00007b",
                      *         "type": "website.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -24240,8 +24836,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24296,7 +24892,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0079-7000-8000-00000f000079",
+                     *         "uuid": "01938a0f-007a-7000-8000-00000f00007a",
                      *         "type": "website.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -24337,8 +24933,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0079-7000-8000-00000f000079/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-007a-7000-8000-00000f00007a/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24398,7 +24994,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-007f-7000-8000-00000f00007f",
+                     *         "uuid": "01938a0f-0080-7000-8000-00000f000080",
                      *         "type": "certificate.issue",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -24439,8 +25035,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0080-7000-8000-00000f000080/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24579,7 +25175,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-007b-7000-8000-00000f00007b",
+                     *         "uuid": "01938a0f-007c-7000-8000-00000f00007c",
                      *         "type": "website.domain.add",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -24613,8 +25209,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-007b-7000-8000-00000f00007b/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24660,7 +25256,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-007c-7000-8000-00000f00007c",
+                     *         "uuid": "01938a0f-007d-7000-8000-00000f00007d",
                      *         "type": "website.domain.remove",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -24694,8 +25290,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-007c-7000-8000-00000f00007c/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24835,7 +25431,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-007d-7000-8000-00000f00007d",
+                     *         "uuid": "01938a0f-007e-7000-8000-00000f00007e",
                      *         "type": "website.nginx.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -24869,8 +25465,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-007d-7000-8000-00000f00007d/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -24974,7 +25570,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-007e-7000-8000-00000f00007e",
+                     *         "uuid": "01938a0f-007f-7000-8000-00000f00007f",
                      *         "type": "website.php.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -25008,8 +25604,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-007e-7000-8000-00000f00007e/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-007f-7000-8000-00000f00007f/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -25054,7 +25650,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ac-7000-8000-00000f0000ac",
+                     *         "uuid": "01938a0f-00ad-7000-8000-00000f0000ad",
                      *         "type": "malware.scan",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -25088,8 +25684,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ad-7000-8000-00000f0000ad/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -25193,7 +25789,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-00ab-7000-8000-00000f0000ab",
+                     *         "uuid": "01938a0f-00ac-7000-8000-00000f0000ac",
                      *         "type": "waf.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -25234,8 +25830,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-00ab-7000-8000-00000f0000ab/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-00ac-7000-8000-00000f0000ac/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -25498,7 +26094,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0098-7000-8000-00000f000098",
+                     *         "uuid": "01938a0f-0099-7000-8000-00000f000099",
                      *         "type": "wordpress.install",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -25539,8 +26135,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0098-7000-8000-00000f000098/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -25583,7 +26179,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-009a-7000-8000-00000f00009a",
+                     *         "uuid": "01938a0f-009b-7000-8000-00000f00009b",
                      *         "type": "wordpress.clone_staging",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -25595,85 +26191,6 @@ export interface operations {
                      *           {
                      *             "seq": 1,
                      *             "op": "wp.clone",
-                     *             "state": "pending",
-                     *             "started_at": null,
-                     *             "finished_at": null
-                     *           }
-                     *         ],
-                     *         "attempts": 0,
-                     *         "max_attempts": 3,
-                     *         "timeout_sec": 600,
-                     *         "error": null,
-                     *         "server": {
-                     *           "uuid": "01938a02-0003-7000-8000-000002000003",
-                     *           "name": "srv-hcm-01"
-                     *         },
-                     *         "requested_by": {
-                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
-                     *           "name": "Quản trị hệ thống",
-                     *           "email": "superadmin@itso.local"
-                     *         },
-                     *         "created_at": "2026-11-20T08:15:00+07:00",
-                     *         "started_at": null,
-                     *         "finished_at": null,
-                     *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events"
-                     *         }
-                     *       },
-                     *       "resource": {
-                     *         "type": "wordpress_site",
-                     *         "uuid": "01938a11-0001-7000-8000-000011000001"
-                     *       }
-                     *     }
-                     */
-                    "application/json": components["schemas"]["JobAccepted"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            422: components["responses"]["ValidationFailed"];
-            429: components["responses"]["TooManyRequests"];
-        };
-    };
-    wordPressHarden: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
-                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
-            };
-            path: {
-                /** @description UUID tài nguyên. */
-                id: components["parameters"]["Id"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Đã nhận, Job được tạo */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    /**
-                     * @example {
-                     *       "job": {
-                     *         "uuid": "01938a0f-009b-7000-8000-00000f00009b",
-                     *         "type": "wordpress.harden",
-                     *         "state": "queued",
-                     *         "progress": 0,
-                     *         "resource": {
-                     *           "type": "wordpress_site",
-                     *           "uuid": "01938a11-0001-7000-8000-000011000001"
-                     *         },
-                     *         "steps": [
-                     *           {
-                     *             "seq": 1,
-                     *             "op": "wp.harden",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -25717,6 +26234,85 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    wordPressHarden: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-009c-7000-8000-00000f00009c",
+                     *         "type": "wordpress.harden",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "wordpress_site",
+                     *           "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "wp.harden",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *           "name": "srv-hcm-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009c-7000-8000-00000f00009c/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "wordpress_site",
+                     *         "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     wordPressUpdate: {
         parameters: {
             query?: never;
@@ -25741,7 +26337,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0099-7000-8000-00000f000099",
+                     *         "uuid": "01938a0f-009a-7000-8000-00000f00009a",
                      *         "type": "wordpress.update",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -25775,8 +26371,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0099-7000-8000-00000f000099/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-009a-7000-8000-00000f00009a/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -26389,6 +26985,63 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    enrollNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "token": "itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga",
+                 *       "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHzMIGaAgEAMDgxNjA0BgNVBAMMLTAxOTM4YTAyLTAwMDQtNzAwMC04MDAwLTAw\n-----END CERTIFICATE REQUEST-----\n",
+                 *       "hostname": "srv-hn-03.itso.local",
+                 *       "ip_addresses": [
+                 *         "10.10.1.13"
+                 *       ],
+                 *       "facts": {
+                 *         "os": "Ubuntu 24.04.1 LTS",
+                 *         "kernel": "6.8.0-48-generic",
+                 *         "arch": "amd64",
+                 *         "agent_version": "0.2.0-dev"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["NodeEnrollRequest"];
+            };
+        };
+        responses: {
+            /** @description Đã tạo */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "server_uuid": "01938a02-0004-7000-8000-000002000004",
+                     *         "cert_pem": "-----BEGIN CERTIFICATE-----\nMIIBkTCCATegAwIBAgIUQ2hhcmdl\n-----END CERTIFICATE-----\n",
+                     *         "chain_pem": "-----BEGIN CERTIFICATE-----\nMIIBnDCCAUKgAwIBAgIUSVRTTy1DQQ\n-----END CERTIFICATE-----\n",
+                     *         "ca_sha256": "e3b7c1d04f9a26b85c71e0d3a4f6b29c8d15e7a03b6c94f21d8e5a7c0b3f9e61",
+                     *         "hmac_key": "q3Vx9-Lm2Pz7Rt4Kc8Wn1Ys6Hd0Bf5Ga3Je9Ui2Oa7E",
+                     *         "relay_url": "https://admin.itso.local:28444",
+                     *         "cert_not_after": "2026-12-21T09:00:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["NodeEnrollment"];
+                    };
+                };
+            };
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useFmt } from '@/shared/format/useFmt';
 import { TextField } from '@/shared/page/fields';
+import { InfoList } from '@/shared/page/InfoList';
 import { PageHeader } from '@/shared/page/PageHeader';
 import { Alert } from '@/ui/Alert';
 import { AppLink } from '@/ui/AppLink';
@@ -34,6 +35,7 @@ type Form = z.infer<typeof enrollSchema>;
 interface Token {
   token: string;
   command: string;
+  ca_sha256: string;
   expires_at: string;
 }
 
@@ -126,9 +128,21 @@ export default function ServerNewPage() {
               <>
                 <p className="text-base">{t('servers.runCommand')}</p>
                 <CodeBlock code={token.command} label={t('servers.joinCommand')} />
-                <p className="text-sm text-muted">
-                  {t('servers.tokenExpires', { time: fmt.dateTime(token.expires_at) })}
-                </p>
+                <InfoList
+                  items={[
+                    [
+                      t('servers.caPin'),
+                      <code key="ca" className="font-mono text-xs break-all">
+                        {token.ca_sha256}
+                      </code>,
+                    ],
+                    [
+                      t('servers.tokenExpiresLabel'),
+                      `${fmt.dateTime(token.expires_at)} (${fmt.rel(token.expires_at)})`,
+                    ],
+                  ]}
+                />
+                <p className="text-sm text-muted">{t('servers.tokenOnce')}</p>
                 {joined.data ? (
                   <Alert
                     tone="success"

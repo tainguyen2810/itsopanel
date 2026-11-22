@@ -350,6 +350,9 @@ func (e *Env) Update(ctx context.Context, dir string) error {
 		return fmt.Errorf("bản %s cần cập nhật từ ≥ %s (đang %s)", nv, r.Manifest.MinFromVersion, cur)
 	}
 	e.printf("Cập nhật %s → %s\n", cur, nv)
+	if e.Role() == RoleNode {
+		return e.updateNode(ctx, &st, r, cur, nv)
+	}
 	// Sao lưu DB panel + /etc/itso trước khi đổi gì.
 	bdir := BackupDir + "/pre-update"
 	if err := e.FS.MkdirAll(bdir); err != nil {
@@ -429,7 +432,7 @@ func (e *Env) Rollback(ctx context.Context) error {
 	if err := e.installUnits(ctx); err != nil {
 		return err
 	}
-	if _, err := e.cmd(ctx, "systemctl", "restart", "itso.target"); err != nil {
+	if _, err := e.cmd(ctx, "systemctl", "restart", e.mainUnit()); err != nil {
 		return err
 	}
 	st.Previous, st.Version = cur, prev
@@ -472,4 +475,51 @@ func (e *Env) copyTree(src, dst string) error {
 		_, err = e.FS.WriteAtomic(target, b, fi.Mode().Perm()&0o700, platform.Owner{})
 		return err
 	})
+}
+
+// mainUnit là unit khởi động lại sau update/rollback theo vai trò.
+func (e *Env) mainUnit() string {
+	if e.Role() == RoleNode {
+		return NodeUnit
+	}
+	return "itso.target"
+}
+
+// updateNode: node không có DB/Laravel; sao lưu /etc/itso, đổi release, khởi động lại agent node.
+func (e *Env) updateNode(ctx context.Context, st *State, r *Release, cur, nv string) error {
+	bdir := BackupDir + "/pre-update"
+	if err := e.FS.MkdirAll(bdir); err != nil {
+		return err
+	}
+	if err := e.copyTree(EtcDir, bdir+"/"+cur+"-etc"); err != nil {
+		return err
+	}
+	if _, err := e.extract(r); err != nil {
+		return err
+	}
+	fail := func(cause error) error {
+		e.printf("  LỖI: %v → rollback về %s\n", cause, cur)
+		if err := e.activate(cur); err != nil {
+			return fmt.Errorf("%v; rollback lỗi: %w", cause, err)
+		}
+		_ = e.installUnits(ctx)
+		_, _ = e.cmd(ctx, "systemctl", "restart", NodeUnit)
+		return fmt.Errorf("cập nhật thất bại, đã rollback về %s: %w", cur, cause)
+	}
+	if err := e.activate(nv); err != nil {
+		return fail(err)
+	}
+	if err := e.installUnits(ctx); err != nil {
+		return fail(err)
+	}
+	if _, err := e.cmd(ctx, "systemctl", "restart", NodeUnit); err != nil {
+		return fail(err)
+	}
+	st.Previous, st.Version = cur, nv
+	if err := e.saveState(st); err != nil {
+		return err
+	}
+	e.prune(st)
+	e.printf("Đã cập nhật node lên %s (bản trước %s giữ để rollback)\n", nv, cur)
+	return nil
 }

@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 9 — Multi-server & chuyển tài khoản (kế hoạch ✓ duyệt 2026-11-21 cùng D-88 → D-93, **chưa bắt đầu 9.0**). Phase 8 ✓ APPROVED 2026-11-21 cùng D-82 → D-87 và mốc `v0.1.0-alpha` (kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 9.0 ○ (chờ người dùng bảo bắt đầu). Prompt chi tiết `docs/planning/seed/PHASE_9_PROMPTS.md`
+- **Phase:** 9 — Multi-server & chuyển tài khoản (kế hoạch ✓ duyệt 2026-11-21 cùng D-88 → D-93; 9.0 → 9.8 ✓, merge `main`, **chờ duyệt**, dừng trước Phase 10). Phase 8 ✓ APPROVED 2026-11-21 cùng D-82 → D-87 và mốc `v0.1.0-alpha` (kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 9.8 ✓ (Phase 9 xong, báo cáo `docs/reports/phase-9.md`). Prompt chi tiết `docs/planning/seed/PHASE_9_PROMPTS.md`
 - **Task đang làm:** không
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-9`
-- **Bước tiếp theo:** chờ người dùng bảo bắt đầu Phase 9 (9.0 mockup → 9.8, nhánh `phase-9`); chạy `tests/vm/phase4–8.sh` (gồm DR 2 VM) khi có VM
+- **Bước tiếp theo:** chờ người dùng duyệt Phase 9 (không tự sang Phase 10); chạy `tests/vm/phase4–9.sh` (gồm DR 2 VM, Phase 9 cần 3 VM) khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -24,24 +24,24 @@
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
 | 7 | Security Center | ✓ APPROVED (báo cáo `docs/reports/phase-7.md`; tiêu chí cần VM: chờ VM) |
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
-| 9 | Multi-server & chuyển tài khoản | ○ kế hoạch ✓ duyệt (`PHASE_9_PROMPTS.md`) |
+| 9 | Multi-server & chuyển tài khoản | ✓ chờ duyệt (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ○ |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
 
-Phase 9 (kế hoạch ✓ duyệt 2026-11-21, chưa bắt đầu) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
+Phase 9 (kế hoạch ✓ duyệt 2026-11-21, đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
 
-- ○ 9.0 Mockup Multi-server & chuyển tài khoản trên bản demo
-- ○ 9.1 ADR 0034–0038 (D-88…D-93), contracts, migration Phase 9
-- ○ 9.2 CA nội bộ, `itso-relay` mTLS, agent node kết nối ra
-- ○ 9.3 Installer `--role`, `itso node`
-- ○ 9.4 Panel API nhiều server: enroll, năng lực, job theo server, gợi ý
-- ○ 9.5 Agent: `migrate.*`, `http.check`, `account.remove`, khôi phục chéo server
-- ○ 9.6 Panel: điều phối chuyển account, cutover, rollback
-- ○ 9.7 UI nối API thật
-- ○ 9.8 e2e, VM Phase 9 (3 VM), review bảo mật, báo cáo, merge
+- ✓ 9.0 Mockup Multi-server & chuyển tài khoản trên bản demo (`docs/screenshots/phase-9/`, 48 ảnh) — 7d94e0e
+- ✓ 9.1 ADR 0034–0038 (D-88…D-93), contracts, migration Phase 9 — 611cfa4
+- ✓ 9.2 CA nội bộ, `itso-relay` mTLS, agent node kết nối ra — 9670a98
+- ✓ 9.3 Installer `--role`, `itso node` — 8d37f3a
+- ✓ 9.4 Panel API nhiều server: enroll, năng lực, job theo server, gợi ý
+- ✓ 9.5 Agent: `migrate.*`, `http.check`, `account.remove`, khôi phục chéo server
+- ✓ 9.6 Panel: điều phối chuyển account, cutover, rollback — 8dfa8c2
+- ✓ 9.7 UI nối API thật — b2ef24d
+- ✓ 9.8 e2e, VM Phase 9 (3 VM), review bảo mật, báo cáo, merge — 45ebccd
 
 Phase 8: ✓ APPROVED 2026-11-21 (merge `7ec1afb`, tag `v0.1.0-alpha`) — prompt chi tiết: `docs/planning/seed/PHASE_8_PROMPTS.md`
 
@@ -170,5 +170,12 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 8 / 8.5 | Khôi phục thảm họa: `install.sh --restore` (mã thiết lập `mode: restore`, wizard chọn sẵn khôi phục), `POST /setup/restore:inspect` (agent `backup.snapshots` tag `type:panel`, không lưu bí mật) + `POST /setup/restore` (job `setup.restore`, op mới `panel.restore`, bí mật tạm trong Redis Crypt TTL 2 giờ, tham chiếu `setup_restore:…`, xóa khi job xong), `itso panel-restore-apply` (sao lưu máy mới, `pg_restore --single-transaction`, `/etc/itso` giữ file của máy mới + APP_KEY cũ, migrate, `itso:reconcile`, xóa bản rõ), `itso:dr-restore` (mỗi account một job ghi đè nhiều bước, song song 2, scheduler 5 phút), gộp kết quả khôi phục nhiều bước, runbook `docs/runbooks/disaster-recovery.md` | 4050012 |
 | 2026-11-21 | 8 / 8.6 | UI Backup & Restore khớp hành vi API thật: wizard khôi phục chọn DB theo `snapshot.databases` (agent lưu dump `db/<tên>.sql\|.dump`), ghi đè đúng một website/DB, bỏ chọn server khác (Phase 9) và mục cấu hình; bộ khôi phục có `destination_uuid` (CLI `itso backup panel-restore` cần); purge chỉ xác nhận được sau hạn giữ, xác nhận = xóa ngay; wizard DR thêm đường dẫn repo server, SFTP hướng dẫn CLI; MSW purge/khôi phục/DR như API thật; dữ liệu demo oldshop đã hết hạn giữ; ảnh phase-8 chụp lại (purge, DR) | a8ce9bc |
 | 2026-11-21 | 8 / 8.7 | E2E stack thật Phase 8 (`e2e-real/phase8.spec.ts`: đích local → bộ khôi phục một lần → policy → chạy ngay → duyệt → khôi phục file/website/DB đúng nội dung; Portal khôi phục sau MFA + step-up), toàn bộ 19/19; sửa theo API thật: đích local cố định `/var/backups/itso`, khóa retention `last/hourly/daily/weekly/monthly` (contract trước → API → UI → DBML); `tests/vm/phase8.sh` B0–B6 (DR 2 VM `--dr-source/--dr-target`); review `docs/security/backup-review.md`; phiên bản mặc định `0.1.0-alpha`; release notes + hướng dẫn cài `docs/releases/`; báo cáo `docs/reports/phase-8.md`; merge phase-8 → main (local), tag `v0.1.0-alpha` | 78927fb |
+| 2026-11-22 | 9.8 | E2E stack thật Phase 9 (`e2e-real/phase9.spec.ts`, relay thật + agent node sandbox: thêm node qua UI → chuyển account qua wizard → cutover → hoàn tác → node mất kết nối `waiting_agent` → chạy tiếp → thu hồi); sửa lỗi e2e tìm ra: account chưa backup bị preflight chặn nhầm (repo chưa khởi tạo → cảnh báo), chặng đích không dừng khi `migrate.preflight` chặn (thêm `enforce` vào contract, op lỗi `precondition_failed`), lọc job `waiting_agent` 422; sandbox: ownership chấp nhận uid tiến trình, bỏ HTTP khi không có nginx, wizard cho chọn server bị loại (hiện lý do), `make dev` chép CA + `ITSO_RELAY_PUBLIC_URL`; `tests/vm/phase9.sh` (3 VM, N0–N6, gọi panel qua `lib/panel_api.php`); review `docs/security/multi-server-review.md`; `make check`; báo cáo `docs/reports/phase-9.md`; merge `--no-ff` main | 45ebccd |
+| 2026-11-21 | 9.5 | Agent: `http.check` (GET tới 127.0.0.1 của node, Host = domain đã kiểm, không theo redirect, path cấm traversal/%2e/%2f/`//`, thân ≤ 1 MiB → sha256); `migrate.preflight` (username/uid/gid trống, đĩa + 10 %, PHP đã cài, DB engine + tên, domain chưa thuộc account khác, đọc được repo); `migrate.verify` (sha256 file mẫu dưới `sites/<site>/` theo manifest, chủ sở hữu, dump DB khớp manifest + số bảng MariaDB, HTTP/HTTPS qua 127.0.0.1, cron); `migrate.cutover` (nguồn: trang bảo trì 503 qua include `<uuid>.nginx-migrating`, dừng pool/timer cron, gỡ nhóm SFTP/SSH, dừng phiên, ghi trạng thái `/var/lib/itso/migrations`; đích: bật pool/timer, gỡ bảo trì) + `migrate.rollback` (đích khóa, nguồn mở lại đúng những gì đã dừng), idempotent; `account.remove` thật (vhost → pool → cron → SFTP/SSH/FTP → DB + user DB → home không theo symlink → user/group Linux; chỉ user GECOS ITSO); khôi phục chéo server (đích đọc repo của nguồn); Sim: `userdel`/`groupdel`/`pure-pw list`/đếm bảng | fe309e5 |
+| 2026-11-21 | 9.4 | `POST /admin/servers/enrollment-tokens` (SA + step-up, token một lần chỉ lưu sha256, lệnh join ghim CA, 409 khi chưa có CA); `POST /api/v1/internal/nodes:enroll` (chỉ qua listener loopback, kiểm chữ ký HMAC của relay, khóa token `FOR UPDATE`, `pki.sign_csr` qua agent local, tạo server node + agent mtls/pending + khóa HMAC mã hóa APP_KEY + `agent_certificates`, sai 10 lần/10 phút/IP → 429); `POST /admin/servers/{id}:revoke` (gõ tên, chặn khi còn account/máy panel, chứng chỉ thu hồi + đẩy danh sách tới relay); mọi service gọi agent theo server (`forServer`), terminal chỉ máy panel; job tới node mất kết nối → `waiting_agent` + `agent_deadline_at` (ghi 30 phút, đọc 2 phút; giữ op_id), `itso:relay-sync` mỗi phút (last_seen từ relay, online/degraded/unreachable + thông báo SA, chạy tiếp job chờ, đẩy lại danh sách thu hồi); `itso:certs-rotate` (qua 2/3 hạn, `--force`); gợi ý server loại node không có vai trò web/mất kết nối/đĩa < 15% kèm lý do | bcbc762 |
+| 2026-11-21 | 9.3 | `itso install --role all-in-one\|control-plane\|node`: control plane/all-in-one thêm bước `pki` (CA nội bộ root 0600, chứng chỉ relay SAN hostname/IP/domain, khóa ký enroll), user `itso-relay` (`itso` vào nhóm để dùng socket); node chỉ cài group + gói tối thiểu + release + `join` (tải CA, so `--ca-sha256` trước khi gửi token, CSR CN `itso-enroll` → chứng chỉ CN = server_uuid, kiểm khớp khóa/CA, ghi `/etc/itso/node` 0700, khóa HMAC 0600) + `itso-agent-node.service`, không Laravel/PostgreSQL/Redis/relay; không đổi vai trò tại chỗ; CLI `itso pki init\|pin`, `itso node status\|rejoin\|leave`, `status`/`doctor`/`update`/`rollback` theo vai trò; unit `itso-relay.service` (không đặc quyền, socket `/run/itso-relay/relay.sock`), `itso-agent-node.service`, `itso-cert-rotate.timer`; Caddy chặn `/api/v1/internal/*` công khai, listener loopback 28480 cho enroll; `install.sh` nhận cờ vai trò; runbook `docs/runbooks/multi-server.md` | 8d37f3a |
+| 2026-11-21 | 9.2 | `internal/pki` (CA P-256 10 năm, ký CSR kiểm CN = server_uuid/khóa P-256/một khối PEM/hạn ≤ 30 ngày, chỉ ClientAuth; chứng chỉ server relay); op `pki.sign_csr` (chặn ở chế độ node) + `agent.cert.rotate` hai pha (khóa chờ, kiểm khớp khóa/CN/CA đã ghim, thay nguyên tử); `internal/relay` + `cmd/itso-relay` (TLS 1.3, `/v1/agent` bắt buộc chứng chỉ client CA nội bộ, CN = uuid, danh sách thu hồi lưu đĩa + cắt kết nối ngay, một kết nối mỗi server, ≤ 32 op song song, envelope ≤ 1 MiB/kết quả ≤ 8 MiB, `GET /v1/ca`, `POST /v1/enroll` chuyển tiếp có chữ ký relay + 10 lần/10 phút/IP; unix socket `/v1/nodes/{uuid}/ops`, `/v1/status`, `/v1/revocations`); agent `--mode node` (quay số ra, heartbeat 20 giây, backoff 1→60 giây có jitter, đọc lại chứng chỉ mỗi lần quay số, cùng handler HMAC/policy/schema/idempotent); Laravel `AgentClient::forServer` (mtls → relay, khóa HMAC riêng node mã hóa APP_KEY, 503 → `AgentUnreachable`), `JobRunner` gửi theo `job.server_id`; `make dev` chạy thêm relay + agent node sandbox. Chưa làm: terminal stream qua relay (để 9.4) | 9670a98 |
+| 2026-11-21 | 9.1 | ADR 0034–0038 (Accepted); agent-ops: `pki.sign_csr`, `agent.cert.rotate`, `http.check`, `migrate.preflight/verify/cutover/rollback` viết lại theo D-93 (bỏ `migrate.sync`), `account.remove` (`reason` purge/migrated, `confirm`), lỗi `agent_unreachable`/`cert_expired`/`enrollment_invalid`, 18 vector độc mới; OpenAPI `POST /api/v1/internal/nodes:enroll`; DBML `agent_certificates`, `agent_enrollment_tokens` (sha256), `account_migrations` (holding, DNS, snapshot); migration Phase 9 (ALTER bảng cũ đánh dấu `/* phase:9 */`); API trả trường mới của Server/gợi ý | 611cfa4 |
+| 2026-11-21 | 9.0 | Mockup Phase 9 trên demo: server theo vai trò/kênh/kết nối + chứng chỉ, thêm node (token một lần + ghim CA), node mất kết nối (banner, job `waiting_agent`, job lỗi `agent_unreachable`), thu hồi node (trạng thái `revoked`), gợi ý server có lý do loại + % cam kết, chuyển account 6 bước (kiểm tra trước → đồng bộ → kiểm tra dữ liệu → cutover có DNS/ước tính → giữ nguồn → dọn nguồn), khôi phục sang server khác; contracts: `:migrate-preflight`, `:cleanup`, `servers/{id}:revoke`, `MigrationPreflight`, `AccountMigration` mới | 7d94e0e |
 | 2026-11-21 | 9 / kế hoạch | Kế hoạch Phase 9 Multi-server & chuyển tài khoản theo yêu cầu người dùng: `PHASE_9_PROMPTS.md` (9.0 mockup → 9.8 tích hợp), đề xuất D-88 (vai trò cài đặt), D-89 (`itso-relay` mTLS, node chỉ kết nối ra), D-90 (CA nội bộ, chứng chỉ 30 ngày), D-91 (job khi node offline), D-92 (gợi ý server), D-93 (chuyển account qua repo restic, cutover + rollback); nhánh `phase-9` từ `main` | 628a6a6 |
 | 2026-11-21 | 8 / duyệt | Người dùng duyệt những gì đã làm: Phase 8 + D-82 → D-87 (ADR 0029–0033 Accepted) + mốc `v0.1.0-alpha`; kế hoạch Phase 9 + D-88 → D-93; ROADMAP Phase 1 ghi APPROVED | 02adc94 |

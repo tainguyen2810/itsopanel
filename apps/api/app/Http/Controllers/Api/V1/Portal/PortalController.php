@@ -83,6 +83,10 @@ final class PortalController
             if ($a->lifecycle_state === 'suspended') {
                 $warnings[] = ['code' => 'account_suspended', 'severity' => 'high', 'message' => "{$a->username}: đang bị tạm ngưng"];
             }
+            if ($a->lifecycle_state === 'migrating') {
+                $warnings[] = ['code' => 'account_migrating', 'severity' => 'medium',
+                    'message' => "{$a->username}: đang chuyển sang máy chủ mới, tạm thời chỉ xem (không thay đổi được)"];
+            }
             if ($a->lifecycle_state === 'terminated' && $a->purge_after !== null) {
                 $warnings[] = ['code' => 'account_terminated', 'severity' => 'critical',
                     'message' => "{$a->username}: đã chấm dứt, dữ liệu giữ tới {$a->purge_after->toDateString()}"];

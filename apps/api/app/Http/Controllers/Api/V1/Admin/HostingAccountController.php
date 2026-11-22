@@ -12,8 +12,10 @@ use App\Domain\Hosting\ProvisioningService;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\HostingPresenter;
 use App\Http\Presenters\JobPresenter;
+use App\Http\Presenters\ServerPresenter;
 use App\Http\Support\Listing;
 use App\Models\AccountLifecycleEvent;
+use App\Models\Agent;
 use App\Models\HostingAccount;
 use App\Models\HostingPackage;
 use App\Models\Job;
@@ -27,7 +29,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * /admin/hosting-accounts (Prompt 3.5): đọc theo phạm vi, mọi thay đổi qua ProvisioningService (job 202).
- * Purge (Phase 8) và chuyển server (Phase 9) trả 501 có mã riêng.
+ * Chuyển server: AccountMigrationController (Phase 9).
  */
 final class HostingAccountController
 {
@@ -202,13 +204,6 @@ final class HostingAccountController
     }
 
     /** migrate (Phase 9): chưa hiện thực — trả 501, không giả thành công. Purge: BackupAdminController (Phase 8). */
-    public function notAvailable(Request $request, string $id): JsonResponse
-    {
-        $this->find($request, $id);
-
-        throw new ApiProblem(501, 'migration_not_available', 'Chưa có ở phiên bản này', 'Chuyển account sang server khác hiện thực ở Phase 9.');
-    }
-
     public function placement(Request $request): JsonResponse
     {
         $request->validate(['package' => ['required', 'uuid']]);
@@ -241,10 +236,35 @@ final class HostingAccountController
                 $score = min($score, max(0, (int) round(100 - max(0, $ratio - 1) * 100 - $ratio * 30)));
             }
             $reasons[] = $accounts->count().' account đang có';
+            // D-92: server bị loại vẫn trả về kèm lý do; % cam kết = tổng hạn mức đĩa các account / dung lượng đĩa.
+            $excluded = [];
+            if (! $s->accepting_new_accounts) {
+                $excluded[] = 'Đang tắt nhận account mới';
+            }
+            if ($s->status !== 'ready') {
+                $excluded[] = "Trạng thái server: {$s->status}";
+            }
+            if (! in_array('web', $s->role_tags, true)) {
+                $excluded[] = 'Không có vai trò web';
+            }
+            $conn = ServerPresenter::connection(Agent::query()->where('server_id', $s->id)->first());
+            if ($conn !== 'online') {
+                $excluded[] = "Kết nối agent: {$conn}";
+                $score = min($score, 10);
+            }
+            $disk = is_numeric($f['disk_mb'] ?? null) ? (int) $f['disk_mb'] : 0;
+            $quota = (int) DB::table('hosting_package_versions')->whereIn('id', $accounts->pluck('package_version_id'))
+                ->get(['id', 'disk_mb'])->keyBy('id')->pipe(fn ($v) => $accounts->sum(fn (HostingAccount $a): int => (int) ($v[$a->package_version_id]->disk_mb ?? 0)));
+            $used = is_numeric($f['disk_used_mb'] ?? null) ? (int) $f['disk_used_mb'] : 0;
+            if ($disk > 0 && ($disk - $used - (int) $limits['disk_mb']) * 100 < 15 * $disk) {
+                $excluded[] = 'Đĩa còn dưới 15% sau khi cấp';
+            }
             $rows[] = ['server' => ['uuid' => $s->uuid, 'name' => $s->name], 'score' => max(0, min(100, $score)),
-                'reasons' => $reasons, 'accepting_new' => $s->accepting_new_accounts];
+                'reasons' => $reasons, 'accepting_new' => $s->accepting_new_accounts,
+                'eligible' => $excluded === [], 'excluded_reasons' => $excluded,
+                'commit_pct' => $disk > 0 ? (int) round($quota * 100 / $disk) : 0];
         }
-        usort($rows, fn (array $x, array $y): int => $y['score'] <=> $x['score']);
+        usort($rows, fn (array $x, array $y): int => [$y['eligible'], $y['score']] <=> [$x['eligible'], $x['score']]);
 
         return response()->json(['data' => $rows, 'meta' => ['next_cursor' => null, 'limit' => count($rows) ?: 1]]);
     }

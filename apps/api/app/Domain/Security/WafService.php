@@ -88,7 +88,7 @@ final class WafService
         $total = 0;
         $blockedByIp = [];
         for ($page = 0; $page < $maxPages; $page++) {
-            $res = $this->agent->call('waf.events', ['cursor' => $set->waf_events_cursor, 'limit' => 500], null, null, 30.0);
+            $res = $this->agent->forServer($server->id)->call('waf.events', ['cursor' => $set->waf_events_cursor, 'limit' => 500], null, null, 30.0);
             if (! $res->ok) {
                 break;
             }
