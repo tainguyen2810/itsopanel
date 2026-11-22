@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 10 — Docker Manager, WordPress Toolkit, Software (bắt đầu 2026-11-22; kế hoạch `docs/planning/seed/PHASE_10_PROMPTS.md`, D-94 → D-100 đề xuất). Phase 9 ✓ APPROVED 2026-11-22 (merge `8d2a613`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 10.6 Panel WordPress (✱)
-- **Task đang làm:** 10.6
+- **Prompt hiện tại:** 10.7 UI nối API thật (✱)
+- **Task đang làm:** 10.7
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-10`
 - **Bước tiếp theo:** làm hàng loạt 10.0 → 10.8, tự merge, DỪNG trước Phase 11; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -39,8 +39,8 @@ Phase 10 (bắt đầu 2026-11-22, đang làm) — prompt chi tiết: `docs/plan
 - ✓ 10.3 Agent Docker: Engine client, validator compose, DOCKER-USER, image/volume (log realtime qua gateway: hoãn, dùng tail)
 - ✓ 10.4 Panel Docker: hosts, compose, cổng, registry, website Docker, firewall scope=docker, backup/khôi phục volume
 - ✓ 10.5 Agent WordPress: wp.* dưới UID account, update có snapshot restic + tự khôi phục
-- ✱ 10.6 Panel WordPress: Admin + Portal
-- ○ 10.7 UI nối API thật
+- ✓ 10.6 Panel WordPress: Admin + Portal (cài, quét, cập nhật an toàn, staging, hardening, tự cập nhật theo cửa sổ)
+- ✱ 10.7 UI nối API thật
 - ○ 10.8 e2e, VM Phase 10, review bảo mật, báo cáo, merge
 
 Phase 9: ✓ APPROVED 2026-11-22 (merge `8d2a613`) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
@@ -197,4 +197,5 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-22 | 10.2 | Software Manager: catalog agent 22 recipe, PPA ondrej/php khóa ghim, wp-cli sha512, upgrade, unattended-upgrades không reboot; panel chặn xung đột/phụ thuộc/đang dùng, os-updates, refresh; Go + Pest 488 xanh | — |
 | 2026-11-22 | 10.3 | Agent Docker: client Engine API qua unix socket, validator compose (chặn theo rule, viết lại cổng 127.0.0.1:20000–29999, thêm limit, override 4 rule), DOCKER-USER qua iptables-restore, compose validate→apply theo sha256, image update có rollback tự động, volume backup/restore restic; log realtime qua gateway hoãn (dùng tail) | 536d6d4 |
 | 2026-11-22 | 10.4 | Panel Docker: quyền `docker.read/write/manage` (ADMIN read+write trên server được giao, SA bật Docker/registry/DOCKER-USER/override); `docker:enable` (step-up, recipe + daemon.json + DOCKER-USER), container (cache `containers`)/image/volume/network, compose-projects CRUD + revision + `:validate/:up/:down/:pull`, xem trước validator, cấp cổng trong transaction (đụng unique → kiểm lại), override chỉ SA kèm lý do, `:update-images/:rollback-images`, registry (Crypt, `registry_password:<uuid>`), env compose qua `compose_env:<uuid>`, website loại docker (vhost proxy tới cổng đã cấp), firewall `scope=docker` (ALTER phase:10) → docker.firewall.sync, policy backup `compose_project` → docker.volume.backup + khôi phục `volume:`; Pest 498, db-verify 142 | bad264f |
-| 2026-11-22 | 10.5 | Agent WordPress: 8 op wp.* (detect đọc file qua fs helper; info/install/update/clone/harden/admin_password/maintenance chạy `php<ver> wp-cli.phar` qua systemd-run dưới uid + slice account, allowlist subcommand, cấm cờ --require/--exec/--ssh/--http/--path; mật khẩu qua stdin `--prompt`); đường dẫn chỉ `sites/<domain>/public[/…]`, chặn mọi thành phần symlink; wp.update: snapshot restic `pre-wp-update` (file site + DB) → maintenance → update → verify-checksums + http.check → lỗi thì khôi phục file (hoán đổi, giữ bản lỗi) + DB; clone vào đích rỗng + DB rỗng, search-replace, noindex; harden 6 mục (cờ vhost xmlrpc/uploads qua `nginx.vhost.apply.wp_hardening`); contract wp.update thêm snapshot/check_scheme/rolled_back, BackupTag thêm `pre-wp-update`, `auto`; sandbox mô phỏng WP-CLI | — |
+| 2026-11-22 | 10.5 | Agent WordPress: 8 op wp.* (detect đọc file qua fs helper; info/install/update/clone/harden/admin_password/maintenance chạy `php<ver> wp-cli.phar` qua systemd-run dưới uid + slice account, allowlist subcommand, cấm cờ --require/--exec/--ssh/--http/--path; mật khẩu qua stdin `--prompt`); đường dẫn chỉ `sites/<domain>/public[/…]`, chặn mọi thành phần symlink; wp.update: snapshot restic `pre-wp-update` (file site + DB) → maintenance → update → verify-checksums + http.check → lỗi thì khôi phục file (hoán đổi, giữ bản lỗi) + DB; clone vào đích rỗng + DB rỗng, search-replace, noindex; harden 6 mục (cờ vhost xmlrpc/uploads qua `nginx.vhost.apply.wp_hardening`); contract wp.update thêm snapshot/check_scheme/rolled_back, BackupTag thêm `pre-wp-update`, `auto`; sandbox mô phỏng WP-CLI | fdd210f |
+| 2026-11-22 | 10.6 | Panel WordPress: model WordPressSite/Component/Update (+ cột `database_id`, `last_auto_update_at` vào migration Phase 10 chưa phát hành), `WordPressService` (cài: DB + DB user theo gói, mật khẩu admin sinh một lần qua ref `wp_password:<uuid>` giữ tạm trong Cache + Crypt, trả `secret` một lần; quét theo server; chi tiết làm mới wp.info ≤ 5 phút; cập nhật cần đích backup + quota backup chưa tạm dừng → repo.init? → wp.update (snapshot tag `account:`, manual/auto) → backup.stats → wp.info; staging tính giới hạn website + DB của gói, basic auth → 422; hardening lưu cờ vhost rồi áp `nginx.vhost.apply`; đổi mật khẩu admin step-up; bảo trì), `WordPressJobHandler` (lịch sử bước, snapshot `pre-wp-update` vào backup_snapshots, thông báo khi rolled_back/failed, xóa secret khi job xong), lệnh `itso:wordpress-auto-update` mỗi giờ (cửa sổ qua nửa đêm, ≥ 20 giờ/lần, minor → `--minor`), API `/admin` + `/portal/wordpress/*`; wp.info trả `db_name`; Pest 505 | 6a7e374 |
