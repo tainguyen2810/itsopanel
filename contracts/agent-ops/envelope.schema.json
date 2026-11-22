@@ -133,6 +133,7 @@
         "backup.forget",
         "pki.sign_csr",
         "agent.cert.rotate",
+        "uptime.probe",
         "http.check",
         "migrate.preflight",
         "migrate.verify",
@@ -2357,6 +2358,25 @@
         "properties": {
           "params": {
             "$ref": "ops/agent.cert.rotate.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "uptime.probe"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/uptime.probe.schema.json#/$defs/params"
           }
         }
       }

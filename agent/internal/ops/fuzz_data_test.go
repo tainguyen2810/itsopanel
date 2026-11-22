@@ -39,3 +39,26 @@ func FuzzParseSSHKey(f *testing.F) {
 		}
 	})
 }
+
+// FuzzUptimePath: path được chấp nhận không thể thoát khỏi domain (traversal, //, CRLF, ký tự mã hóa . hoặc /).
+func FuzzUptimePath(f *testing.F) {
+	for _, s := range []string{"/", "/health?x=1", "/../a", "/a%0d%0ab", "//evil", "/%2e%2e/", "/a/.?b"} {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		if ops.CheckUptimePath(s) != nil {
+			return
+		}
+		ls := strings.ToLower(s)
+		bad := !strings.HasPrefix(s, "/") || strings.Contains(s, "//") || strings.ContainsAny(s, "\r\n\x00 #\\") ||
+			strings.Contains(ls, "%2e") || strings.Contains(ls, "%2f") || strings.Contains(ls, "%0a") || strings.Contains(ls, "%0d")
+		for _, seg := range strings.FieldsFunc(strings.SplitN(s, "?", 2)[0], func(r rune) bool { return r == '/' }) {
+			if seg == "." || seg == ".." {
+				bad = true
+			}
+		}
+		if bad || len(s) > 200 {
+			t.Fatalf("path uptime không an toàn được chấp nhận: %q", s)
+		}
+	})
+}

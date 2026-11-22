@@ -111,6 +111,7 @@ export const PORTAL_NAV: NavGroup[] = [
       { key: 'wordpress', href: '/portal/wordpress', icon: Blocks },
       { key: 'terminal', href: '/portal/terminal', icon: SquareTerminal },
       { key: 'security', href: '/portal/security', icon: ShieldCheck },
+      { key: 'monitoring', href: '/portal/monitoring', icon: Activity },
     ],
   },
   {

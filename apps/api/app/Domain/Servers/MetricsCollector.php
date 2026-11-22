@@ -24,8 +24,18 @@ final class MetricsCollector
     public const SERVICES = ['nginx', 'php8.1-fpm', 'php8.2-fpm', 'php8.3-fpm', 'php8.4-fpm', 'mariadb', 'postgresql',
         'redis-server', 'fail2ban', 'cron', 'ssh', 'itso-gateway'];
 
+    /** Mọi metric được ghi vào metric_samples (server + account; ram_mb/disk_mb chỉ account). */
+    public const SAMPLE_METRICS = ['cpu_pct', 'ram_pct', 'disk_pct', 'swap_pct', 'inode_pct', 'load_1m', 'net_in', 'net_out',
+        'io_read', 'io_write', 'tasks', 'ram_mb', 'disk_mb'];
+
     /** Giữ metric_samples bao nhiêu ngày (partition theo ngày, DATABASE.md). */
     public const RETENTION_DAYS = 7;
+
+    /** Giữ metric_rollups (1 giờ) bao nhiêu ngày (D-101). */
+    public const ROLLUP_RETENTION_DAYS = 90;
+
+    /** Tạo trước partition cho bao nhiêu ngày tới (itso:metrics-prune). */
+    public const PARTITION_AHEAD_DAYS = 2;
 
     public function __construct(
         private readonly AgentClient $agent,
@@ -129,7 +139,43 @@ final class MetricsCollector
             'disk_pct' => $disk > 0 ? round($vals['disk_used_mb'] * 100 / $disk, 2) : 0.0,
             'load_1m' => $vals['load_1m'],
         ];
+        $samples += self::extendedSamples($d);
         $this->insertSamples($server->id, null, $samples, $now);
+    }
+
+    /**
+     * Số liệu mở rộng Phase 11 (D-101). Agent cũ (node chưa nâng cấp) không trả các trường này → bỏ qua, không ghi 0.
+     *
+     * @param  array<string, mixed>  $d  kết quả metrics.snapshot
+     * @return array<string, float|int>
+     */
+    public static function extendedSamples(array $d): array
+    {
+        $out = [];
+        $pct = fn (mixed $used, mixed $total): ?float => is_numeric($used) && is_numeric($total) && (float) $total > 0
+            ? round(min(100.0, max(0.0, (float) $used * 100 / (float) $total)), 2) : null;
+        if (array_key_exists('swap_total_mb', $d)) {
+            $out['swap_pct'] = $pct($d['swap_used_mb'] ?? 0, $d['swap_total_mb']) ?? 0.0; // không có swap → 0 %
+        }
+        if (($p = $pct($d['inode_used'] ?? null, $d['inode_total'] ?? null)) !== null) {
+            $out['inode_pct'] = $p;
+        }
+        if (is_array($d['net'] ?? null)) {
+            $rx = $tx = 0.0;
+            foreach ($d['net'] as $n) {
+                $rx += is_array($n) && is_numeric($n['rx_bps'] ?? null) ? (float) $n['rx_bps'] : 0.0;
+                $tx += is_array($n) && is_numeric($n['tx_bps'] ?? null) ? (float) $n['tx_bps'] : 0.0;
+            }
+            $out['net_in'] = round($rx, 1);
+            $out['net_out'] = round($tx, 1);
+        }
+        foreach (['io_read_bps' => 'io_read', 'io_write_bps' => 'io_write', 'tasks' => 'tasks'] as $k => $metric) {
+            if (is_numeric($d[$k] ?? null)) {
+                $out[$metric] = max(0, $d[$k] + 0);
+            }
+        }
+
+        return $out;
     }
 
     /** @param  array<string, float|int>  $samples */
@@ -170,5 +216,21 @@ final class MetricsCollector
         DB::table('metric_samples_default')->where('at', '<', Carbon::createFromFormat('Ymd', $cut, 'UTC')?->startOfDay())->delete();
 
         return $dropped;
+    }
+
+    /** Tạo partition metric_samples cho hôm nay và PARTITION_AHEAD_DAYS ngày tới (idempotent). */
+    public function ensureAhead(?Carbon $now = null): void
+    {
+        $day = ($now ?? Carbon::now())->copy()->utc()->startOfDay();
+        for ($i = 0; $i <= self::PARTITION_AHEAD_DAYS; $i++) {
+            $this->ensurePartition($day->copy()->addDays($i));
+        }
+    }
+
+    /** Xóa rollup cũ hơn ROLLUP_RETENTION_DAYS. Trả số dòng đã xóa. */
+    public function pruneRollups(?Carbon $now = null): int
+    {
+        return DB::table('metric_rollups')->where('bucket', '<', ($now ?? Carbon::now())->copy()->utc()
+            ->subDays(self::ROLLUP_RETENTION_DAYS)->startOfHour())->delete();
     }
 }

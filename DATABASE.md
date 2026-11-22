@@ -63,4 +63,8 @@ Chi tiết đầy đủ 81 bảng và nguyên tắc expand/contract: [database/d
 | 8 | `backup_*`, `restore_jobs`, `purge_records` |
 | 9 | `agent_enrollment_tokens`, mở rộng `agents`, `account_migrations` |
 | 10 | docker_*, `compose_*`, `port_allocations`, `wordpress_*` |
-| 11 | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `notification_channels`, `notification_preferences` |
+| 11 | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `uptime_results`, `uptime_rollups`, `notification_channels`, `notification_preferences`, `notification_deliveries` |
+
+**Lưu trữ số liệu (D-101, từ 11.3):** `metric_samples` 1 phút, partition theo ngày, giữ 7 ngày; `itso:metrics-prune` (hằng ngày) tạo trước partition 2 ngày tới, drop partition cũ (không DELETE) và xóa `metric_rollups` quá 90 ngày. `itso:metrics-rollup` (mỗi giờ) upsert min/avg/max/số mẫu theo giờ UTC, chạy bù khi trễ. API: khoảng ≤ 24 giờ đọc samples, dài hơn đọc rollup (trung bình theo số mẫu), tối đa ~500 điểm. Số liệu account (cpu_pct, ram, IO, tasks) lấy từ một lần `metrics.cgroup` theo lô mỗi server trong `itso:usage-refresh` (5 phút).
+
+**Thông báo (D-103/D-104, từ 11.5):** `notification_channels` (email nhóm, Telegram, webhook; bí mật `secret_encrypted` bằng Crypt, API chỉ trả `secret_set`). `notification_deliveries` mỗi lượt gửi: `channel_id` (kênh admin) hoặc `recipient_user_id` (email cá nhân theo tùy chọn, `channel_id` NULL; CHECK một trong hai), `response_code`, `state` queued → sending → sent / retrying (1/5/15 phút) / failed; `blocked` = SSRF guard hoặc vượt 30 tin/phút (payload `rate_limited`, gộp thành tin tóm tắt `notification.summary`); `resend_of_id` khi gửi lại. `notification_preferences` một dòng mỗi người × sự kiện, dòng `event_type = '*'` là danh sách kênh đang bật chung; mặc định chỉ in-app, mức critical luôn in-app.

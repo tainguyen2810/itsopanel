@@ -103,3 +103,25 @@ sudo bash tests/vm/phase10.sh --cleanup
 | V4 | Backup volume (pause) → khôi phục ra volume mới → sha256 nội dung giống hệt |
 | V5 | WordPress thật: cài qua panel (mật khẩu chỉ trong response), cập nhật akismet khi tải bị chặn → `rolled_back`, file plugin như cũ, site 200; staging 200; harden → `xmlrpc.php` 403, PHP trong uploads 403, `wp-config.php` 0400 |
 | V6 | PHP 8.1/8.2/8.4 cài song song, mỗi site trả đúng phiên bản, 3 FPM active |
+
+## Monitoring, Alerts, Notifications (Phase 11, Prompt 11.8)
+
+Trong VM đã cài (sau `run-all.sh --release … --no-uninstall`), bằng root, với scheduler và queue `notifications`
+chạy bằng systemd. Script đẩy `/` lên > 90 % bằng `fallocate`, dừng `itso-agent` và `nginx`, thêm dòng vào
+`/etc/hosts` và bảng nft tạm, nên chỉ chạy trong VM dùng một lần:
+
+```bash
+sudo bash tests/vm/phase11.sh                    # M0–M5 → /root/itso-vm-phase11.md
+sudo ITSO_VM_SMTP_HOST=smtp.example.vn ITSO_VM_SMTP_USER=… ITSO_VM_SMTP_PASS=… ITSO_VM_SMTP_TO=ops@example.vn \
+  bash tests/vm/phase11.sh                       # thêm M4 (SMTP thật)
+sudo bash tests/vm/phase11.sh --cleanup
+```
+
+| Mã | Kiểm |
+|---|---|
+| M0 | RAM/disk server trên panel khớp `/proc/meminfo` và `df` (±10 / ±2 điểm); RAM account đọc từ cgroup v2 thật `itso-acct-<uid>.slice` sau `itso:usage-refresh` |
+| M1 | `fallocate` đẩy `/` lên 92 % → "Disk server > 90%" firing ≤ 120 giây (rule kéo dài 60 giây); xóa file → resolved |
+| M2 | Dừng `itso-agent` → "Server mất kết nối" firing ≤ 120 giây; bật lại → resolved. Máy node (Phase 9): chặn cổng relay bằng nftables theo runbook |
+| M3 | Uptime nginx thật: up → dừng nginx → down sau 3 lần kiểm → bật → up; hạn chứng chỉ khi `ITSO_VM_ACME=1` |
+| M4 | Email qua SMTP thật (`ITSO_VM_SMTP_*`), "Gửi thử" → `sent`; không cấu hình → SKIP |
+| M5 | Webhook: URL IP riêng không bật cờ → 422; tên miền trỏ IP riêng (qua `/etc/hosts`) → delivery `blocked`, bộ đếm nft 0 gói tin ra IP đó |

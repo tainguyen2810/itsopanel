@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 324,
+  "total": 344,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -2303,6 +2303,184 @@
           "expect": "reject",
           "layer": "semantic",
           "note": "Symlink trỏ ra ngoài home: agent kiểm sau khi resolve (path_outside_home)"
+        }
+      ]
+    },
+    "uptime_path": {
+      "schema": "agent-ops/defs.schema.json#/$defs/UptimePath",
+      "vectors": [
+        {
+          "input": "/",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Trang chủ"
+        },
+        {
+          "input": "/health?full=1&x=a+b",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Có query"
+        },
+        {
+          "input": "https://evil.example/",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "URL tuyệt đối (không phải đường dẫn)"
+        },
+        {
+          "input": "//169.254.169.254/latest",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Hai gạch đầu (host khác)"
+        },
+        {
+          "input": "/../etc/passwd",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal"
+        },
+        {
+          "input": "/%2e%2e/x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal mã hóa"
+        },
+        {
+          "input": "/x%0d%0aHost:%20evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "CRLF mã hóa"
+        },
+        {
+          "input": "/x\r\nHost: evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "CRLF thô"
+        },
+        {
+          "input": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Quá 200 ký tự"
+        }
+      ]
+    },
+    "uptime_keyword": {
+      "schema": "agent-ops/defs.schema.json#/$defs/UptimeKeyword",
+      "vectors": [
+        {
+          "input": "Đặt hàng",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Từ khóa Unicode"
+        },
+        {
+          "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Quá 100 ký tự"
+        },
+        {
+          "input": "ok\nfoo",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ký tự điều khiển"
+        },
+        {
+          "input": "",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Rỗng"
+        }
+      ]
+    },
+    "uptime_target": {
+      "schema": "agent-ops/defs.schema.json#/$defs/UptimeTarget",
+      "vectors": [
+        {
+          "input": {
+            "check_uuid": "0193aa20-0001-7000-8000-000000000001",
+            "host": "lehoa.vn",
+            "path": "/",
+            "scheme": "https",
+            "keyword": null
+          },
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Mục hợp lệ"
+        },
+        {
+          "input": {
+            "check_uuid": "0193aa20-0001-7000-8000-000000000001",
+            "host": "lehoa.vn",
+            "path": "/",
+            "scheme": "ftp",
+            "keyword": null
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Scheme không phải http(s)"
+        },
+        {
+          "input": {
+            "check_uuid": "0193aa20-0001-7000-8000-000000000001",
+            "host": "10.0.0.5",
+            "path": "/",
+            "scheme": "http",
+            "keyword": null
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Host là IP"
+        },
+        {
+          "input": {
+            "check_uuid": "0193aa20-0001-7000-8000-000000000001",
+            "host": "lehoa.vn:8080",
+            "path": "/",
+            "scheme": "https",
+            "keyword": null
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Cổng lạ trong host"
+        },
+        {
+          "input": {
+            "check_uuid": "0193aa20-0001-7000-8000-000000000001",
+            "host": "lehoa.vn",
+            "path": "/",
+            "scheme": "https",
+            "keyword": null,
+            "url": "https://evil/"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Trường url tự do"
+        },
+        {
+          "input": {
+            "check_uuid": "0193aa20-0001-7000-8000-000000000001",
+            "host": "lehoa.vn",
+            "path": "/",
+            "scheme": "https",
+            "keyword": "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+          },
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Từ khóa quá dài"
+        },
+        {
+          "input": {
+            "check_uuid": "0193aa20-0001-7000-8000-000000000001",
+            "host": "admin.itso.local",
+            "path": "/",
+            "scheme": "https",
+            "keyword": null
+          },
+          "expect": "accept",
+          "layer": "semantic",
+          "note": "Domain không thuộc website của check: panel chỉ gửi domain chính của website"
         }
       ]
     }

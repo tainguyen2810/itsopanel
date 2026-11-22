@@ -32,8 +32,8 @@ it('job thành công: op_id job_uuid:seq:attempt, tiến độ 100, log, audit; 
     assertMatchesContract(JA, 'get', '/api/v1/admin/jobs/{id}/logs', 200, $logs);
     expect(collect($logs->json('data'))->pluck('message')->last())->toContain('Hoàn tất');
     $ev = $sa->get("/api/v1/admin/jobs/{$job->uuid}/events");
-    expect($ev->status())->toBe(200)->and($ev->headers->get('Content-Type'))->toStartWith('text/event-stream')
-        ->and($ev->getContent())->toContain('event: job');
+    expect($ev->getStatusCode())->toBe(200)->and($ev->headers->get('Content-Type'))->toStartWith('text/event-stream')
+        ->and($ev->streamedContent())->toContain('event: job');
     assertMatchesContract(JA, 'post', '/api/v1/admin/jobs/{id}:cancel', 409, $sa->post("/api/v1/admin/jobs/{$job->uuid}:cancel"));
     assertMatchesContract(JA, 'get', '/api/v1/admin/jobs/{id}', 404, $sa->get('/api/v1/admin/jobs/'.Str::uuid()));
 

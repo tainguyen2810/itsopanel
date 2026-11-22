@@ -48,8 +48,29 @@ export function dashboardOf(ctx: Ctx) {
   };
 }
 
-const STEP: Record<string, number> = { '1h': 60, '24h': 1800, '7d': 10800, '30d': 43200 };
-const POINTS: Record<string, number> = { '1h': 60, '24h': 48, '7d': 56, '30d': 60 };
+// D-101: ≤ 24 giờ đọc samples 1 phút (gộp để vẽ), dài hơn đọc rollup 1 giờ.
+const STEP: Record<string, number> = {
+  '1h': 60,
+  '24h': 1800,
+  '7d': 10800,
+  '30d': 43200,
+  '90d': 129600,
+};
+const POINTS: Record<string, number> = { '1h': 60, '24h': 48, '7d': 56, '30d': 60, '90d': 60 };
+const sourceOf = (range: string) => (range === '1h' || range === '24h' ? 'samples' : 'rollup');
+const UNIT: Record<string, string> = {
+  cpu_pct: 'pct',
+  ram_pct: 'pct',
+  disk_pct: 'pct',
+  swap_pct: 'pct',
+  inode_pct: 'pct',
+  net_in: 'bps',
+  net_out: 'bps',
+  io_read: 'bps',
+  io_write: 'bps',
+  load_1m: 'count',
+  tasks: 'count',
+};
 
 /** Số giả ngẫu nhiên ổn định theo seed (cùng tài nguyên + số liệu → cùng đường biểu đồ). */
 function rng(seed: string) {
@@ -81,7 +102,7 @@ export function series(seed: string, current: number, range: string, spread: num
   return { step_sec: step, points: pts };
 }
 
-const METRICS = ['cpu_pct', 'ram_pct', 'disk_pct', 'net_in', 'net_out', 'load_1m'];
+const METRICS = Object.keys(UNIT);
 
 export function registerDashboard() {
   on('get', '/api/v1/admin/dashboard/summary', (ctx) => ok(dashboardOf(ctx)));
@@ -106,16 +127,33 @@ export function registerDashboard() {
       net_in: [net, 0.5],
       net_out: [net * 0.35, 0.6],
       load_1m: [r.load_1m, 0.4],
+      swap_pct: [Math.min(100, r.cpu_pct / 6), 0.3, 100],
+      inode_pct: [pct(r.disk_used_mb, r.disk_mb) * 0.55, 0.01, 100],
+      io_read: [net * 0.6, 0.7],
+      io_write: [net * 0.4, 0.7],
+      tasks: [180 + s.account_count * 22, 0.15],
     };
     const [cur, spread, max] = base[metric] as [number, number, number?];
+    // Server mất kết nối: không có điểm mới sau lúc mất heartbeat (biểu đồ dừng lại).
+    const ser = series(`${s.uuid}:${metric}`, cur, range, spread, max);
+    // Server mất kết nối: series dừng ở mẫu cuối (~20 phút trước), không vẽ tới hiện tại.
+    if (s.status !== 'ready' && range === '1h') ser.points = ser.points.slice(0, 39);
+    if (s.status !== 'ready' && range === '24h')
+      ser.points = ser.points.slice(
+        0,
+        Math.max(1, ser.points.length - Math.ceil(ser.points.length / 24)),
+      );
     return ok({
       resource: { type: 'server', uuid: s.uuid },
       metric,
-      ...series(`${s.uuid}:${metric}`, cur, range, spread, max),
+      unit: UNIT[metric],
+      source: sourceOf(range),
+      limit: null,
+      ...ser,
     });
   });
 
-  on('get', '/api/v1/admin/metrics/hosting-accounts/{id}', (ctx) => {
+  const accountSeries = (ctx: Ctx) => {
     const a = ctx.db.data.accounts.find((x) => x.uuid === ctx.params.id);
     if (!a || !canSeeAccount(visibility(ctx.db, ctx.actor), a.uuid)) {
       return problem(404, 'not_found', 'Không tìm thấy account');
@@ -130,15 +168,27 @@ export function registerDashboard() {
       cpu_pct: [pct(u.cpu_percent.used, u.cpu_percent.limit ?? 100), 0.5, 100],
       ram_pct: [pct(u.ram_mb.used, u.ram_mb.limit ?? u.ram_mb.used * 2), 0.2, 100],
       disk_pct: [pct(u.disk_mb.used, u.disk_mb.limit ?? u.disk_mb.used * 2), 0.01, 100],
+      inode_pct: [pct(u.inodes.used, u.inodes.limit ?? u.inodes.used * 2), 0.01, 100],
+      swap_pct: [0, 0, 100],
       net_in: [200_000 + (u.disk_mb.used % 7) * 90_000, 0.6],
       net_out: [80_000 + (u.disk_mb.used % 5) * 40_000, 0.6],
+      io_read: [20_000 + (u.disk_mb.used % 9) * 4000, 0.7],
+      io_write: [8_000 + (u.disk_mb.used % 7) * 3000, 0.7],
       load_1m: [0.3, 0.5],
+      tasks: [8 + (u.disk_mb.used % 11), 0.3],
     };
     const [cur, spread, max] = base[metric] as [number, number, number?];
+    const unit = UNIT[metric] ?? 'count';
     return ok({
       resource: { type: 'hosting_account', uuid: a.uuid },
       metric,
+      unit,
+      source: sourceOf(range),
+      // Số liệu % của account tính theo giới hạn gói: đường giới hạn ở 100 %.
+      limit: unit === 'pct' ? 100 : null,
       ...series(`${a.uuid}:${metric}`, cur, range, spread, max),
     });
-  });
+  };
+  on('get', '/api/v1/admin/metrics/hosting-accounts/{id}', accountSeries);
+  on('get', '/api/v1/portal/hosting-accounts/{id}/usage-history', accountSeries);
 }

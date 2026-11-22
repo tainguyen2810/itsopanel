@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\Admin\DockerController;
 use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
 use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
+use App\Http\Controllers\Api\V1\Admin\MonitoringController;
+use App\Http\Controllers\Api\V1\Admin\NotificationChannelController;
 use App\Http\Controllers\Api\V1\Admin\RegistryController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
@@ -26,7 +28,9 @@ use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Internal\NodeEnrollController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\NotificationPreferenceController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
+use App\Http\Controllers\Api\V1\Portal\PortalMonitoringController;
 use App\Http\Controllers\Api\V1\Security\FirewallController;
 use App\Http\Controllers\Api\V1\Security\ProtectionController;
 use App\Http\Controllers\Api\V1\Security\SecurityController;
@@ -144,6 +148,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('notifications', [NotificationController::class, 'index']);
             Route::post('notifications/{id}:read', [NotificationController::class, 'read']);
             Route::post('notifications:read-all', [NotificationController::class, 'readAll']);
+            Route::get('notification-events', [NotificationPreferenceController::class, 'events']);
+            Route::get('notification-preferences', [NotificationPreferenceController::class, 'show']);
+            Route::patch('notification-preferences', [NotificationPreferenceController::class, 'update']);
             Route::get('settings/{group}', [SettingsController::class, 'show'])->middleware('itso.perm:settings.read');
             Route::patch('settings/{group}', [SettingsController::class, 'update'])
                 ->middleware(['itso.perm:settings.write', 'itso.step-up']);
@@ -213,6 +220,30 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('registries/{id}', [RegistryController::class, 'destroy'])->middleware('itso.perm:docker.manage');
             Route::post('registries/{id}:test', [RegistryController::class, 'test'])->middleware(['itso.perm:docker.manage', 'itso.idempotent']);
             Route::get('metrics/servers/{id}', [ServerOpsController::class, 'serverMetrics'])->middleware('itso.perm:servers.read');
+            Route::get('metrics/servers/{id}/accounts', [ServerOpsController::class, 'serverAccountUsage'])->middleware('itso.perm:accounts.read');
+            // Phase 11 (D-102, D-105): rule cảnh báo (SA), cảnh báo, uptime check.
+            Route::get('notification-channels', [NotificationChannelController::class, 'index'])->middleware('itso.perm:monitoring.manage');
+            Route::post('notification-channels', [NotificationChannelController::class, 'store'])->middleware('itso.perm:monitoring.manage');
+            Route::patch('notification-channels/{id}', [NotificationChannelController::class, 'update'])->middleware('itso.perm:monitoring.manage');
+            Route::delete('notification-channels/{id}', [NotificationChannelController::class, 'destroy'])->middleware('itso.perm:monitoring.manage');
+            Route::post('notification-channels/{id}:test', [NotificationChannelController::class, 'test'])->middleware('itso.perm:monitoring.manage');
+            Route::get('notification-deliveries', [NotificationChannelController::class, 'deliveries'])->middleware('itso.perm:monitoring.manage');
+            Route::post('notification-deliveries/{id}:resend', [NotificationChannelController::class, 'resend'])->middleware('itso.perm:monitoring.manage');
+            Route::get('alert-rules', [MonitoringController::class, 'rules'])->middleware('itso.perm:monitoring.read');
+            Route::post('alert-rules', [MonitoringController::class, 'createRule'])->middleware('itso.perm:monitoring.manage');
+            Route::post('alert-rules:preview', [MonitoringController::class, 'preview'])->middleware('itso.perm:monitoring.manage');
+            Route::get('alert-rules/{id}', [MonitoringController::class, 'rule'])->middleware('itso.perm:monitoring.read');
+            Route::patch('alert-rules/{id}', [MonitoringController::class, 'updateRule'])->middleware('itso.perm:monitoring.manage');
+            Route::delete('alert-rules/{id}', [MonitoringController::class, 'deleteRule'])->middleware('itso.perm:monitoring.manage');
+            Route::get('alerts', [MonitoringController::class, 'alerts'])->middleware('itso.perm:monitoring.read');
+            Route::post('alerts/{id}:ack', [MonitoringController::class, 'ack'])->middleware('itso.perm:monitoring.write');
+            Route::post('alerts/{id}:silence', [MonitoringController::class, 'silence'])->middleware('itso.perm:monitoring.write');
+            Route::post('alerts/{id}:unsilence', [MonitoringController::class, 'unsilence'])->middleware('itso.perm:monitoring.write');
+            Route::get('uptime-checks', [MonitoringController::class, 'uptimeChecks'])->middleware('itso.perm:monitoring.read');
+            Route::post('uptime-checks', [MonitoringController::class, 'createUptime'])->middleware('itso.perm:monitoring.write');
+            Route::patch('uptime-checks/{id}', [MonitoringController::class, 'updateUptime'])->middleware('itso.perm:monitoring.write');
+            Route::delete('uptime-checks/{id}', [MonitoringController::class, 'deleteUptime'])->middleware('itso.perm:monitoring.write');
+            Route::get('uptime-checks/{id}/results', [MonitoringController::class, 'uptimeResults'])->middleware('itso.perm:monitoring.read');
             Route::get('metrics/hosting-accounts/{id}', [ServerOpsController::class, 'accountMetrics'])->middleware('itso.perm:accounts.read');
 
             // Gói, account hosting (3.5)
@@ -425,6 +456,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('notifications', [NotificationController::class, 'index']);
             Route::post('notifications/{id}:read', [NotificationController::class, 'read']);
             Route::post('notifications:read-all', [NotificationController::class, 'readAll']);
+            Route::get('notification-events', [NotificationPreferenceController::class, 'events']);
+            Route::get('notification-preferences', [NotificationPreferenceController::class, 'show']);
+            Route::patch('notification-preferences', [NotificationPreferenceController::class, 'update']);
             Route::get('overview', [PortalController::class, 'overview']);
             Route::get('profile', [PortalController::class, 'profile']);
             Route::patch('profile', [PortalController::class, 'updateProfile']);
@@ -432,6 +466,11 @@ Route::prefix('v1')->group(function (): void {
             Route::get('hosting-accounts/{id}', [PortalController::class, 'account']);
             Route::get('hosting-accounts/{id}/features', [PortalController::class, 'features']);
             Route::get('hosting-accounts/{id}/usage', [PortalController::class, 'usage']);
+            Route::get('hosting-accounts/{id}/usage-history', [PortalController::class, 'usageHistory']);
+            Route::get('hosting-accounts/{id}/uptime', [PortalMonitoringController::class, 'accountUptime']);
+            Route::get('websites/{id}/uptime', [PortalMonitoringController::class, 'website']);
+            Route::patch('websites/{id}/uptime', [PortalMonitoringController::class, 'update']);
+            Route::get('websites/{id}/uptime/results', [PortalMonitoringController::class, 'results']);
 
             // ---- Website (Prompt 5.3); quét mã độc/WAF: khối Security Center (Phase 7) bên dưới.
             Route::get('websites', [WebsiteController::class, 'index']);

@@ -13,7 +13,8 @@
       "type": "object",
       "properties": {
         "cpu_pct": {
-          "type": "number"
+          "type": "number",
+          "minimum": 0
         },
         "ram_used_mb": {
           "type": "integer"
@@ -23,13 +24,133 @@
         },
         "load_1m": {
           "type": "number"
+        },
+        "ram_total_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "swap_used_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "swap_total_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "disk_total_mb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inode_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inode_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "load_5m": {
+          "type": "number"
+        },
+        "load_15m": {
+          "type": "number"
+        },
+        "tasks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "io_read_bps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "io_write_bps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "net": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "iface": {
+                "type": "string",
+                "maxLength": 15,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "rx_bps": {
+                "type": "number",
+                "minimum": 0
+              },
+              "tx_bps": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "iface",
+              "rx_bps",
+              "tx_bps"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 64
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "disk_used_mb": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "disk_total_mb": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "inode_used": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "inode_total": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "path",
+              "disk_used_mb",
+              "disk_total_mb",
+              "inode_used",
+              "inode_total"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 32
         }
       },
       "required": [
         "cpu_pct",
         "ram_used_mb",
         "disk_used_mb",
-        "load_1m"
+        "load_1m",
+        "ram_total_mb",
+        "swap_used_mb",
+        "swap_total_mb",
+        "disk_total_mb",
+        "inode_used",
+        "inode_total",
+        "load_5m",
+        "load_15m",
+        "tasks",
+        "io_read_bps",
+        "io_write_bps",
+        "net",
+        "mounts"
       ],
       "additionalProperties": false
     }

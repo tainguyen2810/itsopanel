@@ -49,5 +49,12 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0043](0043-docker-images-volumes.md) | Cập nhật image có rollback, registry, backup volume | Accepted | D-98 |
 | [0044](0044-wordpress-toolkit.md) | WordPress Toolkit (WP-CLI dưới UID account, cập nhật an toàn) | Accepted | D-99 |
 | [0045](0045-software-manager.md) | Software Manager (catalog, PPA ghim khóa, unattended-upgrades) | Accepted | D-100 |
+| [0046](0046-metrics-storage.md) | Metrics trong PostgreSQL (samples partition 7 ngày, rollup 90 ngày) | Accepted | D-101 |
+| [0047](0047-alert-engine.md) | Bộ máy cảnh báo (pending/firing/resolved, mất kết nối ≤ 2 phút, rule mặc định) | Accepted | D-102 |
+| [0048](0048-notification-channels.md) | Kênh email/Telegram/webhook, HMAC, chặn SSRF, nhật ký gửi | Accepted | D-103 |
+| [0049](0049-notification-routing.md) | Định tuyến thông báo (danh mục sự kiện, tùy chọn, USER chỉ in-app + email) | Accepted | D-104 |
+| [0050](0050-uptime-checks.md) | Uptime check theo website qua `uptime.probe` | Accepted | D-105 |
+| [0051](0051-realtime-sse.md) | Sự kiện job realtime qua SSE + Redis pub/sub | Accepted | D-106 |
+| [0052](0052-release-v0.5.0-beta.md) | Phát hành v0.5.0-beta | Accepted | D-107 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

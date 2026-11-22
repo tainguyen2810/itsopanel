@@ -19,14 +19,9 @@ import { cn } from '@/shared/lib/utils';
 
 type Note = Row<'/notifications'>;
 type Prefs = Data<'/notification-preferences'>;
-const CHANNELS = ['email', 'telegram', 'in_app'] as const;
-const EVENTS = [
-  'backup.failed',
-  'certificate.expiring',
-  'security.high',
-  'job.failed',
-  'alert.firing',
-] as const;
+type Event = Row<'/notification-events'>;
+type Channel = 'email' | 'telegram' | 'in_app';
+const CHANNELS: Channel[] = ['in_app', 'email', 'telegram'];
 
 /** Đường dẫn trong thông báo không kèm tiền tố realm (`/websites/…`): ghép với basepath. */
 const linkHref = (base: string, link: string) =>
@@ -155,15 +150,23 @@ function PreferencesCard() {
     queryKey: ['admin', 'notification-prefs'],
     queryFn: () => get('/notification-preferences'),
   });
-  if (q.isError)
+  // Danh mục sự kiện theo vai trò (D-104): Portal chỉ thấy sự kiện của USER, kênh in_app + email.
+  const ev = useQuery({
+    queryKey: ['admin', 'notification-events'],
+    queryFn: () => list('/notification-events'),
+  });
+  if (q.isError || ev.isError)
     return (
       <Card>
         <CardContent className="pt-4">
-          <ErrorState error={q.error} onRetry={() => void q.refetch()} />
+          <ErrorState
+            error={q.error ?? ev.error}
+            onRetry={() => void Promise.all([q.refetch(), ev.refetch()])}
+          />
         </CardContent>
       </Card>
     );
-  if (!q.data)
+  if (!q.data || !ev.data)
     return (
       <Card>
         <CardContent className="pt-4">
@@ -172,11 +175,15 @@ function PreferencesCard() {
       </Card>
     );
   // key theo updated_at: lưu xong nạp lại bản mới từ server.
-  return <PreferencesForm key={q.data.updated_at} initial={q.data} />;
+  return <PreferencesForm key={q.data.updated_at} initial={q.data} events={ev.data} />;
 }
 
-function PreferencesForm({ initial }: { initial: Prefs }) {
+function PreferencesForm({ initial, events }: { initial: Prefs; events: Event[] }) {
   const { t } = useTranslation('admin');
+  const has = (e: Event, c: Channel) => (e.channels as string[]).includes(c);
+  const channels = CHANNELS.filter((c) => events.some((e) => has(e, c)));
+  const groups = [...new Set(events.map((e) => e.group))];
+  const evLabel = (type: string) => t(`events.${type}` as never, { defaultValue: type }) as string;
   const [draft, setDraft] = useState<Prefs>(() => structuredClone(initial));
   const save = useAction(
     (p: Prefs) =>
@@ -186,7 +193,7 @@ function PreferencesForm({ initial }: { initial: Prefs }) {
       }),
     { success: t('notif.prefsSaved'), invalidate: [['admin', 'notification-prefs']] },
   );
-  const toggleEvent = (e: string, c: (typeof CHANNELS)[number], on: boolean) =>
+  const toggleEvent = (e: string, c: Channel, on: boolean) =>
     setDraft((d) => {
       const cur = d.events[e] ?? [];
       return {
@@ -200,7 +207,7 @@ function PreferencesForm({ initial }: { initial: Prefs }) {
       <CardContent className="flex flex-col gap-4">
         <fieldset className="flex flex-col gap-3">
           <legend className="mb-1 font-medium">{t('notif.channels')}</legend>
-          {CHANNELS.map((c) => (
+          {channels.map((c) => (
             <div key={c} className="flex items-center justify-between gap-3">
               <Label htmlFor={`ch-${c}`}>{t(`alerts.channel.${c}`)}</Label>
               <Switch
@@ -221,36 +228,61 @@ function PreferencesForm({ initial }: { initial: Prefs }) {
                 <th scope="col" className="py-1 text-left font-medium">
                   {t('notif.event')}
                 </th>
-                {CHANNELS.map((c) => (
+                {channels.map((c) => (
                   <th key={c} scope="col" className="px-2 py-1 font-medium">
                     {t(`alerts.channel.${c}`)}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {EVENTS.map((e) => (
-                <tr key={e} className="border-b border-border">
-                  <th scope="row" className="py-2 pr-2 text-left font-normal">
-                    {t(`notif.ev.${e}`)}
+            {groups.map((g) => (
+              <tbody key={g}>
+                <tr>
+                  <th
+                    scope="colgroup"
+                    colSpan={channels.length + 1}
+                    className="pt-3 pb-1 text-left text-xs font-medium tracking-wide text-subtle uppercase"
+                  >
+                    {t(`notif.groups.${g}` as never, { defaultValue: g }) as string}
                   </th>
-                  {CHANNELS.map((c) => (
-                    <td key={c} className="px-2 py-2 text-center">
-                      <Checkbox
-                        checked={(draft.events[e] ?? []).includes(c)}
-                        disabled={draft.channels[c] !== true}
-                        onCheckedChange={(v) => toggleEvent(e, c, v === true)}
-                        aria-label={t('notif.eventChannel', {
-                          event: t(`notif.ev.${e}`),
-                          channel: t(`alerts.channel.${c}`),
-                        })}
-                      />
-                    </td>
-                  ))}
                 </tr>
-              ))}
-            </tbody>
+                {events
+                  .filter((e) => e.group === g)
+                  .map((e) => (
+                    <tr key={e.type} className="border-b border-border">
+                      <th scope="row" className="py-2 pr-2 text-left font-normal">
+                        {evLabel(e.type)}
+                      </th>
+                      {channels.map((c) => {
+                        if (!has(e, c))
+                          return (
+                            <td key={c} className="px-2 py-2 text-center text-subtle">
+                              <span aria-hidden>—</span>
+                              <span className="sr-only">{t('notif.unavailable')}</span>
+                            </td>
+                          );
+                        const locked = c === 'in_app' && e.in_app_locked;
+                        return (
+                          <td key={c} className="px-2 py-2 text-center">
+                            <Checkbox
+                              checked={locked || (draft.events[e.type] ?? []).includes(c)}
+                              disabled={locked || draft.channels[c] !== true}
+                              onCheckedChange={(v) => toggleEvent(e.type, c, v === true)}
+                              aria-label={t('notif.eventChannel', {
+                                event: evLabel(e.type),
+                                channel: t(`alerts.channel.${c}`),
+                              })}
+                              {...(locked ? { title: t('notif.locked') } : {})}
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+              </tbody>
+            ))}
           </table>
+          <p className="mt-2 text-xs text-muted">{t('notif.lockedHint')}</p>
         </div>
         <div className="flex justify-end">
           <Button onClick={() => save.mutate(draft)} disabled={save.isPending}>

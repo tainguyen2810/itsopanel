@@ -11,13 +11,10 @@
           "items": {
             "$ref": "../defs.schema.json#/$defs/Account"
           },
-          "minItems": 1,
           "maxItems": 1000
         }
       },
-      "required": [
-        "accounts"
-      ],
+      "required": [],
       "additionalProperties": false
     },
     "result": {
@@ -56,6 +53,26 @@
               "oom_kills": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "cpu_pct": {
+                "type": "number",
+                "minimum": 0
+              },
+              "io_read_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "io_write_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "io_read_bps": {
+                "type": "number",
+                "minimum": 0
+              },
+              "io_write_bps": {
+                "type": "number",
+                "minimum": 0
               }
             },
             "required": [
@@ -65,14 +82,24 @@
               "memory_current_mb",
               "memory_max_mb",
               "pids_current",
-              "oom_kills"
+              "oom_kills",
+              "cpu_pct",
+              "io_read_bytes",
+              "io_write_bytes",
+              "io_read_bps",
+              "io_write_bps"
             ],
             "additionalProperties": false
           }
+        },
+        "sampled_at": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
-        "accounts"
+        "accounts",
+        "sampled_at"
       ],
       "additionalProperties": false
     }

@@ -88,6 +88,8 @@ Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so v
 | Reconcile | `php artisan itso:reconcile [--account=<username>]` tạo job `hosting_account.reconcile` (đẩy lại `account.ensure` + `quota.apply` theo trạng thái mong muốn) để trạng thái observed khớp desired; `make dev` tự chạy sau khi agent sẵn sàng |
 | Dữ liệu demo | `php artisan db:seed --class=DemoSeeder` (từ chối chạy ở production): người dùng, gói, account mẫu; chi tiết ở `docs/runbooks/phase-3-demo.md` |
 
+**If-Match (từ 11.7):** ngoài ETag mạnh trong header, các endpoint rule cảnh báo, user, đích/chính sách backup và tùy chọn thông báo nhận `If-Match: "<updated_at>"` đúng bằng trường `updated_at` API trả về (độ phân giải giây; giao diện và bản demo gửi giá trị này) qua `App\Http\Support\IfMatch`; mốc khác → `412`. Tùy chọn thông báo có ETag chính là `"<updated_at>"`. **SSE job (11.6):** `GET /jobs/{id}/events` — xem ADR 0051.
+
 ## 2. Hosting Provisioning Service (lớp nội bộ)
 
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.
@@ -109,7 +111,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | Docker | `/admin/servers/{id}/docker/*`, `/admin/compose-projects` |
 | WordPress | `/admin/wordpress/*` |
 | Git deploy | `GET/POST /admin/git-repositories`, `GET/PATCH/DELETE …/{id}`, `POST …:rotate-webhook-secret`, `GET/POST …/{id}/deployments`, `POST /admin/git-deployments/{id}:rollback`. Webhook công khai `POST /hooks/git/{token}` (HMAC) để Phase 10 |
-| Monitoring, Audit, Jobs, Settings, Notifications | `/admin/metrics/*`, `/admin/alert-rules`, `/admin/audit-logs`, `/admin/jobs`, `/admin/settings/*` |
+| Monitoring, Audit, Jobs, Settings, Notifications | `/admin/metrics/*`, `/admin/alert-rules`, `/admin/audit-logs`, `/admin/jobs`, `/admin/settings/*` (SMTP: nhóm `smtp`, mật khẩu chỉ ghi); `/admin/notification-channels` (+ `:test` gửi đồng bộ, SA `monitoring.manage`, bí mật chỉ ghi), `/admin/notification-deliveries` (+ `:resend` cho failed/blocked, khác → 409), `/admin/notification-events`, `/admin/notification-preferences` (11.5) |
 | Terminal | `POST /admin/terminal/sessions` (root terminal chỉ chạy khi policy cục bộ cho phép) |
 
 ## 4. Portal API (USER, chỉ trên tài nguyên của mình)
@@ -127,7 +129,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | WordPress | `/portal/wordpress/*` |
 | Git deploy | `/portal/git-repositories*`, `/portal/git-deployments/{id}:rollback` (khi gói cho phép) |
 | Terminal | `POST /portal/terminal/sessions` (chỉ khi gói cho SSH; shell trong jail) |
-| Jobs, Notifications, Profile | `/portal/jobs/{id}`, `/portal/notifications`, `/portal/profile`, `/portal/mfa/*`, `/portal/sessions` |
+| Jobs, Notifications, Profile | `/portal/jobs/{id}`, `/portal/notifications`, `/portal/notification-events` (chỉ sự kiện của USER), `/portal/notification-preferences` (in_app + email), `/portal/profile`, `/portal/mfa/*`, `/portal/sessions` |
 
 Portal **không có**: servers, packages, users, firewall, docker, software, settings hệ thống. Truy cập tài nguyên không thuộc mình trả `404`.
 

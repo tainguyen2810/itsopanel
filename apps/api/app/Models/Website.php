@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Monitoring\UptimeService;
 use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -54,6 +55,16 @@ class Website extends Model
     protected function casts(): array
     {
         return ['observed_facts' => 'array', 'drift' => 'array', 'observed_at' => 'datetime'];
+    }
+
+    protected static function booted(): void
+    {
+        // D-105: website có SSL được bật uptime check mặc định (khi tạo hoặc khi chuyển sang có SSL).
+        static::saved(function (self $w): void {
+            if (($w->ssl_mode ?? 'none') !== 'none' && ($w->wasRecentlyCreated || $w->wasChanged('ssl_mode'))) {
+                UptimeService::ensureDefault($w);
+            }
+        });
     }
 
     /** @return BelongsTo<HostingAccount, $this> */

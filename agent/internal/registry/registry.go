@@ -44,7 +44,7 @@ type Result struct {
 	Cached       bool           `json:"cached,omitempty"`
 }
 
-var retryable = map[string]bool{"deadline_exceeded": true, "busy": true, "dependency_unavailable": true}
+var retryable = map[string]bool{"deadline_exceeded": true, "busy": true, "dependency_unavailable": true, "agent_unreachable": true}
 
 // Registry giữ handler và cache kết quả theo op_id (idempotent) + nonce đã dùng.
 type Registry struct {

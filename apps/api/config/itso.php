@@ -21,7 +21,7 @@ use App\Domain\WordPress\WordPressService;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
-    'version' => env('ITSO_VERSION', '0.1.0-alpha'),
+    'version' => env('ITSO_VERSION', '0.5.0-beta'),
     'commit' => env('ITSO_COMMIT', 'dev'),
     'agent_min_version' => '0.1.0',
     // Kênh cập nhật hiển thị ở /system/updates (panel không tự cập nhật; root chạy `itso update`).
@@ -54,6 +54,12 @@ return [
         'install_url' => env('ITSO_INSTALL_URL'),
     ],
 
+    // SSE sự kiện job (D-106, ADR 0051): giữ tối đa 5 phút, heartbeat 15 giây, đọc log mới mỗi giây.
+    'sse' => [
+        'max_sec' => (int) env('ITSO_SSE_MAX_SEC', 300),
+        'heartbeat_sec' => 15,
+        'poll_ms' => (int) env('ITSO_SSE_POLL_MS', 1000),
+    ],
     'relay' => [
         // Unix socket của itso-relay (Laravel gửi envelope cho node mtls qua đây).
         'socket' => env('ITSO_RELAY_SOCKET', '/run/itso-relay/relay.sock'),

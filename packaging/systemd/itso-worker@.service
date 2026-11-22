@@ -11,7 +11,7 @@ Group=itso
 Slice=itso-panel.slice
 EnvironmentFile=/etc/itso/itso.env
 WorkingDirectory=/opt/itso/current/api
-ExecStart=/opt/itso/current/bin/frankenphp php-cli /opt/itso/current/api/artisan queue:work --sleep=1 --tries=1 --max-time=3600
+ExecStart=/opt/itso/current/bin/frankenphp php-cli /opt/itso/current/api/artisan queue:work --queue=default,notifications --sleep=1 --tries=1 --max-time=3600
 Restart=always
 RestartSec=2s
 NoNewPrivileges=yes

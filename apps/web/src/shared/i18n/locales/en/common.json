@@ -95,7 +95,15 @@
     "unhealthy": "Unhealthy",
     "starting": "Starting",
     "updating": "Updating",
-    "cloning": "Cloning"
+    "cloning": "Cloning",
+    "up": "Up",
+    "down": "Down",
+    "paused": "Paused",
+    "unknown": "Unknown",
+    "sent": "Sent",
+    "sending": "Sending",
+    "retrying": "Retrying",
+    "blocked": "Blocked"
   },
   "table": {
     "selected_one": "{{count}} row selected",

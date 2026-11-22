@@ -16,7 +16,7 @@ it('GET /api/v1/system/health khớp schema getHealth (admin và portal)', funct
 it('GET /api/v1/admin/system/version khớp schema getSystemVersion', function () {
     $res = adminSpa($this)->get('/api/v1/admin/system/version');
     assertMatchesContract('itso-admin-v1.yaml', 'get', '/api/v1/admin/system/version', 200, $res);
-    expect($res->json('data.version'))->toBe('0.1.0-alpha');
+    expect($res->json('data.version'))->toBe('0.5.0-beta');
 });
 
 it('GET /api/v1/admin/system/status: agent mock trả pong → reachable, khớp schema', function () {

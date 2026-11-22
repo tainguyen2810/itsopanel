@@ -11,7 +11,7 @@ sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_recor
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
 uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal malware_finding waf_event fim_change
-backup_repository backup_verification wp_update""".split())}
+backup_repository backup_verification wp_update notification_channel notification_delivery""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -1626,3 +1626,182 @@ NODE_ENROLLMENT = {
     "ca_sha256": CA_SHA256, "hmac_key": "q3Vx9-Lm2Pz7Rt4Kc8Wn1Ys6Hd0Bf5Ga3Je9Ui2Oa7E",
     "relay_url": "https://admin.itso.local:28444", "cert_not_after": "2026-12-21T09:00:00+07:00",
 }
+
+# ================================================================ Phase 11: giám sát, cảnh báo, thông báo (11.0)
+METRICS.update({"unit": "pct", "source": "samples", "limit": None})
+for _r in ALERT_RULES:
+    _r.update({"is_default": False, "repeat_sec": 14400, "firing_count": 0})
+ALERT_RULES[1]["is_default"] = True  # Disk server > 90%
+for _k, (_name, _metric, _scope, _op, _thr, _for, _sev, _ch) in enumerate([
+    ("Server mất kết nối", "agent_offline_sec", "server", "gte", 90, 0, "critical", ["in_app", "email", "telegram"]),
+    ("Inode server > 90%", "inode_pct", "server", "gt", 90, 300, "high", ["in_app", "email"]),
+    ("Dịch vụ lõi dừng", "service_down", "server", "gte", 1, 120, "high", ["in_app", "email"]),
+    ("Website không phản hồi", "uptime_down", "website", "gte", 1, 0, "high", ["in_app", "email", "webhook"]),
+    ("Chứng chỉ còn ≤ 7 ngày", "cert_days", "website", "lte", 7, 0, "medium", ["in_app", "email"]),
+    ("Backup lỗi", "backup_failed", "hosting_account", "gte", 1, 0, "high", ["in_app", "email"]),
+]):
+    ALERT_RULES.append({"uuid": u("alert_rule", 10 + _k), "name": _name, "metric": _metric, "scope_type": _scope,
+                        "scope_uuid": None, "operator": _op, "threshold": _thr, "for_sec": _for, "severity": _sev,
+                        "channels": _ch, "enabled": True, "is_default": True, "repeat_sec": 14400, "firing_count": 0,
+                        **ts()})
+_RULE = {r["name"]: r for r in ALERT_RULES}
+
+
+def _alert_ref(name):
+    return {"uuid": _RULE[name]["uuid"], "name": name}
+
+
+ALERTS[0].update({"message": "CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút", "server": server_ref(2),
+                  "acknowledged_by": None, "acknowledged_at": None, "silenced_until": None, "last_notified_at": T2})
+ALERTS[1].update({"message": "Disk srv-hn-01 91,8% (ngưỡng 90%)", "server": server_ref(0), "acknowledged_by": None,
+                  "acknowledged_at": None, "silenced_until": None, "last_notified_at": "2026-11-19T02:15:00+07:00"})
+ALERTS[2].update({"state": "firing", "message": "Quota disk thientam 96,4% (ngưỡng 95%)", "server": server_ref(0),
+                  "acknowledged_by": user_ref(1), "acknowledged_at": "2026-11-20T07:52:00+07:00", "silenced_until": None,
+                  "last_notified_at": "2026-11-20T07:41:00+07:00"})
+ALERTS.extend([
+    {"uuid": u("alert", 4), "rule": _alert_ref("Server mất kết nối"), "severity": "critical", "state": "firing",
+     "resource": {"type": "server", "uuid": SERVERS[2]["uuid"]}, "value": 1260,
+     "message": "srv-hcm-01 không gửi heartbeat 21 phút; job mới chờ node quay lại", "server": server_ref(2),
+     "started_at": "2026-11-20T07:54:00+07:00", "resolved_at": None, "acknowledged_by": None, "acknowledged_at": None,
+     "silenced_until": None, "last_notified_at": "2026-11-20T07:54:30+07:00"},
+    {"uuid": u("alert", 5), "rule": _alert_ref("Website không phản hồi"), "severity": "high", "state": "firing",
+     "resource": {"type": "website", "uuid": WEBSITES[15]["uuid"]}, "value": 1,
+     "message": "intranet.itso.vn trả 502 ba lần liên tiếp", "server": server_ref(0),
+     "started_at": "2026-11-20T08:02:00+07:00", "resolved_at": None, "acknowledged_by": None, "acknowledged_at": None,
+     "silenced_until": "2026-11-20T09:02:00+07:00", "last_notified_at": "2026-11-20T08:02:10+07:00"},
+    {"uuid": u("alert", 6), "rule": {"uuid": ALERT_RULES[2]["uuid"], "name": ALERT_RULES[2]["name"]},
+     "severity": "medium", "state": "pending", "resource": {"type": "server", "uuid": SERVERS[1]["uuid"]}, "value": 92.6,
+     "message": "RAM srv-hn-02 92,6% (ngưỡng 90%) mới 6/15 phút", "server": server_ref(1),
+     "started_at": "2026-11-20T08:09:00+07:00", "resolved_at": None, "acknowledged_by": None, "acknowledged_at": None,
+     "silenced_until": None, "last_notified_at": None},
+    {"uuid": u("alert", 7), "rule": _alert_ref("Chứng chỉ còn ≤ 7 ngày"), "severity": "medium", "state": "resolved",
+     "resource": {"type": "website", "uuid": WEBSITES[7]["uuid"]}, "value": 6,
+     "message": "saomai.edu.vn còn 6 ngày; đã gia hạn", "server": server_ref(1),
+     "started_at": "2026-11-17T03:17:00+07:00", "resolved_at": "2026-11-17T03:19:00+07:00", "acknowledged_by": None,
+     "acknowledged_at": None, "silenced_until": None, "last_notified_at": "2026-11-17T03:17:20+07:00"},
+])
+for _r in ALERT_RULES:
+    _r["firing_count"] = sum(1 for a in ALERTS if a["rule"]["uuid"] == _r["uuid"] and a["state"] == "firing")
+DASHBOARD["alerts_firing"] = sum(1 for a in ALERTS if a["state"] == "firing")
+DASHBOARD["alerts_recent"] = sorted([a for a in ALERTS if a["state"] == "firing"],
+                                    key=lambda a: a["started_at"], reverse=True)[:5]
+ALERT_PREVIEW = {"matches": 1, "evaluated_at": T2, "resources": [
+    {"resource": {"type": "server", "uuid": SERVERS[0]["uuid"]}, "label": "srv-hn-01", "value": 81.4}]}
+
+_CERT = {0: "2027-01-28T07:00:00+07:00", 1: "2027-01-28T07:00:00+07:00", 4: "2027-02-03T07:00:00+07:00",
+         7: "2027-02-13T07:00:00+07:00", 15: "2026-12-01T07:00:00+07:00", 18: "2026-12-26T07:00:00+07:00"}
+for _c in UPTIME:
+    _idx = next(i for i, w in enumerate(WEBSITES) if w["uuid"] == _c["website"]["uuid"])
+    _down = _c["last_status"] is None or _c["last_status"] >= 400
+    _c.update({"enabled": True, "path": "/", "keyword": None, "state": "down" if _down else "up",
+               "consecutive_failures": 4 if _down else 0,
+               "last_error": "HTTP 502 Bad Gateway" if _down else None,
+               "uptime_24h": 96.5 if _down else 100.0, "uptime_7d": 98.9 if _down else min(100.0, _c["uptime_30d"] + 0.02),
+               "cert_expires_at": _CERT.get(_idx), "down_since": "2026-11-20T08:00:00+07:00" if _down else None})
+UPTIME[0]["keyword"] = "An Phát"
+UPTIME.append({"uuid": u("uptime_check", 9), "website": site_ref(13), "url": "https://gionui.vn/wp-login.php",
+               "interval_sec": 300, "last_status": None, "last_latency_ms": None, "uptime_30d": 99.8,
+               "last_checked_at": "2026-11-18T17:00:00+07:00", "enabled": False, "path": "/wp-login.php", "keyword": None,
+               "state": "paused", "consecutive_failures": 0, "last_error": None, "uptime_24h": 100.0, "uptime_7d": 99.8,
+               "cert_expires_at": None, "down_since": None})
+UPTIME_RESULTS = []
+for _k in range(24):
+    _m = 15 - _k
+    _at = "2026-11-20T%02d:%02d:00+07:00" % (8 + (_m // 60) if _m >= 0 else 7, _m % 60)
+    _ok = _k not in (9, 10)
+    UPTIME_RESULTS.append({"at": _at, "ok": _ok, "status": 200 if _ok else 503,
+                           "latency_ms": 160 + (_k * 37) % 90 if _ok else 10000,
+                           "error": None if _ok else "HTTP 503 Service Unavailable"})
+
+ACCOUNT_USAGE = []
+for _i, (_cpu, _io_r, _io_w, _tasks) in {0: (35.0, 210_000, 95_000, 42), 1: (6.5, 12_000, 4_000, 11),
+                                          4: (18.2, 88_000, 61_000, 27), 7: (54.8, 340_000, 260_000, 63),
+                                          9: (12.1, 40_000, 22_000, 19)}.items():
+    _a = ACCOUNTS[_i]
+    _u = _a["usage"]
+    ACCOUNT_USAGE.append({"hosting_account": acc_ref(_i), "server": _a["server"], "cpu_pct": _cpu,
+                          "ram_mb": float(_u["ram_mb"]["used"]), "ram_limit_mb": _u["ram_mb"]["limit"],
+                          "io_read_bps": float(_io_r), "io_write_bps": float(_io_w), "tasks": _tasks,
+                          "disk_mb": float(_u["disk_mb"]["used"]), "disk_limit_mb": _u["disk_mb"]["limit"],
+                          "sampled_at": "2026-11-20T08:15:00+07:00"})
+ACCOUNT_USAGE.sort(key=lambda r: -r["cpu_pct"])
+
+NOTIFICATION_CHANNELS = [
+    {"uuid": u("notification_channel", 1), "type": "email", "name": "Nhóm vận hành",
+     "enabled": True, "config": {"recipients": ["ops@itso.vn", "truc-ca@itso.vn"], "chat_id": None, "url": None,
+                                 "allow_private_network": False},
+     "secret_set": False, "last_delivery": {"state": "sent", "at": "2026-11-20T07:54:31+07:00", "error": None}, **ts()},
+    {"uuid": u("notification_channel", 2), "type": "telegram", "name": "Telegram trực ca",
+     "enabled": True, "config": {"recipients": [], "chat_id": "-1001234567890", "url": None, "allow_private_network": False},
+     "secret_set": True, "last_delivery": {"state": "sent", "at": "2026-11-20T07:54:32+07:00", "error": None}, **ts()},
+    {"uuid": u("notification_channel", 3), "type": "webhook", "name": "Webhook Mattermost",
+     "enabled": True, "config": {"recipients": [], "chat_id": None, "url": "https://chat.itso.vn/hooks/k3x9w2",
+                                 "allow_private_network": False},
+     "secret_set": True, "last_delivery": {"state": "failed", "at": "2026-11-20T08:02:41+07:00",
+                                           "error": "HTTP 500 sau 3 lần thử"}, **ts()},
+    {"uuid": u("notification_channel", 4), "type": "webhook", "name": "Webhook phòng máy (mạng riêng)",
+     "enabled": False, "config": {"recipients": [], "chat_id": None, "url": "http://10.10.5.30:8080/alert",
+                                  "allow_private_network": True},
+     "secret_set": True, "last_delivery": None, **ts()},
+]
+
+
+def _ch(i):
+    c = NOTIFICATION_CHANNELS[i]
+    return {"uuid": c["uuid"], "name": c["name"], "type": c["type"]}
+
+
+NOTIFICATION_DELIVERIES = [
+    {"uuid": u("notification_delivery", 1), "channel": _ch(0), "event_type": "alert.firing",
+     "title": "[CRITICAL] srv-hcm-01 mất kết nối", "severity": "critical", "state": "sent", "attempts": 1,
+     "error": None, "response_code": 250, "created_at": "2026-11-20T07:54:30+07:00",
+     "sent_at": "2026-11-20T07:54:31+07:00", "next_retry_at": None},
+    {"uuid": u("notification_delivery", 2), "channel": _ch(2), "event_type": "alert.firing",
+     "title": "[HIGH] intranet.itso.vn không phản hồi", "severity": "high", "state": "failed", "attempts": 3,
+     "error": "HTTP 500 Internal Server Error", "response_code": 500, "created_at": "2026-11-20T08:02:10+07:00",
+     "sent_at": None, "next_retry_at": None},
+    {"uuid": u("notification_delivery", 3), "channel": _ch(1), "event_type": "alert.firing",
+     "title": "[CRITICAL] srv-hcm-01 mất kết nối", "severity": "critical", "state": "sent", "attempts": 1,
+     "error": None, "response_code": 200, "created_at": "2026-11-20T07:54:30+07:00",
+     "sent_at": "2026-11-20T07:54:32+07:00", "next_retry_at": None},
+    {"uuid": u("notification_delivery", 4), "channel": _ch(2), "event_type": "backup.failed",
+     "title": "Backup thientam lỗi", "severity": "high", "state": "retrying", "attempts": 2,
+     "error": "Hết thời gian chờ (5 giây)", "response_code": None, "created_at": "2026-11-20T08:10:00+07:00",
+     "sent_at": None, "next_retry_at": "2026-11-20T08:25:00+07:00"},
+    {"uuid": u("notification_delivery", 5), "channel": _ch(3), "event_type": "channel.test",
+     "title": "Tin thử từ ITSO Panel", "severity": "info", "state": "blocked", "attempts": 0,
+     "error": "Địa chỉ 169.254.169.254 thuộc dải link-local, luôn bị chặn", "response_code": None,
+     "created_at": "2026-11-19T15:20:00+07:00", "sent_at": None, "next_retry_at": None},
+    {"uuid": u("notification_delivery", 6), "channel": _ch(0), "event_type": "alert.resolved",
+     "title": "[RESOLVED] Disk srv-hn-01 về 84%", "severity": "info", "state": "sent", "attempts": 1, "error": None,
+     "response_code": 250, "created_at": "2026-11-19T02:40:10+07:00", "sent_at": "2026-11-19T02:40:11+07:00",
+     "next_retry_at": None},
+]
+for _c in NOTIFICATION_CHANNELS:
+    _d = next((d for d in sorted(NOTIFICATION_DELIVERIES, key=lambda d: d["created_at"], reverse=True)
+               if d["channel"]["uuid"] == _c["uuid"] and d["state"] in ("sent", "failed", "blocked")), None)
+    _c["last_delivery"] = ({"state": _d["state"], "at": _d["sent_at"] or _d["created_at"], "error": _d["error"]}
+                           if _d else None)
+
+_ALL = ["super_admin", "admin"]
+NOTIFICATION_EVENTS = [
+    {"type": t, "group": g, "severity": sev, "audiences": aud, "channels": ch, "in_app_locked": sev == "critical"}
+    for t, g, sev, aud, ch in [
+        ("alert.firing", "monitoring", "high", _ALL, ["in_app", "email", "telegram"]),
+        ("alert.resolved", "monitoring", "info", _ALL, ["in_app", "email"]),
+        ("server.unreachable", "monitoring", "critical", _ALL, ["in_app", "email", "telegram"]),
+        ("website.down", "monitoring", "high", _ALL + ["user"], ["in_app", "email"]),
+        ("website.up", "monitoring", "info", _ALL + ["user"], ["in_app"]),
+        ("quota.warning", "account", "medium", _ALL + ["user"], ["in_app", "email"]),
+        ("quota.exceeded", "account", "high", _ALL + ["user"], ["in_app", "email"]),
+        ("account.suspended", "account", "high", _ALL + ["user"], ["in_app", "email"]),
+        ("account.unsuspended", "account", "info", ["user"], ["in_app", "email"]),
+        ("certificate.expiring", "ssl", "medium", _ALL + ["user"], ["in_app", "email"]),
+        ("certificate.renew_failed", "ssl", "high", _ALL + ["user"], ["in_app", "email"]),
+        ("backup.failed", "backup", "high", _ALL + ["user"], ["in_app", "email"]),
+        ("backup.succeeded", "backup", "info", _ALL, ["in_app"]),
+        ("job.failed", "jobs", "medium", _ALL + ["user"], ["in_app"]),
+        ("security.high", "security", "critical", _ALL, ["in_app", "email", "telegram"]),
+        ("wordpress.rolled_back", "wordpress", "high", _ALL + ["user"], ["in_app", "email"]),
+    ]
+]

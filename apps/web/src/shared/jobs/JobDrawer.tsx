@@ -10,11 +10,15 @@ import { Skeleton } from '@/ui/Feedback';
 import { JobProgress } from '@/ui/JobProgress';
 import { explainJobError } from './jobErrors';
 import { setJobDrawerOpen, useJobDrawer } from './jobStore';
+import { useJobEvents } from './useJobEvents';
 
 /** Job (schema chung trong common.yaml, giống nhau ở admin và portal). */
 export type Job = PortalSchemas['Job'];
 
-const TERMINAL = new Set(['succeeded', 'failed', 'cancelled']);
+const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'timed_out']);
+
+/** Poll dự phòng khi không có SSE (contract: 2 giây). */
+export const POLL_MS = 2000;
 
 export function jobStatus(state: Job['state']) {
   if (state === 'cancel_requested') return 'running' as const;
@@ -53,19 +57,26 @@ export function JobView({ job, title }: { job: Job; title?: string }) {
 }
 
 /**
- * Drawer toàn cục theo dõi job: tự làm mới tới khi job kết thúc, báo toast và làm mới dữ liệu
- * các trang (invalidate cache) khi xong.
+ * Drawer toàn cục theo dõi job: nhận tiến độ qua SSE (`links.events`), lỗi SSE thì poll 2 giây tới khi job kết thúc;
+ * báo toast và làm mới dữ liệu các trang (invalidate cache) khi xong.
  */
 export function JobDrawerHost({ fetchJob }: { fetchJob: (uuid: string) => Promise<Job> }) {
   const { t } = useTranslation('common');
   const { uuid, open } = useJobDrawer();
   const qc = useQueryClient();
+  // Job đã có trong cache (lần tải đầu hoặc sự kiện SSE) cho biết URL luồng và job đã kết thúc chưa.
+  const cached = uuid ? qc.getQueryData<Job>(['job', uuid]) : undefined;
+  const live = useJobEvents(
+    uuid,
+    cached?.links.events,
+    cached ? TERMINAL.has(cached.state) : false,
+  );
   const q = useQuery({
     queryKey: ['job', uuid],
     queryFn: () => fetchJob(uuid as string),
     enabled: uuid !== null,
     refetchInterval: (query) =>
-      query.state.data && TERMINAL.has(query.state.data.state) ? false : 800,
+      live || (query.state.data && TERMINAL.has(query.state.data.state)) ? false : POLL_MS,
   });
   const announced = useRef<string | null>(null);
   const job = q.data;

@@ -22,7 +22,7 @@ import (
 )
 
 // Version là phiên bản agent thật (ghi đè bằng -ldflags khi build release).
-var Version = "0.1.0-alpha"
+var Version = "0.5.0-beta"
 
 // Deps là phụ thuộc của handler.
 type Deps struct {
@@ -59,6 +59,8 @@ type Deps struct {
 
 	mu       sync.Mutex
 	inflight map[string]context.CancelFunc
+	// rates: mốc bộ đếm cho tốc độ IO/network/CPU slice (Phase 11), khóa bởi mu.
+	rates map[string]rateState
 }
 
 func (d *Deps) now() time.Time {
@@ -147,6 +149,9 @@ func extraHandlers(d *Deps) map[string]registry.Handler {
 }
 
 func (d *Deps) ping(context.Context, *envelope.Envelope) (map[string]any, error) {
+	if err := d.offlineErr(); err != nil {
+		return nil, err
+	}
 	mode := "real"
 	if d.Sandbox {
 		mode = "sandbox"

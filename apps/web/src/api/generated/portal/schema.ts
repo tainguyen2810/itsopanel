@@ -987,6 +987,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal/hosting-accounts/{id}/uptime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uptime các website của account */
+        get: operations["portalListAccountUptimeChecks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portal/hosting-accounts/{id}/usage": {
         parameters: {
             query?: never;
@@ -996,6 +1013,23 @@ export interface paths {
         };
         /** Usage so với quota */
         get: operations["portalGetHostingAccountUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/hosting-accounts/{id}/usage-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chuỗi số liệu account của tôi */
+        get: operations["portalGetAccountMetrics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1046,8 +1080,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Luồng tiến độ (SSE qua gateway)
-         * @description `text/event-stream`; mỗi sự kiện là một Job JSON. Fallback polling 2 giây.
+         * Luồng tiến độ (SSE)
+         * @description `text/event-stream` (D-106, ADR 0051). Sự kiện đầu `event: job` là snapshot Job JSON; sau đó `event: log` (JobLog JSON) cho mỗi dòng log mới và `event: job` khi trạng thái/tiến độ đổi. `id:` = seq của log (tăng dần) để nối lại bằng `Last-Event-ID`. Heartbeat comment mỗi 15 giây; giữ tối đa 5 phút hoặc tới khi job kết thúc; client lỗi SSE thì quay về poll `GET /jobs/{id}` 2 giây. Kiểm quyền như `GET /jobs/{id}`.
          */
         get: operations["portalStreamJobEvents"];
         put?: never;
@@ -1108,6 +1142,26 @@ export interface paths {
          *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
         post: operations["portalRetryJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/notification-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Danh mục sự kiện thông báo
+         * @description Portal chỉ thấy sự kiện có đối tượng `user`; kênh của USER chỉ `in_app` và `email` (D-104).
+         */
+        get: operations["portalListNotificationEvents"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1629,6 +1683,44 @@ export interface paths {
          * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
         patch: operations["portalUpdateWebsitePhp"];
+        trace?: never;
+    };
+    "/api/v1/portal/websites/{id}/uptime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Uptime check của website
+         * @description Website chưa có uptime check → 404.
+         */
+        get: operations["portalGetWebsiteUptime"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Bật/tắt, đổi đường dẫn hoặc từ khóa kiểm */
+        patch: operations["portalUpdateWebsiteUptime"];
+        trace?: never;
+    };
+    "/api/v1/portal/websites/{id}/uptime/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kết quả kiểm gần đây */
+        get: operations["portalListWebsiteUptimeResults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/portal/wordpress/sites": {
@@ -2462,6 +2554,51 @@ export interface components {
             /** @enum {string|null} */
             format?: "zip" | "tar.gz" | null;
         };
+        /** @description URL luôn thuộc domain của website (D-105): người dùng chỉ chọn đường dẫn, không nhập URL tùy ý. */
+        UptimeCheck: {
+            /** Format: uuid */
+            uuid: string;
+            website: components["schemas"]["WebsiteRef"];
+            /** Format: uri */
+            url: string;
+            interval_sec: number;
+            last_status: number | null;
+            last_latency_ms: number | null;
+            uptime_30d: number;
+            /** Format: date-time */
+            last_checked_at: string | null;
+            enabled?: boolean;
+            path?: string;
+            keyword?: string | null;
+            /** @enum {string} */
+            state?: "up" | "down" | "unknown" | "paused";
+            consecutive_failures?: number;
+            last_error?: string | null;
+            uptime_24h?: number;
+            uptime_7d?: number;
+            /** Format: date-time */
+            cert_expires_at?: string | null;
+            /** Format: date-time */
+            down_since?: string | null;
+        };
+        MetricSeries: {
+            resource: components["schemas"]["ResourceRef"];
+            metric: string;
+            step_sec: number;
+            points: [
+                string,
+                number
+            ][];
+            /** @description pct, mb, bps, count, ms */
+            unit?: string;
+            /**
+             * @description ≤ 24 giờ: samples 1 phút; dài hơn: rollup 1 giờ (D-101).
+             * @enum {string}
+             */
+            source?: "samples" | "rollup";
+            /** @description Giới hạn theo gói (số liệu account), để vẽ đường giới hạn. */
+            limit?: number | null;
+        };
         JobLog: {
             seq: number;
             /** Format: date-time */
@@ -2469,6 +2606,17 @@ export interface components {
             /** @enum {string} */
             level: "debug" | "info" | "warn" | "error";
             message: string;
+        };
+        NotificationEvent: {
+            type: string;
+            group: string;
+            /** @enum {string} */
+            severity: "info" | "low" | "medium" | "high" | "critical";
+            audiences: ("super_admin" | "admin" | "user")[];
+            /** @description Kênh người nhận được chọn cho sự kiện này. */
+            channels: ("in_app" | "email" | "telegram" | "webhook")[];
+            /** @description Mức critical: in-app luôn bật (D-104). */
+            in_app_locked: boolean;
         };
         NotificationPreferences: {
             channels: {
@@ -2787,6 +2935,20 @@ export interface components {
             upload_max_filesize?: components["schemas"]["NginxSize"];
             pm_max_children?: number;
             disable_functions?: string[];
+        };
+        UptimeCheckUpdate: {
+            path?: string;
+            interval_sec?: number;
+            keyword?: string | null;
+            enabled?: boolean;
+        };
+        UptimeResult: {
+            /** Format: date-time */
+            at: string;
+            ok: boolean;
+            status: number | null;
+            latency_ms: number | null;
+            error: string | null;
         };
         WordPressSite: {
             /** Format: uuid */
@@ -3114,6 +3276,10 @@ export interface components {
         UploadId: string;
         /** @description Vị trí chunk. */
         ContentRange: string;
+        /** @description Số liệu. */
+        Metric: "cpu_pct" | "ram_pct" | "disk_pct" | "net_in" | "net_out" | "load_1m" | "swap_pct" | "inode_pct" | "io_read" | "io_write" | "tasks";
+        /** @description Khoảng thời gian. */
+        Range: "1h" | "24h" | "7d" | "30d" | "90d";
         /** @description Lọc theo trạng thái job. */
         FilterState: components["schemas"]["JobState"];
         /** @description UUID domain. */
@@ -7376,6 +7542,101 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    portalListAccountUptimeChecks: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a2a-0001-7000-8000-00002a000001",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "url": "https://anphat.vn/",
+                     *           "interval_sec": 60,
+                     *           "last_status": 200,
+                     *           "last_latency_ms": 182,
+                     *           "uptime_30d": 99.97,
+                     *           "last_checked_at": "2026-11-20T08:15:00+07:00",
+                     *           "enabled": true,
+                     *           "path": "/",
+                     *           "keyword": "An Phát",
+                     *           "state": "up",
+                     *           "consecutive_failures": 0,
+                     *           "last_error": null,
+                     *           "uptime_24h": 100,
+                     *           "uptime_7d": 99.99,
+                     *           "cert_expires_at": "2027-01-28T07:00:00+07:00",
+                     *           "down_since": null
+                     *         },
+                     *         {
+                     *           "uuid": "01938a2a-0002-7000-8000-00002a000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0002-7000-8000-000006000002",
+                     *             "primary_domain": "shop.anphat.vn"
+                     *           },
+                     *           "url": "https://shop.anphat.vn/",
+                     *           "interval_sec": 60,
+                     *           "last_status": 200,
+                     *           "last_latency_ms": 240,
+                     *           "uptime_30d": 99.95,
+                     *           "last_checked_at": "2026-11-20T08:15:00+07:00",
+                     *           "enabled": true,
+                     *           "path": "/",
+                     *           "keyword": null,
+                     *           "state": "up",
+                     *           "consecutive_failures": 0,
+                     *           "last_error": null,
+                     *           "uptime_24h": 100,
+                     *           "uptime_7d": 99.97,
+                     *           "cert_expires_at": "2027-01-28T07:00:00+07:00",
+                     *           "down_since": null
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["UptimeCheck"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     portalGetHostingAccountUsage: {
         parameters: {
             query?: never;
@@ -7441,6 +7702,74 @@ export interface operations {
                      */
                     "application/json": {
                         data: components["schemas"]["Usage"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalGetAccountMetrics: {
+        parameters: {
+            query: {
+                /** @description Số liệu. */
+                metric: components["parameters"]["Metric"];
+                /** @description Khoảng thời gian. */
+                range?: components["parameters"]["Range"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "resource": {
+                     *           "type": "hosting_account",
+                     *           "uuid": "01938a05-0001-7000-8000-000005000001"
+                     *         },
+                     *         "metric": "cpu_pct",
+                     *         "step_sec": 300,
+                     *         "points": [
+                     *           [
+                     *             "2026-11-20T08:00:00+07:00",
+                     *             31.2
+                     *           ],
+                     *           [
+                     *             "2026-11-20T08:05:00+07:00",
+                     *             36.9
+                     *           ],
+                     *           [
+                     *             "2026-11-20T08:10:00+07:00",
+                     *             42.1
+                     *           ],
+                     *           [
+                     *             "2026-11-20T08:15:00+07:00",
+                     *             37.5
+                     *           ]
+                     *         ],
+                     *         "unit": "pct",
+                     *         "source": "samples",
+                     *         "limit": 100
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["MetricSeries"];
                     };
                 };
             };
@@ -7760,7 +8089,10 @@ export interface operations {
     portalStreamJobEvents: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Nối lại: chỉ gửi sự kiện có id lớn hơn (EventSource tự gửi). */
+                "Last-Event-ID"?: string;
+            };
             path: {
                 /** @description UUID tài nguyên. */
                 id: components["parameters"]["Id"];
@@ -7777,8 +8109,16 @@ export interface operations {
                 };
                 content: {
                     /**
-                     * @example event: job
+                     * @example retry: 2000
+                     *     id: 41
+                     *     event: job
                      *     data: {"uuid":"01938a0f-0002-7000-8000-00000f000002","state":"running","progress":60}
+                     *
+                     *     id: 42
+                     *     event: log
+                     *     data: {"seq":42,"at":"2026-11-20T08:00:05+07:00","level":"info","message":"Bước 2 xong."}
+                     *
+                     *     : ping
                      */
                     "text/event-stream": string;
                 };
@@ -8041,6 +8381,95 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalListNotificationEvents: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "type": "website.down",
+                     *           "group": "monitoring",
+                     *           "severity": "high",
+                     *           "audiences": [
+                     *             "super_admin",
+                     *             "admin",
+                     *             "user"
+                     *           ],
+                     *           "channels": [
+                     *             "in_app",
+                     *             "email"
+                     *           ],
+                     *           "in_app_locked": false
+                     *         },
+                     *         {
+                     *           "type": "website.up",
+                     *           "group": "monitoring",
+                     *           "severity": "info",
+                     *           "audiences": [
+                     *             "super_admin",
+                     *             "admin",
+                     *             "user"
+                     *           ],
+                     *           "channels": [
+                     *             "in_app"
+                     *           ],
+                     *           "in_app_locked": false
+                     *         },
+                     *         {
+                     *           "type": "quota.warning",
+                     *           "group": "account",
+                     *           "severity": "medium",
+                     *           "audiences": [
+                     *             "super_admin",
+                     *             "admin",
+                     *             "user"
+                     *           ],
+                     *           "channels": [
+                     *             "in_app",
+                     *             "email"
+                     *           ],
+                     *           "in_app_locked": false
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["NotificationEvent"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };
@@ -10827,6 +11256,204 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalGetWebsiteUptime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "uuid": "01938a2a-0001-7000-8000-00002a000001",
+                     *         "website": {
+                     *           "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *           "primary_domain": "anphat.vn"
+                     *         },
+                     *         "url": "https://anphat.vn/",
+                     *         "interval_sec": 60,
+                     *         "last_status": 200,
+                     *         "last_latency_ms": 182,
+                     *         "uptime_30d": 99.97,
+                     *         "last_checked_at": "2026-11-20T08:15:00+07:00",
+                     *         "enabled": true,
+                     *         "path": "/",
+                     *         "keyword": "An Phát",
+                     *         "state": "up",
+                     *         "consecutive_failures": 0,
+                     *         "last_error": null,
+                     *         "uptime_24h": 100,
+                     *         "uptime_7d": 99.99,
+                     *         "cert_expires_at": "2027-01-28T07:00:00+07:00",
+                     *         "down_since": null
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["UptimeCheck"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalUpdateWebsiteUptime: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412. */
+                "If-Match"?: components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "keyword": "Liên hệ"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UptimeCheckUpdate"];
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "uuid": "01938a2a-0001-7000-8000-00002a000001",
+                     *         "website": {
+                     *           "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *           "primary_domain": "anphat.vn"
+                     *         },
+                     *         "url": "https://anphat.vn/",
+                     *         "interval_sec": 60,
+                     *         "last_status": 200,
+                     *         "last_latency_ms": 182,
+                     *         "uptime_30d": 99.97,
+                     *         "last_checked_at": "2026-11-20T08:15:00+07:00",
+                     *         "enabled": true,
+                     *         "path": "/",
+                     *         "keyword": "An Phát",
+                     *         "state": "up",
+                     *         "consecutive_failures": 0,
+                     *         "last_error": null,
+                     *         "uptime_24h": 100,
+                     *         "uptime_7d": 99.99,
+                     *         "cert_expires_at": "2027-01-28T07:00:00+07:00",
+                     *         "down_since": null
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["UptimeCheck"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalListWebsiteUptimeResults: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "at": "2026-11-20T08:15:00+07:00",
+                     *           "ok": true,
+                     *           "status": 200,
+                     *           "latency_ms": 160,
+                     *           "error": null
+                     *         },
+                     *         {
+                     *           "at": "2026-11-20T08:14:00+07:00",
+                     *           "ok": true,
+                     *           "status": 200,
+                     *           "latency_ms": 197,
+                     *           "error": null
+                     *         },
+                     *         {
+                     *           "at": "2026-11-20T08:13:00+07:00",
+                     *           "ok": true,
+                     *           "status": 200,
+                     *           "latency_ms": 234,
+                     *           "error": null
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["UptimeResult"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
         };

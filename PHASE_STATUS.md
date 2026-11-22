@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` (kế hoạch `docs/planning/seed/PHASE_11_PROMPTS.md`, D-101 → D-107 đề xuất; **chờ người dùng chọn bắt đầu**). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** chưa bắt đầu (11.0 Mockup là prompt đầu)
-- **Task đang làm:** không
+- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` ✓ hoàn tất phần không cần VM, **chờ duyệt** (báo cáo `docs/reports/phase-11.md`, release notes `docs/releases/v0.5.0-beta.md`; merge `--no-ff` vào `main`, tag local `v0.5.0-beta`). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** — (11.0–11.8 ✓)
+- **Task đang làm:** không; DỪNG trước Phase 12, chờ người dùng duyệt Phase 11
 - **Commit cuối:** xem `git log -1` trên `main`
-- **Bước tiếp theo:** khi người dùng chọn bắt đầu: tạo nhánh `phase-11`, làm hàng loạt 11.0 → 11.8, tự merge, phát hành `v0.5.0-beta` (tag local), DỪNG trước Phase 12; chạy `tests/vm/phase4–10.sh` khi có VM
+- **Bước tiếp theo:** người dùng duyệt Phase 11 / `v0.5.0-beta`, rồi chọn bắt đầu Phase 12; chạy `tests/vm/phase4–11.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -26,22 +26,22 @@
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
-| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ kế hoạch xong, chờ bắt đầu |
+| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✓ chờ duyệt (báo cáo `docs/reports/phase-11.md`; `v0.5.0-beta` tag local; tiêu chí cần VM: chờ VM) |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
 
-Phase 11 (kế hoạch 2026-11-22, chờ bắt đầu) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
+Phase 11 (bắt đầu 2026-11-22, nhánh `phase-11`) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
 
-- ○ 11.0 Mockup Monitoring, Uptime, Alerts, kênh + tùy chọn thông báo trên bản demo (`docs/screenshots/phase-11/`)
-- ○ 11.1 ADR 0046–0052 (D-101…D-107), contracts, migration Phase 11
-- ○ 11.2 Agent: metrics mở rộng, cgroup theo lô, `uptime.probe`
-- ○ 11.3 Panel metrics: rollup, prune, API theo khoảng, usage account
-- ○ 11.4 Panel alerts: rule, bộ máy đánh giá, mất kết nối ≤ 2 phút, uptime
-- ○ 11.5 Notifications: email/Telegram/webhook, SSRF guard, định tuyến, sự kiện USER
-- ○ 11.6 Realtime job SSE, dashboard dữ liệu thật
-- ○ 11.7 UI nối API thật
-- ○ 11.8 e2e, VM Phase 11, review bảo mật, báo cáo, `v0.5.0-beta`, merge
+- ✓ 11.0 Mockup Monitoring, Uptime, Alerts, kênh + tùy chọn thông báo trên bản demo (`docs/screenshots/phase-11/`, 19 cảnh × 4 = 76 ảnh)
+- ✓ 11.1 ADR 0046–0052 (D-101…D-107), contracts, migration Phase 11
+- ✓ 11.2 Agent: metrics mở rộng, cgroup theo lô, `uptime.probe`
+- ✓ 11.3 Panel metrics: rollup, prune, API theo khoảng, usage account
+- ✓ 11.4 Panel alerts: rule, bộ máy đánh giá, mất kết nối ≤ 2 phút, uptime
+- ✓ 11.5 Notifications: email/Telegram/webhook, SSRF guard, định tuyến, sự kiện USER
+- ✓ 11.6 Realtime job SSE, dashboard dữ liệu thật
+- ✓ 11.7 UI nối API thật
+- ✓ 11.8 e2e stack thật Phase 11 (5 luồng; toàn bộ 32/32 trên DB sạch), `tests/vm/phase11.sh` (M0–M5 chờ VM), review bảo mật, runbook, 5 lỗi e2e tìm ra đã sửa, `make check` (21 PASS · 1 SKIP · codegen-check sửa xong), `make release`, báo cáo, merge, tag local `v0.5.0-beta`
 
 Phase 10: ✓ APPROVED 2026-11-22 (merge `ea528c9`) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`
 
@@ -214,3 +214,9 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-22 | 10.7 | UI nối API thật: cài WordPress hiện mật khẩu quản trị một lần (`secret`), staging hiện basic auth tắt + lý do (API 422), MSW WordPress theo API (job `wordpress_site`, op thật, cần đích backup → 409, basic auth → 422, user admin chưa biết → `precondition_failed`, quét không có website PHP → 409, tên quản trị admin/administrator → 422), registry chỉ SA (403 như `docker.manage`); API: body cập nhật rỗng = mọi thành phần có bản mới, core trong lịch sử có slug `wordpress`, chặn tên quản trị admin/administrator; Vitest 593, Playwright demo + axe 100, Pest 505 | 18ea187 |
 | 2026-11-22 | 10.8 | Tích hợp: e2e stack thật `phase10.spec.ts` 4 luồng (Software PHP 8.3 + 8.2, gỡ đang dùng 409; Docker bật + step-up, privileged 422, apply, website docker, image unhealthy → `rolled_back`, registry, backup volume; WordPress secret một lần, update lỗi → `rolled_back` với restic thật, staging, harden; USER không chạm Docker); file điều khiển sandbox `docker-control.json`/`wp-control.json`; `make dev` bật docker trong policy sandbox; `tests/vm/phase10.sh` V0–V6; review bảo mật `docs/security/docker-wordpress-review.md`; runbook; e2e stack thật toàn bộ 26/27 lượt đầu (đĩa < 15 %, dọn cache, chạy lại xanh); `make check` 22 PASS · 1 SKIP · 0 FAIL; báo cáo `docs/reports/phase-10.md` | f1e0602 |
 | 2026-11-22 | 10 / duyệt · 11 / kế hoạch | Người dùng duyệt Phase 10 (merge `ea528c9`) và yêu cầu lên kế hoạch tiếp; kế hoạch `PHASE_11_PROMPTS.md` (11.0 mockup → 11.8 tích hợp + `v0.5.0-beta`), đề xuất D-101 → D-107 | — |
+| 2026-11-22 | 11.0 | Mockup Phase 11 trên bản demo: contracts + dữ liệu + MSW (SSRF giả lập), Giám sát (nhóm biểu đồ, offline, dịch vụ), tài nguyên account, uptime, cảnh báo (ack/silence, luật mặc định, xem trước), kênh + nhật ký gửi, Dashboard, Portal Giám sát, ma trận tùy chọn thông báo; 76 ảnh `docs/screenshots/phase-11/`; Vitest 616, Playwright demo + axe 708 | ac806f7 |
+| 2026-11-22 | 11.1 | ADR 0046–0052, D-101…D-107 APPROVED; agent-ops `metrics.snapshot` mở rộng, `metrics.cgroup` lô, `uptime.probe` + 20 vector độc; DBML + migration Phase 11 (8 bảng, fingerprint unique, uptime_results partition, deliveries); db-verify 172, Pest 505 | 1c13c74 |
+| 2026-11-22 | GitHub | Người dùng yêu cầu đưa code lên GitHub (chọn trên thẻ quyết định): remote `github` = `tainguyen2810/itsopanel`, đẩy `main`, `phase-10`, `phase-11`; tag bị proxy môi trường từ chối (HTTP 403), giữ local. D-51 cập nhật | — |
+| 2026-11-22 | 11.2 | Agent: `metrics.snapshot` điền RAM/swap tổng, inode, load 5/15, tasks, IO bps (chỉ đĩa vật lý), net theo interface (bỏ lo/veth/docker), mounts ext4/xfs/btrfs; tốc độ tính từ lần đọc trước (bộ đếm quay về → 0); `metrics.cgroup` lô (accounts rỗng = mọi slice có user, bỏ slice thiếu), cpu_pct + IO bytes/bps; `uptime.probe` (dial cố định 127.0.0.1, Host/SNI = domain, không proxy, redirect chỉ cùng host ≤ 3, timeout từng URL, 64 KB cho từ khóa, hạn chứng chỉ, song song 8); sandbox: file điều khiển `metrics-control.json` (disk_pct, offline → `agent_unreachable`, uptime_down, cert_days) + cây cgroup giả; registry: `agent_unreachable` retryable như errors.json; fuzz `FuzzUptimePath` | b7ff570 |
+| 2026-11-22 | 11.3 | Panel metrics: số liệu server mở rộng, account qua một `metrics.cgroup` lô/server trong usage-refresh, `itso:metrics-rollup` (giờ, idempotent, chạy bù), `itso:metrics-prune` (tạo trước 2 ngày, drop > 7 ngày, rollup > 90 ngày), API theo khoảng (≤ 24 giờ samples, dài hơn rollup, ≤ 500 điểm, unit/source/limit), top account theo server, Portal usage-history; sửa GROUP BY trùng tên cột; Pest 511 | 11ae375 |
+| 2026-11-22 | 11.4 | Alerts + uptime: 9 rule mặc định, `itso:alerts-evaluate` (pending/firing/resolved, mất kết nối firing ngay ≤ 2 phút, hysteresis 2 lượt, nhắc lại, ack, silence), thông báo in-app theo phạm vi; `itso:uptime-probe` (lô theo server, 3 lỗi → down), bảng mới `uptime_rollups` cho % 30 ngày; API rule/alert/uptime admin + Portal uptime; quyền `monitoring.*`; Pest 519, db-verify 176 | (commit này) |

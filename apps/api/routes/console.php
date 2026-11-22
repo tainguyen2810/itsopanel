@@ -41,3 +41,13 @@ Schedule::command('itso:software-refresh')->dailyAt('05:23')->withoutOverlapping
 // Phase 10: WordPress Toolkit (D-99) — làm mới bản mới hằng ngày, tự cập nhật theo cửa sổ giờ (kiểm mỗi giờ).
 Schedule::command('itso:wordpress-auto-update --refresh')->dailyAt('01:37')->withoutOverlapping();
 Schedule::command('itso:wordpress-auto-update')->hourlyAt(5)->withoutOverlapping();
+
+// Phase 11: lưu trữ số liệu (D-101) — rollup 1 giờ, tạo trước/drop partition và xóa rollup quá 90 ngày.
+Schedule::command('itso:metrics-rollup')->hourlyAt(2)->withoutOverlapping();
+Schedule::command('itso:metrics-prune')->dailyAt('00:13')->withoutOverlapping();
+// Phase 11: cảnh báo (D-102) và uptime (D-105) mỗi phút.
+Schedule::command('itso:uptime-probe')->everyMinute()->withoutOverlapping();
+Schedule::command('itso:alerts-evaluate')->everyMinute()->withoutOverlapping();
+// Phase 11 (ADR 0048/0049): tin tóm tắt + thử lại thông báo, chứng chỉ sắp hết hạn.
+Schedule::command('itso:notifications-tick')->everyMinute()->withoutOverlapping();
+Schedule::command('itso:certificates-expiry')->dailyAt('08:17')->withoutOverlapping();

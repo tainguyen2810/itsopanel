@@ -36,6 +36,7 @@ function ShellLayout() {
   const notes = useQuery({
     queryKey: ['admin', 'notifications'],
     queryFn: () => list('/notifications'),
+    refetchInterval: 30_000, // chuông thông báo poll 30 giây (D-106)
   });
   const unread = (notes.data ?? []).filter((n) => n.read_at === null).length;
   return (

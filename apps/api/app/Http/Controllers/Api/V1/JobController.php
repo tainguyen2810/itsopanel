@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Auth\Access;
 use App\Auth\Realm;
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Jobs\JobEvents;
 use App\Domain\Jobs\JobRunner;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\JobPresenter;
@@ -16,13 +17,13 @@ use App\Models\JobLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * /admin/jobs và /portal/jobs (cùng controller, phạm vi theo App\Auth\Access::jobs). Tiến độ: polling
- * GET /jobs/{id} hoặc /jobs/{id}/events (text/event-stream, một snapshot + retry 2 giây; luồng thật Phase 11).
+ * GET /jobs/{id} hoặc /jobs/{id}/events (SSE thật từ Phase 11, ADR 0051).
  */
 final class JobController
 {
@@ -31,6 +32,7 @@ final class JobController
         private readonly JobPresenter $present,
         private readonly JobRunner $runner,
         private readonly AuditLogger $audit,
+        private readonly JobEvents $events,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -57,14 +59,47 @@ final class JobController
             ->header('ETag', '"'.sha1($job->state.$job->progress.$job->updated_at->format('U.u')).'"');
     }
 
-    public function events(Request $request, string $id): Response
+    /**
+     * SSE thật (D-106, ADR 0051): snapshot job, rồi log mới (`id` = seq) và snapshot khi trạng thái đổi; heartbeat 15 giây;
+     * tối đa 5 phút hoặc tới khi job kết thúc; `Last-Event-ID` bỏ các sự kiện đã nhận. Quyền như GET /jobs/{id}.
+     */
+    public function events(Request $request, string $id): StreamedResponse
     {
         $job = $this->find($request, $id);
-        $data = json_encode($this->present->job($job, Realm::of($request)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $realm = Realm::of($request);
+        $last = $request->header('Last-Event-ID');
+        $after = is_string($last) && preg_match('/^[0-9]{1,18}$/', $last) === 1 ? (int) $last : 0;
+        $maxSec = (float) config('itso.sse.max_sec', 300);
+        $beatSec = (float) config('itso.sse.heartbeat_sec', 15);
+        $pollUs = (int) config('itso.sse.poll_ms', 1000) * 1000;
 
-        return response("retry: 2000\nevent: job\ndata: $data\n\n", 200, [
+        return response()->stream(function () use ($job, $realm, $after, $maxSec, $beatSec, $pollUs): void {
+            $start = microtime(true);
+            $beat = $start;
+            echo "retry: 2000\n\n";
+            $snap = $job->state.'|'.$job->progress.'|'.$job->attempts.'|'.($job->error_code ?? '');
+            echo JobEvents::frame('job', $after, $this->present->job($job, $realm));
+            while (true) {
+                [$out, $after, $snap, $done] = $this->events->frames($job, $realm, $after, $snap, $this->present);
+                if ($out !== '') {
+                    echo $out;
+                    $beat = microtime(true);
+                } elseif (microtime(true) - $beat >= $beatSec) {
+                    echo ": ping\n\n";
+                    $beat = microtime(true);
+                }
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+                flush();
+                if ($done || microtime(true) - $start >= $maxSec || connection_aborted() === 1) {
+                    break;
+                }
+                usleep($pollUs);
+            }
+        }, 200, [
             'Content-Type' => 'text/event-stream; charset=utf-8',
-            'Cache-Control' => 'no-cache',
+            'Cache-Control' => 'no-cache, no-transform',
             'X-Accel-Buffering' => 'no',
         ]);
     }

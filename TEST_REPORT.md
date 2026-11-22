@@ -2,6 +2,125 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.8 (Tích hợp: e2e stack thật, VM, review bảo mật, make check, v0.5.0-beta) — nhánh `phase-11`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue `default,notifications` + Vite + itso-agent `--sandbox` + node sandbox), DB `migrate:fresh --seed` + `DemoSeeder`. Webhook giả nghe trên IP dải riêng `10.99.0.1` thêm vào `lo` (SsrfGuard chặn loopback và `192.0.2.0/24` của container); SMTP giả Node trên `127.0.0.1:2525`. Container không có cgroup v2/systemd/nftables thật: `tests/vm/phase11.sh` **chờ VM**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 11 | `playwright test -c playwright.real.config.ts e2e-real/phase11.spec.ts` | **5/5 PASS** (3,6 phút): số liệu server từ agent sandbox, RAM account = `memory.current` của cgroup giả; disk 92 % → firing < 120 giây → webhook nhận tin ký HMAC đúng + SMTP giả nhận thư (link `/admin/monitoring/alerts`) → 80 % → resolved; `offline=true` → "Server mất kết nối" < 120 giây → resolved; uptime down sau 3 lần → cảnh báo, Portal thấy `down` → up; USER không có rule/kênh/deliveries/alerts |
+| E2E stack thật toàn bộ (DB sạch) | `make test-e2e-real` | **32/32 PASS** (22,7 phút). Lượt trước trên DB cũ 27/32: thư của rule khác đến trước (spec chọn thư disk), mẫu disk giả còn lại làm wizard Phase 3 loại server (spec thu mẫu thật ở `afterAll`) |
+| Lỗi e2e tìm ra | — | (1) webhook **500** trên stack thật: `'stream' => true` chuyển Guzzle sang StreamHandler, từ chối `CURLOPT_RESOLVE` (Pest dùng `Http::fake` nên không thấy) → bỏ `stream`, body ≤ 64 KB bằng callback progress, thêm `WebhookTransportTest` (HTTP thật qua `php -S`); (2) webhook đi qua `HTTPS_PROXY` của môi trường, mất ghim IP → `proxy=''`; (3) Cài đặt SMTP không xóa trống `username` (`""` → `null` → 422); (4) link email/Telegram thiếu `/admin`, `/portal`; (5) review bảo mật: trần 200 rule tự tạo (409). Mỗi lỗi có test hồi quy |
+| Pest | `vendor/bin/pest --parallel` | **536/536 PASS** (mới `WebhookTransportTest`, rule thứ 201 → 409; `itso:uptime-probe --all`; Settings xóa trống chuỗi; link theo realm; proxy rỗng + ghim IP) |
+| `make check` | `make check` | **21 PASS · 1 SKIP (staticcheck) · 1 FAIL** (1 396 s): `codegen-check` lệch vì file sinh sau khi sửa `demo.py` ở 11.7 chưa commit (chỉ ví dụ trong comment/JSON) → `make codegen`, commit `aa3457f`, `make codegen-check` **OK**. Trong đó: Pest 536/536, Vitest 623/623, Playwright demo + mockup 708/708, Go + fuzz PASS, db-verify 178 + migration Phase 3 → 11 khớp, lint web/api/agent, no-exec, installer, unit systemd |
+| Release | `make release` | `build/release/0.5.0-beta`: tarball, `itso`, `install.sh`, SBOM, `manifest.json` + `manifest.sig` (khóa DEV tạm); thiếu `frankenphp` (như alpha, ghi `missing_components`) |
+| Script VM | `bash -n tests/vm/phase11.sh` | OK; M0–M5 **chờ VM** |
+
+**Test bị bỏ qua:** không (staticcheck chưa cài trên container, như các Phase trước).
+
+## 2026-11-22 — Phase 11 / Prompt 11.7 (UI Monitoring/Alerts/Notifications nối API thật) — nhánh `phase-11`
+
+Phạm vi: đối chiếu mọi đường dẫn API các màn 11.0 dùng (client sinh từ OpenAPI) với `route:list` — đủ. Sửa lệch giữa giao diện và API thật: giao diện gửi `If-Match: "<updated_at>"` còn API so ETag riêng → PATCH rule cảnh báo, tùy chọn thông báo (và **lỗi có từ trước** ở sửa user, đích/chính sách backup) sẽ luôn 412 trên stack thật; thêm `App\Http\Support\IfMatch` nhận ETag mạnh hoặc mốc `updated_at`, ETag tùy chọn = `"<updated_at>"`. Danh mục sự kiện ở API khớp bản demo, chỉ kênh cá nhân (bỏ `webhook` khỏi `alert.firing`, webhook đi theo rule); `account.unsuspended` chỉ USER. Webhook có IP viết thẳng loopback/link-local/metadata (hoặc mạng riêng khi chưa bật) bị từ chối khi lưu như giao diện; tên miền vẫn kiểm khi gửi. MSW: tùy chọn kiểm như API (Portal chỉ in_app + email, sự kiện ngoài danh mục realm → 422, critical luôn in-app, gộp `events` thay vì thay toàn bộ), SSE job một khung.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest | `vendor/bin/pest --parallel` | **534/534 PASS** (mới `Phase11/UiApiTest.php` 2 test: If-Match `updated_at` cho rule/user/tùy chọn, mốc cũ và rác → 412, ETag mạnh vẫn dùng được; danh mục chỉ kênh cá nhân, gửi lại toàn bộ tùy chọn như giao diện; `NotificationsTest` thêm 3 ca IP viết thẳng → 422) |
+| Vitest | `npx vitest run` | **623/623 PASS** (thêm 2 test MSW tùy chọn + webhook) |
+| Playwright demo | `playwright test e2e/demo-audit.spec.ts e2e/demo-smoke.spec.ts --grep "monitoring\|notifications\|jobs\|dashboard"` · `e2e/demo-security7.spec.ts e2e/demo-core.spec.ts` · `e2e/screenshots-phase11.spec.ts --grep "notification-prefs\|channel"` | **26/26**, **8/8**, **20/20 PASS** (axe 0 critical/serious sáng/tối, 390px không tràn, EN không lẫn tiếng Việt; drawer job qua SSE của MSW không lỗi console; ảnh không đổi) |
+| Lint | `make lint-web` (ESLint, Prettier, check-i18n 3499 key vi = en) · `pint` · `phpstan` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-22 — Phase 11 / Prompt 11.6 (SSE sự kiện job, dashboard dữ liệu thật) — nhánh `phase-11`
+
+Phạm vi: `JobLog` phát mỗi dòng log lên Redis `PUBLISH itso:job:<uuid>` (`App\Domain\Jobs\JobEvents`, lỗi Redis không làm hỏng job). `GET /jobs/{id}/events` (admin + portal) là SSE thật: `retry: 2000`, snapshot `event: job` đầu tiên, sau đó `event: log` (id = seq log, tăng dần) và `event: job` khi trạng thái/tiến độ đổi; `Last-Event-ID` bỏ sự kiện đã nhận; heartbeat `: ping` 15 giây; đóng khi job kết thúc hoặc sau 300 giây; quyền như `GET /jobs/{id}`. Contract `streamJobEvents` mô tả khung + header `Last-Event-ID` (codegen lại). Web: `useJobEvents` (EventSource, ghi cache React Query; lỗi lặp → poll 2 giây) dùng trong drawer theo dõi job và trang chi tiết job; dashboard và chuông thông báo poll 30 giây; MSW trả một khung SSE (EventSource tự nối lại). Dashboard: `alerts_firing` và `security_events_24h` thật theo phạm vi (bỏ giá trị 0 tạm).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS |
+| Pest | `vendor/bin/pest --parallel` | **532/532 PASS** (mới `Phase11/RealtimeTest.php` 5 test: thứ tự id log khớp DB, snapshot đầu/cuối, Last-Event-ID bỏ sự kiện cũ và giá trị rác bị bỏ qua, ngoài phạm vi 404 (ADMIN ngoài phạm vi, USER khác), heartbeat + đóng theo thời gian tối đa, snapshot khi `cancel_requested` không kèm log, publish Redis đủ mọi log và Redis lỗi job vẫn xong, dashboard theo phạm vi SA/AD_IN/AD_OUT). `JobsTest`/`EndpointGapsTest` đọc `streamedContent()`. Lần đầu: dòng log "Đã xếp hàng" thiếu `at` trong model nên bản tin publish lỗi → `JobDispatcher` ghi `at` |
+| Vitest | `npx vitest run` | **621/621 PASS** (mới `JobEvents.test.tsx` 3 test: SSE cập nhật, không poll khi luồng chạy, đóng khi job xong; SSE lỗi lặp → poll; không có EventSource → poll). Lần đầu: poll vẫn chạy do `refetchInterval` đọc ref chưa cập nhật → tính từ cache trước `useQuery` |
+| Lint | `make lint-web` (ESLint, Prettier, check-i18n) · `pint` · `phpstan` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-22 — Phase 11 / Prompt 11.5 (Notifications: kênh, SSRF guard, retry/resend, định tuyến, sự kiện USER) — nhánh `phase-11`
+
+Phạm vi: `App\Domain\Notifications` — `NotificationCatalog` (16 sự kiện, đối tượng nhận, kênh, `in_app_locked`), `NotificationPreferences` (người × sự kiện × kênh, dòng `*` = kênh bật chung, mặc định in-app, critical luôn in-app, USER chỉ in_app + email), `NotificationDispatcher` (SUPER_ADMIN + ADMIN trong phạm vi + USER chủ account; in-app ngay, email cá nhân / kênh admin → `notification_deliveries` → queue `notifications`; 30 tin/phút/kênh, phần vượt `blocked` rồi gộp tin tóm tắt), `NotificationSender` (email SMTP từ Settings, Telegram Bot API, webhook ký `X-ITSO-Signature: sha256=HMAC(secret, ts.body)` + `X-ITSO-Timestamp`; thử lại 1/5/15 phút rồi failed), `SsrfGuard` (phân giải DNS trước, kết nối đúng IP qua CURLOPT_RESOLVE; luôn chặn loopback/link-local/169.254/0/8/multicast/dành riêng/IPv4-mapped; dải riêng chỉ khi bật; không redirect; 5 giây; đọc ≤ 64 KB), `UserEvents` (quota 80/100 %, chứng chỉ 14/7/1 ngày + gia hạn lỗi, backup lỗi, account khóa/mở, website down/up). `Notifier` cũ đi qua Dispatcher (giữ in-app), `AlertEvents` gửi kênh theo `channels` của rule, USER không còn nhận `alert.*`. API admin `notification-channels` (CRUD + `:test`, SA), `notification-deliveries` (+ `:resend`), `notification-events`, `notification-preferences`; Portal `notification-events`, `notification-preferences`. Lệnh `itso:notifications-tick` (mỗi phút), `itso:certificates-expiry` (hằng ngày); worker nghe `default,notifications`. Schema: `notification_deliveries` thêm `recipient_user_id`, `response_code`, `channel_id` cho phép NULL (CHECK một trong hai) — migration Phase 11 chưa phát hành nên sinh lại.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| DB | `make db-schema` · `make db-migrations PHASE=11` · `make db-verify` | 96 bảng · **178 test SQL PASS** (thêm 2 test đích gửi); áp lần lượt = itso.sql + extras.sql |
+| Pest | `vendor/bin/pest --parallel` (PostgreSQL + Redis thật) | **527/527 PASS** (mới `Phase11/NotificationsTest.php` 8 test, 232 assertion: webhook tới 127.0.0.1, 169.254.169.254, [::1], [::ffff:127.0.0.1], 0.0.0.0, tên miền ra 10.0.0.5, DNS có một IP loopback → `blocked`, không có request nào; bật mạng riêng → gửi; chữ ký HMAC đúng; 302 không theo; lỗi 500 → thử lại 3 lần rồi failed, gửi lại được, lượt sent → 409; Telegram 401 không lộ token; giới hạn 30/phút + tin tóm tắt; bí mật không có trong response/audit/delivery; ADMIN không có quyền kênh, USER không vào API admin, chỉ chỉnh in-app/email; ADMIN ngoài phạm vi không nhận). `AlertsTest` sửa một kỳ vọng: USER chủ nhận `website.down` thay cho `alert.firing`. Lần đầu 4 lỗi đều ở test (Http::fake chồng callback, đường dẫn JSON có dấu chấm, thiếu agent cho rule disk, 419 khi USER POST API admin → kiểm bằng GET) |
+| Lint | `pint` · `phpstan` | PASS (sửa 6 lỗi kiểu, gồm `DB::raw` nối chuỗi → câu `UPDATE` có tham số) |
+| Khác | `make no-exec` · `make docs-check` · `make structure` · `make units-check` | PASS |
+
+**Test bị bỏ qua:** không. **Còn lại cho 11.7:** MSW đang từ chối URL webhook IP nội bộ ngay khi tạo kênh, API thật nhận và chặn khi gửi (delivery `blocked`) — chỉnh MSW theo API.
+
+## 2026-11-22 — Phase 11 / Prompt 11.4 (Alert engine, rule mặc định, mất kết nối ≤ 2 phút, uptime) — nhánh `phase-11`
+
+Phạm vi: `App\Domain\Monitoring` — `AlertMetrics` (14 nguồn: mẫu server ≤ 3 phút, mẫu account ≤ 15 phút, `agent_offline_sec` từ `agents.last_seen_at`, dịch vụ lõi enabled mà dừng, uptime, hạn chứng chỉ, backup gần nhất lỗi, quota disk), `DefaultAlertRules` (9 rule mặc định theo `default_key`, tạo nếu thiếu), `AlertEngine` (`itso:alerts-evaluate` mỗi phút: pending → firing → resolved, fingerprint, mất kết nối firing ngay, hysteresis 2 lượt, nhắc lại theo `repeat_sec`, ack dừng nhắc, silence không thông báo, rule tắt/đối tượng mất → resolved), `AlertEvents` (in-app cho SUPER_ADMIN, ADMIN trong phạm vi, USER chủ account với sự kiện dành cho USER; 11.5 gắn kênh), `UptimeService` (`itso:uptime-probe` mỗi phút gom theo server → `uptime.probe` lô ≤ 50, 3 lỗi → down, 1 thành công → up, `uptime_results` + bảng mới `uptime_rollups` giờ/90 ngày cho % 30 ngày; website có SSL tự bật check). API admin `alert-rules` (CRUD SA, preview, ETag/If-Match), `alerts` (lọc, ack, silence, unsilence), `uptime-checks` (+ results); Portal `websites/{id}/uptime` (+ results, PATCH), `hosting-accounts/{id}/uptime`. Quyền mới `monitoring.read|write` (ADMIN) và `monitoring.manage` (SA).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| DB | `make db-schema` · `make db-verify` | 96 bảng · **176 test SQL PASS** (thêm 4 test `uptime_rollups`); migration Phase 11 sinh lại (chưa phát hành) khớp đặc tả, áp lần lượt = itso.sql + extras.sql |
+| Pest | `make test-api` | **519/519 PASS** (mới `Phase11/AlertsTest.php` 8 test). Lần đầu: closure `fn` của test chụp giá trị biến (dùng `use (&$ok)`); website tạo không có `ssl_mode` trong bộ nhớ bị coi là có SSL → coi null là `none`; ETag theo `updated_at` (giây) không đổi khi sửa trong cùng giây → ETag theo nội dung |
+| Lint | `pint --test` · `phpstan` | PASS |
+| Khác | `make no-exec` · `make docs-check` · `make structure` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-22 — Phase 11 / Prompt 11.3 (Panel metrics: rollup, prune, API theo khoảng, usage account) — nhánh `phase-11`
+
+Phạm vi: `MetricsCollector` ghi thêm swap_pct, inode_pct, net_in/net_out (tổng interface), io_read/io_write, tasks (agent cũ không trả thì bỏ qua, không ghi 0); `itso:usage-refresh` gọi một `metrics.cgroup` lô mỗi server → cpu_pct, ram, IO, tasks theo account (account chưa có slice dùng số quota.report); `MetricsRollup` + `itso:metrics-rollup` (mỗi giờ, upsert theo khóa NULLS NOT DISTINCT, chạy bù, tính lại giờ mới nhất); `itso:metrics-prune` (hằng ngày: tạo trước 2 ngày, drop partition > 7 ngày, xóa rollup > 90 ngày; `itso:metrics-collect` thôi tự prune); `MetricsQuery`: range 1h/24h (samples) và 7d/30d/90d (rollup, trung bình theo số mẫu), ≤ 500 điểm, `unit`/`source`/`limit`; API mới `GET /admin/metrics/servers/{id}/accounts` (top account, sort/q/cursor, phạm vi ADMIN) và `GET /portal/hosting-accounts/{id}/usage-history`; usage hiện tại của account (Portal/dashboard) dùng số cgroup.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest | `make test-api` | **511/511 PASS** (mới `Phase11/MetricsTest.php` 6 test, 174 assertion). Lần đầu 3 lỗi: rollup chạy bù tính lại thừa một giờ (sửa mốc bắt đầu); **lỗi thật** `GROUP BY bucket` của PostgreSQL gộp theo cột `metric_rollups.bucket` thay vì bí danh → đổi bí danh `ts`; test dùng `travelTo` về quá khứ làm cookie phiên hết hạn (419) → dùng mốc tương đối |
+| Lint | `pint --test` · `phpstan` | PASS (sửa một lỗi kiểu `list<int>`) |
+| Khác | `make no-exec` · `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-22 — Phase 11 / Prompt 11.2 (Agent: metrics mở rộng, cgroup theo lô, uptime.probe) — nhánh `phase-11`
+
+Phạm vi: `internal/ops/metrics.go` (swap/inode/load/tasks, IO bps từ `/proc/diskstats` chỉ đĩa vật lý, net theo interface từ `/proc/net/dev`, mounts ext4/xfs/btrfs; tốc độ tính từ mốc đọc trước, bộ đếm quay về → 0), `metrics.cgroup` lô (accounts rỗng = mọi slice `itso-acct-<uid>` có user trong passwd, bỏ slice thiếu/tên lạ/ngoài dải UID; cpu_pct, IO bytes/bps), `internal/ops/uptime.go` (`uptime.probe`: kiểm lại domain/path/keyword/≤ 50 mục/timeout; dial cố định 127.0.0.1 với Host/SNI = domain, không proxy, redirect chỉ cùng host và cổng 80/443, tối đa 3; đọc ≤ 64 KB tìm từ khóa; hạn chứng chỉ; song song 8), sandbox: `metrics-control.json` (disk_pct, offline → `agent_unreachable`, uptime_down, cert_days) + cây cgroup giả trong gốc sandbox. Registry: `agent_unreachable` trả `retryable: true` đúng `errors.json`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go | `go vet ./...` · `gofmt -l .` · `go test -race ./...` | PASS (ops 153,8 s). Test mới: `TestMetricsSnapshotExtended`, `TestMetricsCgroupBatch` (40 slice giả), `TestSandboxMetricsControl`, `TestUptimeProbe` (httptest HTTP + TLS: từ khóa, 500, timeout, redirect tới 169.254.169.254 / cổng 2222 / vòng lặp bị chặn, redirect cùng host được theo, hạn chứng chỉ), `TestUptimeProbeRejectsEvil` (17 tham số độc), `TestUptimeProbeSandbox`. Lần đầu `TestSandboxMetricsControl` lỗi: registry không đánh dấu `agent_unreachable` retryable → bổ sung theo contract |
+| Fuzz | `go test -fuzz=FuzzUptimePath -fuzztime=15s ./internal/ops` | PASS (217 nghìn lượt); thêm vào `make test-fuzz` |
+| Khác | `make no-exec` · `make codegen-check` · `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-22 — Phase 11 / Prompt 11.1 (ADR, contracts, migration) — nhánh `phase-11`
+
+Phạm vi: ADR 0046–0052, DECISIONS D-101…D-107 (APPROVED), agent-ops: `metrics.snapshot` mở rộng (RAM/swap tổng, disk/inode, load 5/15, tasks, IO bps, net theo interface, mounts), `metrics.cgroup` theo lô (accounts không bắt buộc = mọi slice; thêm cpu_pct, IO bytes/bps, `sampled_at`), op mới `uptime.probe` (≤ 50 mục, domain + đường dẫn + scheme, từ khóa ≤ 100); def `UptimePath`/`UptimeKeyword`/`UptimeTarget`; OpenAPI dùng chung mẫu đường dẫn uptime; DBML Phase 11 (metric_rollups unique NULLS NOT DISTINCT, alert_rules + default_key/severity/repeat, alerts + fingerprint unique khi chưa resolved, uptime_checks + keyword/state, `uptime_results` partition ngày, `notification_channels` secret Crypt, `notification_deliveries`, chỉ mục `metric_samples` theo account đánh dấu phase:11); migration `2026_11_20_000011_phase_11_schema.php` (8 bảng, 70 câu lệnh). Agent tạm trả `net`/`mounts` rỗng và `sampled_at` để khớp contract (11.2 điền số liệu thật).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS · 158 op có schema, **344 vector độc** (mới 20: URL tuyệt đối, //, traversal, CRLF, scheme ftp, host là IP, host:port, trường `url` tự do, từ khóa dài/điều khiển) |
+| DB | `make db-schema` · `make db-verify` · `gen_migrations.py 3…11 --check` | 95 bảng · **172 test SQL PASS** (mới `95_monitoring.sql` 30) · migration Phase 3–10 không đổi, Phase 11 khớp |
+| Go | `go build ./...` · `go test ./internal/contracts/... ./internal/ops` | PASS. Lần đầu lỗi golden `metrics.snapshot`/`metrics.cgroup` (thiếu mảng/`sampled_at` theo contract mới) → trả mảng rỗng + thời điểm |
+| Pest | `make test-api` | **505/505 PASS**. Lần đầu: PostgreSQL cluster mới sau khi container khởi động lại (tạo role `itso` mật khẩu dev công khai + DB `itso`/`itso_test`); SchemaTest thiếu 8 bảng Phase 11 → cập nhật |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-22 — Phase 11 / Prompt 11.0 (mockup Monitoring, Alerts, Notifications) — nhánh `phase-11`
+
+Phạm vi: contracts (OpenAPI: metrics theo khoảng + usage account, alert-rules mặc định + preview, alerts ack/silence/unsilence, uptime-checks admin + portal, notification-channels/deliveries, event catalog, Portal usage-history/uptime), dữ liệu demo Phase 11, MSW `monitoring.ts` (SSRF giả lập `webhookBlock`), màn hình: Giám sát tổng quan (nhóm biểu đồ, server offline, dịch vụ, khoảng 1h–90d), tài nguyên theo account, uptime (kết quả, chứng chỉ), cảnh báo (đang mở/lịch sử, ack, tắt tiếng, luật mặc định, xem trước), kênh thông báo (secret chỉ ghi, cảnh báo mạng riêng, gửi thử), nhật ký gửi, thẻ cảnh báo Dashboard, Portal Giám sát, ma trận tùy chọn thông báo theo danh mục sự kiện. Ảnh `docs/screenshots/phase-11/` (19 cảnh × 1440/390 × sáng/tối = 76).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen-check` · `python3 contracts/tools/check_demo.py` | PASS (admin 307, portal 126 operation) · PASS · OK · OK |
+| Type/lint | `pnpm -s exec tsc -b` · `pnpm -s lint` | sạch (i18n vi = en) |
+| Vitest | `pnpm -s vitest run` | **616/616 PASS** (mới `phase11.test.ts` 12: SSRF loopback/link-local/mạng riêng, secret không trả về, ADMIN 403 kênh, luật mặc định xóa → 409, ack/silence/unsilence, preview, uptime URL tuyệt đối 422, phạm vi Portal). Một lượt chạy song song với Playwright có `admin/App.test.tsx` quá thời gian, chạy lại riêng và toàn bộ: PASS |
+| Playwright demo + axe | `pnpm -s e2e` | **708/708 PASS** (16 phút; smoke + axe tự gồm route mới). Lượt trước hỏng hàng loạt `ERR_CONNECTION_REFUSED` do tôi dừng nhầm server demo 5174, chạy lại sạch |
+| Ảnh mockup | `SCREENSHOT_DIR_P11=docs/screenshots/phase-11 pnpm -s exec playwright test e2e/screenshots-phase11.spec.ts` | 76/76. Lần đầu lỗi 8: xem trước luật không hiện (UI đọc `r.data` trong khi `send` đã bóc `data`, sửa cả gửi thử kênh), trang account chọn mặc định server offline (→ chọn server online đầu tiên) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 10 / Prompt 10.8 (tích hợp: e2e stack thật, VM, review, make check) — nhánh `phase-10`
 
 Phạm vi: `apps/web/e2e-real/phase10.spec.ts` (mới, 4 luồng), file điều khiển sandbox (`/var/lib/itso-sandbox/docker-control.json`: publish image mới + unhealthy; `wp-control.json`: available/fail/checksum_fail) và `FakeEngine.BeforePull`, `scripts/dev.sh` bật `docker: true` trong policy agent sandbox, `tests/vm/phase10.sh` (V0–V6), `docs/security/docker-wordpress-review.md`, `docs/runbooks/phase-10-docker-wordpress.md`, báo cáo `docs/reports/phase-10.md`. Commit f1e0602.

@@ -95,7 +95,15 @@
     "unhealthy": "Không khỏe",
     "starting": "Đang khởi động",
     "updating": "Đang cập nhật",
-    "cloning": "Đang nhân bản"
+    "cloning": "Đang nhân bản",
+    "up": "Hoạt động",
+    "down": "Không phản hồi",
+    "paused": "Tạm dừng",
+    "unknown": "Chưa rõ",
+    "sent": "Đã gửi",
+    "sending": "Đang gửi",
+    "retrying": "Đang thử lại",
+    "blocked": "Bị chặn"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",

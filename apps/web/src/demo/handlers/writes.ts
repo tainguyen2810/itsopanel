@@ -178,3 +178,12 @@ export function registerAuthWrites(on: typeof import('../router').on) {
     return noContent();
   });
 }
+
+/** Khung SSE một snapshot job (bản demo không giữ kết nối; EventSource tự nối lại theo `retry`). */
+export function sseSnapshot(job: unknown): Reply {
+  return {
+    status: 200,
+    headers: { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache' },
+    body: `retry: 2000\nevent: job\ndata: ${JSON.stringify(job)}\n\n`,
+  };
+}

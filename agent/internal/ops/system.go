@@ -274,6 +274,9 @@ func (d *Deps) metricsSnapshot(ctx context.Context, env *envelope.Envelope) (map
 	if err := decode(env, &p); err != nil {
 		return nil, err
 	}
+	if err := d.offlineErr(); err != nil {
+		return nil, err
+	}
 	t1, i1 := d.cpuTimes()
 	if d.CPUSample > 0 {
 		select {
@@ -298,5 +301,7 @@ func (d *Deps) metricsSnapshot(ctx context.Context, env *envelope.Envelope) (map
 	if used < 0 {
 		used = 0
 	}
-	return toData(contracts.MetricsSnapshotResult{CPUPct: cpu, RAMUsedMB: used / 1024, DiskUsedMB: total - free, Load1m: load})
+	res := contracts.MetricsSnapshotResult{CPUPct: cpu, RAMUsedMB: used / 1024, DiskUsedMB: total - free, DiskTotalMB: total, Load1m: load}
+	d.fillSnapshot(&res, m, d.now())
+	return toData(res)
 }

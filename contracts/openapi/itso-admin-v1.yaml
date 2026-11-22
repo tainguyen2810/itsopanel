@@ -519,6 +519,9 @@ paths:
                   enabled: true
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                  is_default: false
+                  repeat_sec: 14400
+                  firing_count: 1
                 - uuid: 01938a20-0002-7000-8000-000020000002
                   name: Disk server > 90%
                   metric: disk_pct
@@ -535,6 +538,9 @@ paths:
                   enabled: true
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                  is_default: true
+                  repeat_sec: 14400
+                  firing_count: 0
                 - uuid: 01938a20-0003-7000-8000-000020000003
                   name: RAM server > 90% trong 15 phút
                   metric: ram_pct
@@ -549,6 +555,9 @@ paths:
                   enabled: true
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                  is_default: false
+                  repeat_sec: 14400
+                  firing_count: 0
                 meta:
                   next_cursor: null
                   limit: 50
@@ -583,6 +592,7 @@ paths:
               channels:
               - email
               enabled: true
+              repeat_sec: 14400
       responses:
         '201':
           description: Đã tạo
@@ -612,6 +622,9 @@ paths:
                   enabled: true
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                  is_default: false
+                  repeat_sec: 14400
+                  firing_count: 1
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -659,6 +672,9 @@ paths:
                   enabled: true
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                  is_default: false
+                  repeat_sec: 14400
+                  firing_count: 1
           headers:
             ETag:
               $ref: ./common.yaml#/components/headers/ETag
@@ -715,6 +731,9 @@ paths:
                   enabled: true
                   created_at: '2026-11-18T09:30:00+07:00'
                   updated_at: '2026-11-19T14:05:00+07:00'
+                  is_default: false
+                  repeat_sec: 14400
+                  firing_count: 1
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -749,6 +768,58 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+      description: Rule mặc định (`is_default`) → 409 `conflict`.
+  /api/v1/admin/alert-rules:preview:
+    post:
+      operationId: previewAlertRule
+      summary: Xem trước rule khớp bao nhiêu đối tượng
+      tags:
+      - Monitoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleInput'
+            example:
+              name: Disk > 80%
+              metric: disk_pct
+              scope_type: server
+              operator: gt
+              threshold: 80
+              severity: medium
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AlertRulePreview'
+                required:
+                - data
+              example:
+                data:
+                  matches: 1
+                  evaluated_at: '2026-11-20T08:15:00+07:00'
+                  resources:
+                  - resource:
+                      type: server
+                      uuid: 01938a02-0001-7000-8000-000002000001
+                    label: srv-hn-01
+                    value: 81.4
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/alerts:
     get:
       operationId: listAlerts
@@ -760,6 +831,9 @@ paths:
       - $ref: ./common.yaml#/components/parameters/Limit
       - $ref: ./common.yaml#/components/parameters/Sort
       - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/FilterAlertState
+      - $ref: ./common.yaml#/components/parameters/FilterSeverity
+      - $ref: ./common.yaml#/components/parameters/FilterServer
       responses:
         '200':
           description: Thành công
@@ -790,6 +864,14 @@ paths:
                   value: 91.3
                   started_at: '2026-11-20T08:15:00+07:00'
                   resolved_at: null
+                  message: CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  acknowledged_by: null
+                  acknowledged_at: null
+                  silenced_until: null
+                  last_notified_at: '2026-11-20T08:15:00+07:00'
                 - uuid: 01938a21-0002-7000-8000-000021000002
                   rule:
                     uuid: 01938a20-0002-7000-8000-000020000002
@@ -802,18 +884,37 @@ paths:
                   value: 91.8
                   started_at: '2026-11-19T02:10:00+07:00'
                   resolved_at: '2026-11-19T02:40:00+07:00'
+                  message: Disk srv-hn-01 91,8% (ngưỡng 90%)
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  acknowledged_by: null
+                  acknowledged_at: null
+                  silenced_until: null
+                  last_notified_at: '2026-11-19T02:15:00+07:00'
                 - uuid: 01938a21-0003-7000-8000-000021000003
                   rule:
                     uuid: 01938a20-0004-7000-8000-000020000004
                     name: Quota disk account > 95%
                   severity: medium
-                  state: acknowledged
+                  state: firing
                   resource:
                     type: hosting_account
                     uuid: 01938a05-0008-7000-8000-000005000008
                   value: 96.4
                   started_at: '2026-11-20T07:40:00+07:00'
                   resolved_at: null
+                  message: Quota disk thientam 96,4% (ngưỡng 95%)
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  acknowledged_by:
+                    uuid: 01938a01-0002-7000-8000-000001000002
+                    name: Trần Minh
+                    email: minh.tran@itso.local
+                  acknowledged_at: '2026-11-20T07:52:00+07:00'
+                  silenced_until: null
+                  last_notified_at: '2026-11-20T07:41:00+07:00'
                 meta:
                   next_cursor: null
                   limit: 50
@@ -825,6 +926,181 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/alerts/{id}:ack:
+    post:
+      operationId: ackAlert
+      summary: Xác nhận đã biết (ngừng nhắc lại)
+      tags:
+      - Monitoring
+      description: Chỉ cảnh báo `firing`; khác → 409 `conflict`.
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Alert'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a21-0001-7000-8000-000021000001
+                  rule:
+                    uuid: 01938a20-0001-7000-8000-000020000001
+                    name: CPU server > 85% trong 10 phút
+                  severity: high
+                  state: firing
+                  resource:
+                    type: server
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                  value: 91.3
+                  started_at: '2026-11-20T08:15:00+07:00'
+                  resolved_at: null
+                  message: CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  acknowledged_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  acknowledged_at: '2026-11-20T08:15:00+07:00'
+                  silenced_until: null
+                  last_notified_at: '2026-11-20T08:15:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/alerts/{id}:silence:
+    post:
+      operationId: silenceAlert
+      summary: Tắt tạm thông báo của cảnh báo
+      tags:
+      - Monitoring
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertSilence'
+            example:
+              duration_sec: 3600
+              reason: Đang bảo trì đĩa
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Alert'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a21-0001-7000-8000-000021000001
+                  rule:
+                    uuid: 01938a20-0001-7000-8000-000020000001
+                    name: CPU server > 85% trong 10 phút
+                  severity: high
+                  state: firing
+                  resource:
+                    type: server
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                  value: 91.3
+                  started_at: '2026-11-20T08:15:00+07:00'
+                  resolved_at: null
+                  message: CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  acknowledged_by: null
+                  acknowledged_at: null
+                  silenced_until: '2026-11-20T09:15:00+07:00'
+                  last_notified_at: '2026-11-20T08:15:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/alerts/{id}:unsilence:
+    post:
+      operationId: unsilenceAlert
+      summary: Bỏ tắt tạm
+      tags:
+      - Monitoring
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Alert'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a21-0001-7000-8000-000021000001
+                  rule:
+                    uuid: 01938a20-0001-7000-8000-000020000001
+                    name: CPU server > 85% trong 10 phút
+                  severity: high
+                  state: firing
+                  resource:
+                    type: server
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                  value: 91.3
+                  started_at: '2026-11-20T08:15:00+07:00'
+                  resolved_at: null
+                  message: CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  acknowledged_by: null
+                  acknowledged_at: null
+                  silenced_until: null
+                  last_notified_at: '2026-11-20T08:15:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
   /api/v1/admin/api-tokens:
     get:
       operationId: listApiTokens
@@ -4499,10 +4775,94 @@ paths:
                     accounts: 5
                   - code: pro
                     accounts: 2
-                  alerts_firing: 1
+                  alerts_firing: 4
                   security_events_24h: 38
                   jobs_running: 2
                   updated_at: '2026-11-20T08:15:00+07:00'
+                  alerts_recent:
+                  - uuid: 01938a21-0001-7000-8000-000021000001
+                    rule:
+                      uuid: 01938a20-0001-7000-8000-000020000001
+                      name: CPU server > 85% trong 10 phút
+                    severity: high
+                    state: firing
+                    resource:
+                      type: server
+                      uuid: 01938a02-0003-7000-8000-000002000003
+                    value: 91.3
+                    started_at: '2026-11-20T08:15:00+07:00'
+                    resolved_at: null
+                    message: CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút
+                    server:
+                      uuid: 01938a02-0003-7000-8000-000002000003
+                      name: srv-hcm-01
+                    acknowledged_by: null
+                    acknowledged_at: null
+                    silenced_until: null
+                    last_notified_at: '2026-11-20T08:15:00+07:00'
+                  - uuid: 01938a21-0005-7000-8000-000021000005
+                    rule:
+                      uuid: 01938a20-000d-7000-8000-00002000000d
+                      name: Website không phản hồi
+                    severity: high
+                    state: firing
+                    resource:
+                      type: website
+                      uuid: 01938a06-0010-7000-8000-000006000010
+                    value: 1
+                    message: intranet.itso.vn trả 502 ba lần liên tiếp
+                    server:
+                      uuid: 01938a02-0001-7000-8000-000002000001
+                      name: srv-hn-01
+                    started_at: '2026-11-20T08:02:00+07:00'
+                    resolved_at: null
+                    acknowledged_by: null
+                    acknowledged_at: null
+                    silenced_until: '2026-11-20T09:02:00+07:00'
+                    last_notified_at: '2026-11-20T08:02:10+07:00'
+                  - uuid: 01938a21-0004-7000-8000-000021000004
+                    rule:
+                      uuid: 01938a20-000a-7000-8000-00002000000a
+                      name: Server mất kết nối
+                    severity: critical
+                    state: firing
+                    resource:
+                      type: server
+                      uuid: 01938a02-0003-7000-8000-000002000003
+                    value: 1260
+                    message: srv-hcm-01 không gửi heartbeat 21 phút; job mới chờ node quay lại
+                    server:
+                      uuid: 01938a02-0003-7000-8000-000002000003
+                      name: srv-hcm-01
+                    started_at: '2026-11-20T07:54:00+07:00'
+                    resolved_at: null
+                    acknowledged_by: null
+                    acknowledged_at: null
+                    silenced_until: null
+                    last_notified_at: '2026-11-20T07:54:30+07:00'
+                  - uuid: 01938a21-0003-7000-8000-000021000003
+                    rule:
+                      uuid: 01938a20-0004-7000-8000-000020000004
+                      name: Quota disk account > 95%
+                    severity: medium
+                    state: firing
+                    resource:
+                      type: hosting_account
+                      uuid: 01938a05-0008-7000-8000-000005000008
+                    value: 96.4
+                    started_at: '2026-11-20T07:40:00+07:00'
+                    resolved_at: null
+                    message: Quota disk thientam 96,4% (ngưỡng 95%)
+                    server:
+                      uuid: 01938a02-0001-7000-8000-000002000001
+                      name: srv-hn-01
+                    acknowledged_by:
+                      uuid: 01938a01-0002-7000-8000-000001000002
+                      name: Trần Minh
+                      email: minh.tran@itso.local
+                    acknowledged_at: '2026-11-20T07:52:00+07:00'
+                    silenced_until: null
+                    last_notified_at: '2026-11-20T07:41:00+07:00'
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
@@ -9204,12 +9564,23 @@ paths:
   /api/v1/admin/jobs/{id}/events:
     get:
       operationId: streamJobEvents
-      summary: Luồng tiến độ (SSE qua gateway)
+      summary: Luồng tiến độ (SSE)
       tags:
       - Jobs
-      description: '`text/event-stream`; mỗi sự kiện là một Job JSON. Fallback polling 2 giây.'
+      description: '`text/event-stream` (D-106, ADR 0051). Sự kiện đầu `event: job` là snapshot Job JSON; sau đó `event: log`
+        (JobLog JSON) cho mỗi dòng log mới và `event: job` khi trạng thái/tiến độ đổi. `id:` = seq của log (tăng dần) để nối
+        lại bằng `Last-Event-ID`. Heartbeat comment mỗi 15 giây; giữ tối đa 5 phút hoặc tới khi job kết thúc; client lỗi SSE
+        thì quay về poll `GET /jobs/{id}` 2 giây. Kiểm quyền như `GET /jobs/{id}`.'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
+      - name: Last-Event-ID
+        in: header
+        required: false
+        schema:
+          type: string
+          maxLength: 20
+          pattern: ^[0-9]{1,20}$
+        description: 'Nối lại: chỉ gửi sự kiện có id lớn hơn (EventSource tự gửi).'
       responses:
         '200':
           description: Thành công
@@ -9217,9 +9588,23 @@ paths:
             text/event-stream:
               schema:
                 type: string
-              example: 'event: job
+              example: 'retry: 2000
+
+                id: 41
+
+                event: job
 
                 data: {"uuid":"01938a0f-0002-7000-8000-00000f000002","state":"running","progress":60}
+
+
+                id: 42
+
+                event: log
+
+                data: {"seq":42,"at":"2026-11-20T08:00:05+07:00","level":"info","message":"Bước 2 xong."}
+
+
+                : ping
 
 
                 '
@@ -9465,7 +9850,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/MetricSeries'
+                    $ref: ./common.yaml#/components/schemas/MetricSeries
                 required:
                 - data
               example:
@@ -9484,6 +9869,9 @@ paths:
                     - 42.1
                   - - '2026-11-20T08:15:00+07:00'
                     - 37.5
+                  unit: pct
+                  source: samples
+                  limit: null
           headers:
             ETag:
               $ref: ./common.yaml#/components/headers/ETag
@@ -9501,6 +9889,7 @@ paths:
       summary: Chuỗi số liệu server
       tags:
       - Monitoring
+      description: ≤ 24 giờ đọc samples 1 phút, dài hơn đọc rollup 1 giờ; tối đa ~500 điểm (D-101).
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/Metric
@@ -9514,7 +9903,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/MetricSeries'
+                    $ref: ./common.yaml#/components/schemas/MetricSeries
                 required:
                 - data
               example:
@@ -9533,6 +9922,9 @@ paths:
                     - 42.1
                   - - '2026-11-20T08:15:00+07:00'
                     - 37.5
+                  unit: pct
+                  source: samples
+                  limit: null
           headers:
             ETag:
               $ref: ./common.yaml#/components/headers/ETag
@@ -9544,6 +9936,589 @@ paths:
           $ref: ./common.yaml#/components/responses/TooManyRequests
         '404':
           $ref: ./common.yaml#/components/responses/NotFound
+  /api/v1/admin/metrics/servers/{id}/accounts:
+    get:
+      operationId: listServerAccountUsage
+      summary: Số liệu cgroup theo account trên server
+      tags:
+      - Monitoring
+      description: Sắp xếp `-cpu_pct`, `-ram_mb`, `-io_write_bps`, `-disk_mb`. ADMIN chỉ server được giao.
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/AccountUsageRow'
+                  required:
+                  - data
+              example:
+                data:
+                - hosting_account:
+                    uuid: 01938a05-0008-7000-8000-000005000008
+                    username: thientam
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  cpu_pct: 54.8
+                  ram_mb: 660.0
+                  ram_limit_mb: 4096
+                  io_read_bps: 340000.0
+                  io_write_bps: 260000.0
+                  tasks: 63
+                  disk_mb: 4650.0
+                  disk_limit_mb: 20480
+                  sampled_at: '2026-11-20T08:15:00+07:00'
+                - hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  cpu_pct: 35.0
+                  ram_mb: 1830.0
+                  ram_limit_mb: 4096
+                  io_read_bps: 210000.0
+                  io_write_bps: 95000.0
+                  tasks: 42
+                  disk_mb: 8420.0
+                  disk_limit_mb: 20480
+                  sampled_at: '2026-11-20T08:15:00+07:00'
+                - hosting_account:
+                    uuid: 01938a05-0005-7000-8000-000005000005
+                    username: binhminh
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  cpu_pct: 18.2
+                  ram_mb: 300.0
+                  ram_limit_mb: 4096
+                  io_read_bps: 88000.0
+                  io_write_bps: 61000.0
+                  tasks: 27
+                  disk_mb: 1800.0
+                  disk_limit_mb: 20480
+                  sampled_at: '2026-11-20T08:15:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/notification-channels:
+    get:
+      operationId: listNotificationChannels
+      summary: Danh sách notificationChannels
+      tags:
+      - Notifications
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/NotificationChannel'
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a38-0001-7000-8000-000038000001
+                  type: email
+                  name: Nhóm vận hành
+                  enabled: true
+                  config:
+                    recipients:
+                    - ops@itso.vn
+                    - truc-ca@itso.vn
+                    chat_id: null
+                    url: null
+                    allow_private_network: false
+                  secret_set: false
+                  last_delivery:
+                    state: sent
+                    at: '2026-11-20T07:54:31+07:00'
+                    error: null
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a38-0002-7000-8000-000038000002
+                  type: telegram
+                  name: Telegram trực ca
+                  enabled: true
+                  config:
+                    recipients: []
+                    chat_id: '-1001234567890'
+                    url: null
+                    allow_private_network: false
+                  secret_set: true
+                  last_delivery:
+                    state: sent
+                    at: '2026-11-20T07:54:32+07:00'
+                    error: null
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a38-0003-7000-8000-000038000003
+                  type: webhook
+                  name: Webhook Mattermost
+                  enabled: true
+                  config:
+                    recipients: []
+                    chat_id: null
+                    url: https://chat.itso.vn/hooks/k3x9w2
+                    allow_private_network: false
+                  secret_set: true
+                  last_delivery:
+                    state: failed
+                    at: '2026-11-20T08:02:10+07:00'
+                    error: HTTP 500 Internal Server Error
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: createNotificationChannel
+      summary: Tạo notificationChannel
+      tags:
+      - Notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelInput'
+            example:
+              type: webhook
+              name: Webhook trực ca
+              enabled: true
+              config:
+                url: https://hooks.itso.vn/panel
+                allow_private_network: false
+              secret: whsec_6f2c1d9a7b3e4f50
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationChannel'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a38-0001-7000-8000-000038000001
+                  type: email
+                  name: Nhóm vận hành
+                  enabled: true
+                  config:
+                    recipients:
+                    - ops@itso.vn
+                    - truc-ca@itso.vn
+                    chat_id: null
+                    url: null
+                    allow_private_network: false
+                  secret_set: false
+                  last_delivery:
+                    state: sent
+                    at: '2026-11-20T07:54:31+07:00'
+                    error: null
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/notification-channels/{id}:
+    patch:
+      operationId: updateNotificationChannel
+      summary: Cập nhật notificationChannel
+      tags:
+      - Notifications
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IfMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelUpdate'
+            example:
+              enabled: false
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationChannel'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a38-0001-7000-8000-000038000001
+                  type: email
+                  name: Nhóm vận hành
+                  enabled: true
+                  config:
+                    recipients:
+                    - ops@itso.vn
+                    - truc-ca@itso.vn
+                    chat_id: null
+                    url: null
+                    allow_private_network: false
+                  secret_set: false
+                  last_delivery:
+                    state: sent
+                    at: '2026-11-20T07:54:31+07:00'
+                    error: null
+                  created_at: '2026-11-18T09:30:00+07:00'
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: deleteNotificationChannel
+      summary: Xóa notificationChannel
+      tags:
+      - Notifications
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '204':
+          description: Thành công, không có nội dung
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/notification-channels/{id}:test:
+    post:
+      operationId: testNotificationChannel
+      summary: Gửi thử
+      tags:
+      - Notifications
+      description: Gửi đồng bộ một tin thử; địa chỉ bị chặn (SSRF guard) → delivery `blocked`.
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationDelivery'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a39-0001-7000-8000-000039000001
+                  channel:
+                    uuid: 01938a38-0001-7000-8000-000038000001
+                    name: Nhóm vận hành
+                    type: email
+                  event_type: alert.firing
+                  title: '[CRITICAL] srv-hcm-01 mất kết nối'
+                  severity: critical
+                  state: sent
+                  attempts: 1
+                  error: null
+                  response_code: 250
+                  created_at: '2026-11-20T07:54:30+07:00'
+                  sent_at: '2026-11-20T07:54:31+07:00'
+                  next_retry_at: null
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/notification-deliveries:
+    get:
+      operationId: listNotificationDeliveries
+      summary: Nhật ký gửi thông báo
+      tags:
+      - Notifications
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/FilterDeliveryState
+      - $ref: ./common.yaml#/components/parameters/FilterChannel
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/NotificationDelivery'
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a39-0001-7000-8000-000039000001
+                  channel:
+                    uuid: 01938a38-0001-7000-8000-000038000001
+                    name: Nhóm vận hành
+                    type: email
+                  event_type: alert.firing
+                  title: '[CRITICAL] srv-hcm-01 mất kết nối'
+                  severity: critical
+                  state: sent
+                  attempts: 1
+                  error: null
+                  response_code: 250
+                  created_at: '2026-11-20T07:54:30+07:00'
+                  sent_at: '2026-11-20T07:54:31+07:00'
+                  next_retry_at: null
+                - uuid: 01938a39-0002-7000-8000-000039000002
+                  channel:
+                    uuid: 01938a38-0003-7000-8000-000038000003
+                    name: Webhook Mattermost
+                    type: webhook
+                  event_type: alert.firing
+                  title: '[HIGH] intranet.itso.vn không phản hồi'
+                  severity: high
+                  state: failed
+                  attempts: 3
+                  error: HTTP 500 Internal Server Error
+                  response_code: 500
+                  created_at: '2026-11-20T08:02:10+07:00'
+                  sent_at: null
+                  next_retry_at: null
+                - uuid: 01938a39-0003-7000-8000-000039000003
+                  channel:
+                    uuid: 01938a38-0002-7000-8000-000038000002
+                    name: Telegram trực ca
+                    type: telegram
+                  event_type: alert.firing
+                  title: '[CRITICAL] srv-hcm-01 mất kết nối'
+                  severity: critical
+                  state: sent
+                  attempts: 1
+                  error: null
+                  response_code: 200
+                  created_at: '2026-11-20T07:54:30+07:00'
+                  sent_at: '2026-11-20T07:54:32+07:00'
+                  next_retry_at: null
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/notification-deliveries/{id}:resend:
+    post:
+      operationId: resendNotificationDelivery
+      summary: Gửi lại
+      tags:
+      - Notifications
+      description: Chỉ delivery `failed` hoặc `blocked`; khác → 409 `conflict`.
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationDelivery'
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a39-0002-7000-8000-000039000002
+                  channel:
+                    uuid: 01938a38-0003-7000-8000-000038000003
+                    name: Webhook Mattermost
+                    type: webhook
+                  event_type: alert.firing
+                  title: '[HIGH] intranet.itso.vn không phản hồi'
+                  severity: high
+                  state: queued
+                  attempts: 3
+                  error: HTTP 500 Internal Server Error
+                  response_code: 500
+                  created_at: '2026-11-20T08:02:10+07:00'
+                  sent_at: null
+                  next_retry_at: null
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/notification-events:
+    get:
+      operationId: listNotificationEvents
+      summary: Danh mục sự kiện thông báo
+      tags:
+      - Notifications
+      description: Portal chỉ thấy sự kiện có đối tượng `user`; kênh của USER chỉ `in_app` và `email` (D-104).
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/NotificationEvent
+                  required:
+                  - data
+              example:
+                data:
+                - type: alert.firing
+                  group: monitoring
+                  severity: high
+                  audiences:
+                  - super_admin
+                  - admin
+                  channels:
+                  - in_app
+                  - email
+                  - telegram
+                  in_app_locked: false
+                - type: alert.resolved
+                  group: monitoring
+                  severity: info
+                  audiences:
+                  - super_admin
+                  - admin
+                  channels:
+                  - in_app
+                  - email
+                  in_app_locked: false
+                - type: server.unreachable
+                  group: monitoring
+                  severity: critical
+                  audiences:
+                  - super_admin
+                  - admin
+                  channels:
+                  - in_app
+                  - email
+                  - telegram
+                  in_app_locked: true
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/notification-preferences:
     get:
       operationId: getNotificationPreferences
@@ -15732,7 +16707,7 @@ paths:
   /api/v1/admin/uptime-checks:
     get:
       operationId: listUptimeChecks
-      summary: Uptime check
+      summary: Danh sách uptimeChecks
       tags:
       - Monitoring
       parameters:
@@ -15753,7 +16728,7 @@ paths:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/UptimeCheck'
+                        $ref: ./common.yaml#/components/schemas/UptimeCheck
                   required:
                   - data
               example:
@@ -15768,6 +16743,16 @@ paths:
                   last_latency_ms: 182
                   uptime_30d: 99.97
                   last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: An Phát
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.99
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
                 - uuid: 01938a2a-0002-7000-8000-00002a000002
                   website:
                     uuid: 01938a06-0002-7000-8000-000006000002
@@ -15778,6 +16763,16 @@ paths:
                   last_latency_ms: 240
                   uptime_30d: 99.95
                   last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: null
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.97
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
                 - uuid: 01938a2a-0003-7000-8000-00002a000003
                   website:
                     uuid: 01938a06-0005-7000-8000-000006000005
@@ -15788,6 +16783,16 @@ paths:
                   last_latency_ms: 310
                   uptime_30d: 99.9
                   last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: null
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.92
+                  cert_expires_at: '2027-02-03T07:00:00+07:00'
+                  down_since: null
                 meta:
                   next_cursor: null
                   limit: 50
@@ -15797,6 +16802,209 @@ paths:
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+    post:
+      operationId: createUptimeCheck
+      summary: Tạo uptimeCheck
+      tags:
+      - Monitoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/UptimeCheckInput
+            example:
+              website_uuid: 01938a06-0001-7000-8000-000006000001
+              path: /
+              interval_sec: 60
+              keyword: null
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/UptimeCheck
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2a-0001-7000-8000-00002a000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  url: https://anphat.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 182
+                  uptime_30d: 99.97
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: An Phát
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.99
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/uptime-checks/{id}:
+    patch:
+      operationId: updateUptimeCheck
+      summary: Cập nhật uptimeCheck
+      tags:
+      - Monitoring
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IfMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/UptimeCheckUpdate
+            example:
+              enabled: false
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/UptimeCheck
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2a-0001-7000-8000-00002a000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  url: https://anphat.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 182
+                  uptime_30d: 99.97
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: An Phát
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.99
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+    delete:
+      operationId: deleteUptimeCheck
+      summary: Xóa uptimeCheck
+      tags:
+      - Monitoring
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '204':
+          description: Thành công, không có nội dung
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/admin/uptime-checks/{id}/results:
+    get:
+      operationId: listUptimeResults
+      summary: Kết quả kiểm gần đây (7 ngày)
+      tags:
+      - Monitoring
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/UptimeResult
+                  required:
+                  - data
+              example:
+                data:
+                - at: '2026-11-20T08:15:00+07:00'
+                  ok: true
+                  status: 200
+                  latency_ms: 160
+                  error: null
+                - at: '2026-11-20T08:14:00+07:00'
+                  ok: true
+                  status: 200
+                  latency_ms: 197
+                  error: null
+                - at: '2026-11-20T08:13:00+07:00'
+                  ok: true
+                  status: 200
+                  latency_ms: 234
+                  error: null
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/users:
@@ -23452,6 +24660,12 @@ components:
         updated_at:
           type: string
           format: date-time
+        alerts_recent:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+          maxItems: 5
+          description: Cảnh báo đang firing mới nhất (Phase 11).
       required:
       - counts
       - servers
@@ -23460,32 +24674,6 @@ components:
       - security_events_24h
       - jobs_running
       - updated_at
-      additionalProperties: false
-    MetricSeries:
-      type: object
-      properties:
-        resource:
-          $ref: ./common.yaml#/components/schemas/ResourceRef
-        metric:
-          type: string
-        step_sec:
-          type: integer
-          minimum: 1
-        points:
-          type: array
-          items:
-            type: array
-            prefixItems:
-            - type: string
-              format: date-time
-            - type: number
-            minItems: 2
-            maxItems: 2
-      required:
-      - resource
-      - metric
-      - step_sec
-      - points
       additionalProperties: false
     AlertRule:
       type: object
@@ -23532,11 +24720,23 @@ components:
           items:
             type: string
             enum:
+            - in_app
             - email
             - telegram
-            - in_app
+            - webhook
         enabled:
           type: boolean
+        is_default:
+          type: boolean
+          description: 'Rule mặc định (D-102): sửa ngưỡng/kênh/tắt được, không xóa được.'
+        repeat_sec:
+          type: integer
+          minimum: 0
+          maximum: 604800
+          description: Nhắc lại khi còn firing; 0 = không nhắc.
+        firing_count:
+          type: integer
+          minimum: 0
         created_at:
           type: string
           format: date-time
@@ -23589,6 +24789,7 @@ components:
         for_sec:
           type: integer
           minimum: 0
+          maximum: 86400
         severity:
           type: string
           enum:
@@ -23601,11 +24802,17 @@ components:
           items:
             type: string
             enum:
+            - in_app
             - email
             - telegram
-            - in_app
+            - webhook
+          minItems: 1
         enabled:
           type: boolean
+        repeat_sec:
+          type: integer
+          minimum: 0
+          maximum: 604800
       required:
       - name
       - metric
@@ -23614,6 +24821,40 @@ components:
       - threshold
       - severity
       additionalProperties: false
+    AlertRulePreview:
+      type: object
+      properties:
+        matches:
+          type: integer
+          minimum: 0
+        evaluated_at:
+          type: string
+          format: date-time
+        resources:
+          type: array
+          items:
+            type: object
+            properties:
+              resource:
+                $ref: ./common.yaml#/components/schemas/ResourceRef
+              label:
+                type: string
+              value:
+                type:
+                - number
+                - 'null'
+            required:
+            - resource
+            - label
+            - value
+            additionalProperties: false
+          maxItems: 20
+      required:
+      - matches
+      - evaluated_at
+      - resources
+      additionalProperties: false
+      description: Rule này khớp bao nhiêu đối tượng với số liệu hiện tại (không tạo cảnh báo).
     Alert:
       type: object
       properties:
@@ -23642,9 +24883,9 @@ components:
         state:
           type: string
           enum:
+          - pending
           - firing
           - resolved
-          - acknowledged
         resource:
           $ref: ./common.yaml#/components/schemas/ResourceRef
         value:
@@ -23653,6 +24894,31 @@ components:
           type: string
           format: date-time
         resolved_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        message:
+          type: string
+        server:
+          oneOf:
+          - $ref: ./common.yaml#/components/schemas/ServerRef
+          - type: 'null'
+        acknowledged_by:
+          oneOf:
+          - $ref: ./common.yaml#/components/schemas/UserRef
+          - type: 'null'
+        acknowledged_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        silenced_until:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        last_notified_at:
           type:
           - string
           - 'null'
@@ -23667,47 +24933,291 @@ components:
       - started_at
       - resolved_at
       additionalProperties: false
-    UptimeCheck:
+    AlertSilence:
+      type: object
+      properties:
+        duration_sec:
+          type: integer
+          minimum: 300
+          maximum: 604800
+        reason:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+      required:
+      - duration_sec
+      additionalProperties: false
+    AccountUsageRow:
+      type: object
+      properties:
+        hosting_account:
+          $ref: ./common.yaml#/components/schemas/AccountRef
+        server:
+          $ref: ./common.yaml#/components/schemas/ServerRef
+        cpu_pct:
+          type: number
+          minimum: 0
+        ram_mb:
+          type: number
+          minimum: 0
+        ram_limit_mb:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+        io_read_bps:
+          type: number
+          minimum: 0
+        io_write_bps:
+          type: number
+          minimum: 0
+        tasks:
+          type: integer
+          minimum: 0
+        disk_mb:
+          type: number
+          minimum: 0
+        disk_limit_mb:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+        sampled_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - hosting_account
+      - server
+      - cpu_pct
+      - ram_mb
+      - ram_limit_mb
+      - io_read_bps
+      - io_write_bps
+      - tasks
+      - disk_mb
+      - disk_limit_mb
+      - sampled_at
+      additionalProperties: false
+      description: Số liệu cgroup gần nhất của account (D-101, mỗi 5 phút).
+    NotificationChannelConfig:
+      type: object
+      properties:
+        recipients:
+          type: array
+          items:
+            type: string
+            format: email
+          maxItems: 20
+          description: 'email: người nhận.'
+        chat_id:
+          type:
+          - string
+          - 'null'
+          maxLength: 64
+          pattern: ^-?[0-9]{1,20}$|^@[A-Za-z0-9_]{5,32}$
+          description: telegram
+        url:
+          type:
+          - string
+          - 'null'
+          format: uri
+          maxLength: 500
+          description: 'webhook: chỉ https:// trừ khi bật mạng riêng.'
+        allow_private_network:
+          type: boolean
+          description: 'webhook: cho phép địa chỉ mạng riêng (RFC 1918). Loopback/link-local luôn bị chặn.'
+      additionalProperties: false
+    NotificationChannel:
       type: object
       properties:
         uuid:
           type: string
           format: uuid
-        website:
-          $ref: ./common.yaml#/components/schemas/WebsiteRef
-        url:
+        type:
           type: string
-          format: uri
-        interval_sec:
+          enum:
+          - email
+          - telegram
+          - webhook
+        name:
+          type: string
+        enabled:
+          type: boolean
+        config:
+          $ref: '#/components/schemas/NotificationChannelConfig'
+        secret_set:
+          type: boolean
+          description: Đã lưu bí mật (bot token / secret HMAC). Không bao giờ trả về.
+        last_delivery:
+          type:
+          - object
+          - 'null'
+          properties:
+            state:
+              type: string
+            at:
+              type: string
+              format: date-time
+            error:
+              type:
+              - string
+              - 'null'
+          required:
+          - state
+          - at
+          - error
+          additionalProperties: false
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - uuid
+      - type
+      - name
+      - enabled
+      - config
+      - secret_set
+      - last_delivery
+      - created_at
+      - updated_at
+      additionalProperties: false
+    NotificationChannelInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - email
+          - telegram
+          - webhook
+        name:
+          type: string
+          maxLength: 80
+        enabled:
+          type: boolean
+        config:
+          $ref: '#/components/schemas/NotificationChannelConfig'
+        secret:
+          type:
+          - string
+          - 'null'
+          writeOnly: true
+          minLength: 16
+          maxLength: 512
+      required:
+      - type
+      - name
+      - config
+      additionalProperties: false
+    NotificationChannelUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        enabled:
+          type: boolean
+        config:
+          $ref: '#/components/schemas/NotificationChannelConfig'
+        secret:
+          type:
+          - string
+          - 'null'
+          writeOnly: true
+          minLength: 16
+          maxLength: 512
+      additionalProperties: false
+    NotificationDelivery:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        channel:
+          type: object
+          properties:
+            uuid:
+              type: string
+              format: uuid
+            name:
+              type: string
+            type:
+              type: string
+              enum:
+              - email
+              - telegram
+              - webhook
+          required:
+          - uuid
+          - name
+          - type
+          additionalProperties: false
+        event_type:
+          type: string
+        title:
+          type: string
+        severity:
+          type: string
+          enum:
+          - info
+          - low
+          - medium
+          - high
+          - critical
+        state:
+          type: string
+          enum:
+          - queued
+          - sending
+          - sent
+          - retrying
+          - failed
+          - blocked
+        attempts:
           type: integer
-          minimum: 30
-        last_status:
-          type:
-          - integer
-          - 'null'
-        last_latency_ms:
-          type:
-          - integer
-          - 'null'
-        uptime_30d:
-          type: number
           minimum: 0
-          maximum: 100
-        last_checked_at:
+        error:
+          type:
+          - string
+          - 'null'
+        response_code:
+          type:
+          - integer
+          - 'null'
+        created_at:
+          type: string
+          format: date-time
+        sent_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        next_retry_at:
           type:
           - string
           - 'null'
           format: date-time
       required:
       - uuid
-      - website
-      - url
-      - interval_sec
-      - last_status
-      - last_latency_ms
-      - uptime_30d
-      - last_checked_at
+      - channel
+      - event_type
+      - title
+      - severity
+      - state
+      - attempts
+      - error
+      - response_code
+      - created_at
+      - sent_at
+      - next_retry_at
       additionalProperties: false
+      description: '`blocked` = bị chặn trước khi gửi (SSRF guard, giới hạn tần suất).'
     AuditLog:
       type: object
       properties:
@@ -24372,6 +25882,7 @@ components:
         for_sec:
           type: integer
           minimum: 0
+          maximum: 86400
         severity:
           type: string
           enum:
@@ -24384,10 +25895,16 @@ components:
           items:
             type: string
             enum:
+            - in_app
             - email
             - telegram
-            - in_app
+            - webhook
+          minItems: 1
         enabled:
           type: boolean
+        repeat_sec:
+          type: integer
+          minimum: 0
+          maximum: 604800
       additionalProperties: false
       description: 'Cập nhật một phần AlertRuleInput: chỉ gửi trường cần đổi.'

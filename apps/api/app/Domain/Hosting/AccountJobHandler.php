@@ -6,6 +6,7 @@ namespace App\Domain\Hosting;
 
 use App\Domain\Data\DataJobHandler;
 use App\Domain\Jobs\JobHandler;
+use App\Domain\Notifications\UserEvents;
 use App\Models\HostingAccount;
 use App\Models\Job;
 use App\Models\User;
@@ -18,7 +19,7 @@ use Illuminate\Support\Carbon;
  */
 final class AccountJobHandler implements JobHandler
 {
-    public function __construct(private readonly ProvisioningService $provisioning) {}
+    public function __construct(private readonly ProvisioningService $provisioning, private readonly UserEvents $events) {}
 
     public function succeeded(Job $job): void
     {
@@ -38,6 +39,9 @@ final class AccountJobHandler implements JobHandler
             $a->observed_at = Carbon::now();
             $a->drift = null;
             $a->save();
+            if (in_array($job->type, ['hosting_account.suspend', 'hosting_account.unsuspend'], true)) {
+                $this->events->accountState($a, $job->type === 'hosting_account.suspend');
+            }
         }
     }
 

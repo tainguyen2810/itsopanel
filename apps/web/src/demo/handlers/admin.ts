@@ -229,7 +229,28 @@ export const ADMIN_LISTS: ListSpec[] = [
     scope: 'none',
     what: 'luật cảnh báo',
   },
-  { path: '/api/v1/admin/alerts', rows: d('alerts'), scope: 'none', sort: '-started_at' },
+  {
+    path: '/api/v1/admin/alerts',
+    rows: d('alerts'),
+    scope: 'none',
+    sort: '-started_at',
+    filters: { state: 'state', severity: 'severity', server: 'server.uuid' },
+  },
+  // Phase 11: kênh + nhật ký gửi chỉ SUPER_ADMIN (D-103).
+  {
+    path: '/api/v1/admin/notification-channels',
+    rows: d('notification_channels'),
+    scope: 'sa',
+    sort: 'name',
+  },
+  {
+    path: '/api/v1/admin/notification-deliveries',
+    rows: d('notification_deliveries'),
+    scope: 'sa',
+    sort: '-created_at',
+    filters: { delivery_state: 'state', channel: 'channel.uuid' },
+    search: ['title', 'event_type'],
+  },
   { path: '/api/v1/admin/uptime-checks', rows: d('uptime'), scope: 'none' },
   {
     path: '/api/v1/admin/notifications',

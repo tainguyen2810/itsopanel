@@ -10,11 +10,11 @@ use Illuminate\Console\Command;
 
 /**
  * Thu số liệu server gắn agent local qua agent (system.info, metrics.snapshot, service.status), ghi metric_samples,
- * server_services, server_capacity; dọn partition metric_samples quá 7 ngày. Lịch: mỗi phút (routes/console.php).
+ * server_services, server_capacity. Lịch: mỗi phút (routes/console.php). Dọn partition: `itso:metrics-prune` (Phase 11).
  */
 final class MetricsCollectCommand extends Command
 {
-    protected $signature = 'itso:metrics-collect {--no-prune : Không dọn partition cũ}';
+    protected $signature = 'itso:metrics-collect';
 
     protected $description = 'Thu số liệu server từ agent vào metric_samples / server_services / server_capacity';
 
@@ -37,12 +37,6 @@ final class MetricsCollectCommand extends Command
                 continue;
             }
             $this->info(sprintf('%s: metrics %s, %d dịch vụ', $s->name, $r['metrics'] ? 'ok' : 'thiếu', $r['services']));
-        }
-        if ($this->option('no-prune') !== true) {
-            $n = $collector->prune();
-            if ($n > 0) {
-                $this->info("Đã xóa {$n} partition metric_samples cũ.");
-            }
         }
 
         return $failed > 0 && $failed === $servers->count() ? self::FAILURE : self::SUCCESS;
