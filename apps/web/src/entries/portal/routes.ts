@@ -19,6 +19,7 @@ export const PORTAL_ROUTES: RouteDef[] = [
   { id: 'wordpressDetail', path: '/wordpress/$id', nav: 'wordpress' },
   { id: 'terminal', path: '/terminal', nav: 'terminal' },
   { id: 'security', path: '/security', nav: 'security' },
+  { id: 'monitoring', path: '/monitoring', nav: 'monitoring' },
   { id: 'jobDetail', path: '/jobs/$id' },
   { id: 'notifications', path: '/notifications', nav: 'notifications' },
   { id: 'profile', path: '/profile', nav: 'profile' },

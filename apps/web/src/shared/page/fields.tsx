@@ -20,12 +20,14 @@ export function TextField<T extends FieldValues>({
   autoComplete,
   placeholder,
   inputMode,
+  disabled,
   ...base
 }: Base<T> & {
   type?: 'text' | 'password' | 'email' | 'number' | 'url';
   autoComplete?: string;
   placeholder?: string;
   inputMode?: 'numeric' | 'text' | 'email';
+  disabled?: boolean;
 }) {
   return (
     <FormField
@@ -37,6 +39,7 @@ export function TextField<T extends FieldValues>({
           {...(autoComplete ? { autoComplete } : {})}
           {...(placeholder ? { placeholder } : {})}
           {...(inputMode ? { inputMode } : {})}
+          {...(disabled ? { disabled: true } : {})}
           value={String(f.value ?? '')}
           onChange={(e) => f.onChange(type === 'number' ? e.target.valueAsNumber : e.target.value)}
         />
@@ -73,12 +76,14 @@ export function SelectField<T extends FieldValues>({
   options,
   placeholder,
   onValueChange,
+  disabled,
   ...base
 }: Base<T> & {
   options: SelectOption[];
   placeholder?: string;
   /** Gọi thêm sau khi field đổi giá trị (vd điền mẫu). */
   onValueChange?: (v: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <FormField
@@ -90,6 +95,7 @@ export function SelectField<T extends FieldValues>({
           {...(f['aria-describedby'] ? { 'aria-describedby': f['aria-describedby'] } : {})}
           options={options}
           {...(placeholder ? { placeholder } : {})}
+          {...(disabled ? { disabled: true } : {})}
           value={f.value === undefined || f.value === null ? undefined : String(f.value)}
           onValueChange={(v: string) => {
             f.onChange(v);

@@ -3,43 +3,79 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { Activity, BellRing, Globe, Server } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFmt } from '@/shared/format/useFmt';
+import { useSession } from '@/shared/session/SessionContext';
 import { SectionNav } from '@/shared/page/SectionNav';
 import { PageHeader } from '@/shared/page/PageHeader';
+import { Alert as Callout } from '@/ui/Alert';
 import { AppLink } from '@/ui/AppLink';
-import { Badge, StatusBadge } from '@/ui/Badge';
+import { StatusBadge } from '@/ui/Badge';
 import { Card, CardContent, CardHeader } from '@/ui/Card';
 import { AreaChart } from '@/ui/Charts';
 import { DataTable, type ColumnDef } from '@/ui/DataTable';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Select } from '@/ui/Select';
 import { StatCard } from '@/ui/StatCard';
+import { RANGES, timeLabel, type Range } from '@/shared/monitoring/ranges';
 import { get, list, type Row } from '../api';
 
-type Srv = Row<'/api/v1/admin/servers'>;
-type Uptime = Row<'/api/v1/admin/uptime-checks'>;
-type Range = '1h' | '24h' | '7d';
-const METRICS = ['cpu_pct', 'ram_pct', 'disk_pct'] as const;
+export { RANGES, timeLabel, type Range };
 
-export function MonitoringNav({ current }: { current: 'overview' | 'alerts' }) {
+type Srv = Row<'/api/v1/admin/servers'>;
+type MetricKey =
+  | 'cpu_pct'
+  | 'ram_pct'
+  | 'swap_pct'
+  | 'disk_pct'
+  | 'inode_pct'
+  | 'io_read'
+  | 'io_write'
+  | 'net_in'
+  | 'net_out'
+  | 'load_1m'
+  | 'tasks';
+/** Nhóm biểu đồ (D-101): mỗi nhóm chung một đơn vị trục Y. */
+const GROUPS = {
+  usage: { metrics: ['cpu_pct', 'ram_pct', 'swap_pct'], unit: 'pct' },
+  storage: { metrics: ['disk_pct', 'inode_pct'], unit: 'pct' },
+  io: { metrics: ['io_read', 'io_write'], unit: 'bps' },
+  network: { metrics: ['net_in', 'net_out'], unit: 'bps' },
+  load: { metrics: ['load_1m'], unit: 'count' },
+} satisfies Record<string, { metrics: MetricKey[]; unit: 'pct' | 'bps' | 'count' }>;
+type Group = keyof typeof GROUPS;
+
+export type MonSection = 'overview' | 'accounts' | 'uptime' | 'alerts' | 'channels' | 'deliveries';
+
+export function MonitoringNav({ current }: { current: MonSection }) {
   const { t } = useTranslation('admin');
-  return (
-    <SectionNav
-      label={t('mon.sections')}
-      current={current}
-      items={[
-        { key: 'overview', href: '/admin/monitoring', label: t('mon.nav.overview') },
-        { key: 'alerts', href: '/admin/monitoring/alerts', label: t('mon.nav.alerts') },
-      ]}
-    />
-  );
+  const { user } = useSession();
+  const sa = user.role === 'SUPER_ADMIN';
+  const items: { key: MonSection; href: string; label: string }[] = [
+    { key: 'overview', href: '/admin/monitoring', label: t('mon.nav.overview') },
+    { key: 'accounts', href: '/admin/monitoring/accounts', label: t('mon.nav.accounts') },
+    { key: 'uptime', href: '/admin/monitoring/uptime', label: t('mon.nav.uptime') },
+    { key: 'alerts', href: '/admin/monitoring/alerts', label: t('mon.nav.alerts') },
+    ...(sa
+      ? ([
+          { key: 'channels', href: '/admin/monitoring/channels', label: t('mon.nav.channels') },
+          {
+            key: 'deliveries',
+            href: '/admin/monitoring/deliveries',
+            label: t('mon.nav.deliveries'),
+          },
+        ] as const)
+      : []),
+  ];
+  return <SectionNav label={t('mon.sections')} current={current} items={items} />;
 }
 
 const pct = (used: number, total: number) => (total > 0 ? (used * 100) / total : 0);
 
+/** Nhãn trục thời gian theo khoảng: giờ:phút cho ≤ 24 giờ, ngày cho khoảng dài. */
 export default function MonitoringPage() {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const [range, setRange] = useState<Range>('24h');
+  const [group, setGroup] = useState<Group>('usage');
   const servers = useQuery({
     queryKey: ['admin', 'servers'],
     queryFn: () => list('/api/v1/admin/servers'),
@@ -55,8 +91,10 @@ export default function MonitoringPage() {
   const [serverId, setServerId] = useState<string | undefined>(undefined);
   const srv = servers.data ?? [];
   const current = serverId ?? srv[0]?.uuid;
+  const selected = srv.find((s) => s.uuid === current);
+  const { metrics, unit } = GROUPS[group] as (typeof GROUPS)[Group];
   const series = useQueries({
-    queries: METRICS.map((metric) => ({
+    queries: metrics.map((metric) => ({
       queryKey: ['admin', 'metrics', current, metric, range],
       queryFn: () =>
         get('/api/v1/admin/metrics/servers/{id}', {
@@ -66,21 +104,27 @@ export default function MonitoringPage() {
       enabled: current !== undefined,
     })),
   });
+  // Byte/giây → KB/s để trục Y gọn.
+  const scale = unit === 'bps' ? 1 / 1024 : 1;
   const byTime = new Map<string, Record<string, number | string>>();
   series.forEach((q, i) => {
     for (const [ts, v] of q.data?.points ?? []) {
-      const row = byTime.get(ts) ?? { time: range === '7d' ? fmt.date(ts) : ts.slice(11, 16) };
-      row[METRICS[i] as string] = Math.round(v * 10) / 10;
+      const row = byTime.get(ts) ?? { time: timeLabel(ts, range, fmt.date) };
+      row[metrics[i] as string] = Math.round(v * scale * 10) / 10;
       byTime.set(ts, row);
     }
   });
   const rows = [...byTime.values()];
+  const source = series[0]?.data?.source;
+  const lastPoint = series[0]?.data?.points.at(-1)?.[0];
   const checks = uptime.data ?? [];
-  const down = checks.filter((c) => c.last_status === null || c.last_status >= 400).length;
-  const avgUptime = checks.length
-    ? checks.reduce((a, c) => a + c.uptime_30d, 0) / checks.length
+  const down = checks.filter((c) => c.state === 'down').length;
+  const active = checks.filter((c) => c.enabled !== false);
+  const avgUptime = active.length
+    ? active.reduce((a, c) => a + c.uptime_30d, 0) / active.length
     : 0;
   const firing = (alerts.data ?? []).filter((a) => a.state === 'firing').length;
+  const offline = srv.filter((s) => s.status !== 'ready');
 
   const srvColumns: ColumnDef<Srv, unknown>[] = [
     {
@@ -128,58 +172,6 @@ export default function MonitoringPage() {
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
   ];
-  const upColumns: ColumnDef<Uptime, unknown>[] = [
-    {
-      id: 'site',
-      header: t('sites.domain'),
-      accessorFn: (c) => c.website.primary_domain,
-      cell: ({ row }) => (
-        <AppLink
-          href={`/admin/websites/${row.original.website.uuid}`}
-          className="font-medium break-all hover:underline"
-        >
-          {row.original.website.primary_domain}
-        </AppLink>
-      ),
-    },
-    {
-      id: 'status',
-      header: t('mon.http'),
-      accessorFn: (c) => c.last_status ?? 0,
-      cell: ({ row }) => {
-        const s = row.original.last_status;
-        return (
-          <Badge tone={s !== null && s < 400 ? 'success' : 'danger'}>
-            {s ?? t('mon.noResponse')}
-          </Badge>
-        );
-      },
-    },
-    {
-      id: 'latency',
-      header: t('mon.latency'),
-      accessorFn: (c) => c.last_latency_ms ?? -1,
-      cell: ({ row }) =>
-        row.original.last_latency_ms === null ? '—' : `${fmt.num(row.original.last_latency_ms)} ms`,
-    },
-    {
-      id: 'uptime',
-      header: t('mon.uptime30'),
-      accessorKey: 'uptime_30d',
-      cell: ({ row }) => (
-        <span className={row.original.uptime_30d < 99.5 ? 'text-danger-text' : undefined}>
-          {fmt.pct(row.original.uptime_30d, 2)}
-        </span>
-      ),
-    },
-    {
-      id: 'checked',
-      header: t('mon.checked'),
-      accessorFn: (c) => c.last_checked_at ?? '',
-      cell: ({ row }) =>
-        row.original.last_checked_at ? fmt.rel(row.original.last_checked_at) : '—',
-    },
-  ];
   return (
     <>
       <PageHeader
@@ -188,6 +180,20 @@ export default function MonitoringPage() {
         nav={<MonitoringNav current="overview" />}
       />
       <div className="flex flex-col gap-4">
+        {offline.map((s) => (
+          <Callout
+            key={s.uuid}
+            tone="danger"
+            title={t('mon.offlineTitle', { name: s.name })}
+            action={
+              <AppLink href="/admin/monitoring/alerts" className="text-sm font-medium underline">
+                {t('mon.viewAlerts')}
+              </AppLink>
+            }
+          >
+            {t('mon.offlineHint')}
+          </Callout>
+        ))}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             icon={Server}
@@ -205,19 +211,23 @@ export default function MonitoringPage() {
             icon={Globe}
             tone={down > 0 ? 'danger' : 'success'}
             label={t('mon.sitesDown')}
-            value={`${down}/${checks.length}`}
+            value={`${down}/${active.length}`}
           />
           <StatCard
             icon={Activity}
             tone="info"
             label={t('mon.avgUptime')}
-            value={checks.length ? fmt.pct(avgUptime, 2) : '—'}
+            value={active.length ? fmt.pct(avgUptime, 2) : '—'}
           />
         </div>
         <Card>
           <CardHeader
             title={t('mon.chart')}
-            description={t('mon.chartHint')}
+            description={
+              source
+                ? t(`mon.source.${source}`, { at: lastPoint ? fmt.dateTime(lastPoint) : '—' })
+                : t('mon.chartHint')
+            }
             action={
               <div className="flex flex-wrap gap-2">
                 <Select
@@ -228,31 +238,47 @@ export default function MonitoringPage() {
                   options={srv.map((s) => ({ value: s.uuid, label: s.name }))}
                 />
                 <Select
+                  aria-label={t('mon.group')}
+                  className="w-44"
+                  value={group}
+                  onValueChange={(v) => setGroup(v as Group)}
+                  options={(Object.keys(GROUPS) as Group[]).map((g) => ({
+                    value: g,
+                    label: t(`mon.groups.${g}`),
+                  }))}
+                />
+                <Select
                   aria-label={t('mon.range')}
                   className="w-32"
                   value={range}
                   onValueChange={(v) => setRange(v as Range)}
-                  options={(['1h', '24h', '7d'] as const).map((r) => ({
-                    value: r,
-                    label: t(`dashboard.ranges.${r}`),
-                  }))}
+                  options={RANGES.map((r) => ({ value: r, label: t(`mon.ranges.${r}`) }))}
                 />
               </div>
             }
           />
           <CardContent>
-            <AreaChart
-              ariaLabel={t('mon.chartAria', {
-                name: srv.find((s) => s.uuid === current)?.name ?? '',
-              })}
-              data={rows}
-              xKey="time"
-              unit="%"
-              height={220}
-              series={METRICS.map((m) => ({ key: m, label: t(`mon.metric.${m}`) }))}
-            />
+            {selected && selected.status !== 'ready' && (
+              <p className="mb-2 text-sm text-danger-text">{t('mon.stale')}</p>
+            )}
+            {rows.length === 0 && series.every((q) => !q.isPending) ? (
+              <p className="py-12 text-center text-sm text-muted">{t('mon.noData')}</p>
+            ) : (
+              <AreaChart
+                ariaLabel={t('mon.chartAria', {
+                  name: selected?.name ?? '',
+                  what: t(`mon.groups.${group}`),
+                })}
+                data={rows}
+                xKey="time"
+                {...(unit === 'pct' ? { unit: '%' } : unit === 'bps' ? { unit: ' KB/s' } : {})}
+                height={220}
+                series={metrics.map((m) => ({ key: m, label: t(`mon.metric.${m}`) }))}
+              />
+            )}
           </CardContent>
         </Card>
+        {current && <ServicesCard id={current} />}
         <Card>
           <CardHeader title={t('mon.resources')} />
           <CardContent>
@@ -265,19 +291,45 @@ export default function MonitoringPage() {
             />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader title={t('mon.uptime')} description={t('mon.uptimeHint')} />
-          <CardContent>
-            <DataTable
-              data={checks}
-              columns={upColumns}
-              getRowId={(c) => c.uuid}
-              primaryColumnId="site"
-              caption={t('mon.uptime')}
-            />
-          </CardContent>
-        </Card>
       </div>
     </>
+  );
+}
+
+/** Dịch vụ hệ thống của server đang chọn: chạy/dừng và chạy từ lúc nào. */
+function ServicesCard({ id }: { id: string }) {
+  const { t } = useTranslation('admin');
+  const fmt = useFmt();
+  const q = useQuery({
+    queryKey: ['admin', 'server', id, 'services'],
+    queryFn: () => list('/api/v1/admin/servers/{id}/services', undefined, { path: { id } }),
+  });
+  const rows = q.data ?? [];
+  return (
+    <Card>
+      <CardHeader title={t('mon.services')} description={t('mon.servicesHint')} />
+      <CardContent>
+        {q.isPending ? null : rows.length === 0 ? (
+          <p className="text-sm text-muted">{t('mon.noServices')}</p>
+        ) : (
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {rows.map((sv) => (
+              <li
+                key={sv.name}
+                className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{sv.name}</p>
+                  <p className="text-xs text-muted">
+                    {sv.since ? t('mon.since', { at: fmt.rel(sv.since) }) : '—'}
+                  </p>
+                </div>
+                <StatusBadge status={sv.active ? 'running' : 'stopped'} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }

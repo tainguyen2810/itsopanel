@@ -26,6 +26,10 @@ const ID_BY_SEGMENT: Record<string, string> = {
   'account-migrations': first('migrations'),
   'compose-projects': first('compose'),
   'alert-rules': first('alert_rules'),
+  'uptime-checks': first('uptime'),
+  'notification-channels': first('notification_channels'),
+  'notification-deliveries': first('notification_deliveries'),
+  alerts: first('alerts'),
   zones: first('dns_zones'),
   'cron-jobs': first('cron'),
   'git-repositories': first('git_repositories'),
@@ -40,6 +44,7 @@ const OTHER: Record<string, string> = {
 const QUERY: Record<string, string> = {
   '/api/v1/admin/metrics/servers/{id}': '?metric=cpu_pct&range=24h',
   '/api/v1/admin/metrics/hosting-accounts/{id}': '?metric=ram_pct&range=7d',
+  '/api/v1/portal/hosting-accounts/{id}/usage-history': '?metric=cpu_pct&range=24h',
   '/api/v1/admin/hosting-accounts/{id}/files': '?path=.',
   '/api/v1/admin/hosting-accounts/{id}/files/content': '?path=sites/anphat.vn/public/index.php',
   '/api/v1/admin/hosting-accounts/{id}/files/download': '?path=sites/anphat.vn/public/index.php',

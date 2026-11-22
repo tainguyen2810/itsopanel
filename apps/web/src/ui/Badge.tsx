@@ -97,7 +97,15 @@ export type StatusKey =
   | 'unhealthy'
   | 'starting'
   | 'updating'
-  | 'cloning';
+  | 'cloning'
+  | 'up'
+  | 'down'
+  | 'paused'
+  | 'unknown'
+  | 'sent'
+  | 'sending'
+  | 'retrying'
+  | 'blocked';
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
@@ -165,6 +173,14 @@ const TONE: Record<StatusKey, Tone> = {
   starting: 'info',
   updating: 'info',
   cloning: 'info',
+  up: 'success',
+  down: 'danger',
+  paused: 'neutral',
+  unknown: 'neutral',
+  sent: 'success',
+  sending: 'info',
+  retrying: 'warning',
+  blocked: 'danger',
 };
 
 /** Trạng thái có trong bảng (dữ liệu API có thể có giá trị mới: hiện nguyên văn, tông trung tính). */

@@ -516,6 +516,11 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             body_example={"channels": {"email": True, "telegram": False, "in_app": True},
                           "events": {"backup.failed": ["email"]}, "updated_at": D.T2},
             ok=cref("NotificationPreferences"), ok_example=one(D.NOTIFICATION_PREFS))
+    api.add("get", "/notification-events", oid("listNotificationEvents"), "Danh mục sự kiện thông báo",
+            "Notifications", list_=True, ok=cref("NotificationEvent"),
+            ok_example=page(D.NOTIFICATION_EVENTS if realm == "admin"
+                            else [e for e in D.NOTIFICATION_EVENTS if "user" in e["audiences"]]),
+            desc="Portal chỉ thấy sự kiện có đối tượng `user`; kênh của USER chỉ `in_app` và `email` (D-104).")
     # -- terminal
     term_ex = D.TERMINAL if realm == "portal" else D.TERMINAL | {"ws_url": "wss://admin.itso.local/gateway/terminal"}
     term_op = api.add("post", "/terminal/sessions", oid("createTerminalSession"), "Mở terminal (ticket 30 giây, dùng một lần)",
@@ -1002,21 +1007,64 @@ def admin_paths(api: Api):
     api.add("post", "/registries/{id}:test", "testRegistry", "Kiểm tra đăng nhập registry", "Docker", params=idp, job=True,
             job_example=jobs("registry.test", "registry", D.REGISTRIES[0]["uuid"], ["docker.registry.login"]),
             desc="Mật khẩu đi qua vault của agent (secret_ref), không vào params job (D-98).")
-    # -- monitoring
+    # -- monitoring (Phase 11: D-101…D-105)
+    mparams = idp + [Api.p("Metric"), Api.p("Range")]
     api.add("get", "/metrics/servers/{id}", "getServerMetrics", "Chuỗi số liệu server", "Monitoring",
-            params=idp + [Api.p("Metric"), Api.p("Range")], ok=ref("MetricSeries"), ok_example=one(D.METRICS))
+            params=mparams, ok=cref("MetricSeries"), ok_example=one(D.METRICS),
+            desc="≤ 24 giờ đọc samples 1 phút, dài hơn đọc rollup 1 giờ; tối đa ~500 điểm (D-101).")
+    api.add("get", "/metrics/servers/{id}/accounts", "listServerAccountUsage", "Số liệu cgroup theo account trên server",
+            "Monitoring", params=idp, list_=True, ok=ref("AccountUsageRow"), ok_example=page(D.ACCOUNT_USAGE),
+            desc="Sắp xếp `-cpu_pct`, `-ram_mb`, `-io_write_bps`, `-disk_mb`. ADMIN chỉ server được giao.")
     api.add("get", "/metrics/hosting-accounts/{id}", "getAccountMetrics", "Chuỗi số liệu account", "Monitoring",
-            params=idp + [Api.p("Metric"), Api.p("Range")], ok=ref("MetricSeries"),
+            params=mparams, ok=cref("MetricSeries"),
             ok_example=one(D.METRICS | {"resource": {"type": "hosting_account", "uuid": acc["uuid"]}}))
     api.crud("/alert-rules", "alertRule", ref("AlertRule"), "Monitoring", D.ALERT_RULES, ops="lcrud",
              create_body=ref("AlertRuleInput"),
              create_example={"name": "CPU server > 85% trong 10 phút", "metric": "cpu_pct", "scope_type": "server",
                              "scope_uuid": None, "operator": "gt", "threshold": 85, "for_sec": 600, "severity": "high",
-                             "channels": ["email"], "enabled": True},
+                             "channels": ["email"], "enabled": True, "repeat_sec": 14400},
              update_body=partial(ADMIN, "AlertRuleInput", ref), update_example={"threshold": 90})
-    api.add("get", "/alerts", "listAlerts", "Cảnh báo", "Monitoring", list_=True, ok=ref("Alert"), ok_example=page(D.ALERTS))
-    api.add("get", "/uptime-checks", "listUptimeChecks", "Uptime check", "Monitoring", list_=True, ok=ref("UptimeCheck"),
-            ok_example=page(D.UPTIME))
+    api.paths[api.prefix + "/alert-rules/{id}"]["delete"]["description"] = "Rule mặc định (`is_default`) → 409 `conflict`."
+    api.add("post", "/alert-rules:preview", "previewAlertRule", "Xem trước rule khớp bao nhiêu đối tượng", "Monitoring",
+            body=ref("AlertRuleInput"), body_example={"name": "Disk > 80%", "metric": "disk_pct", "scope_type": "server",
+                                                      "operator": "gt", "threshold": 80, "severity": "medium"},
+            ok=ref("AlertRulePreview"), ok_example=one(D.ALERT_PREVIEW))
+    api.add("get", "/alerts", "listAlerts", "Cảnh báo", "Monitoring", list_=True,
+            params=[Api.p("FilterAlertState"), Api.p("FilterSeverity"), Api.p("FilterServer")],
+            ok=ref("Alert"), ok_example=page(D.ALERTS))
+    api.add("post", "/alerts/{id}:ack", "ackAlert", "Xác nhận đã biết (ngừng nhắc lại)", "Monitoring", params=idp,
+            ok=ref("Alert"), ok_example=one(D.ALERTS[0] | {"acknowledged_by": D.ALERTS[0].get("acknowledged_by") or
+                                                         {"uuid": D.USERS[0]["uuid"], "name": D.USERS[0]["name"],
+                                                          "email": D.USERS[0]["email"]},
+                                                         "acknowledged_at": D.T2}),
+            desc="Chỉ cảnh báo `firing`; khác → 409 `conflict`.")
+    api.add("post", "/alerts/{id}:silence", "silenceAlert", "Tắt tạm thông báo của cảnh báo", "Monitoring", params=idp,
+            body=ref("AlertSilence"), body_example={"duration_sec": 3600, "reason": "Đang bảo trì đĩa"},
+            ok=ref("Alert"), ok_example=one(D.ALERTS[0] | {"silenced_until": "2026-11-20T09:15:00+07:00"}))
+    api.add("post", "/alerts/{id}:unsilence", "unsilenceAlert", "Bỏ tắt tạm", "Monitoring", params=idp,
+            ok=ref("Alert"), ok_example=one(D.ALERTS[0]))
+    api.crud("/uptime-checks", "uptimeCheck", cref("UptimeCheck"), "Monitoring", D.UPTIME, ops="lcud",
+             create_body=cref("UptimeCheckInput"),
+             create_example={"website_uuid": D.WEBSITES[0]["uuid"], "path": "/", "interval_sec": 60, "keyword": None},
+             update_body=cref("UptimeCheckUpdate"), update_example={"enabled": False})
+    api.add("get", "/uptime-checks/{id}/results", "listUptimeResults", "Kết quả kiểm gần đây (7 ngày)", "Monitoring",
+            params=idp, list_=True, ok=cref("UptimeResult"), ok_example=page(D.UPTIME_RESULTS))
+    # -- kênh + nhật ký gửi (SUPER_ADMIN, D-103)
+    api.crud("/notification-channels", "notificationChannel", ref("NotificationChannel"), "Notifications",
+             D.NOTIFICATION_CHANNELS, ops="lcud", create_body=ref("NotificationChannelInput"),
+             create_example={"type": "webhook", "name": "Webhook trực ca", "enabled": True,
+                             "config": {"url": "https://hooks.itso.vn/panel", "allow_private_network": False},
+                             "secret": "whsec_6f2c1d9a7b3e4f50"},
+             update_body=ref("NotificationChannelUpdate"), update_example={"enabled": False})
+    api.add("post", "/notification-channels/{id}:test", "testNotificationChannel", "Gửi thử", "Notifications",
+            params=idp, ok=ref("NotificationDelivery"), ok_example=one(D.NOTIFICATION_DELIVERIES[0]),
+            desc="Gửi đồng bộ một tin thử; địa chỉ bị chặn (SSRF guard) → delivery `blocked`.")
+    api.add("get", "/notification-deliveries", "listNotificationDeliveries", "Nhật ký gửi thông báo", "Notifications",
+            list_=True, params=[Api.p("FilterDeliveryState"), Api.p("FilterChannel")],
+            ok=ref("NotificationDelivery"), ok_example=page(D.NOTIFICATION_DELIVERIES))
+    api.add("post", "/notification-deliveries/{id}:resend", "resendNotificationDelivery", "Gửi lại", "Notifications",
+            params=idp, ok=ref("NotificationDelivery"), ok_example=one(D.NOTIFICATION_DELIVERIES[1] | {"state": "queued"}),
+            desc="Chỉ delivery `failed` hoặc `blocked`; khác → 409 `conflict`.")
     # -- audit
     api.add("get", "/audit-logs", "listAuditLogs", "Nhật ký audit", "Audit", list_=True,
             params=[Api.p("FilterAction"), Api.p("FilterActor")], ok=ref("AuditLog"), ok_example=page(D.AUDIT))
@@ -1056,6 +1104,22 @@ def portal_paths(api: Api):
             params=idp, ok=cref("HostingAccount"), ok_example=one(D.ACCOUNTS[0]))
     api.add("get", "/hosting-accounts/{id}/usage", "portalGetHostingAccountUsage", "Usage so với quota", "Accounts",
             params=idp, ok=cref("Usage"), ok_example=one(D.ACCOUNTS[0]["usage"]))
+    # Phase 11: số liệu + uptime của chính mình, đặt dưới tài nguyên portal (không mở segment admin-only).
+    api.add("get", "/hosting-accounts/{id}/usage-history", "portalGetAccountMetrics", "Chuỗi số liệu account của tôi",
+            "Accounts", params=idp + [Api.p("Metric"), Api.p("Range")], ok=cref("MetricSeries"),
+            ok_example=one(D.METRICS | {"resource": {"type": "hosting_account", "uuid": D.ACCOUNTS[0]["uuid"]},
+                                        "unit": "pct", "source": "samples", "limit": 100}))
+    api.add("get", "/hosting-accounts/{id}/uptime", "portalListAccountUptimeChecks",
+            "Uptime các website của account", "Accounts", params=idp, list_=True,
+            ok=cref("UptimeCheck"), ok_example=page(D.UPTIME[:2]))
+    api.add("get", "/websites/{id}/uptime", "portalGetWebsiteUptime", "Uptime check của website", "Websites",
+            params=idp, ok=cref("UptimeCheck"), ok_example=one(D.UPTIME[0]),
+            desc="Website chưa có uptime check → 404.")
+    api.add("patch", "/websites/{id}/uptime", "portalUpdateWebsiteUptime", "Bật/tắt, đổi đường dẫn hoặc từ khóa kiểm",
+            "Websites", params=idp, body=cref("UptimeCheckUpdate"), body_example={"keyword": "Liên hệ"},
+            ok=cref("UptimeCheck"), ok_example=one(D.UPTIME[0]))
+    api.add("get", "/websites/{id}/uptime/results", "portalListWebsiteUptimeResults", "Kết quả kiểm gần đây",
+            "Websites", params=idp, list_=True, ok=cref("UptimeResult"), ok_example=page(D.UPTIME_RESULTS))
     api.add("get", "/hosting-accounts/{id}/features", "portalGetHostingAccountFeatures",
             "Tính năng theo gói (PHP, SSH, cron, backup)", "Accounts", params=idp, ok=cref("AccountFeatures"),
             ok_example=one(features_of(D.ACCOUNTS[0])))
@@ -1145,8 +1209,12 @@ def common_components():
         "FilterActor": qp("filter[actor]", {"type": "string", "format": "uuid"}, "Lọc theo người thực hiện."),
         "ServerQuery": qp("server", {"type": "string", "format": "uuid"}, "Server áp dụng.", True),
         "PackageQuery": qp("package", {"type": "string", "format": "uuid"}, "Gói dự định cấp.", True),
-        "Metric": qp("metric", {"type": "string", "enum": ["cpu_pct", "ram_pct", "disk_pct", "net_in", "net_out", "load_1m"]}, "Số liệu.", True),
-        "Range": qp("range", {"type": "string", "enum": ["1h", "24h", "7d", "30d"], "default": "24h"}, "Khoảng thời gian."),
+        "Metric": qp("metric", {"type": "string", "enum": ["cpu_pct", "ram_pct", "disk_pct", "net_in", "net_out", "load_1m",
+                                                          "swap_pct", "inode_pct", "io_read", "io_write", "tasks"]}, "Số liệu.", True),
+        "Range": qp("range", {"type": "string", "enum": ["1h", "24h", "7d", "30d", "90d"], "default": "24h"}, "Khoảng thời gian."),
+        "FilterAlertState": qp("filter[state]", {"type": "string", "enum": ["pending", "firing", "resolved"]}, "Lọc theo trạng thái cảnh báo."),
+        "FilterDeliveryState": qp("filter[delivery_state]", {"type": "string", "enum": ["queued", "sending", "sent", "retrying", "failed", "blocked"]}, "Lọc theo trạng thái gửi."),
+        "FilterChannel": qp("filter[channel]", {"type": "string", "format": "uuid"}, "Lọc theo kênh thông báo."),
         "LogKind": qp("kind", {"type": "string", "enum": ["access", "error"]}, "Loại log.", True),
         "Lines": qp("lines", {"type": "integer", "minimum": 1, "maximum": 2000, "default": 200}, "Số dòng cuối."),
         "IdempotencyKey": qp("Idempotency-Key", {"type": "string", "format": "uuid"},

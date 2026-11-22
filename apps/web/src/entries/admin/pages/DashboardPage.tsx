@@ -415,7 +415,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader
             title={t('dashboard.websiteCount')}
@@ -448,7 +448,7 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-        <Card className="lg:col-span-2 xl:col-span-1">
+        <Card>
           <CardHeader
             title={t('dashboard.securityAlerts')}
             action={<ViewAll href="/admin/security" />}
@@ -470,6 +470,39 @@ export default function DashboardPage() {
                       <SeverityBadge severity={e.severity} />
                       <time dateTime={e.at} className="text-xs text-muted">
                         {fmt.rel(e.at)}
+                      </time>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader
+            title={t('dashboard.monAlerts')}
+            action={<ViewAll href="/admin/monitoring/alerts" />}
+          />
+          <CardContent>
+            {s === undefined ? (
+              <Skeleton className="h-40" />
+            ) : (s.alerts_recent ?? []).length === 0 ? (
+              <p className="text-sm text-muted">{t('dashboard.monAlertsNone')}</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {(s.alerts_recent ?? []).map((a) => (
+                  <li key={a.uuid} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium">{a.message ?? a.rule.name}</p>
+                      <p className="truncate text-sm text-muted">
+                        {a.rule.name}
+                        {a.server ? ` · ${a.server.name}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <StatusBadge status={a.state} />
+                      <time dateTime={a.started_at} className="text-xs text-muted">
+                        {fmt.rel(a.started_at)}
                       </time>
                     </div>
                   </li>

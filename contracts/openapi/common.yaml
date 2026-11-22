@@ -3286,6 +3286,247 @@ components:
       - events
       - updated_at
       additionalProperties: false
+    NotificationEvent:
+      type: object
+      properties:
+        type:
+          type: string
+        group:
+          type: string
+        severity:
+          type: string
+          enum:
+          - info
+          - low
+          - medium
+          - high
+          - critical
+        audiences:
+          type: array
+          items:
+            type: string
+            enum:
+            - super_admin
+            - admin
+            - user
+        channels:
+          type: array
+          items:
+            type: string
+            enum:
+            - in_app
+            - email
+            - telegram
+            - webhook
+          description: Kênh người nhận được chọn cho sự kiện này.
+        in_app_locked:
+          type: boolean
+          description: 'Mức critical: in-app luôn bật (D-104).'
+      required:
+      - type
+      - group
+      - severity
+      - audiences
+      - channels
+      - in_app_locked
+      additionalProperties: false
+    MetricSeries:
+      type: object
+      properties:
+        resource:
+          $ref: '#/components/schemas/ResourceRef'
+        metric:
+          type: string
+        step_sec:
+          type: integer
+          minimum: 1
+        points:
+          type: array
+          items:
+            type: array
+            prefixItems:
+            - type: string
+              format: date-time
+            - type: number
+            minItems: 2
+            maxItems: 2
+        unit:
+          type: string
+          description: pct, mb, bps, count, ms
+        source:
+          type: string
+          enum:
+          - samples
+          - rollup
+          description: '≤ 24 giờ: samples 1 phút; dài hơn: rollup 1 giờ (D-101).'
+        limit:
+          type:
+          - number
+          - 'null'
+          description: Giới hạn theo gói (số liệu account), để vẽ đường giới hạn.
+      required:
+      - resource
+      - metric
+      - step_sec
+      - points
+      additionalProperties: false
+    UptimeCheck:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        website:
+          $ref: '#/components/schemas/WebsiteRef'
+        url:
+          type: string
+          format: uri
+        interval_sec:
+          type: integer
+          minimum: 60
+          maximum: 3600
+        last_status:
+          type:
+          - integer
+          - 'null'
+        last_latency_ms:
+          type:
+          - integer
+          - 'null'
+        uptime_30d:
+          type: number
+          minimum: 0
+          maximum: 100
+        last_checked_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        enabled:
+          type: boolean
+        path:
+          type: string
+        keyword:
+          type:
+          - string
+          - 'null'
+        state:
+          type: string
+          enum:
+          - up
+          - down
+          - unknown
+          - paused
+        consecutive_failures:
+          type: integer
+          minimum: 0
+        last_error:
+          type:
+          - string
+          - 'null'
+        uptime_24h:
+          type: number
+          minimum: 0
+          maximum: 100
+        uptime_7d:
+          type: number
+          minimum: 0
+          maximum: 100
+        cert_expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        down_since:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - uuid
+      - website
+      - url
+      - interval_sec
+      - last_status
+      - last_latency_ms
+      - uptime_30d
+      - last_checked_at
+      additionalProperties: false
+      description: 'URL luôn thuộc domain của website (D-105): người dùng chỉ chọn đường dẫn, không nhập URL tùy ý.'
+    UptimeCheckInput:
+      type: object
+      properties:
+        website_uuid:
+          type: string
+          format: uuid
+        path:
+          type: string
+          maxLength: 200
+          pattern: ^/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*$
+          not:
+            pattern: (^|/)\.{1,2}(/|\?|$)|%2[eEfF]|//|%0[aAdD]
+        interval_sec:
+          type: integer
+          minimum: 60
+          maximum: 3600
+        keyword:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+        enabled:
+          type: boolean
+      required:
+      - website_uuid
+      additionalProperties: false
+    UptimeCheckUpdate:
+      type: object
+      properties:
+        path:
+          type: string
+          maxLength: 200
+          pattern: ^/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*$
+          not:
+            pattern: (^|/)\.{1,2}(/|\?|$)|%2[eEfF]|//|%0[aAdD]
+        interval_sec:
+          type: integer
+          minimum: 60
+          maximum: 3600
+        keyword:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+        enabled:
+          type: boolean
+      additionalProperties: false
+    UptimeResult:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        ok:
+          type: boolean
+        status:
+          type:
+          - integer
+          - 'null'
+        latency_ms:
+          type:
+          - integer
+          - 'null'
+        error:
+          type:
+          - string
+          - 'null'
+      required:
+      - at
+      - ok
+      - status
+      - latency_ms
+      - error
+      additionalProperties: false
     TerminalTicket:
       type: object
       properties:
@@ -3903,6 +4144,11 @@ components:
         - net_in
         - net_out
         - load_1m
+        - swap_pct
+        - inode_pct
+        - io_read
+        - io_write
+        - tasks
       description: Số liệu.
     Range:
       name: range
@@ -3915,8 +4161,42 @@ components:
         - 24h
         - 7d
         - 30d
+        - 90d
         default: 24h
       description: Khoảng thời gian.
+    FilterAlertState:
+      name: filter[state]
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - pending
+        - firing
+        - resolved
+      description: Lọc theo trạng thái cảnh báo.
+    FilterDeliveryState:
+      name: filter[delivery_state]
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - queued
+        - sending
+        - sent
+        - retrying
+        - failed
+        - blocked
+      description: Lọc theo trạng thái gửi.
+    FilterChannel:
+      name: filter[channel]
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Lọc theo kênh thông báo.
     LogKind:
       name: kind
       in: query

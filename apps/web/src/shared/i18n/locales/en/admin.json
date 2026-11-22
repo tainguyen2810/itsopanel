@@ -83,7 +83,9 @@
     "packageDist": "Package distribution",
     "packageAria": "Distribution of {{count}} accounts by package",
     "accountsCaption": "accounts",
-    "securityAlerts": "Security alerts"
+    "securityAlerts": "Security alerts",
+    "monAlerts": "Monitoring alerts",
+    "monAlertsNone": "No recent alerts."
   },
   "jobs": {
     "title": "Jobs",
@@ -2706,7 +2708,11 @@
     "sections": "Monitoring sections",
     "nav": {
       "overview": "Overview",
-      "alerts": "Alerts"
+      "alerts": "Alerts",
+      "accounts": "Accounts",
+      "uptime": "Uptime",
+      "channels": "Channels",
+      "deliveries": "Delivery log"
     },
     "servers": "Servers",
     "online_one": "{{count}} online",
@@ -2716,12 +2722,20 @@
     "avgUptime": "Avg uptime (30 days)",
     "chart": "Resources over time",
     "chartHint": "CPU, RAM and disk (%).",
-    "chartAria": "CPU, RAM and disk chart for {{name}}",
+    "chartAria": "{{what}} chart for {{name}}",
     "range": "Time range",
     "metric": {
       "cpu_pct": "CPU",
       "ram_pct": "RAM",
-      "disk_pct": "Disk"
+      "disk_pct": "Disk",
+      "swap_pct": "Swap",
+      "inode_pct": "Inodes",
+      "net_in": "Network in",
+      "net_out": "Network out",
+      "load_1m": "Load 1m",
+      "io_read": "Read",
+      "io_write": "Write",
+      "tasks": "Tasks"
     },
     "resources": "Server resources",
     "server": "Server",
@@ -2736,7 +2750,35 @@
     "noResponse": "No response",
     "latency": "Latency",
     "uptime30": "Uptime (30 days)",
-    "checked": "Checked"
+    "checked": "Checked",
+    "offlineTitle": "{{name}} is not reporting",
+    "offlineHint": "No metrics received recently. The chart stops at the last sample.",
+    "viewAlerts": "View alerts",
+    "group": "Chart group",
+    "groups": {
+      "usage": "CPU, RAM, swap",
+      "storage": "Disk and inodes",
+      "io": "Disk I/O",
+      "network": "Network",
+      "load": "Load"
+    },
+    "ranges": {
+      "1h": "1 hour",
+      "24h": "24 hours",
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days"
+    },
+    "source": {
+      "samples": "1-minute samples · updated {{at}}",
+      "rollup": "Hourly rollup · updated {{at}}"
+    },
+    "stale": "Stale",
+    "noData": "No data for this range yet.",
+    "services": "System services",
+    "servicesHint": "Running or stopped, and since when.",
+    "noServices": "No services reported.",
+    "since": "Since {{at}}"
   },
   "alerts": {
     "title": "Alerts",
@@ -2762,7 +2804,8 @@
     "channel": {
       "email": "Email",
       "telegram": "Telegram",
-      "in_app": "In-panel"
+      "in_app": "In-panel",
+      "webhook": "Webhook"
     },
     "enabled": "Enabled",
     "toggle": "Toggle rule {{name}}",
@@ -2785,7 +2828,14 @@
       "load_1m": "Load (1 min)",
       "quota_disk_pct": "Disk quota (%)",
       "http_latency_ms": "HTTP latency (ms)",
-      "http_status": "HTTP status"
+      "http_status": "HTTP status",
+      "swap_pct": "Swap (%)",
+      "inode_pct": "Inodes (%)",
+      "agent_offline_sec": "Agent offline (seconds)",
+      "service_down": "Service down",
+      "uptime_down": "Uptime check down",
+      "cert_days": "Certificate days left",
+      "backup_failed": "Backup failed"
     },
     "operator": "Condition",
     "op": {
@@ -2803,7 +2853,31 @@
     "errors": {
       "channels": "Choose at least one channel",
       "pct": "Percent from 0 to 100"
-    }
+    },
+    "acked": "Alert acknowledged",
+    "silenced": "Alert silenced",
+    "unsilenced": "Silence removed",
+    "ackedBy": "Acknowledged by {{name}}",
+    "silencedUntil": "Silenced until {{at}}",
+    "ack": "Acknowledge",
+    "silenceFor": "Silence for {{d}}",
+    "unsilence": "Remove silence",
+    "default": "Default",
+    "firingCount_one": "{{count}} firing",
+    "firingCount_other": "{{count}} firing",
+    "tabs": {
+      "open_one": "Open ({{count}})",
+      "open_other": "Open ({{count}})",
+      "history_one": "History ({{count}})",
+      "history_other": "History ({{count}})"
+    },
+    "defaultHint": "Default rule: it cannot be deleted and its metric and scope are fixed. You can change the threshold, channels or disable it.",
+    "repeatSec": "Repeat notification (seconds)",
+    "repeatHint": "0 = notify once while firing",
+    "preview": "Preview",
+    "previewResult_one": "{{count}} resource would alert now",
+    "previewResult_other": "{{count}} resources would alert now",
+    "alertActionsFor": "Actions for alert {{name}}"
   },
   "audit": {
     "title": "Audit log",
@@ -2880,7 +2954,19 @@
       "alert.firing": "Monitoring alert"
     },
     "savePrefs": "Save preferences",
-    "prefsSaved": "Preferences saved"
+    "prefsSaved": "Preferences saved",
+    "unavailable": "Not available for this event",
+    "locked": "Critical events always appear in the panel",
+    "lockedHint": "Critical events always appear in the panel; email and Telegram follow your choice.",
+    "groups": {
+      "account": "Account",
+      "backup": "Backup",
+      "jobs": "Jobs",
+      "monitoring": "Monitoring",
+      "security": "Security",
+      "ssl": "SSL",
+      "wordpress": "WordPress"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -3059,5 +3145,160 @@
       "rolled_back": "Rolled back",
       "failed": "Failed"
     }
+  },
+  "accUsage": {
+    "title": "Account usage",
+    "description": "CPU, RAM, I/O and disk per hosting account from cgroups, sampled every 5 minutes.",
+    "top": "Accounts on this server",
+    "sampled": "Sampled {{at}}",
+    "none": "No usage data yet.",
+    "account": "Account",
+    "cpu": "CPU",
+    "ram": "RAM",
+    "io": "Disk I/O",
+    "tasks": "Tasks",
+    "disk": "Disk",
+    "ramOf": "RAM of {{name}}",
+    "diskOf": "Disk of {{name}}",
+    "read": "Read {{v}}",
+    "write": "Write {{v}}",
+    "chart": "Chart",
+    "chartFor": "Usage chart for {{name}}",
+    "chartHint": "Percent of the package limit.",
+    "metric": {
+      "cpu_pct": "CPU",
+      "ram_pct": "RAM",
+      "disk_pct": "Disk"
+    }
+  },
+  "uptime": {
+    "title": "Uptime checks",
+    "description": "HTTP checks on each website's own domain, run by the server agent.",
+    "add": "Add check",
+    "editTitle": "Edit check for {{name}}",
+    "formHint": "Only a path on the website's domain can be checked; arbitrary URLs are not allowed.",
+    "website": "Website",
+    "pickWebsite": "Choose a website",
+    "path": "Path",
+    "pathHint": "Starts with /, for example /health",
+    "interval": "Interval",
+    "intervalSec": "Interval (seconds)",
+    "keyword": "Keyword",
+    "keywordHint": "Down if the page does not contain it",
+    "noKeyword": "None",
+    "saved": "Check saved",
+    "deleted": "Check deleted",
+    "deleteTitle": "Delete uptime check for {{name}}?",
+    "deleteHint": "Check history is deleted too.",
+    "toggle": "Toggle check for {{name}}",
+    "actionsFor": "Actions for check {{name}}",
+    "results": "Results",
+    "resultsTitle": "Uptime results for {{name}}",
+    "url": "URL",
+    "ratio": "Uptime",
+    "window": {
+      "0": "24h",
+      "1": "7d",
+      "2": "30d"
+    },
+    "cert": "Certificate",
+    "certDays_one": "{{date}} ({{count}} day left)",
+    "certDays_other": "{{date}} ({{count}} days left)",
+    "daysLeft_one": "{{count}} day",
+    "daysLeft_other": "{{count}} days",
+    "downSince": "Down since",
+    "latency": "Latency",
+    "latencyAria": "Latency chart for {{url}}",
+    "failures": "Recent failures",
+    "noFailures": "No failures in this period.",
+    "errors": {
+      "path": "Path must start with / and contain only URL characters"
+    }
+  },
+  "channels": {
+    "title": "Notification channels",
+    "description": "Email, Telegram and webhook destinations for alerts. Secrets are encrypted and never shown again.",
+    "add": "Add channel",
+    "editTitle": "Edit channel {{name}}",
+    "formHint": "Webhooks are signed with HMAC-SHA256; private network targets are blocked unless allowed.",
+    "type": "Type",
+    "name": "Name",
+    "recipients": "Recipients",
+    "recipientsHint": "Up to 20 addresses, separated by commas",
+    "chatId": "Chat ID",
+    "chatIdHint": "Numeric ID or @channel",
+    "url": "Webhook URL",
+    "urlHint": "HTTPS required",
+    "allowPrivate": "Allow private network",
+    "allowPrivateHint": "Only for internal services (10.x, 192.168.x). Loopback and metadata addresses are always blocked.",
+    "privateWarn": "This webhook may reach internal services. Use only for trusted internal endpoints.",
+    "privateNet": "Private network",
+    "secret": "Secret",
+    "secretSet": "Set",
+    "secretMissing": "Missing",
+    "botToken": "Bot token",
+    "hmacSecret": "HMAC secret",
+    "secretHint": "16–512 characters. Stored encrypted.",
+    "secretKeep": "Leave blank to keep the current secret.",
+    "last": "Last delivery",
+    "toggle": "Toggle channel {{name}}",
+    "actionsFor": "Actions for channel {{name}}",
+    "test": "Send test",
+    "saved": "Channel saved",
+    "deleted": "Channel deleted",
+    "deleteTitle": "Delete channel {{name}}?",
+    "deleteHint": "Rules using this channel stop sending to it.",
+    "dismiss": "Dismiss",
+    "testResult": {
+      "ok": "Test sent to {{name}}",
+      "fail": "Test to {{name}} failed"
+    },
+    "testOkHint": "Check the destination for the test message.",
+    "errors": {
+      "recipients": "Enter 1 to 20 valid email addresses",
+      "chatId": "Enter a numeric chat ID or @channel name",
+      "url": "Use an https:// URL (http:// only with private network allowed)",
+      "secret": "Secret must be 16 to 512 characters"
+    }
+  },
+  "deliveries": {
+    "title": "Delivery log",
+    "description": "Outgoing notifications: failures, retries, SSRF blocks and manual resend.",
+    "message": "Message",
+    "channel": "Channel",
+    "attempts": "Attempts",
+    "at": "Created",
+    "nextRetry": "Next retry {{at}}",
+    "resend": "Resend",
+    "resendFor": "Resend {{name}}",
+    "resent": "Queued for resend"
+  },
+  "events": {
+    "alert.firing": "Alert firing",
+    "alert.resolved": "Alert resolved",
+    "server.unreachable": "Server unreachable",
+    "website.down": "Website down",
+    "website.up": "Website back up",
+    "quota.warning": "Quota warning",
+    "quota.exceeded": "Quota exceeded",
+    "account.suspended": "Account suspended",
+    "account.unsuspended": "Account unsuspended",
+    "certificate.expiring": "Certificate expiring",
+    "certificate.renew_failed": "Certificate renewal failed",
+    "backup.failed": "Backup failed",
+    "backup.succeeded": "Backup succeeded",
+    "job.failed": "Job failed",
+    "security.high": "High security event",
+    "wordpress.rolled_back": "WordPress update rolled back",
+    "channel.test": "Channel test"
+  },
+  "pmon": {
+    "title": "Monitoring",
+    "description": "Resource usage of your hosting accounts and uptime of your websites.",
+    "account": "Hosting account",
+    "usage": "Resource usage",
+    "usageHint": "Percent of your package limit.",
+    "uptimeHint": "Checks are set up by your administrator; you can pause or resume them.",
+    "noChecks": "No uptime checks for this account yet."
   }
 }

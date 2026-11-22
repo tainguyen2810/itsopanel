@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` (kế hoạch `docs/planning/seed/PHASE_11_PROMPTS.md`, D-101 → D-107 đề xuất; **chờ người dùng chọn bắt đầu**). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** chưa bắt đầu (11.0 Mockup là prompt đầu)
-- **Task đang làm:** không
+- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` (kế hoạch `docs/planning/seed/PHASE_11_PROMPTS.md`, D-101 → D-107 đề xuất; đang làm trên nhánh `phase-11`, người dùng chọn bắt đầu 2026-11-22). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 11.1 ADR và contracts (11.0 mockup ✓)
+- **Task đang làm:** 11.1
 - **Commit cuối:** xem `git log -1` trên `main`
-- **Bước tiếp theo:** khi người dùng chọn bắt đầu: tạo nhánh `phase-11`, làm hàng loạt 11.0 → 11.8, tự merge, phát hành `v0.5.0-beta` (tag local), DỪNG trước Phase 12; chạy `tests/vm/phase4–10.sh` khi có VM
+- **Bước tiếp theo:** làm hàng loạt 11.1 → 11.8, tự merge, phát hành `v0.5.0-beta` (tag local), DỪNG trước Phase 12; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -26,15 +26,15 @@
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
-| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ kế hoạch xong, chờ bắt đầu |
+| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✱ đang làm (nhánh `phase-11`) |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
 
-Phase 11 (kế hoạch 2026-11-22, chờ bắt đầu) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
+Phase 11 (bắt đầu 2026-11-22, nhánh `phase-11`) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
 
-- ○ 11.0 Mockup Monitoring, Uptime, Alerts, kênh + tùy chọn thông báo trên bản demo (`docs/screenshots/phase-11/`)
-- ○ 11.1 ADR 0046–0052 (D-101…D-107), contracts, migration Phase 11
+- ✓ 11.0 Mockup Monitoring, Uptime, Alerts, kênh + tùy chọn thông báo trên bản demo (`docs/screenshots/phase-11/`, 19 cảnh × 4 = 76 ảnh)
+- ✱ 11.1 ADR 0046–0052 (D-101…D-107), contracts, migration Phase 11
 - ○ 11.2 Agent: metrics mở rộng, cgroup theo lô, `uptime.probe`
 - ○ 11.3 Panel metrics: rollup, prune, API theo khoảng, usage account
 - ○ 11.4 Panel alerts: rule, bộ máy đánh giá, mất kết nối ≤ 2 phút, uptime
@@ -214,3 +214,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-22 | 10.7 | UI nối API thật: cài WordPress hiện mật khẩu quản trị một lần (`secret`), staging hiện basic auth tắt + lý do (API 422), MSW WordPress theo API (job `wordpress_site`, op thật, cần đích backup → 409, basic auth → 422, user admin chưa biết → `precondition_failed`, quét không có website PHP → 409, tên quản trị admin/administrator → 422), registry chỉ SA (403 như `docker.manage`); API: body cập nhật rỗng = mọi thành phần có bản mới, core trong lịch sử có slug `wordpress`, chặn tên quản trị admin/administrator; Vitest 593, Playwright demo + axe 100, Pest 505 | 18ea187 |
 | 2026-11-22 | 10.8 | Tích hợp: e2e stack thật `phase10.spec.ts` 4 luồng (Software PHP 8.3 + 8.2, gỡ đang dùng 409; Docker bật + step-up, privileged 422, apply, website docker, image unhealthy → `rolled_back`, registry, backup volume; WordPress secret một lần, update lỗi → `rolled_back` với restic thật, staging, harden; USER không chạm Docker); file điều khiển sandbox `docker-control.json`/`wp-control.json`; `make dev` bật docker trong policy sandbox; `tests/vm/phase10.sh` V0–V6; review bảo mật `docs/security/docker-wordpress-review.md`; runbook; e2e stack thật toàn bộ 26/27 lượt đầu (đĩa < 15 %, dọn cache, chạy lại xanh); `make check` 22 PASS · 1 SKIP · 0 FAIL; báo cáo `docs/reports/phase-10.md` | f1e0602 |
 | 2026-11-22 | 10 / duyệt · 11 / kế hoạch | Người dùng duyệt Phase 10 (merge `ea528c9`) và yêu cầu lên kế hoạch tiếp; kế hoạch `PHASE_11_PROMPTS.md` (11.0 mockup → 11.8 tích hợp + `v0.5.0-beta`), đề xuất D-101 → D-107 | — |
+| 2026-11-22 | 11.0 | Mockup Phase 11 trên bản demo: contracts + dữ liệu + MSW (SSRF giả lập), Giám sát (nhóm biểu đồ, offline, dịch vụ), tài nguyên account, uptime, cảnh báo (ack/silence, luật mặc định, xem trước), kênh + nhật ký gửi, Dashboard, Portal Giám sát, ma trận tùy chọn thông báo; 76 ảnh `docs/screenshots/phase-11/`; Vitest 616, Playwright demo + axe 708 | (commit này) |

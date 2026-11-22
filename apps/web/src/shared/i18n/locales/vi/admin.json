@@ -83,7 +83,9 @@
     "packageDist": "Phân bổ gói hosting",
     "packageAria": "Biểu đồ phân bổ {{count}} tài khoản theo gói",
     "accountsCaption": "tài khoản",
-    "securityAlerts": "Cảnh báo bảo mật"
+    "securityAlerts": "Cảnh báo bảo mật",
+    "monAlerts": "Cảnh báo giám sát",
+    "monAlertsNone": "Không có cảnh báo gần đây."
   },
   "jobs": {
     "title": "Tác vụ",
@@ -2706,7 +2708,11 @@
     "sections": "Các mục giám sát",
     "nav": {
       "overview": "Tổng quan",
-      "alerts": "Cảnh báo"
+      "alerts": "Cảnh báo",
+      "accounts": "Account",
+      "uptime": "Uptime",
+      "channels": "Kênh",
+      "deliveries": "Nhật ký gửi"
     },
     "servers": "Máy chủ",
     "online_one": "{{count}} đang chạy",
@@ -2716,12 +2722,20 @@
     "avgUptime": "Uptime TB 30 ngày",
     "chart": "Tài nguyên theo thời gian",
     "chartHint": "CPU, RAM và disk (%).",
-    "chartAria": "Biểu đồ CPU, RAM, disk của {{name}}",
+    "chartAria": "Biểu đồ {{what}} của {{name}}",
     "range": "Khoảng thời gian",
     "metric": {
       "cpu_pct": "CPU",
       "ram_pct": "RAM",
-      "disk_pct": "Disk"
+      "disk_pct": "Disk",
+      "swap_pct": "Swap",
+      "inode_pct": "Inode",
+      "net_in": "Mạng vào",
+      "net_out": "Mạng ra",
+      "load_1m": "Load 1 phút",
+      "io_read": "Đọc",
+      "io_write": "Ghi",
+      "tasks": "Tiến trình"
     },
     "resources": "Tài nguyên máy chủ",
     "server": "Máy chủ",
@@ -2736,7 +2750,35 @@
     "noResponse": "Không phản hồi",
     "latency": "Độ trễ",
     "uptime30": "Uptime 30 ngày",
-    "checked": "Kiểm tra lúc"
+    "checked": "Kiểm tra lúc",
+    "offlineTitle": "{{name}} không gửi số liệu",
+    "offlineHint": "Gần đây không nhận được số liệu. Biểu đồ dừng ở mẫu cuối.",
+    "viewAlerts": "Xem cảnh báo",
+    "group": "Nhóm biểu đồ",
+    "groups": {
+      "usage": "CPU, RAM, swap",
+      "storage": "Disk và inode",
+      "io": "I/O đĩa",
+      "network": "Mạng",
+      "load": "Load"
+    },
+    "ranges": {
+      "1h": "1 giờ",
+      "24h": "24 giờ",
+      "7d": "7 ngày",
+      "30d": "30 ngày",
+      "90d": "90 ngày"
+    },
+    "source": {
+      "samples": "Mẫu 1 phút · cập nhật {{at}}",
+      "rollup": "Gộp theo giờ · cập nhật {{at}}"
+    },
+    "stale": "Cũ",
+    "noData": "Chưa có số liệu trong khoảng này.",
+    "services": "Dịch vụ hệ thống",
+    "servicesHint": "Đang chạy hay đã dừng, và từ lúc nào.",
+    "noServices": "Chưa có dịch vụ nào được báo.",
+    "since": "Từ {{at}}"
   },
   "alerts": {
     "title": "Cảnh báo",
@@ -2762,7 +2804,8 @@
     "channel": {
       "email": "Email",
       "telegram": "Telegram",
-      "in_app": "Trong panel"
+      "in_app": "Trong panel",
+      "webhook": "Webhook"
     },
     "enabled": "Bật",
     "toggle": "Bật/tắt luật {{name}}",
@@ -2785,7 +2828,14 @@
       "load_1m": "Load 1 phút",
       "quota_disk_pct": "Quota disk (%)",
       "http_latency_ms": "Độ trễ HTTP (ms)",
-      "http_status": "Mã HTTP"
+      "http_status": "Mã HTTP",
+      "swap_pct": "Swap (%)",
+      "inode_pct": "Inode (%)",
+      "agent_offline_sec": "Agent mất kết nối (giây)",
+      "service_down": "Dịch vụ ngừng",
+      "uptime_down": "Uptime check lỗi",
+      "cert_days": "Số ngày chứng chỉ còn lại",
+      "backup_failed": "Backup lỗi"
     },
     "operator": "Điều kiện",
     "op": {
@@ -2803,7 +2853,31 @@
     "errors": {
       "channels": "Chọn ít nhất một kênh",
       "pct": "Phần trăm từ 0 đến 100"
-    }
+    },
+    "acked": "Đã xác nhận cảnh báo",
+    "silenced": "Đã tắt tiếng cảnh báo",
+    "unsilenced": "Đã bỏ tắt tiếng",
+    "ackedBy": "{{name}} đã xác nhận",
+    "silencedUntil": "Tắt tiếng tới {{at}}",
+    "ack": "Xác nhận",
+    "silenceFor": "Tắt tiếng {{d}}",
+    "unsilence": "Bỏ tắt tiếng",
+    "default": "Mặc định",
+    "firingCount_one": "{{count}} đang mở",
+    "firingCount_other": "{{count}} đang mở",
+    "tabs": {
+      "open_one": "Đang mở ({{count}})",
+      "open_other": "Đang mở ({{count}})",
+      "history_one": "Lịch sử ({{count}})",
+      "history_other": "Lịch sử ({{count}})"
+    },
+    "defaultHint": "Luật mặc định: không xóa được, số liệu và phạm vi cố định. Có thể đổi ngưỡng, kênh hoặc tắt.",
+    "repeatSec": "Nhắc lại thông báo (giây)",
+    "repeatHint": "0 = chỉ báo một lần khi đang mở",
+    "preview": "Xem trước",
+    "previewResult_one": "{{count}} tài nguyên sẽ cảnh báo ngay",
+    "previewResult_other": "{{count}} tài nguyên sẽ cảnh báo ngay",
+    "alertActionsFor": "Thao tác cho cảnh báo {{name}}"
   },
   "audit": {
     "title": "Nhật ký kiểm toán",
@@ -2880,7 +2954,19 @@
       "alert.firing": "Cảnh báo giám sát"
     },
     "savePrefs": "Lưu tùy chọn",
-    "prefsSaved": "Đã lưu tùy chọn"
+    "prefsSaved": "Đã lưu tùy chọn",
+    "unavailable": "Không áp dụng cho sự kiện này",
+    "locked": "Sự kiện nghiêm trọng luôn hiện trong panel",
+    "lockedHint": "Sự kiện nghiêm trọng luôn hiện trong panel; email và Telegram theo lựa chọn của bạn.",
+    "groups": {
+      "account": "Account",
+      "backup": "Backup",
+      "jobs": "Job",
+      "monitoring": "Giám sát",
+      "security": "Bảo mật",
+      "ssl": "SSL",
+      "wordpress": "WordPress"
+    }
   },
   "settings": {
     "title": "Cài đặt",
@@ -3059,5 +3145,160 @@
       "rolled_back": "Đã hoàn tác",
       "failed": "Lỗi"
     }
+  },
+  "accUsage": {
+    "title": "Tài nguyên theo account",
+    "description": "CPU, RAM, I/O và disk của từng hosting account lấy từ cgroup, 5 phút một lần.",
+    "top": "Account trên máy chủ này",
+    "sampled": "Lấy mẫu {{at}}",
+    "none": "Chưa có số liệu.",
+    "account": "Account",
+    "cpu": "CPU",
+    "ram": "RAM",
+    "io": "I/O đĩa",
+    "tasks": "Tiến trình",
+    "disk": "Disk",
+    "ramOf": "RAM của {{name}}",
+    "diskOf": "Disk của {{name}}",
+    "read": "Đọc {{v}}",
+    "write": "Ghi {{v}}",
+    "chart": "Biểu đồ",
+    "chartFor": "Biểu đồ tài nguyên của {{name}}",
+    "chartHint": "Phần trăm so với giới hạn gói.",
+    "metric": {
+      "cpu_pct": "CPU",
+      "ram_pct": "RAM",
+      "disk_pct": "Disk"
+    }
+  },
+  "uptime": {
+    "title": "Kiểm tra uptime",
+    "description": "Kiểm tra HTTP trên chính domain của website, do agent trên máy chủ thực hiện.",
+    "add": "Thêm kiểm tra",
+    "editTitle": "Sửa kiểm tra của {{name}}",
+    "formHint": "Chỉ kiểm tra được đường dẫn trên domain của website, không nhập URL tùy ý.",
+    "website": "Website",
+    "pickWebsite": "Chọn website",
+    "path": "Đường dẫn",
+    "pathHint": "Bắt đầu bằng /, ví dụ /health",
+    "interval": "Chu kỳ",
+    "intervalSec": "Chu kỳ (giây)",
+    "keyword": "Từ khóa",
+    "keywordHint": "Báo lỗi nếu trang không chứa từ này",
+    "noKeyword": "Không có",
+    "saved": "Đã lưu kiểm tra",
+    "deleted": "Đã xóa kiểm tra",
+    "deleteTitle": "Xóa kiểm tra uptime của {{name}}?",
+    "deleteHint": "Lịch sử kiểm tra cũng bị xóa.",
+    "toggle": "Bật/tắt kiểm tra của {{name}}",
+    "actionsFor": "Thao tác cho kiểm tra {{name}}",
+    "results": "Kết quả",
+    "resultsTitle": "Kết quả uptime của {{name}}",
+    "url": "URL",
+    "ratio": "Uptime",
+    "window": {
+      "0": "24 giờ",
+      "1": "7 ngày",
+      "2": "30 ngày"
+    },
+    "cert": "Chứng chỉ",
+    "certDays_one": "{{date}} (còn {{count}} ngày)",
+    "certDays_other": "{{date}} (còn {{count}} ngày)",
+    "daysLeft_one": "{{count}} ngày",
+    "daysLeft_other": "{{count}} ngày",
+    "downSince": "Lỗi từ",
+    "latency": "Độ trễ",
+    "latencyAria": "Biểu đồ độ trễ của {{url}}",
+    "failures": "Lần lỗi gần đây",
+    "noFailures": "Không có lỗi trong khoảng này.",
+    "errors": {
+      "path": "Đường dẫn phải bắt đầu bằng / và chỉ gồm ký tự hợp lệ trong URL"
+    }
+  },
+  "channels": {
+    "title": "Kênh thông báo",
+    "description": "Nơi nhận cảnh báo qua email, Telegram, webhook. Secret được mã hóa và không hiển thị lại.",
+    "add": "Thêm kênh",
+    "editTitle": "Sửa kênh {{name}}",
+    "formHint": "Webhook được ký HMAC-SHA256; địa chỉ mạng nội bộ bị chặn trừ khi cho phép.",
+    "type": "Loại",
+    "name": "Tên",
+    "recipients": "Người nhận",
+    "recipientsHint": "Tối đa 20 địa chỉ, cách nhau bằng dấu phẩy",
+    "chatId": "Chat ID",
+    "chatIdHint": "ID dạng số hoặc @kenh",
+    "url": "URL webhook",
+    "urlHint": "Bắt buộc HTTPS",
+    "allowPrivate": "Cho phép mạng nội bộ",
+    "allowPrivateHint": "Chỉ cho dịch vụ nội bộ (10.x, 192.168.x). Loopback và địa chỉ metadata luôn bị chặn.",
+    "privateWarn": "Webhook này có thể gọi vào dịch vụ nội bộ. Chỉ dùng cho endpoint nội bộ tin cậy.",
+    "privateNet": "Mạng nội bộ",
+    "secret": "Secret",
+    "secretSet": "Đã đặt",
+    "secretMissing": "Chưa có",
+    "botToken": "Bot token",
+    "hmacSecret": "Secret HMAC",
+    "secretHint": "16–512 ký tự. Lưu dạng mã hóa.",
+    "secretKeep": "Để trống để giữ secret hiện tại.",
+    "last": "Lần gửi cuối",
+    "toggle": "Bật/tắt kênh {{name}}",
+    "actionsFor": "Thao tác cho kênh {{name}}",
+    "test": "Gửi thử",
+    "saved": "Đã lưu kênh",
+    "deleted": "Đã xóa kênh",
+    "deleteTitle": "Xóa kênh {{name}}?",
+    "deleteHint": "Các luật dùng kênh này sẽ ngừng gửi tới kênh.",
+    "dismiss": "Đóng",
+    "testResult": {
+      "ok": "Đã gửi thử tới {{name}}",
+      "fail": "Gửi thử tới {{name}} lỗi"
+    },
+    "testOkHint": "Kiểm tra nơi nhận để thấy tin thử.",
+    "errors": {
+      "recipients": "Nhập 1 đến 20 email hợp lệ",
+      "chatId": "Nhập chat ID dạng số hoặc tên @kenh",
+      "url": "Dùng URL https:// (http:// chỉ khi cho phép mạng nội bộ)",
+      "secret": "Secret dài 16 đến 512 ký tự"
+    }
+  },
+  "deliveries": {
+    "title": "Nhật ký gửi",
+    "description": "Thông báo gửi ra ngoài: lỗi, thử lại, bị chặn bởi SSRF guard và gửi lại thủ công.",
+    "message": "Nội dung",
+    "channel": "Kênh",
+    "attempts": "Số lần thử",
+    "at": "Tạo lúc",
+    "nextRetry": "Thử lại lúc {{at}}",
+    "resend": "Gửi lại",
+    "resendFor": "Gửi lại {{name}}",
+    "resent": "Đã xếp hàng gửi lại"
+  },
+  "events": {
+    "alert.firing": "Cảnh báo mở",
+    "alert.resolved": "Cảnh báo đã hết",
+    "server.unreachable": "Mất kết nối máy chủ",
+    "website.down": "Website lỗi",
+    "website.up": "Website hoạt động lại",
+    "quota.warning": "Sắp hết quota",
+    "quota.exceeded": "Vượt quota",
+    "account.suspended": "Account bị tạm khóa",
+    "account.unsuspended": "Account được mở khóa",
+    "certificate.expiring": "Chứng chỉ sắp hết hạn",
+    "certificate.renew_failed": "Gia hạn chứng chỉ lỗi",
+    "backup.failed": "Backup lỗi",
+    "backup.succeeded": "Backup thành công",
+    "job.failed": "Job lỗi",
+    "security.high": "Sự kiện bảo mật mức cao",
+    "wordpress.rolled_back": "Cập nhật WordPress bị hoàn tác",
+    "channel.test": "Gửi thử kênh"
+  },
+  "pmon": {
+    "title": "Giám sát",
+    "description": "Tài nguyên hosting account và uptime website của bạn.",
+    "account": "Hosting account",
+    "usage": "Tài nguyên sử dụng",
+    "usageHint": "Phần trăm so với giới hạn gói.",
+    "uptimeHint": "Quản trị viên tạo kiểm tra; bạn có thể tạm dừng hoặc bật lại.",
+    "noChecks": "Account này chưa có kiểm tra uptime."
   }
 }

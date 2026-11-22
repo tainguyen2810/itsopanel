@@ -1249,7 +1249,16 @@ const METRICS = [
   'quota_disk_pct',
   'http_latency_ms',
   'http_status',
+  // Phase 11 (D-102): nguồn mới + rule mặc định
+  'swap_pct',
+  'inode_pct',
+  'agent_offline_sec',
+  'service_down',
+  'uptime_down',
+  'cert_days',
+  'backup_failed',
 ];
+const RULE_CHANNELS = ['in_app', 'email', 'telegram', 'webhook'];
 
 function ruleError(b: Partial<S['AlertRuleInput']>, partial: boolean): string | null {
   if ((!partial || b.name !== undefined) && (!b.name?.trim() || b.name.length > 120))
@@ -1287,8 +1296,16 @@ function ruleError(b: Partial<S['AlertRuleInput']>, partial: boolean): string | 
     !['low', 'medium', 'high', 'critical'].includes(b.severity ?? '')
   )
     return 'Chọn mức độ.';
-  if (b.channels && !b.channels.every((c) => ['email', 'telegram', 'in_app'].includes(c)))
+  if (
+    b.channels &&
+    (b.channels.length === 0 || !b.channels.every((c) => RULE_CHANNELS.includes(c)))
+  )
     return 'Kênh thông báo không hợp lệ.';
+  if (
+    b.repeat_sec !== undefined &&
+    (!Number.isInteger(b.repeat_sec) || b.repeat_sec < 0 || b.repeat_sec > 604800)
+  )
+    return 'Nhắc lại từ 0 đến 604800 giây.';
   return null;
 }
 
@@ -1328,6 +1345,9 @@ function registerOps() {
       severity: b.severity as Rule['severity'],
       channels: b.channels ?? ['in_app'],
       enabled: b.enabled ?? true,
+      is_default: false,
+      repeat_sec: b.repeat_sec ?? 14400,
+      firing_count: 0,
       created_at: ctx.db.now(),
       updated_at: ctx.db.now(),
     };
@@ -1373,6 +1393,8 @@ function registerOps() {
     const rules = ctx.db.data.alert_rules as Rule[];
     const i = rules.findIndex((x) => x.uuid === ctx.params.id);
     if (i < 0) return notFound('luật cảnh báo');
+    if (rules[i]?.is_default)
+      return conflict('Rule mặc định không xóa được; có thể tắt hoặc đổi ngưỡng.');
     const alerts = ctx.db.data.alerts as S['Alert'][];
     if (alerts.some((a) => a.rule.uuid === ctx.params.id && a.state === 'firing'))
       return conflict('Luật đang có cảnh báo chưa xử lý; tắt luật hoặc chờ cảnh báo kết thúc.');
@@ -1383,6 +1405,78 @@ function registerOps() {
       resource: { type: 'alert_rule', uuid: ctx.params.id ?? '' },
     });
     return noContent();
+  });
+
+  on('post', P('/alert-rules:preview'), (ctx) => {
+    const deny = saOnly(ctx);
+    if (deny) return deny;
+    const b = body<S['AlertRuleInput']>(ctx);
+    const err = ruleError(b, false);
+    if (err) return invalid(err);
+    const cmp = (x: number) =>
+      b.operator === 'gt'
+        ? x > (b.threshold as number)
+        : b.operator === 'gte'
+          ? x >= (b.threshold as number)
+          : b.operator === 'lt'
+            ? x < (b.threshold as number)
+            : x <= (b.threshold as number);
+    const pctOf = (u: number, t: number) => (t > 0 ? Math.round((u * 1000) / t) / 10 : 0);
+    let rows: { resource: { type: string; uuid: string }; label: string; value: number | null }[] =
+      [];
+    if (b.scope_type === 'server') {
+      rows = ctx.db.data.servers.map((s) => {
+        const r = s.resources;
+        const value =
+          b.metric === 'cpu_pct'
+            ? r.cpu_pct
+            : b.metric === 'ram_pct'
+              ? pctOf(r.ram_used_mb, r.ram_mb)
+              : b.metric === 'disk_pct'
+                ? pctOf(r.disk_used_mb, r.disk_mb)
+                : b.metric === 'load_1m'
+                  ? r.load_1m
+                  : b.metric === 'agent_offline_sec'
+                    ? s.status === 'ready'
+                      ? 0
+                      : 1260
+                    : null;
+        return { resource: { type: 'server', uuid: s.uuid }, label: s.name, value };
+      });
+    } else if (b.scope_type === 'hosting_account') {
+      rows = ctx.db.data.accounts
+        .filter((a) => a.lifecycle_state === 'active')
+        .map((a) => ({
+          resource: { type: 'hosting_account', uuid: a.uuid },
+          label: a.username,
+          value:
+            b.metric === 'quota_disk_pct'
+              ? pctOf(a.usage.disk_mb.used, a.usage.disk_mb.limit ?? 0)
+              : b.metric === 'cpu_pct'
+                ? pctOf(a.usage.cpu_percent.used, a.usage.cpu_percent.limit ?? 100)
+                : b.metric === 'ram_pct'
+                  ? pctOf(a.usage.ram_mb.used, a.usage.ram_mb.limit ?? 0)
+                  : null,
+        }));
+    } else {
+      const up = ctx.db.data.uptime as S['UptimeCheck'][];
+      rows = up.map((c) => ({
+        resource: { type: 'website', uuid: c.website.uuid },
+        label: c.website.primary_domain,
+        value:
+          b.metric === 'http_latency_ms'
+            ? c.last_latency_ms
+            : b.metric === 'http_status'
+              ? c.last_status
+              : b.metric === 'uptime_down'
+                ? c.state === 'down'
+                  ? 1
+                  : 0
+                : null,
+      }));
+    }
+    const hits = rows.filter((r) => r.value !== null && cmp(r.value));
+    return ok({ matches: hits.length, evaluated_at: ctx.db.now(), resources: hits.slice(0, 20) });
   });
 
   on('get', P('/audit-logs/export'), (ctx) => {

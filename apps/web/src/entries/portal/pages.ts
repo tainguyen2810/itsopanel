@@ -22,6 +22,7 @@ export const PORTAL_PAGES: PageLoaders = {
   wordpressDetail: () => import('@/shared/hosting/pages/WordPressDetailPage'),
   terminal: () => import('./pages/TerminalPage'),
   security: () => import('./pages/SecurityPage'),
+  monitoring: () => import('./pages/MonitoringPage'),
   jobDetail: () => import('@/shared/pages/JobDetailPage'),
   notifications: () => import('@/shared/pages/NotificationsPage'),
   profile: () => import('@/shared/pages/ProfilePage'),

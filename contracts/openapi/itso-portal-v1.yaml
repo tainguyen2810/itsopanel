@@ -3684,6 +3684,89 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/hosting-accounts/{id}/uptime:
+    get:
+      operationId: portalListAccountUptimeChecks
+      summary: Uptime các website của account
+      tags:
+      - Accounts
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/UptimeCheck
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a2a-0001-7000-8000-00002a000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  url: https://anphat.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 182
+                  uptime_30d: 99.97
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: An Phát
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.99
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
+                - uuid: 01938a2a-0002-7000-8000-00002a000002
+                  website:
+                    uuid: 01938a06-0002-7000-8000-000006000002
+                    primary_domain: shop.anphat.vn
+                  url: https://shop.anphat.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 240
+                  uptime_30d: 99.95
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: null
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.97
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/hosting-accounts/{id}/usage:
     get:
       operationId: portalGetHostingAccountUsage
@@ -3735,6 +3818,58 @@ paths:
                     limit: 40960
                   bandwidth_mb_30d: 48213
                   measured_at: '2026-11-20T08:15:00+07:00'
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+  /api/v1/portal/hosting-accounts/{id}/usage-history:
+    get:
+      operationId: portalGetAccountMetrics
+      summary: Chuỗi số liệu account của tôi
+      tags:
+      - Accounts
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/Metric
+      - $ref: ./common.yaml#/components/parameters/Range
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/MetricSeries
+                required:
+                - data
+              example:
+                data:
+                  resource:
+                    type: hosting_account
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                  metric: cpu_pct
+                  step_sec: 300
+                  points:
+                  - - '2026-11-20T08:00:00+07:00'
+                    - 31.2
+                  - - '2026-11-20T08:05:00+07:00'
+                    - 36.9
+                  - - '2026-11-20T08:10:00+07:00'
+                    - 42.1
+                  - - '2026-11-20T08:15:00+07:00'
+                    - 37.5
+                  unit: pct
+                  source: samples
+                  limit: 100
           headers:
             ETag:
               $ref: ./common.yaml#/components/headers/ETag
@@ -4235,6 +4370,79 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/notification-events:
+    get:
+      operationId: portalListNotificationEvents
+      summary: Danh mục sự kiện thông báo
+      tags:
+      - Notifications
+      description: Portal chỉ thấy sự kiện có đối tượng `user`; kênh của USER chỉ `in_app` và `email` (D-104).
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/NotificationEvent
+                  required:
+                  - data
+              example:
+                data:
+                - type: website.down
+                  group: monitoring
+                  severity: high
+                  audiences:
+                  - super_admin
+                  - admin
+                  - user
+                  channels:
+                  - in_app
+                  - email
+                  in_app_locked: false
+                - type: website.up
+                  group: monitoring
+                  severity: info
+                  audiences:
+                  - super_admin
+                  - admin
+                  - user
+                  channels:
+                  - in_app
+                  in_app_locked: false
+                - type: quota.warning
+                  group: account
+                  severity: medium
+                  audiences:
+                  - super_admin
+                  - admin
+                  - user
+                  channels:
+                  - in_app
+                  - email
+                  in_app_locked: false
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/notification-preferences:
     get:
       operationId: portalGetNotificationPreferences
@@ -6564,6 +6772,182 @@ paths:
           $ref: ./common.yaml#/components/responses/Conflict
         '412':
           $ref: ./common.yaml#/components/responses/PreconditionFailed
+  /api/v1/portal/websites/{id}/uptime:
+    get:
+      operationId: portalGetWebsiteUptime
+      summary: Uptime check của website
+      tags:
+      - Websites
+      description: Website chưa có uptime check → 404.
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/UptimeCheck
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2a-0001-7000-8000-00002a000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  url: https://anphat.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 182
+                  uptime_30d: 99.97
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: An Phát
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.99
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+    patch:
+      operationId: portalUpdateWebsiteUptime
+      summary: Bật/tắt, đổi đường dẫn hoặc từ khóa kiểm
+      tags:
+      - Websites
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IfMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/UptimeCheckUpdate
+            example:
+              keyword: Liên hệ
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/UptimeCheck
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a2a-0001-7000-8000-00002a000001
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  url: https://anphat.vn/
+                  interval_sec: 60
+                  last_status: 200
+                  last_latency_ms: 182
+                  uptime_30d: 99.97
+                  last_checked_at: '2026-11-20T08:15:00+07:00'
+                  enabled: true
+                  path: /
+                  keyword: An Phát
+                  state: up
+                  consecutive_failures: 0
+                  last_error: null
+                  uptime_24h: 100.0
+                  uptime_7d: 99.99
+                  cert_expires_at: '2027-01-28T07:00:00+07:00'
+                  down_since: null
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+  /api/v1/portal/websites/{id}/uptime/results:
+    get:
+      operationId: portalListWebsiteUptimeResults
+      summary: Kết quả kiểm gần đây
+      tags:
+      - Websites
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/UptimeResult
+                  required:
+                  - data
+              example:
+                data:
+                - at: '2026-11-20T08:15:00+07:00'
+                  ok: true
+                  status: 200
+                  latency_ms: 160
+                  error: null
+                - at: '2026-11-20T08:14:00+07:00'
+                  ok: true
+                  status: 200
+                  latency_ms: 197
+                  error: null
+                - at: '2026-11-20T08:13:00+07:00'
+                  ok: true
+                  status: 200
+                  latency_ms: 234
+                  error: null
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/portal/wordpress/sites:
     get:
       operationId: portalListWordPressSites

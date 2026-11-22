@@ -2,6 +2,20 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.0 (mockup Monitoring, Alerts, Notifications) — nhánh `phase-11`
+
+Phạm vi: contracts (OpenAPI: metrics theo khoảng + usage account, alert-rules mặc định + preview, alerts ack/silence/unsilence, uptime-checks admin + portal, notification-channels/deliveries, event catalog, Portal usage-history/uptime), dữ liệu demo Phase 11, MSW `monitoring.ts` (SSRF giả lập `webhookBlock`), màn hình: Giám sát tổng quan (nhóm biểu đồ, server offline, dịch vụ, khoảng 1h–90d), tài nguyên theo account, uptime (kết quả, chứng chỉ), cảnh báo (đang mở/lịch sử, ack, tắt tiếng, luật mặc định, xem trước), kênh thông báo (secret chỉ ghi, cảnh báo mạng riêng, gửi thử), nhật ký gửi, thẻ cảnh báo Dashboard, Portal Giám sát, ma trận tùy chọn thông báo theo danh mục sự kiện. Ảnh `docs/screenshots/phase-11/` (19 cảnh × 1440/390 × sáng/tối = 76).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen-check` · `python3 contracts/tools/check_demo.py` | PASS (admin 307, portal 126 operation) · PASS · OK · OK |
+| Type/lint | `pnpm -s exec tsc -b` · `pnpm -s lint` | sạch (i18n vi = en) |
+| Vitest | `pnpm -s vitest run` | **616/616 PASS** (mới `phase11.test.ts` 12: SSRF loopback/link-local/mạng riêng, secret không trả về, ADMIN 403 kênh, luật mặc định xóa → 409, ack/silence/unsilence, preview, uptime URL tuyệt đối 422, phạm vi Portal). Một lượt chạy song song với Playwright có `admin/App.test.tsx` quá thời gian, chạy lại riêng và toàn bộ: PASS |
+| Playwright demo + axe | `pnpm -s e2e` | **708/708 PASS** (16 phút; smoke + axe tự gồm route mới). Lượt trước hỏng hàng loạt `ERR_CONNECTION_REFUSED` do tôi dừng nhầm server demo 5174, chạy lại sạch |
+| Ảnh mockup | `SCREENSHOT_DIR_P11=docs/screenshots/phase-11 pnpm -s exec playwright test e2e/screenshots-phase11.spec.ts` | 76/76. Lần đầu lỗi 8: xem trước luật không hiện (UI đọc `r.data` trong khi `send` đã bóc `data`, sửa cả gửi thử kênh), trang account chọn mặc định server offline (→ chọn server online đầu tiên) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 10 / Prompt 10.8 (tích hợp: e2e stack thật, VM, review, make check) — nhánh `phase-10`
 
 Phạm vi: `apps/web/e2e-real/phase10.spec.ts` (mới, 4 luồng), file điều khiển sandbox (`/var/lib/itso-sandbox/docker-control.json`: publish image mới + unhealthy; `wp-control.json`: available/fail/checksum_fail) và `FakeEngine.BeforePull`, `scripts/dev.sh` bật `docker: true` trong policy agent sandbox, `tests/vm/phase10.sh` (V0–V6), `docs/security/docker-wordpress-review.md`, `docs/runbooks/phase-10-docker-wordpress.md`, báo cáo `docs/reports/phase-10.md`. Commit f1e0602.

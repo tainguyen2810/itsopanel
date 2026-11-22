@@ -7945,7 +7945,10 @@
         "2026-11-20T08:15:00+07:00",
         37.5
       ]
-    ]
+    ],
+    "unit": "pct",
+    "source": "samples",
+    "limit": null
   },
   "alert_rules": [
     {
@@ -7964,7 +7967,10 @@
       ],
       "enabled": true,
       "created_at": "2026-11-18T09:30:00+07:00",
-      "updated_at": "2026-11-19T14:05:00+07:00"
+      "updated_at": "2026-11-19T14:05:00+07:00",
+      "is_default": false,
+      "repeat_sec": 14400,
+      "firing_count": 1
     },
     {
       "uuid": "01938a20-0002-7000-8000-000020000002",
@@ -7983,7 +7989,10 @@
       ],
       "enabled": true,
       "created_at": "2026-11-18T09:30:00+07:00",
-      "updated_at": "2026-11-19T14:05:00+07:00"
+      "updated_at": "2026-11-19T14:05:00+07:00",
+      "is_default": true,
+      "repeat_sec": 14400,
+      "firing_count": 0
     },
     {
       "uuid": "01938a20-0003-7000-8000-000020000003",
@@ -8000,7 +8009,10 @@
       ],
       "enabled": true,
       "created_at": "2026-11-18T09:30:00+07:00",
-      "updated_at": "2026-11-19T14:05:00+07:00"
+      "updated_at": "2026-11-19T14:05:00+07:00",
+      "is_default": false,
+      "repeat_sec": 14400,
+      "firing_count": 0
     },
     {
       "uuid": "01938a20-0004-7000-8000-000020000004",
@@ -8017,7 +8029,10 @@
       ],
       "enabled": true,
       "created_at": "2026-11-18T09:30:00+07:00",
-      "updated_at": "2026-11-19T14:05:00+07:00"
+      "updated_at": "2026-11-19T14:05:00+07:00",
+      "is_default": false,
+      "repeat_sec": 14400,
+      "firing_count": 1
     },
     {
       "uuid": "01938a20-0005-7000-8000-000020000005",
@@ -8033,6 +8048,137 @@
         "in_app"
       ],
       "enabled": false,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00",
+      "is_default": false,
+      "repeat_sec": 14400,
+      "firing_count": 0
+    },
+    {
+      "uuid": "01938a20-000a-7000-8000-00002000000a",
+      "name": "Server mất kết nối",
+      "metric": "agent_offline_sec",
+      "scope_type": "server",
+      "scope_uuid": null,
+      "operator": "gte",
+      "threshold": 90,
+      "for_sec": 0,
+      "severity": "critical",
+      "channels": [
+        "in_app",
+        "email",
+        "telegram"
+      ],
+      "enabled": true,
+      "is_default": true,
+      "repeat_sec": 14400,
+      "firing_count": 1,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a20-000b-7000-8000-00002000000b",
+      "name": "Inode server > 90%",
+      "metric": "inode_pct",
+      "scope_type": "server",
+      "scope_uuid": null,
+      "operator": "gt",
+      "threshold": 90,
+      "for_sec": 300,
+      "severity": "high",
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "enabled": true,
+      "is_default": true,
+      "repeat_sec": 14400,
+      "firing_count": 0,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a20-000c-7000-8000-00002000000c",
+      "name": "Dịch vụ lõi dừng",
+      "metric": "service_down",
+      "scope_type": "server",
+      "scope_uuid": null,
+      "operator": "gte",
+      "threshold": 1,
+      "for_sec": 120,
+      "severity": "high",
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "enabled": true,
+      "is_default": true,
+      "repeat_sec": 14400,
+      "firing_count": 0,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a20-000d-7000-8000-00002000000d",
+      "name": "Website không phản hồi",
+      "metric": "uptime_down",
+      "scope_type": "website",
+      "scope_uuid": null,
+      "operator": "gte",
+      "threshold": 1,
+      "for_sec": 0,
+      "severity": "high",
+      "channels": [
+        "in_app",
+        "email",
+        "webhook"
+      ],
+      "enabled": true,
+      "is_default": true,
+      "repeat_sec": 14400,
+      "firing_count": 1,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a20-000e-7000-8000-00002000000e",
+      "name": "Chứng chỉ còn ≤ 7 ngày",
+      "metric": "cert_days",
+      "scope_type": "website",
+      "scope_uuid": null,
+      "operator": "lte",
+      "threshold": 7,
+      "for_sec": 0,
+      "severity": "medium",
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "enabled": true,
+      "is_default": true,
+      "repeat_sec": 14400,
+      "firing_count": 0,
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a20-000f-7000-8000-00002000000f",
+      "name": "Backup lỗi",
+      "metric": "backup_failed",
+      "scope_type": "hosting_account",
+      "scope_uuid": null,
+      "operator": "gte",
+      "threshold": 1,
+      "for_sec": 0,
+      "severity": "high",
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "enabled": true,
+      "is_default": true,
+      "repeat_sec": 14400,
+      "firing_count": 0,
       "created_at": "2026-11-18T09:30:00+07:00",
       "updated_at": "2026-11-19T14:05:00+07:00"
     }
@@ -8052,7 +8198,16 @@
       },
       "value": 91.3,
       "started_at": "2026-11-20T08:15:00+07:00",
-      "resolved_at": null
+      "resolved_at": null,
+      "message": "CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút",
+      "server": {
+        "uuid": "01938a02-0003-7000-8000-000002000003",
+        "name": "srv-hcm-01"
+      },
+      "acknowledged_by": null,
+      "acknowledged_at": null,
+      "silenced_until": null,
+      "last_notified_at": "2026-11-20T08:15:00+07:00"
     },
     {
       "uuid": "01938a21-0002-7000-8000-000021000002",
@@ -8068,7 +8223,16 @@
       },
       "value": 91.8,
       "started_at": "2026-11-19T02:10:00+07:00",
-      "resolved_at": "2026-11-19T02:40:00+07:00"
+      "resolved_at": "2026-11-19T02:40:00+07:00",
+      "message": "Disk srv-hn-01 91,8% (ngưỡng 90%)",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "acknowledged_by": null,
+      "acknowledged_at": null,
+      "silenced_until": null,
+      "last_notified_at": "2026-11-19T02:15:00+07:00"
     },
     {
       "uuid": "01938a21-0003-7000-8000-000021000003",
@@ -8077,14 +8241,127 @@
         "name": "Quota disk account > 95%"
       },
       "severity": "medium",
-      "state": "acknowledged",
+      "state": "firing",
       "resource": {
         "type": "hosting_account",
         "uuid": "01938a05-0008-7000-8000-000005000008"
       },
       "value": 96.4,
       "started_at": "2026-11-20T07:40:00+07:00",
-      "resolved_at": null
+      "resolved_at": null,
+      "message": "Quota disk thientam 96,4% (ngưỡng 95%)",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "acknowledged_by": {
+        "uuid": "01938a01-0002-7000-8000-000001000002",
+        "name": "Trần Minh",
+        "email": "minh.tran@itso.local"
+      },
+      "acknowledged_at": "2026-11-20T07:52:00+07:00",
+      "silenced_until": null,
+      "last_notified_at": "2026-11-20T07:41:00+07:00"
+    },
+    {
+      "uuid": "01938a21-0004-7000-8000-000021000004",
+      "rule": {
+        "uuid": "01938a20-000a-7000-8000-00002000000a",
+        "name": "Server mất kết nối"
+      },
+      "severity": "critical",
+      "state": "firing",
+      "resource": {
+        "type": "server",
+        "uuid": "01938a02-0003-7000-8000-000002000003"
+      },
+      "value": 1260,
+      "message": "srv-hcm-01 không gửi heartbeat 21 phút; job mới chờ node quay lại",
+      "server": {
+        "uuid": "01938a02-0003-7000-8000-000002000003",
+        "name": "srv-hcm-01"
+      },
+      "started_at": "2026-11-20T07:54:00+07:00",
+      "resolved_at": null,
+      "acknowledged_by": null,
+      "acknowledged_at": null,
+      "silenced_until": null,
+      "last_notified_at": "2026-11-20T07:54:30+07:00"
+    },
+    {
+      "uuid": "01938a21-0005-7000-8000-000021000005",
+      "rule": {
+        "uuid": "01938a20-000d-7000-8000-00002000000d",
+        "name": "Website không phản hồi"
+      },
+      "severity": "high",
+      "state": "firing",
+      "resource": {
+        "type": "website",
+        "uuid": "01938a06-0010-7000-8000-000006000010"
+      },
+      "value": 1,
+      "message": "intranet.itso.vn trả 502 ba lần liên tiếp",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "started_at": "2026-11-20T08:02:00+07:00",
+      "resolved_at": null,
+      "acknowledged_by": null,
+      "acknowledged_at": null,
+      "silenced_until": "2026-11-20T09:02:00+07:00",
+      "last_notified_at": "2026-11-20T08:02:10+07:00"
+    },
+    {
+      "uuid": "01938a21-0006-7000-8000-000021000006",
+      "rule": {
+        "uuid": "01938a20-0003-7000-8000-000020000003",
+        "name": "RAM server > 90% trong 15 phút"
+      },
+      "severity": "medium",
+      "state": "pending",
+      "resource": {
+        "type": "server",
+        "uuid": "01938a02-0002-7000-8000-000002000002"
+      },
+      "value": 92.6,
+      "message": "RAM srv-hn-02 92,6% (ngưỡng 90%) mới 6/15 phút",
+      "server": {
+        "uuid": "01938a02-0002-7000-8000-000002000002",
+        "name": "srv-hn-02"
+      },
+      "started_at": "2026-11-20T08:09:00+07:00",
+      "resolved_at": null,
+      "acknowledged_by": null,
+      "acknowledged_at": null,
+      "silenced_until": null,
+      "last_notified_at": null
+    },
+    {
+      "uuid": "01938a21-0007-7000-8000-000021000007",
+      "rule": {
+        "uuid": "01938a20-000e-7000-8000-00002000000e",
+        "name": "Chứng chỉ còn ≤ 7 ngày"
+      },
+      "severity": "medium",
+      "state": "resolved",
+      "resource": {
+        "type": "website",
+        "uuid": "01938a06-0008-7000-8000-000006000008"
+      },
+      "value": 6,
+      "message": "saomai.edu.vn còn 6 ngày; đã gia hạn",
+      "server": {
+        "uuid": "01938a02-0002-7000-8000-000002000002",
+        "name": "srv-hn-02"
+      },
+      "started_at": "2026-11-17T03:17:00+07:00",
+      "resolved_at": "2026-11-17T03:19:00+07:00",
+      "acknowledged_by": null,
+      "acknowledged_at": null,
+      "silenced_until": null,
+      "last_notified_at": "2026-11-17T03:17:20+07:00"
     }
   ],
   "uptime": [
@@ -8099,7 +8376,17 @@
       "last_status": 200,
       "last_latency_ms": 182,
       "uptime_30d": 99.97,
-      "last_checked_at": "2026-11-20T08:15:00+07:00"
+      "last_checked_at": "2026-11-20T08:15:00+07:00",
+      "enabled": true,
+      "path": "/",
+      "keyword": "An Phát",
+      "state": "up",
+      "consecutive_failures": 0,
+      "last_error": null,
+      "uptime_24h": 100.0,
+      "uptime_7d": 99.99,
+      "cert_expires_at": "2027-01-28T07:00:00+07:00",
+      "down_since": null
     },
     {
       "uuid": "01938a2a-0002-7000-8000-00002a000002",
@@ -8112,7 +8399,17 @@
       "last_status": 200,
       "last_latency_ms": 240,
       "uptime_30d": 99.95,
-      "last_checked_at": "2026-11-20T08:15:00+07:00"
+      "last_checked_at": "2026-11-20T08:15:00+07:00",
+      "enabled": true,
+      "path": "/",
+      "keyword": null,
+      "state": "up",
+      "consecutive_failures": 0,
+      "last_error": null,
+      "uptime_24h": 100.0,
+      "uptime_7d": 99.97,
+      "cert_expires_at": "2027-01-28T07:00:00+07:00",
+      "down_since": null
     },
     {
       "uuid": "01938a2a-0003-7000-8000-00002a000003",
@@ -8125,7 +8422,17 @@
       "last_status": 200,
       "last_latency_ms": 310,
       "uptime_30d": 99.9,
-      "last_checked_at": "2026-11-20T08:15:00+07:00"
+      "last_checked_at": "2026-11-20T08:15:00+07:00",
+      "enabled": true,
+      "path": "/",
+      "keyword": null,
+      "state": "up",
+      "consecutive_failures": 0,
+      "last_error": null,
+      "uptime_24h": 100.0,
+      "uptime_7d": 99.92,
+      "cert_expires_at": "2027-02-03T07:00:00+07:00",
+      "down_since": null
     },
     {
       "uuid": "01938a2a-0004-7000-8000-00002a000004",
@@ -8138,7 +8445,17 @@
       "last_status": 200,
       "last_latency_ms": 198,
       "uptime_30d": 100.0,
-      "last_checked_at": "2026-11-20T08:15:00+07:00"
+      "last_checked_at": "2026-11-20T08:15:00+07:00",
+      "enabled": true,
+      "path": "/",
+      "keyword": null,
+      "state": "up",
+      "consecutive_failures": 0,
+      "last_error": null,
+      "uptime_24h": 100.0,
+      "uptime_7d": 100.0,
+      "cert_expires_at": "2027-02-13T07:00:00+07:00",
+      "down_since": null
     },
     {
       "uuid": "01938a2a-0005-7000-8000-00002a000005",
@@ -8151,7 +8468,17 @@
       "last_status": 502,
       "last_latency_ms": null,
       "uptime_30d": 98.72,
-      "last_checked_at": "2026-11-20T08:15:00+07:00"
+      "last_checked_at": "2026-11-20T08:15:00+07:00",
+      "enabled": true,
+      "path": "/",
+      "keyword": null,
+      "state": "down",
+      "consecutive_failures": 4,
+      "last_error": "HTTP 502 Bad Gateway",
+      "uptime_24h": 96.5,
+      "uptime_7d": 98.9,
+      "cert_expires_at": "2026-12-01T07:00:00+07:00",
+      "down_since": "2026-11-20T08:00:00+07:00"
     },
     {
       "uuid": "01938a2a-0006-7000-8000-00002a000006",
@@ -8164,7 +8491,40 @@
       "last_status": 200,
       "last_latency_ms": 155,
       "uptime_30d": 99.99,
-      "last_checked_at": "2026-11-20T08:15:00+07:00"
+      "last_checked_at": "2026-11-20T08:15:00+07:00",
+      "enabled": true,
+      "path": "/",
+      "keyword": null,
+      "state": "up",
+      "consecutive_failures": 0,
+      "last_error": null,
+      "uptime_24h": 100.0,
+      "uptime_7d": 100.0,
+      "cert_expires_at": "2026-12-26T07:00:00+07:00",
+      "down_since": null
+    },
+    {
+      "uuid": "01938a2a-0009-7000-8000-00002a000009",
+      "website": {
+        "uuid": "01938a06-000e-7000-8000-00000600000e",
+        "primary_domain": "gionui.vn"
+      },
+      "url": "https://gionui.vn/wp-login.php",
+      "interval_sec": 300,
+      "last_status": null,
+      "last_latency_ms": null,
+      "uptime_30d": 99.8,
+      "last_checked_at": "2026-11-18T17:00:00+07:00",
+      "enabled": false,
+      "path": "/wp-login.php",
+      "keyword": null,
+      "state": "paused",
+      "consecutive_failures": 0,
+      "last_error": null,
+      "uptime_24h": 100.0,
+      "uptime_7d": 99.8,
+      "cert_expires_at": null,
+      "down_since": null
     }
   ],
   "notifications": [
@@ -9369,10 +9729,116 @@
         "accounts": 2
       }
     ],
-    "alerts_firing": 1,
+    "alerts_firing": 4,
     "security_events_24h": 38,
     "jobs_running": 2,
-    "updated_at": "2026-11-20T08:15:00+07:00"
+    "updated_at": "2026-11-20T08:15:00+07:00",
+    "alerts_recent": [
+      {
+        "uuid": "01938a21-0001-7000-8000-000021000001",
+        "rule": {
+          "uuid": "01938a20-0001-7000-8000-000020000001",
+          "name": "CPU server > 85% trong 10 phút"
+        },
+        "severity": "high",
+        "state": "firing",
+        "resource": {
+          "type": "server",
+          "uuid": "01938a02-0003-7000-8000-000002000003"
+        },
+        "value": 91.3,
+        "started_at": "2026-11-20T08:15:00+07:00",
+        "resolved_at": null,
+        "message": "CPU srv-hcm-01 91,3% (ngưỡng 85%) trong 10 phút",
+        "server": {
+          "uuid": "01938a02-0003-7000-8000-000002000003",
+          "name": "srv-hcm-01"
+        },
+        "acknowledged_by": null,
+        "acknowledged_at": null,
+        "silenced_until": null,
+        "last_notified_at": "2026-11-20T08:15:00+07:00"
+      },
+      {
+        "uuid": "01938a21-0005-7000-8000-000021000005",
+        "rule": {
+          "uuid": "01938a20-000d-7000-8000-00002000000d",
+          "name": "Website không phản hồi"
+        },
+        "severity": "high",
+        "state": "firing",
+        "resource": {
+          "type": "website",
+          "uuid": "01938a06-0010-7000-8000-000006000010"
+        },
+        "value": 1,
+        "message": "intranet.itso.vn trả 502 ba lần liên tiếp",
+        "server": {
+          "uuid": "01938a02-0001-7000-8000-000002000001",
+          "name": "srv-hn-01"
+        },
+        "started_at": "2026-11-20T08:02:00+07:00",
+        "resolved_at": null,
+        "acknowledged_by": null,
+        "acknowledged_at": null,
+        "silenced_until": "2026-11-20T09:02:00+07:00",
+        "last_notified_at": "2026-11-20T08:02:10+07:00"
+      },
+      {
+        "uuid": "01938a21-0004-7000-8000-000021000004",
+        "rule": {
+          "uuid": "01938a20-000a-7000-8000-00002000000a",
+          "name": "Server mất kết nối"
+        },
+        "severity": "critical",
+        "state": "firing",
+        "resource": {
+          "type": "server",
+          "uuid": "01938a02-0003-7000-8000-000002000003"
+        },
+        "value": 1260,
+        "message": "srv-hcm-01 không gửi heartbeat 21 phút; job mới chờ node quay lại",
+        "server": {
+          "uuid": "01938a02-0003-7000-8000-000002000003",
+          "name": "srv-hcm-01"
+        },
+        "started_at": "2026-11-20T07:54:00+07:00",
+        "resolved_at": null,
+        "acknowledged_by": null,
+        "acknowledged_at": null,
+        "silenced_until": null,
+        "last_notified_at": "2026-11-20T07:54:30+07:00"
+      },
+      {
+        "uuid": "01938a21-0003-7000-8000-000021000003",
+        "rule": {
+          "uuid": "01938a20-0004-7000-8000-000020000004",
+          "name": "Quota disk account > 95%"
+        },
+        "severity": "medium",
+        "state": "firing",
+        "resource": {
+          "type": "hosting_account",
+          "uuid": "01938a05-0008-7000-8000-000005000008"
+        },
+        "value": 96.4,
+        "started_at": "2026-11-20T07:40:00+07:00",
+        "resolved_at": null,
+        "message": "Quota disk thientam 96,4% (ngưỡng 95%)",
+        "server": {
+          "uuid": "01938a02-0001-7000-8000-000002000001",
+          "name": "srv-hn-01"
+        },
+        "acknowledged_by": {
+          "uuid": "01938a01-0002-7000-8000-000001000002",
+          "name": "Trần Minh",
+          "email": "minh.tran@itso.local"
+        },
+        "acknowledged_at": "2026-11-20T07:52:00+07:00",
+        "silenced_until": null,
+        "last_notified_at": "2026-11-20T07:41:00+07:00"
+      }
+    ]
   },
   "portal_overview": {
     "accounts": [
@@ -9737,5 +10203,717 @@
     "hmac_key": "q3Vx9-Lm2Pz7Rt4Kc8Wn1Ys6Hd0Bf5Ga3Je9Ui2Oa7E",
     "relay_url": "https://admin.itso.local:28444",
     "cert_not_after": "2026-12-21T09:00:00+07:00"
-  }
+  },
+  "alert_preview": {
+    "matches": 1,
+    "evaluated_at": "2026-11-20T08:15:00+07:00",
+    "resources": [
+      {
+        "resource": {
+          "type": "server",
+          "uuid": "01938a02-0001-7000-8000-000002000001"
+        },
+        "label": "srv-hn-01",
+        "value": 81.4
+      }
+    ]
+  },
+  "uptime_results": [
+    {
+      "at": "2026-11-20T08:15:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 160,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:14:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 197,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:13:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 234,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:12:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 181,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:11:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 218,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:10:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 165,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:09:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 202,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:08:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 239,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:07:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 186,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:06:00+07:00",
+      "ok": false,
+      "status": 503,
+      "latency_ms": 10000,
+      "error": "HTTP 503 Service Unavailable"
+    },
+    {
+      "at": "2026-11-20T08:05:00+07:00",
+      "ok": false,
+      "status": 503,
+      "latency_ms": 10000,
+      "error": "HTTP 503 Service Unavailable"
+    },
+    {
+      "at": "2026-11-20T08:04:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 207,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:03:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 244,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:02:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 191,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:01:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 228,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T08:00:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 175,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:59:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 212,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:58:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 249,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:57:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 196,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:56:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 233,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:55:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 180,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:54:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 217,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:53:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 164,
+      "error": null
+    },
+    {
+      "at": "2026-11-20T07:52:00+07:00",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 201,
+      "error": null
+    }
+  ],
+  "account_usage": [
+    {
+      "hosting_account": {
+        "uuid": "01938a05-0008-7000-8000-000005000008",
+        "username": "thientam"
+      },
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "cpu_pct": 54.8,
+      "ram_mb": 660.0,
+      "ram_limit_mb": 4096,
+      "io_read_bps": 340000.0,
+      "io_write_bps": 260000.0,
+      "tasks": 63,
+      "disk_mb": 4650.0,
+      "disk_limit_mb": 20480,
+      "sampled_at": "2026-11-20T08:15:00+07:00"
+    },
+    {
+      "hosting_account": {
+        "uuid": "01938a05-0001-7000-8000-000005000001",
+        "username": "anphat"
+      },
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "cpu_pct": 35.0,
+      "ram_mb": 1830.0,
+      "ram_limit_mb": 4096,
+      "io_read_bps": 210000.0,
+      "io_write_bps": 95000.0,
+      "tasks": 42,
+      "disk_mb": 8420.0,
+      "disk_limit_mb": 20480,
+      "sampled_at": "2026-11-20T08:15:00+07:00"
+    },
+    {
+      "hosting_account": {
+        "uuid": "01938a05-0005-7000-8000-000005000005",
+        "username": "binhminh"
+      },
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "cpu_pct": 18.2,
+      "ram_mb": 300.0,
+      "ram_limit_mb": 4096,
+      "io_read_bps": 88000.0,
+      "io_write_bps": 61000.0,
+      "tasks": 27,
+      "disk_mb": 1800.0,
+      "disk_limit_mb": 20480,
+      "sampled_at": "2026-11-20T08:15:00+07:00"
+    },
+    {
+      "hosting_account": {
+        "uuid": "01938a05-000a-7000-8000-00000500000a",
+        "username": "intranet"
+      },
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "cpu_pct": 12.1,
+      "ram_mb": 900.0,
+      "ram_limit_mb": 8192,
+      "io_read_bps": 40000.0,
+      "io_write_bps": 22000.0,
+      "tasks": 19,
+      "disk_mb": 6550.0,
+      "disk_limit_mb": 102400,
+      "sampled_at": "2026-11-20T08:15:00+07:00"
+    },
+    {
+      "hosting_account": {
+        "uuid": "01938a05-0002-7000-8000-000005000002",
+        "username": "mktitso"
+      },
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "cpu_pct": 6.5,
+      "ram_mb": 610.0,
+      "ram_limit_mb": 1024,
+      "io_read_bps": 12000.0,
+      "io_write_bps": 4000.0,
+      "tasks": 11,
+      "disk_mb": 4710.0,
+      "disk_limit_mb": 5120,
+      "sampled_at": "2026-11-20T08:15:00+07:00"
+    }
+  ],
+  "notification_channels": [
+    {
+      "uuid": "01938a38-0001-7000-8000-000038000001",
+      "type": "email",
+      "name": "Nhóm vận hành",
+      "enabled": true,
+      "config": {
+        "recipients": [
+          "ops@itso.vn",
+          "truc-ca@itso.vn"
+        ],
+        "chat_id": null,
+        "url": null,
+        "allow_private_network": false
+      },
+      "secret_set": false,
+      "last_delivery": {
+        "state": "sent",
+        "at": "2026-11-20T07:54:31+07:00",
+        "error": null
+      },
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a38-0002-7000-8000-000038000002",
+      "type": "telegram",
+      "name": "Telegram trực ca",
+      "enabled": true,
+      "config": {
+        "recipients": [],
+        "chat_id": "-1001234567890",
+        "url": null,
+        "allow_private_network": false
+      },
+      "secret_set": true,
+      "last_delivery": {
+        "state": "sent",
+        "at": "2026-11-20T07:54:32+07:00",
+        "error": null
+      },
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a38-0003-7000-8000-000038000003",
+      "type": "webhook",
+      "name": "Webhook Mattermost",
+      "enabled": true,
+      "config": {
+        "recipients": [],
+        "chat_id": null,
+        "url": "https://chat.itso.vn/hooks/k3x9w2",
+        "allow_private_network": false
+      },
+      "secret_set": true,
+      "last_delivery": {
+        "state": "failed",
+        "at": "2026-11-20T08:02:10+07:00",
+        "error": "HTTP 500 Internal Server Error"
+      },
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    },
+    {
+      "uuid": "01938a38-0004-7000-8000-000038000004",
+      "type": "webhook",
+      "name": "Webhook phòng máy (mạng riêng)",
+      "enabled": false,
+      "config": {
+        "recipients": [],
+        "chat_id": null,
+        "url": "http://10.10.5.30:8080/alert",
+        "allow_private_network": true
+      },
+      "secret_set": true,
+      "last_delivery": {
+        "state": "blocked",
+        "at": "2026-11-19T15:20:00+07:00",
+        "error": "Địa chỉ 169.254.169.254 thuộc dải link-local, luôn bị chặn"
+      },
+      "created_at": "2026-11-18T09:30:00+07:00",
+      "updated_at": "2026-11-19T14:05:00+07:00"
+    }
+  ],
+  "notification_deliveries": [
+    {
+      "uuid": "01938a39-0001-7000-8000-000039000001",
+      "channel": {
+        "uuid": "01938a38-0001-7000-8000-000038000001",
+        "name": "Nhóm vận hành",
+        "type": "email"
+      },
+      "event_type": "alert.firing",
+      "title": "[CRITICAL] srv-hcm-01 mất kết nối",
+      "severity": "critical",
+      "state": "sent",
+      "attempts": 1,
+      "error": null,
+      "response_code": 250,
+      "created_at": "2026-11-20T07:54:30+07:00",
+      "sent_at": "2026-11-20T07:54:31+07:00",
+      "next_retry_at": null
+    },
+    {
+      "uuid": "01938a39-0002-7000-8000-000039000002",
+      "channel": {
+        "uuid": "01938a38-0003-7000-8000-000038000003",
+        "name": "Webhook Mattermost",
+        "type": "webhook"
+      },
+      "event_type": "alert.firing",
+      "title": "[HIGH] intranet.itso.vn không phản hồi",
+      "severity": "high",
+      "state": "failed",
+      "attempts": 3,
+      "error": "HTTP 500 Internal Server Error",
+      "response_code": 500,
+      "created_at": "2026-11-20T08:02:10+07:00",
+      "sent_at": null,
+      "next_retry_at": null
+    },
+    {
+      "uuid": "01938a39-0003-7000-8000-000039000003",
+      "channel": {
+        "uuid": "01938a38-0002-7000-8000-000038000002",
+        "name": "Telegram trực ca",
+        "type": "telegram"
+      },
+      "event_type": "alert.firing",
+      "title": "[CRITICAL] srv-hcm-01 mất kết nối",
+      "severity": "critical",
+      "state": "sent",
+      "attempts": 1,
+      "error": null,
+      "response_code": 200,
+      "created_at": "2026-11-20T07:54:30+07:00",
+      "sent_at": "2026-11-20T07:54:32+07:00",
+      "next_retry_at": null
+    },
+    {
+      "uuid": "01938a39-0004-7000-8000-000039000004",
+      "channel": {
+        "uuid": "01938a38-0003-7000-8000-000038000003",
+        "name": "Webhook Mattermost",
+        "type": "webhook"
+      },
+      "event_type": "backup.failed",
+      "title": "Backup thientam lỗi",
+      "severity": "high",
+      "state": "retrying",
+      "attempts": 2,
+      "error": "Hết thời gian chờ (5 giây)",
+      "response_code": null,
+      "created_at": "2026-11-20T08:10:00+07:00",
+      "sent_at": null,
+      "next_retry_at": "2026-11-20T08:25:00+07:00"
+    },
+    {
+      "uuid": "01938a39-0005-7000-8000-000039000005",
+      "channel": {
+        "uuid": "01938a38-0004-7000-8000-000038000004",
+        "name": "Webhook phòng máy (mạng riêng)",
+        "type": "webhook"
+      },
+      "event_type": "channel.test",
+      "title": "Tin thử từ ITSO Panel",
+      "severity": "info",
+      "state": "blocked",
+      "attempts": 0,
+      "error": "Địa chỉ 169.254.169.254 thuộc dải link-local, luôn bị chặn",
+      "response_code": null,
+      "created_at": "2026-11-19T15:20:00+07:00",
+      "sent_at": null,
+      "next_retry_at": null
+    },
+    {
+      "uuid": "01938a39-0006-7000-8000-000039000006",
+      "channel": {
+        "uuid": "01938a38-0001-7000-8000-000038000001",
+        "name": "Nhóm vận hành",
+        "type": "email"
+      },
+      "event_type": "alert.resolved",
+      "title": "[RESOLVED] Disk srv-hn-01 về 84%",
+      "severity": "info",
+      "state": "sent",
+      "attempts": 1,
+      "error": null,
+      "response_code": 250,
+      "created_at": "2026-11-19T02:40:10+07:00",
+      "sent_at": "2026-11-19T02:40:11+07:00",
+      "next_retry_at": null
+    }
+  ],
+  "notification_events": [
+    {
+      "type": "alert.firing",
+      "group": "monitoring",
+      "severity": "high",
+      "audiences": [
+        "super_admin",
+        "admin"
+      ],
+      "channels": [
+        "in_app",
+        "email",
+        "telegram",
+        "webhook"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "alert.resolved",
+      "group": "monitoring",
+      "severity": "info",
+      "audiences": [
+        "super_admin",
+        "admin"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "server.unreachable",
+      "group": "monitoring",
+      "severity": "critical",
+      "audiences": [
+        "super_admin",
+        "admin"
+      ],
+      "channels": [
+        "in_app",
+        "email",
+        "telegram"
+      ],
+      "in_app_locked": true
+    },
+    {
+      "type": "website.down",
+      "group": "monitoring",
+      "severity": "high",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "website.up",
+      "group": "monitoring",
+      "severity": "info",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "quota.warning",
+      "group": "account",
+      "severity": "medium",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "quota.exceeded",
+      "group": "account",
+      "severity": "high",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "account.suspended",
+      "group": "account",
+      "severity": "high",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "account.unsuspended",
+      "group": "account",
+      "severity": "info",
+      "audiences": [
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "certificate.expiring",
+      "group": "ssl",
+      "severity": "medium",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "certificate.renew_failed",
+      "group": "ssl",
+      "severity": "high",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "backup.failed",
+      "group": "backup",
+      "severity": "high",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "backup.succeeded",
+      "group": "backup",
+      "severity": "info",
+      "audiences": [
+        "super_admin",
+        "admin"
+      ],
+      "channels": [
+        "in_app"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "job.failed",
+      "group": "jobs",
+      "severity": "medium",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app"
+      ],
+      "in_app_locked": false
+    },
+    {
+      "type": "security.high",
+      "group": "security",
+      "severity": "critical",
+      "audiences": [
+        "super_admin",
+        "admin"
+      ],
+      "channels": [
+        "in_app",
+        "email",
+        "telegram"
+      ],
+      "in_app_locked": true
+    },
+    {
+      "type": "wordpress.rolled_back",
+      "group": "wordpress",
+      "severity": "high",
+      "audiences": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "channels": [
+        "in_app",
+        "email"
+      ],
+      "in_app_locked": false
+    }
+  ]
 }
