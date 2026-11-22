@@ -763,6 +763,10 @@ t("ops", "uptime_results", [
     "check_id bigint [not null]", "ok boolean [not null]", "status int", "latency_ms int", "error text",
     "at timestamptz [not null]",
 ], ["(check_id, at)"], "D-105: partition theo ngày, giữ 7 ngày (extras.sql). Không FK để ghi nhanh.")
+t("ops", "uptime_rollups", IDN + [
+    "check_id bigint [not null, ref: > uptime_checks.id]", "bucket timestamptz [not null, note: 'Đầu giờ (UTC)']",
+    "ok_count int [not null]", "total int [not null]", "avg_latency_ms int",
+], ["(check_id, bucket) [unique]"], "D-105: % uptime theo giờ (từ uptime_results), giữ 90 ngày cho % 30 ngày; itso:metrics-rollup.")
 
 GROUP_NAMES = {
     "identity": "Danh tính và phân quyền", "infra": "Hạ tầng", "hosting": "Hosting",

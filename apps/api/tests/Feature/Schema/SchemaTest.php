@@ -36,7 +36,7 @@ const PHASE10_TABLES = ['docker_hosts', 'registries', 'compose_projects', 'compo
     'port_allocations', 'image_rollbacks', 'wordpress_sites', 'wordpress_components', 'wordpress_updates',
     'git_repositories', 'git_deployments'];
 const PHASE11_TABLES = ['metric_rollups', 'alert_rules', 'alerts', 'uptime_checks', 'uptime_results',
-    'notification_channels', 'notification_preferences', 'notification_deliveries'];
+    'uptime_rollups', 'notification_channels', 'notification_preferences', 'notification_deliveries'];
 const PHASE8_TABLES = ['backup_destinations', 'backup_repositories', 'backup_policies', 'backup_policy_destinations',
     'backup_jobs', 'backup_snapshots', 'backup_verifications', 'restore_jobs', 'purge_records'];
 
@@ -52,7 +52,7 @@ function rejects(callable $fn, string $pattern): void
     throw new RuntimeException('Mong đợi lỗi DB khớp '.$pattern);
 }
 
-it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 + 9 bảng Phase 8 + 3 bảng Phase 9 + 12 bảng Phase 10 + 8 bảng Phase 11 (không hơn), audit_logs, metric_samples, waf_events và uptime_results có partition mặc định', function () {
+it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 + 9 bảng Phase 8 + 3 bảng Phase 9 + 12 bảng Phase 10 + 9 bảng Phase 11 (không hơn), audit_logs, metric_samples, waf_events và uptime_results có partition mặc định', function () {
     $tables = collect(DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         ->pluck('tablename')
         ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default', 'waf_events_default', 'uptime_results_default'], true))

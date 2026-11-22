@@ -1732,6 +1732,19 @@ Table uptime_results {
   Note: 'D-105: partition theo ngày, giữ 7 ngày (extras.sql). Không FK để ghi nhanh.'
 }
 
+Table uptime_rollups {
+  id bigint [pk, increment]
+  check_id bigint [not null, ref: > uptime_checks.id]
+  bucket timestamptz [not null, note: 'Đầu giờ (UTC)']
+  ok_count int [not null]
+  total int [not null]
+  avg_latency_ms int
+  indexes {
+    (check_id, bucket) [unique]
+  }
+  Note: 'D-105: % uptime theo giờ (từ uptime_results), giữ 90 ngày cho % 30 ngày; itso:metrics-rollup.'
+}
+
 TableGroup identity [note: 'Danh tính và phân quyền'] {
   users
   roles
@@ -1849,4 +1862,5 @@ TableGroup ops [note: 'Thông báo, Cài đặt, Giám sát'] {
   alerts
   uptime_checks
   uptime_results
+  uptime_rollups
 }

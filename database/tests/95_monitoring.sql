@@ -65,6 +65,16 @@ SELECT itso_test.assert('Tạo partition uptime theo ngày',
 SELECT itso_test.expect_ok('Ghi kết quả uptime vào partition ngày',
   $$INSERT INTO uptime_results (check_id, ok, status, latency_ms, at) VALUES (1, true, 200, 120, '2026-11-22 08:00:00+00')$$);
 
+-- uptime_rollups: một dòng mỗi check × giờ, ok ≤ total.
+SELECT itso_test.expect_ok('Rollup uptime theo giờ',
+  $$INSERT INTO uptime_rollups (check_id, bucket, ok_count, total, avg_latency_ms) VALUES (1, '2026-11-22 08:00:00+00', 59, 60, 120)$$);
+SELECT itso_test.expect_error('Rollup uptime trùng giờ bị từ chối',
+  $$INSERT INTO uptime_rollups (check_id, bucket, ok_count, total) VALUES (1, '2026-11-22 08:00:00+00', 1, 1)$$, '23505');
+SELECT itso_test.expect_error('ok_count > total bị từ chối',
+  $$INSERT INTO uptime_rollups (check_id, bucket, ok_count, total) VALUES (1, '2026-11-22 09:00:00+00', 5, 4)$$, '23514');
+SELECT itso_test.expect_error('bucket không tròn giờ bị từ chối',
+  $$INSERT INTO uptime_rollups (check_id, bucket, ok_count, total) VALUES (1, '2026-11-22 09:30:00+00', 1, 1)$$, '23514');
+
 -- kênh + nhật ký gửi
 SELECT itso_test.expect_error('Kênh telegram thiếu secret bị từ chối',
   $$INSERT INTO notification_channels (type, name, config) VALUES ('telegram', 'TG', '{"chat_id":"-100"}')$$, '23514');

@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.4 (Alert engine, rule mặc định, mất kết nối ≤ 2 phút, uptime) — nhánh `phase-11`
+
+Phạm vi: `App\Domain\Monitoring` — `AlertMetrics` (14 nguồn: mẫu server ≤ 3 phút, mẫu account ≤ 15 phút, `agent_offline_sec` từ `agents.last_seen_at`, dịch vụ lõi enabled mà dừng, uptime, hạn chứng chỉ, backup gần nhất lỗi, quota disk), `DefaultAlertRules` (9 rule mặc định theo `default_key`, tạo nếu thiếu), `AlertEngine` (`itso:alerts-evaluate` mỗi phút: pending → firing → resolved, fingerprint, mất kết nối firing ngay, hysteresis 2 lượt, nhắc lại theo `repeat_sec`, ack dừng nhắc, silence không thông báo, rule tắt/đối tượng mất → resolved), `AlertEvents` (in-app cho SUPER_ADMIN, ADMIN trong phạm vi, USER chủ account với sự kiện dành cho USER; 11.5 gắn kênh), `UptimeService` (`itso:uptime-probe` mỗi phút gom theo server → `uptime.probe` lô ≤ 50, 3 lỗi → down, 1 thành công → up, `uptime_results` + bảng mới `uptime_rollups` giờ/90 ngày cho % 30 ngày; website có SSL tự bật check). API admin `alert-rules` (CRUD SA, preview, ETag/If-Match), `alerts` (lọc, ack, silence, unsilence), `uptime-checks` (+ results); Portal `websites/{id}/uptime` (+ results, PATCH), `hosting-accounts/{id}/uptime`. Quyền mới `monitoring.read|write` (ADMIN) và `monitoring.manage` (SA).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| DB | `make db-schema` · `make db-verify` | 96 bảng · **176 test SQL PASS** (thêm 4 test `uptime_rollups`); migration Phase 11 sinh lại (chưa phát hành) khớp đặc tả, áp lần lượt = itso.sql + extras.sql |
+| Pest | `make test-api` | **519/519 PASS** (mới `Phase11/AlertsTest.php` 8 test). Lần đầu: closure `fn` của test chụp giá trị biến (dùng `use (&$ok)`); website tạo không có `ssl_mode` trong bộ nhớ bị coi là có SSL → coi null là `none`; ETag theo `updated_at` (giây) không đổi khi sửa trong cùng giây → ETag theo nội dung |
+| Lint | `pint --test` · `phpstan` | PASS |
+| Khác | `make no-exec` · `make docs-check` · `make structure` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.3 (Panel metrics: rollup, prune, API theo khoảng, usage account) — nhánh `phase-11`
 
 Phạm vi: `MetricsCollector` ghi thêm swap_pct, inode_pct, net_in/net_out (tổng interface), io_read/io_write, tasks (agent cũ không trả thì bỏ qua, không ghi 0); `itso:usage-refresh` gọi một `metrics.cgroup` lô mỗi server → cpu_pct, ram, IO, tasks theo account (account chưa có slice dùng số quota.report); `MetricsRollup` + `itso:metrics-rollup` (mỗi giờ, upsert theo khóa NULLS NOT DISTINCT, chạy bù, tính lại giờ mới nhất); `itso:metrics-prune` (hằng ngày: tạo trước 2 ngày, drop partition > 7 ngày, xóa rollup > 90 ngày; `itso:metrics-collect` thôi tự prune); `MetricsQuery`: range 1h/24h (samples) và 7d/30d/90d (rollup, trung bình theo số mẫu), ≤ 500 điểm, `unit`/`source`/`limit`; API mới `GET /admin/metrics/servers/{id}/accounts` (top account, sort/q/cursor, phạm vi ADMIN) và `GET /portal/hosting-accounts/{id}/usage-history`; usage hiện tại của account (Portal/dashboard) dùng số cgroup.

@@ -17,6 +17,7 @@ use App\Domain\Servers\SoftwareService;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\JobPresenter;
 use App\Http\Support\Listing;
+use App\Http\Support\OffsetPage;
 use App\Infrastructure\Agent\AgentUnavailable;
 use App\Models\HostingAccount;
 use App\Models\Job;
@@ -186,25 +187,13 @@ final class ServerOpsController
     public function serverAccountUsage(Request $request, string $id): JsonResponse
     {
         $s = $this->find($request, $id);
-        $limit = $request->query('limit', '50');
-        if (! is_string($limit) || ! ctype_digit($limit) || (int) $limit < 1 || (int) $limit > 200) {
-            throw ApiProblem::field('limit', 'limit phải là số nguyên 1–200.');
-        }
         $sort = $request->query('sort', '-cpu_pct');
         $keys = ['cpu_pct' => 'cpu_pct', 'ram_mb' => 'ram_mb', 'io_write_bps' => 'io_write_bps', 'io_read_bps' => 'io_read_bps',
             'disk_mb' => 'disk_mb', 'tasks' => 'tasks', 'username' => 'username'];
         if (! is_string($sort) || ! isset($keys[ltrim($sort, '-')])) {
             throw ApiProblem::field('sort', 'sort không hợp lệ.');
         }
-        $cursor = $request->query('cursor');
-        $offset = 0;
-        if (is_string($cursor) && $cursor !== '') {
-            $raw = base64_decode($cursor, true);
-            if ($raw === false || preg_match('/^o:(\d{1,6})$/', $raw, $m) !== 1) {
-                throw ApiProblem::field('cursor', 'cursor không hợp lệ.');
-            }
-            $offset = (int) $m[1];
-        }
+        OffsetPage::params($request); // kiểm limit/cursor trước khi đọc số liệu
         $q = $this->access->accounts($this->actor($request))->where('server_id', $s->id)
             ->whereIn('lifecycle_state', ['active', 'suspended']);
         Listing::search($request, $q, ['hosting_accounts.username']);
@@ -218,10 +207,8 @@ final class ServerOpsController
 
             return $c !== 0 ? $c : strcmp($a['hosting_account']['username'], $b['hosting_account']['username']);
         });
-        $page = array_slice($rows, $offset, (int) $limit);
-        $next = $offset + (int) $limit < count($rows) ? base64_encode('o:'.($offset + (int) $limit)) : null;
 
-        return response()->json(['data' => $page, 'meta' => ['next_cursor' => $next, 'limit' => (int) $limit]]);
+        return response()->json(OffsetPage::ofArray($request, $rows));
     }
 
     /** @param list<string> $types */

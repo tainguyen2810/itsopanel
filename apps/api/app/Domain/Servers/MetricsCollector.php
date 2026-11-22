@@ -24,6 +24,10 @@ final class MetricsCollector
     public const SERVICES = ['nginx', 'php8.1-fpm', 'php8.2-fpm', 'php8.3-fpm', 'php8.4-fpm', 'mariadb', 'postgresql',
         'redis-server', 'fail2ban', 'cron', 'ssh', 'itso-gateway'];
 
+    /** Mọi metric được ghi vào metric_samples (server + account; ram_mb/disk_mb chỉ account). */
+    public const SAMPLE_METRICS = ['cpu_pct', 'ram_pct', 'disk_pct', 'swap_pct', 'inode_pct', 'load_1m', 'net_in', 'net_out',
+        'io_read', 'io_write', 'tasks', 'ram_mb', 'disk_mb'];
+
     /** Giữ metric_samples bao nhiêu ngày (partition theo ngày, DATABASE.md). */
     public const RETENTION_DAYS = 7;
 

@@ -80,6 +80,11 @@ final class Permissions
             'docker.write' => 'Compose project (tạo/sửa/chạy/xóa, cập nhật/rollback image), điều khiển container, prune image, xóa volume (step-up; không override)',
             'docker.manage' => 'Bật Docker, registry, DOCKER-USER, override validator (SUPER_ADMIN)',
         ],
+        'monitoring' => [
+            'monitoring.read' => 'Xem cảnh báo, rule cảnh báo, uptime check (theo phạm vi; Phase 11)',
+            'monitoring.write' => 'Xác nhận/tắt tạm cảnh báo, tạo/sửa/xóa uptime check (theo phạm vi)',
+            'monitoring.manage' => 'Tạo/sửa/xóa rule cảnh báo, kênh thông báo (SUPER_ADMIN)',
+        ],
         'backups' => [
             'backups.read' => 'Xem bản backup, repo, kiểm chứng, lịch sử khôi phục (theo phạm vi)',
             'backups.write' => 'Backup ngay, kiểm chứng snapshot, tải file từ snapshot (theo phạm vi)',
@@ -94,7 +99,7 @@ final class Permissions
         'ADMIN' => ['users.read', 'users.write', 'roles.read', 'servers.read', 'packages.read', 'accounts.read',
             'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'files.*', 'ftp.*',
             'cron.*', 'terminal.account', 'backups.read', 'backups.write', 'backups.restore', 'security.read', 'security.write',
-            'docker.read', 'docker.write'],
+            'docker.read', 'docker.write', 'monitoring.read', 'monitoring.write'],
         'USER' => ['own.*'],
     ];
 

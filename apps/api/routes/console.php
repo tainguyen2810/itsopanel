@@ -45,3 +45,6 @@ Schedule::command('itso:wordpress-auto-update')->hourlyAt(5)->withoutOverlapping
 // Phase 11: lưu trữ số liệu (D-101) — rollup 1 giờ, tạo trước/drop partition và xóa rollup quá 90 ngày.
 Schedule::command('itso:metrics-rollup')->hourlyAt(2)->withoutOverlapping();
 Schedule::command('itso:metrics-prune')->dailyAt('00:13')->withoutOverlapping();
+// Phase 11: cảnh báo (D-102) và uptime (D-105) mỗi phút.
+Schedule::command('itso:uptime-probe')->everyMinute()->withoutOverlapping();
+Schedule::command('itso:alerts-evaluate')->everyMinute()->withoutOverlapping();

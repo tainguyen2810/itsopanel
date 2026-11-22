@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` (kế hoạch `docs/planning/seed/PHASE_11_PROMPTS.md`, D-101 → D-107 đề xuất; đang làm trên nhánh `phase-11`, người dùng chọn bắt đầu 2026-11-22). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 11.4 Panel alerts và uptime (11.0–11.3 ✓)
-- **Task đang làm:** 11.4
+- **Prompt hiện tại:** 11.5 Notifications (11.0–11.4 ✓)
+- **Task đang làm:** 11.5
 - **Commit cuối:** xem `git log -1` trên `main`
 - **Bước tiếp theo:** làm hàng loạt 11.1 → 11.8, tự merge, phát hành `v0.5.0-beta` (tag local), DỪNG trước Phase 12; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -37,8 +37,8 @@ Phase 11 (bắt đầu 2026-11-22, nhánh `phase-11`) — prompt chi tiết: `do
 - ✓ 11.1 ADR 0046–0052 (D-101…D-107), contracts, migration Phase 11
 - ✓ 11.2 Agent: metrics mở rộng, cgroup theo lô, `uptime.probe`
 - ✓ 11.3 Panel metrics: rollup, prune, API theo khoảng, usage account
-- ✱ 11.4 Panel alerts: rule, bộ máy đánh giá, mất kết nối ≤ 2 phút, uptime
-- ○ 11.5 Notifications: email/Telegram/webhook, SSRF guard, định tuyến, sự kiện USER
+- ✓ 11.4 Panel alerts: rule, bộ máy đánh giá, mất kết nối ≤ 2 phút, uptime
+- ✱ 11.5 Notifications: email/Telegram/webhook, SSRF guard, định tuyến, sự kiện USER
 - ○ 11.6 Realtime job SSE, dashboard dữ liệu thật
 - ○ 11.7 UI nối API thật
 - ○ 11.8 e2e, VM Phase 11, review bảo mật, báo cáo, `v0.5.0-beta`, merge
@@ -218,4 +218,5 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-22 | 11.1 | ADR 0046–0052, D-101…D-107 APPROVED; agent-ops `metrics.snapshot` mở rộng, `metrics.cgroup` lô, `uptime.probe` + 20 vector độc; DBML + migration Phase 11 (8 bảng, fingerprint unique, uptime_results partition, deliveries); db-verify 172, Pest 505 | 1c13c74 |
 | 2026-11-22 | GitHub | Người dùng yêu cầu đưa code lên GitHub (chọn trên thẻ quyết định): remote `github` = `tainguyen2810/itsopanel`, đẩy `main`, `phase-10`, `phase-11`; tag bị proxy môi trường từ chối (HTTP 403), giữ local. D-51 cập nhật | — |
 | 2026-11-22 | 11.2 | Agent: `metrics.snapshot` điền RAM/swap tổng, inode, load 5/15, tasks, IO bps (chỉ đĩa vật lý), net theo interface (bỏ lo/veth/docker), mounts ext4/xfs/btrfs; tốc độ tính từ lần đọc trước (bộ đếm quay về → 0); `metrics.cgroup` lô (accounts rỗng = mọi slice có user, bỏ slice thiếu), cpu_pct + IO bytes/bps; `uptime.probe` (dial cố định 127.0.0.1, Host/SNI = domain, không proxy, redirect chỉ cùng host ≤ 3, timeout từng URL, 64 KB cho từ khóa, hạn chứng chỉ, song song 8); sandbox: file điều khiển `metrics-control.json` (disk_pct, offline → `agent_unreachable`, uptime_down, cert_days) + cây cgroup giả; registry: `agent_unreachable` retryable như errors.json; fuzz `FuzzUptimePath` | b7ff570 |
-| 2026-11-22 | 11.3 | Panel metrics: số liệu server mở rộng, account qua một `metrics.cgroup` lô/server trong usage-refresh, `itso:metrics-rollup` (giờ, idempotent, chạy bù), `itso:metrics-prune` (tạo trước 2 ngày, drop > 7 ngày, rollup > 90 ngày), API theo khoảng (≤ 24 giờ samples, dài hơn rollup, ≤ 500 điểm, unit/source/limit), top account theo server, Portal usage-history; sửa GROUP BY trùng tên cột; Pest 511 | (commit này) |
+| 2026-11-22 | 11.3 | Panel metrics: số liệu server mở rộng, account qua một `metrics.cgroup` lô/server trong usage-refresh, `itso:metrics-rollup` (giờ, idempotent, chạy bù), `itso:metrics-prune` (tạo trước 2 ngày, drop > 7 ngày, rollup > 90 ngày), API theo khoảng (≤ 24 giờ samples, dài hơn rollup, ≤ 500 điểm, unit/source/limit), top account theo server, Portal usage-history; sửa GROUP BY trùng tên cột; Pest 511 | 11ae375 |
+| 2026-11-22 | 11.4 | Alerts + uptime: 9 rule mặc định, `itso:alerts-evaluate` (pending/firing/resolved, mất kết nối firing ngay ≤ 2 phút, hysteresis 2 lượt, nhắc lại, ack, silence), thông báo in-app theo phạm vi; `itso:uptime-probe` (lô theo server, 3 lỗi → down), bảng mới `uptime_rollups` cho % 30 ngày; API rule/alert/uptime admin + Portal uptime; quyền `monitoring.*`; Pest 519, db-verify 176 | (commit này) |

@@ -366,6 +366,8 @@ BEGIN
                  part, p_day, p_day + 1);
   RETURN part;
 END $$;
+ALTER TABLE uptime_rollups ADD CONSTRAINT uptime_rollups_count_chk CHECK (total >= 1 AND ok_count BETWEEN 0 AND total);
+ALTER TABLE uptime_rollups ADD CONSTRAINT uptime_rollups_bucket_chk CHECK (bucket = date_trunc('hour', bucket AT TIME ZONE 'UTC') AT TIME ZONE 'UTC');
 ALTER TABLE notification_channels ADD CONSTRAINT notification_channels_type_chk CHECK (type IN ('email', 'telegram', 'webhook'));
 ALTER TABLE notification_channels ADD CONSTRAINT notification_channels_secret_chk CHECK (type = 'email' OR secret_encrypted IS NOT NULL);
 ALTER TABLE notification_preferences ADD CONSTRAINT notification_preferences_channels_chk
