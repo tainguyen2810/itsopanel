@@ -1841,7 +1841,7 @@
     "staging": "Tạo bản staging",
     "install": "Cài WordPress",
     "installTitle": "Cài WordPress",
-    "installHint": "Panel tạo database, cài WordPress và bật hardening cơ bản. Mật khẩu quản trị hiện trong job.",
+    "installHint": "Panel tạo database + user theo gói rồi cài WordPress. Mật khẩu quản trị chỉ hiện một lần ngay sau khi gửi.",
     "pickSite": "Chọn website",
     "phpOnly": "Chỉ website loại PHP chưa cài WordPress.",
     "siteTitle": "Tiêu đề site",
@@ -1877,6 +1877,8 @@
       "minor": "Chỉ bản vá (6.7.1 → 6.7.2)",
       "all": "Mọi bản cập nhật, kể cả plugin/theme"
     },
+    "basicAuthLater": "Chưa có ở bản này. Staging mặc định bật noindex để không bị công cụ tìm kiếm lập chỉ mục.",
+    "adminPasswordOnce": "Mật khẩu quản trị WordPress",
     "basicAuth": "Bảo vệ bằng mật khẩu (basic auth)",
     "checksumsBad": "Checksum lõi không khớp",
     "components": "Lõi, plugin và theme",

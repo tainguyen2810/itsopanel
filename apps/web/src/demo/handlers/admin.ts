@@ -12,7 +12,7 @@ export interface ListSpec extends ListOptions {
   path: ApiPath;
   rows: Coll;
   /** Cách lọc theo phạm vi vai trò: theo account, theo server, hoặc chỉ SUPER_ADMIN thấy. */
-  scope?: 'account' | 'server' | 'self' | 'none';
+  scope?: 'account' | 'server' | 'self' | 'none' | 'sa';
   detail?: ApiPath;
   what?: string;
 }
@@ -205,7 +205,8 @@ export const ADMIN_LISTS: ListSpec[] = [
     search: ['name'],
     what: 'compose project',
   },
-  { path: '/api/v1/admin/registries', rows: d('registries'), scope: 'none' },
+  // Như API: registry cần quyền docker.manage (chỉ SUPER_ADMIN).
+  { path: '/api/v1/admin/registries', rows: d('registries'), scope: 'sa' },
   {
     path: '/api/v1/admin/wordpress/sites',
     rows: d('wordpress'),
@@ -272,6 +273,10 @@ function visibleRows(ctx: Ctx, spec: ListSpec): Row[] | Reply {
       return v.all
         ? rows
         : rows.filter((r) => (r.actor as { uuid: string } | null)?.uuid === ctx.actor.uuid);
+    case 'sa':
+      return ctx.actor.role === 'SUPER_ADMIN'
+        ? rows
+        : problem(403, 'forbidden', 'Chỉ Super Admin được xem registry');
     case 'none':
     default:
       return rows;

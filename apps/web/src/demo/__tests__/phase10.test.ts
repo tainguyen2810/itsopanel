@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { dataset } from '../dataset';
-import { resetDb, setStepMs } from '../db';
+import { db, resetDb, setStepMs } from '../db';
 import { validateCompose } from '../handlers/docker';
 import { demoServer } from '../node';
 import { validateResponse } from './openapi';
@@ -289,5 +289,42 @@ describe('API giả lập Phase 10 (Docker, Compose, Software, WordPress)', () =
     expect(validateResponse('/api/v1/admin/wordpress/sites/{id}', 'patch', 200, p.body)).toEqual(
       [],
     );
+  });
+  it('WordPress như API: cài trả mật khẩu quản trị một lần; staging basic auth → 422; chưa có đích backup → 409', async () => {
+    const wpSites = new Set(
+      (dataset.wordpress as { website: { uuid: string } }[]).map((w) => w.website.uuid),
+    );
+    const free = dataset.websites.find((w) => w.type === 'php' && !wpSites.has(w.uuid));
+    expect(free).toBeDefined();
+    const body = {
+      website_uuid: free?.uuid,
+      title: 'Thử',
+      admin_username: 'quantri',
+      admin_email: 'qt@example.vn',
+      locale: 'vi',
+    };
+    expect(
+      (await call('POST', '/api/v1/admin/wordpress/sites', { ...body, admin_username: 'admin' }))
+        .status,
+    ).toBe(422);
+    const r = await call('POST', '/api/v1/admin/wordpress/sites', body);
+    const secret = (r.body as { secret?: string }).secret ?? '';
+    expect(secret.length).toBeGreaterThanOrEqual(16);
+    expect((r.body as { job: { resource: { type: string } } }).job.resource.type).toBe(
+      'wordpress_site',
+    );
+    await finish(r);
+    const job = (r.body as { job: { uuid: string } }).job.uuid;
+    expect(JSON.stringify(await call('GET', `/api/v1/admin/jobs/${job}`))).not.toContain(secret);
+
+    const stg = await call('POST', `/api/v1/admin/wordpress/sites/${WP}:clone-staging`, {
+      subdomain: 'stg',
+      basic_auth: true,
+    });
+    expect(stg.status).toBe(422);
+    db().data.backup_dests = [];
+    const u = await call('POST', `/api/v1/admin/wordpress/sites/${WP}:update`, { core: true });
+    expect(u.status).toBe(409);
+    expect((u.body as { code: string }).code).toBe('precondition_failed');
   });
 });

@@ -560,13 +560,10 @@ final class WordPressService
             if (! self::inWindow($wp->update_window, (int) $now->format('G')) || $wp->website->trashed()) {
                 continue;
             }
-            $outdated = WordPressComponent::query()->where('wordpress_site_id', $wp->id)->whereNotNull('update_version')->get();
-            if ($outdated->isEmpty()) {
+            $in = self::outdated($wp);
+            if ($in === null) {
                 continue;
             }
-            $in = ['core' => $outdated->contains('type', 'core'),
-                'plugins' => $outdated->where('type', 'plugin')->pluck('slug')->all(),
-                'themes' => $outdated->where('type', 'theme')->pluck('slug')->all()];
             try {
                 $this->update(null, $wp, $in, 'auto', $wp->auto_update === 'minor');
                 $n++;
@@ -576,6 +573,23 @@ final class WordPressService
         }
 
         return $n;
+    }
+
+    /**
+     * Mọi thành phần có bản mới theo cache wp.info, dạng WordPressUpdateRequest; null khi không có gì để cập nhật.
+     *
+     * @return array{core: bool, plugins: list<string>, themes: list<string>}|null
+     */
+    public static function outdated(WordPressSite $wp): ?array
+    {
+        $outdated = WordPressComponent::query()->where('wordpress_site_id', $wp->id)->whereNotNull('update_version')->orderBy('slug')->get();
+        if ($outdated->isEmpty()) {
+            return null;
+        }
+
+        return ['core' => $outdated->contains('type', 'core'),
+            'plugins' => array_values(array_map('strval', $outdated->where('type', 'plugin')->pluck('slug')->all())),
+            'themes' => array_values(array_map('strval', $outdated->where('type', 'theme')->pluck('slug')->all()))];
     }
 
     /**

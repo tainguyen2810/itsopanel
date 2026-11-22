@@ -148,8 +148,10 @@ it('USER cài WordPress: DB + user theo gói, mật khẩu admin trả một l�
     assertMatchesContract(P10WP, 'get', '/api/v1/portal/wordpress/sites/{id}', 200, $show);
     expect(collect($show->json('data.components'))->firstWhere('slug', 'wordpress-seo')['latest_version'])->toBe('23.9');
 
-    // Cài lần hai vào cùng website → 409; website không phải php → 422.
+    // Cài lần hai vào cùng website → 409; tên quản trị "admin" → 422.
     expect(p10winstall($a, $us, $w)[1]->status())->toBe(409);
+    expect(p10w($us, 'POST', '/api/v1/portal/wordpress/sites', ['website_uuid' => p10wwebsite($a, 'khac.vn')->uuid, 'title' => 'X',
+        'admin_username' => 'admin', 'admin_email' => 'a@khac.vn', 'locale' => 'vi'])->status())->toBe(422);
     expect(AuditLog::query()->where('action', 'wordpress.install')->exists())->toBeTrue()->and($errors)->toBe([]);
 });
 
@@ -194,7 +196,7 @@ it('cập nhật lỗi → agent khôi phục snapshot: lịch sử rolled_back,
     // Chưa có đích backup → 409: cập nhật luôn cần snapshot trước.
     expect(p10w($sa, 'POST', "/api/v1/admin/wordpress/sites/{$wp->uuid}:update", ['core' => true])->json('code'))->toBe('precondition_failed');
     p10wdest($sa);
-    expect(p10w($sa, 'POST', "/api/v1/admin/wordpress/sites/{$wp->uuid}:update", [])->status())->toBe(422);
+    expect(p10w($sa, 'POST', "/api/v1/admin/wordpress/sites/{$wp->uuid}:update", ['plugins' => ['Sai Slug']])->status())->toBe(422);
     $n = count($agent->calls);
     $r = p10w($sa, 'POST', "/api/v1/admin/wordpress/sites/{$wp->uuid}:update", ['core' => true, 'plugins' => ['wordpress-seo']]);
     assertMatchesContract(P10WA, 'post', '/api/v1/admin/wordpress/sites/{id}:update', 202, $r);
@@ -220,7 +222,7 @@ it('cập nhật lỗi → agent khôi phục snapshot: lịch sử rolled_back,
     $h = $sa->get("/api/v1/admin/wordpress/sites/{$wp->uuid}/updates");
     assertMatchesContract(P10WA, 'get', '/api/v1/admin/wordpress/sites/{id}/updates', 200, $h);
     expect($h->json('data.0.state'))->toBe('rolled_back')->and($h->json('data.0.snapshot_uuid'))->toBe($snaps[0]->uuid)
-        ->and($h->json('data.0.items.1'))->toBe(['type' => 'plugin', 'slug' => 'wordpress-seo', 'from' => '23.0', 'to' => '23.0']);
+        ->and($h->json('data.0.items.0.slug'))->toBe('wordpress')->and($h->json('data.0.items.1'))->toBe(['type' => 'plugin', 'slug' => 'wordpress-seo', 'from' => '23.0', 'to' => '23.0']);
     $site = $a->spa('US_OWNER')->get("/api/v1/portal/wordpress/sites/{$wp->uuid}");
     expect($site->json('data.site.last_update.state'))->toBe('rolled_back')->and($errors)->toBe([]);
 });
@@ -238,7 +240,9 @@ it('cập nhật thành công: không thông báo; khôi phục cũng hỏng →
     [$wp] = p10winstall($a, $a->spa('US_OWNER'), p10wwebsite($a));
     $sa = $a->spa('SA');
     p10wdest($sa);
-    p10w($sa, 'POST', "/api/v1/admin/wordpress/sites/{$wp->uuid}:update", ['core' => true])->assertStatus(202);
+    // Body rỗng = mọi thành phần đang có bản mới theo cache (core + wordpress-seo).
+    p10w($sa, 'POST', "/api/v1/admin/wordpress/sites/{$wp->uuid}:update", [])->assertStatus(202);
+    expect(collect($agent->calls)->firstWhere('op', 'wp.update')['params']['components'])->toEqual([['type' => 'core'], ['type' => 'plugin', 'slug' => 'wordpress-seo']]);
     expect(WordPressUpdate::query()->value('state'))->toBe('succeeded')->and(Notification::query()->where('type', 'like', 'wordpress.%')->count())->toBe(0);
 
     $fail = true;

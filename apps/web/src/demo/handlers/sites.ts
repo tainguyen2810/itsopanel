@@ -1880,7 +1880,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     if (
       !b.admin_username ||
       !/^[a-z][a-z0-9_]{2,30}$/.test(b.admin_username) ||
-      b.admin_username === 'admin'
+      ['admin', 'administrator'].includes(b.admin_username)
     )
       return invalid('Tên quản trị 3–31 ký tự, không dùng "admin".');
     if (!b.admin_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.admin_email))
@@ -1890,58 +1890,71 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     const dbs = ctx.db.data.databases.filter((d) => d.hosting_account.uuid === a.uuid).length;
     if (L && dbs >= L.database_limit)
       return quota('databases', 'Cài WordPress cần thêm 1 database nhưng gói đã hết hạn mức.');
-    return startJob(ctx, {
-      type: 'wordpress.install',
-      resource: { type: 'website', uuid: w.uuid },
-      ops: ['db.mysql.create', 'wp.install', 'wp.harden'],
-      server: w.server,
-      changes: { title: b.title, admin: b.admin_username, locale: b.locale },
-      onDone: (db) => {
-        wps(db).push({
-          uuid: db.newUuid(),
-          website: siteRef(w),
-          hosting_account: accRef(a),
-          wp_version: '6.7.1',
-          latest_version: '6.7.1',
-          plugins_total: 2,
-          plugins_outdated: 0,
-          themes_outdated: 0,
-          auto_update: 'minor',
-          update_window: '02:00-05:00',
-          hardening: {
-            file_edit_disabled: true,
-            xmlrpc_blocked: true,
-            php_in_uploads_blocked: true,
-            wp_config_protected: true,
-            salts_rotated: true,
-            version_hidden: true,
-          },
-          maintenance: false,
-          admin_username: b.admin_username ?? 'admin',
-          php_version: '8.3',
-          state: 'ready',
-          last_update: null,
-          staging_of: null,
-          updated_at: db.now(),
-        });
-        const name = `${a.username}_wp${String(db.data.databases.length).slice(-2)}`;
-        db.data.databases.push({
-          uuid: db.newUuid(),
-          hosting_account: accRef(a),
-          server: a.server,
-          engine: 'mariadb',
-          name,
-          size_mb: 4.2,
-          charset: 'utf8mb4',
-          users: [name],
-          ...fresh(db),
-          status: 'ready',
-          observed_version: 1,
-          observed_at: db.now(),
-        });
-        a.usage.databases.used += 1;
-      },
-    });
+    // Như API: site tạo ngay (state updating), job tạo DB + DB user rồi wp.install → wp.info; mật khẩu admin do
+    // panel sinh, trả MỘT lần trong `secret`, không lưu.
+    const uuid = ctx.db.newUuid();
+    return withSecret(
+      startJob(ctx, {
+        type: 'wordpress.install',
+        resource: { type: 'wordpress_site', uuid },
+        ops: [
+          'db.mysql.owner_ensure',
+          'db.mysql.create',
+          'db.mysql.user_ensure',
+          'db.mysql.grant',
+          'wp.install',
+          'wp.info',
+        ],
+        server: w.server,
+        changes: { title: b.title, admin: b.admin_username, locale: b.locale },
+        onDone: (db) => {
+          wps(db).push({
+            uuid,
+            website: siteRef(w),
+            hosting_account: accRef(a),
+            wp_version: '6.7.1',
+            latest_version: '6.7.1',
+            plugins_total: 2,
+            plugins_outdated: 0,
+            themes_outdated: 0,
+            auto_update: 'minor',
+            update_window: '02:00-05:00',
+            hardening: {
+              file_edit_disabled: false,
+              xmlrpc_blocked: false,
+              php_in_uploads_blocked: false,
+              wp_config_protected: false,
+              salts_rotated: false,
+              version_hidden: false,
+            },
+            maintenance: false,
+            admin_username: b.admin_username ?? 'admin',
+            php_version: '8.3',
+            state: 'ready',
+            last_update: null,
+            staging_of: null,
+            updated_at: db.now(),
+          });
+          const name = `${a.username}_wp${String(db.data.databases.length).slice(-2)}`;
+          db.data.databases.push({
+            uuid: db.newUuid(),
+            hosting_account: accRef(a),
+            server: a.server,
+            engine: 'mariadb',
+            name,
+            size_mb: 4.2,
+            charset: 'utf8mb4',
+            users: [name],
+            ...fresh(db),
+            status: 'ready',
+            observed_version: 1,
+            observed_at: db.now(),
+          });
+          a.usage.databases.used += 1;
+        },
+      }),
+      secret(24),
+    );
   });
   const wpOf = (ctx: Ctx) => owned(ctx, wps(ctx.db), 'site WordPress');
   const HARDEN_KEYS = [
@@ -2033,16 +2046,28 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     });
     return ok(wp);
   });
-  on('post', P('/wordpress/sites:scan'), (ctx) =>
-    startJob(ctx, {
+  on('post', P('/wordpress/sites:scan'), (ctx) => {
+    const v = visibility(ctx.db, ctx.actor);
+    if (
+      !ctx.db.data.websites.some(
+        (w) => w.type === 'php' && canSeeAccount(v, w.hosting_account.uuid),
+      )
+    )
+      return problem(
+        409,
+        'precondition_failed',
+        'Không có website PHP',
+        'Chưa có website PHP nào để quét.',
+      );
+    return startJob(ctx, {
       type: 'wordpress.scan',
       resource: { type: 'hosting_account', uuid: ctx.db.data.accounts[0]?.uuid ?? '' },
       ops: ['wp.detect'],
       server: ctx.db.data.servers[0]
         ? { uuid: ctx.db.data.servers[0].uuid, name: ctx.db.data.servers[0].name }
         : null,
-    }),
-  );
+    });
+  });
   const busy = (wp: S['WordPressSite']) =>
     wp.state === 'updating' || wp.state === 'cloning'
       ? problem(409, 'invalid_state_transition', 'Site đang có thao tác khác chạy')
@@ -2082,6 +2107,14 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
         items.push({ type, slug, from: c.version, to: c.latest_version as string });
       }
     if (items.length === 0) return problem(409, 'conflict', 'Không có thành phần nào cần cập nhật');
+    // Như API: cập nhật luôn chụp snapshot pre-wp-update trước → cần một đích backup đang bật.
+    if (ctx.db.data.backup_dests.length === 0)
+      return problem(
+        409,
+        'precondition_failed',
+        'Chưa có đích backup',
+        'Cập nhật WordPress luôn chụp snapshot trước: SUPER_ADMIN cần thêm đích backup.',
+      );
     const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
     const snap = ctx.db.data.snapshots.find(
       (x) => x.hosting_account?.uuid === wp.hosting_account.uuid,
@@ -2108,7 +2141,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     return startJob(ctx, {
       type: 'wordpress.update',
       resource: { type: 'wordpress_site', uuid: wp.uuid },
-      ops: ['backup.run', 'wp.maintenance', 'wp.update', 'http.check'],
+      ops: ['wp.update', 'backup.stats', 'wp.info'],
       server: w.server,
       changes: { items: items.map((i) => `${i.type}:${i.slug}`) },
       onDone: (db) => {
@@ -2168,7 +2201,12 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     if (pw.length < 12 || pw.length > 128 || !/^[A-Za-z0-9._~!@#%^*+=:,-]+$/.test(pw))
       return invalid('Mật khẩu 12–128 ký tự, không khoảng trắng.');
     if (!wp.admin_username)
-      return problem(409, 'conflict', 'Không xác định được tài khoản quản trị WordPress');
+      return problem(
+        409,
+        'precondition_failed',
+        'Chưa biết user admin',
+        'Site được phát hiện qua quét: panel chưa biết user admin của site này.',
+      );
     const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
     // Mật khẩu không vào audit/changes của job (D-69).
     return startJob(ctx, {
@@ -2205,6 +2243,8 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     const b = (ctx.body ?? {}) as Partial<S['WordPressCloneRequest']>;
     if (!b.subdomain || !/^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/.test(b.subdomain))
       return invalid('Subdomain chỉ gồm chữ thường, số và dấu gạch ngang.');
+    if (b.basic_auth === true)
+      return invalid('Bảo vệ staging bằng mật khẩu (basic auth) chưa có ở bản này.');
     const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
     const a = accountOfSite(ctx.db, w);
     if (wp.staging_of) return problem(409, 'conflict', 'Đây đã là bản staging');
@@ -2222,9 +2262,16 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     return startJob(ctx, {
       type: 'wordpress.clone_staging',
       resource: { type: 'wordpress_site', uuid: wp.uuid },
-      ops: ['fs.site_layout.ensure', 'nginx.vhost.apply', 'wp.clone'],
+      ops: [
+        'fs.site_layout.ensure',
+        'nginx.vhost.apply',
+        'db.mysql.create',
+        'db.mysql.user_ensure',
+        'wp.clone',
+        'wp.info',
+      ],
       server: w.server,
-      changes: { domain, basic_auth: b.basic_auth ?? true, noindex: b.noindex ?? true },
+      changes: { domain, noindex: b.noindex ?? true },
       onDone: (db) => {
         wp.state = 'ready';
         const site: Website = {
@@ -2233,7 +2280,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
           primary_domain: domain,
           domains_count: 1,
           waf_enabled: false,
-          ssl_mode: 'acme',
+          ssl_mode: 'none',
           created_at: db.now(),
           updated_at: db.now(),
         };

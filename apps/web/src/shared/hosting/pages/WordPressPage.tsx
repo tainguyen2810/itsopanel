@@ -15,7 +15,7 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import type { ColumnDef } from '@/ui/DataTable';
 import { list, send, type Row } from '@/shared/api/realm';
 import { useAction } from '@/shared/api/useAction';
-import { RowMenu, useAccountFilter, useRealmLinks, useWebsites } from './common';
+import { RowMenu, SecretDialog, useAccountFilter, useRealmLinks, useWebsites } from './common';
 import { wpInstallSchema, type WpInstallForm } from './forms';
 
 type Wp = Row<'/wordpress/sites'>;
@@ -224,56 +224,72 @@ function Install({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bool
     resolver: zodResolver(wpInstallSchema),
     defaultValues: empty,
   });
+  const [secret, setSecret] = useState<string | null>(null);
   const close = (o: boolean) => {
     if (!o) reset(empty);
     onOpenChange(o);
   };
-  const install = useAction((v: WpInstallForm) => send('POST', '/wordpress/sites', { body: v }), {
-    onSuccess: () => close(false),
-  });
+  // Mật khẩu quản trị do panel sinh, API trả MỘT lần trong `secret` (không lưu, không có trong job).
+  const install = useAction(
+    (v: WpInstallForm) => send<{ secret?: string }>('POST', '/wordpress/sites', { body: v }),
+    {
+      invalidate: [['admin', 'wordpress']],
+      onSuccess: (r) => {
+        close(false);
+        if (r.secret) setSecret(r.secret);
+      },
+    },
+  );
   return (
-    <FormDialog
-      open={open}
-      onOpenChange={close}
-      title={t('wp.installTitle')}
-      description={t('wp.installHint')}
-      submitLabel={t('wp.install')}
-      pending={install.isPending}
-      onSubmit={() => void handleSubmit((v) => install.mutate(v))()}
-    >
-      <SelectField
-        control={control}
-        name="website_uuid"
-        label={t('wp.site')}
-        options={sites
-          .filter((w) => w.type === 'php')
-          .map((w) => ({
-            value: w.uuid,
-            label: `${w.primary_domain} (${w.hosting_account.username})`,
-          }))}
-        placeholder={t('wp.pickSite')}
-        description={t('wp.phpOnly')}
+    <>
+      <SecretDialog
+        secret={secret}
+        title={t('wp.adminPasswordOnce')}
+        onClose={() => setSecret(null)}
       />
-      <TextField control={control} name="title" label={t('wp.siteTitle')} />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
+      <FormDialog
+        open={open}
+        onOpenChange={close}
+        title={t('wp.installTitle')}
+        description={t('wp.installHint')}
+        submitLabel={t('wp.install')}
+        pending={install.isPending}
+        onSubmit={() => void handleSubmit((v) => install.mutate(v))()}
+      >
+        <SelectField
           control={control}
-          name="admin_username"
-          label={t('wp.adminUser')}
-          description={t('wp.adminUserHint')}
-          autoComplete="off"
+          name="website_uuid"
+          label={t('wp.site')}
+          options={sites
+            .filter((w) => w.type === 'php')
+            .map((w) => ({
+              value: w.uuid,
+              label: `${w.primary_domain} (${w.hosting_account.username})`,
+            }))}
+          placeholder={t('wp.pickSite')}
+          description={t('wp.phpOnly')}
         />
-        <TextField control={control} name="admin_email" type="email" label={t('wp.adminEmail')} />
-      </div>
-      <SelectField
-        control={control}
-        name="locale"
-        label={t('wp.locale')}
-        options={[
-          { value: 'vi', label: 'Tiếng Việt' },
-          { value: 'en_US', label: 'English (US)' },
-        ]}
-      />
-    </FormDialog>
+        <TextField control={control} name="title" label={t('wp.siteTitle')} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            control={control}
+            name="admin_username"
+            label={t('wp.adminUser')}
+            description={t('wp.adminUserHint')}
+            autoComplete="off"
+          />
+          <TextField control={control} name="admin_email" type="email" label={t('wp.adminEmail')} />
+        </div>
+        <SelectField
+          control={control}
+          name="locale"
+          label={t('wp.locale')}
+          options={[
+            { value: 'vi', label: 'Tiếng Việt' },
+            { value: 'en_US', label: 'English (US)' },
+          ]}
+        />
+      </FormDialog>
+    </>
   );
 }

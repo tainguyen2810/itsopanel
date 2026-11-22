@@ -51,7 +51,7 @@ final class WordPressController
         HostingPackageController::rejectUnknown($request, ['website_uuid', 'title', 'admin_username', 'admin_email', 'locale']);
         $in = $request->validate([
             'website_uuid' => ['required', 'uuid'], 'title' => ['required', 'string', 'max:120'],
-            'admin_username' => ['required', 'string', 'regex:/^[a-z][a-z0-9_]{2,30}$/'],
+            'admin_username' => ['required', 'string', 'regex:/^[a-z][a-z0-9_]{2,30}$/', 'not_in:admin,administrator'],
             'admin_email' => ['required', 'email', 'max:254'], 'locale' => ['required', 'in:vi,en_US'],
         ]);
         $w = Website::query()->where('uuid', $in['website_uuid'])
@@ -109,6 +109,11 @@ final class WordPressController
         $in = $request->validate(['core' => ['sometimes', 'boolean'],
             'plugins' => ['sometimes', 'array', 'max:200'], 'plugins.*' => ['string', self::SLUG],
             'themes' => ['sometimes', 'array', 'max:50'], 'themes.*' => ['string', self::SLUG]]);
+        if ($in === []) {
+            // Body rỗng = mọi thành phần đang có bản mới (theo cache wp.info), như lịch tự cập nhật "all".
+            $in = WordPressService::outdated($wp) ?? throw new ApiProblem(409, 'conflict', 'Không có gì để cập nhật',
+                'Core, plugin và theme đều đang ở bản mới nhất.');
+        }
 
         return $this->accepted($request, $this->service->update($this->actor($request), $wp, $in));
     }

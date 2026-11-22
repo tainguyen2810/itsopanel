@@ -1841,7 +1841,7 @@
     "staging": "Create staging copy",
     "install": "Install WordPress",
     "installTitle": "Install WordPress",
-    "installHint": "The panel creates a database, installs WordPress and applies basic hardening. The admin password shows in the job.",
+    "installHint": "The panel creates a database + user within the package, then installs WordPress. The admin password is shown once, right after you submit.",
     "pickSite": "Choose a website",
     "phpOnly": "PHP websites without WordPress only.",
     "siteTitle": "Site title",
@@ -1877,6 +1877,8 @@
       "minor": "Patch releases only (6.7.1 → 6.7.2)",
       "all": "All updates, including plugins/themes"
     },
+    "basicAuthLater": "Not available in this version. Staging sets noindex by default so search engines do not index it.",
+    "adminPasswordOnce": "WordPress admin password",
     "basicAuth": "Password protect (basic auth)",
     "checksumsBad": "Core checksums mismatch",
     "components": "Core, plugins and themes",

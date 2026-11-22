@@ -656,14 +656,13 @@ function StagingDialog({
 }) {
   const { t } = useTranslation('admin');
   const [sub, setSub] = useState('staging');
-  const [auth, setAuth] = useState(true);
   const [noindex, setNoindex] = useState(true);
   const valid = /^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/.test(sub);
   const run = useAction(
     () =>
       send('POST', '/wordpress/sites/{id}:clone-staging', {
         path: { id: site.uuid },
-        body: { subdomain: sub, basic_auth: auth, noindex },
+        body: { subdomain: sub, noindex },
       }),
     {
       invalidate: [keyOf(site.uuid), ['admin', 'wordpress']],
@@ -694,10 +693,21 @@ function StagingDialog({
           <span className="text-base break-all text-muted">.{site.website.primary_domain}</span>
         </div>
       </div>
-      <label className="flex items-center justify-between gap-3 text-base">
-        {t('wp.basicAuth')}
-        <Switch checked={auth} onCheckedChange={setAuth} aria-label={t('wp.basicAuth')} />
-      </label>
+      {/* Basic auth cho staging chưa có ở bản này (API trả 422): hiện tắt, kèm lý do. */}
+      <div className="flex flex-col gap-1">
+        <label className="flex items-center justify-between gap-3 text-base text-muted">
+          {t('wp.basicAuth')}
+          <Switch
+            checked={false}
+            disabled
+            aria-label={t('wp.basicAuth')}
+            aria-describedby="wp-auth-later"
+          />
+        </label>
+        <p id="wp-auth-later" className="text-sm text-muted">
+          {t('wp.basicAuthLater')}
+        </p>
+      </div>
       <label className="flex items-center justify-between gap-3 text-base">
         {t('wp.noindex')}
         <Switch checked={noindex} onCheckedChange={setNoindex} aria-label={t('wp.noindex')} />

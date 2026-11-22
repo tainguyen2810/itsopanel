@@ -2,6 +2,20 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 10 / Prompt 10.7 (UI nối API thật) — nhánh `phase-10`
+
+Phạm vi: các màn Software, Docker (server, compose, registry, website Docker, backup volume) và WordPress đã dùng client sinh từ OpenAPI từ 10.0; prompt này rà hành vi MSW theo API thật (10.2–10.6) và sửa chỗ lệch. WordPress: dialog cài hiện mật khẩu quản trị **một lần** (`SecretDialog`, API không lưu), staging hiện basic auth **tắt + lý do** "chưa có ở bản này" và không gửi `basic_auth`; MSW: cài tạo job `wordpress_site` với op thật (`db.mysql.*` → `wp.install` → `wp.info`), trả `secret`, hardening mặc định tắt; cập nhật chưa có đích backup → 409 `precondition_failed`, op `wp.update/backup.stats/wp.info`; staging `basic_auth: true` → 422; đổi mật khẩu khi chưa biết user admin → 409 `precondition_failed`; quét khi không có website PHP → 409; tên quản trị `admin`/`administrator` → 422; registry chỉ SUPER_ADMIN (403, như `docker.manage`). API chỉnh theo UI: body `:update` rỗng = mọi thành phần có bản mới (theo cache), không còn gì → 409; core trong lịch sử có slug `wordpress` (như ví dụ OpenAPI); chặn tên quản trị `admin`/`administrator`. Chụp lại 4 ảnh `admin-wordpress-staging-*`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest | `pnpm -s vitest run` | **593/593 PASS** (mới: WordPress như API — cài trả secret một lần, job không chứa secret, basic auth → 422, không có đích backup → 409) |
+| Playwright demo | `playwright test e2e/demo-sites.spec.ts e2e/demo-infra.spec.ts e2e/demo-portal.spec.ts e2e/demo-hosting.spec.ts` | PASS (mới: cài WordPress → hộp thoại mật khẩu một lần; staging basic auth bị khóa kèm lý do) |
+| axe + 390px + EN | `playwright test e2e/demo-audit.spec.ts` | PASS (tổng cộng 100/100 cùng các spec trên) |
+| Lint web | `pnpm -s lint` · `tsc -b` | sạch (i18n 3282 key, vi = en) |
+| API | `make test-api` · `make lint-api` | **505/505** · sạch |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** menu Registry vẫn hiện với ADMIN (trang trả 403 rõ ràng; shell chưa lọc menu theo quyền); dữ liệu demo Docker có `update_available` cho image còn API thật luôn trả false (chưa kiểm registry).
+
 ## 2026-11-22 — Phase 10 / Prompt 10.6 (Panel WordPress) — nhánh `phase-10`
 
 Phạm vi: model + `WordPressService` + `WordPressJobHandler` + `WordPressController` (Admin `websites.read/write`, Portal theo account sở hữu; `:admin-password` step-up), presenter khớp OpenAPI `WordPressSite/Detail/Update`, lệnh `itso:wordpress-auto-update [--refresh]` (lịch: refresh 01:37 hằng ngày, auto-update phút 05 mỗi giờ), secret `wp_password` (Cache + Crypt, TTL 2 giờ, xóa khi job kết thúc), WebsiteSpec::vhost thêm `wp_hardening`, xóa website → soft-delete site WP. DBML: `wordpress_sites.database_id`, `last_auto_update_at` (migration Phase 10 chưa phát hành, sinh lại). wp.info thêm `db_name` (agent đọc DB_NAME từ wp-config).

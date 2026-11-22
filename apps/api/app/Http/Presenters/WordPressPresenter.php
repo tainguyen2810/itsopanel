@@ -72,7 +72,7 @@ final class WordPressPresenter
         $by = $u->requested_by_user_id !== null ? User::query()->find($u->requested_by_user_id) : null;
 
         return ['uuid' => $u->uuid, 'site_uuid' => $siteUuid, 'trigger' => $u->trigger, 'state' => $u->state,
-            'items' => array_map(fn (array $it): array => ['type' => (string) $it['type'], 'slug' => (string) ($it['slug'] ?? ''),
+            'items' => array_map(fn (array $it): array => ['type' => (string) $it['type'], 'slug' => $it['type'] === 'core' ? 'wordpress' : (string) ($it['slug'] ?? ''),
                 'from' => (string) ($it['from_version'] ?? ''), 'to' => (string) ($it['to_version'] ?? '')], $u->items),
             'steps' => array_map(fn (array $s): array => ['key' => (string) $s['key'], 'state' => (string) $s['state']], $u->steps),
             'snapshot_uuid' => is_string($snap) ? $snap : null, 'error' => $u->error,
