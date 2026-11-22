@@ -107,6 +107,13 @@ describe('API giả lập (MSW) đúng theo OpenAPI', () => {
       const res = await fetch(`http://demo.local${url}${QUERY[r.path] ?? ''}`, {
         headers: HEADERS[r.path] ?? {},
       });
+      if (res.headers.get('Content-Type')?.startsWith('text/event-stream')) {
+        // SSE job (D-106): khung `event: job` mang Job JSON.
+        const text = await res.text();
+        expect(res.status).toBe(200);
+        expect(text).toMatch(/^retry: \d+\nevent: job\ndata: \{/);
+        return;
+      }
       if (res.headers.get('Content-Type')?.startsWith('text/csv')) {
         // Xuất CSV (audit log): contract khai báo text/csv, kiểm dòng tiêu đề.
         expect(res.status).toBe(200);

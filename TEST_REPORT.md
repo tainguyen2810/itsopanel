@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.6 (SSE sự kiện job, dashboard dữ liệu thật) — nhánh `phase-11`
+
+Phạm vi: `JobLog` phát mỗi dòng log lên Redis `PUBLISH itso:job:<uuid>` (`App\Domain\Jobs\JobEvents`, lỗi Redis không làm hỏng job). `GET /jobs/{id}/events` (admin + portal) là SSE thật: `retry: 2000`, snapshot `event: job` đầu tiên, sau đó `event: log` (id = seq log, tăng dần) và `event: job` khi trạng thái/tiến độ đổi; `Last-Event-ID` bỏ sự kiện đã nhận; heartbeat `: ping` 15 giây; đóng khi job kết thúc hoặc sau 300 giây; quyền như `GET /jobs/{id}`. Contract `streamJobEvents` mô tả khung + header `Last-Event-ID` (codegen lại). Web: `useJobEvents` (EventSource, ghi cache React Query; lỗi lặp → poll 2 giây) dùng trong drawer theo dõi job và trang chi tiết job; dashboard và chuông thông báo poll 30 giây; MSW trả một khung SSE (EventSource tự nối lại). Dashboard: `alerts_firing` và `security_events_24h` thật theo phạm vi (bỏ giá trị 0 tạm).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make codegen` · `make contracts-check` · `make codegen-check` | PASS |
+| Pest | `vendor/bin/pest --parallel` | **532/532 PASS** (mới `Phase11/RealtimeTest.php` 5 test: thứ tự id log khớp DB, snapshot đầu/cuối, Last-Event-ID bỏ sự kiện cũ và giá trị rác bị bỏ qua, ngoài phạm vi 404 (ADMIN ngoài phạm vi, USER khác), heartbeat + đóng theo thời gian tối đa, snapshot khi `cancel_requested` không kèm log, publish Redis đủ mọi log và Redis lỗi job vẫn xong, dashboard theo phạm vi SA/AD_IN/AD_OUT). `JobsTest`/`EndpointGapsTest` đọc `streamedContent()`. Lần đầu: dòng log "Đã xếp hàng" thiếu `at` trong model nên bản tin publish lỗi → `JobDispatcher` ghi `at` |
+| Vitest | `npx vitest run` | **621/621 PASS** (mới `JobEvents.test.tsx` 3 test: SSE cập nhật, không poll khi luồng chạy, đóng khi job xong; SSE lỗi lặp → poll; không có EventSource → poll). Lần đầu: poll vẫn chạy do `refetchInterval` đọc ref chưa cập nhật → tính từ cache trước `useQuery` |
+| Lint | `make lint-web` (ESLint, Prettier, check-i18n) · `pint` · `phpstan` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.5 (Notifications: kênh, SSRF guard, retry/resend, định tuyến, sự kiện USER) — nhánh `phase-11`
 
 Phạm vi: `App\Domain\Notifications` — `NotificationCatalog` (16 sự kiện, đối tượng nhận, kênh, `in_app_locked`), `NotificationPreferences` (người × sự kiện × kênh, dòng `*` = kênh bật chung, mặc định in-app, critical luôn in-app, USER chỉ in_app + email), `NotificationDispatcher` (SUPER_ADMIN + ADMIN trong phạm vi + USER chủ account; in-app ngay, email cá nhân / kênh admin → `notification_deliveries` → queue `notifications`; 30 tin/phút/kênh, phần vượt `blocked` rồi gộp tin tóm tắt), `NotificationSender` (email SMTP từ Settings, Telegram Bot API, webhook ký `X-ITSO-Signature: sha256=HMAC(secret, ts.body)` + `X-ITSO-Timestamp`; thử lại 1/5/15 phút rồi failed), `SsrfGuard` (phân giải DNS trước, kết nối đúng IP qua CURLOPT_RESOLVE; luôn chặn loopback/link-local/169.254/0/8/multicast/dành riêng/IPv4-mapped; dải riêng chỉ khi bật; không redirect; 5 giây; đọc ≤ 64 KB), `UserEvents` (quota 80/100 %, chứng chỉ 14/7/1 ngày + gia hạn lỗi, backup lỗi, account khóa/mở, website down/up). `Notifier` cũ đi qua Dispatcher (giữ in-app), `AlertEvents` gửi kênh theo `channels` của rule, USER không còn nhận `alert.*`. API admin `notification-channels` (CRUD + `:test`, SA), `notification-deliveries` (+ `:resend`), `notification-events`, `notification-preferences`; Portal `notification-events`, `notification-preferences`. Lệnh `itso:notifications-tick` (mỗi phút), `itso:certificates-expiry` (hằng ngày); worker nghe `default,notifications`. Schema: `notification_deliveries` thêm `recipient_user_id`, `response_code`, `channel_id` cho phép NULL (CHECK một trong hai) — migration Phase 11 chưa phát hành nên sinh lại.

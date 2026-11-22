@@ -1080,8 +1080,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Luồng tiến độ (SSE qua gateway)
-         * @description `text/event-stream`; mỗi sự kiện là một Job JSON. Fallback polling 2 giây.
+         * Luồng tiến độ (SSE)
+         * @description `text/event-stream` (D-106, ADR 0051). Sự kiện đầu `event: job` là snapshot Job JSON; sau đó `event: log` (JobLog JSON) cho mỗi dòng log mới và `event: job` khi trạng thái/tiến độ đổi. `id:` = seq của log (tăng dần) để nối lại bằng `Last-Event-ID`. Heartbeat comment mỗi 15 giây; giữ tối đa 5 phút hoặc tới khi job kết thúc; client lỗi SSE thì quay về poll `GET /jobs/{id}` 2 giây. Kiểm quyền như `GET /jobs/{id}`.
          */
         get: operations["portalStreamJobEvents"];
         put?: never;
@@ -8089,7 +8089,10 @@ export interface operations {
     portalStreamJobEvents: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Nối lại: chỉ gửi sự kiện có id lớn hơn (EventSource tự gửi). */
+                "Last-Event-ID"?: string;
+            };
             path: {
                 /** @description UUID tài nguyên. */
                 id: components["parameters"]["Id"];
@@ -8106,8 +8109,16 @@ export interface operations {
                 };
                 content: {
                     /**
-                     * @example event: job
+                     * @example retry: 2000
+                     *     id: 41
+                     *     event: job
                      *     data: {"uuid":"01938a0f-0002-7000-8000-00000f000002","state":"running","progress":60}
+                     *
+                     *     id: 42
+                     *     event: log
+                     *     data: {"seq":42,"at":"2026-11-20T08:00:05+07:00","level":"info","message":"Bước 2 xong."}
+                     *
+                     *     : ping
                      */
                     "text/event-stream": string;
                 };

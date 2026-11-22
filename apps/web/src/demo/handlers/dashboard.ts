@@ -139,7 +139,10 @@ export function registerDashboard() {
     // Server mất kết nối: series dừng ở mẫu cuối (~20 phút trước), không vẽ tới hiện tại.
     if (s.status !== 'ready' && range === '1h') ser.points = ser.points.slice(0, 39);
     if (s.status !== 'ready' && range === '24h')
-      ser.points = ser.points.slice(0, Math.max(1, ser.points.length - Math.ceil(ser.points.length / 24)));
+      ser.points = ser.points.slice(
+        0,
+        Math.max(1, ser.points.length - Math.ceil(ser.points.length / 24)),
+      );
     return ok({
       resource: { type: 'server', uuid: s.uuid },
       metric,

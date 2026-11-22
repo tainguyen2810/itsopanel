@@ -52,7 +52,7 @@ it('Portal: luồng sự kiện job và chạy lại job lỗi của chính mìn
     $po = $a->spa('US_OWNER');
     $ev = $po->get("/api/v1/portal/jobs/{$job->uuid}/events");
     expect($ev->getStatusCode())->toBe(200)->and($ev->headers->get('Content-Type'))->toStartWith('text/event-stream')
-        ->and($ev->getContent())->toContain('event: job');
+        ->and($ev->streamedContent())->toContain('event: job');
     $other = $a->spa('US_OTHER');
     expect($other->get("/api/v1/portal/jobs/{$job->uuid}/events")->getStatusCode())->toBe(404);
     expect($other->call('POST', "/api/v1/portal/jobs/{$job->uuid}:retry", [], ['Idempotency-Key' => (string) Str::uuid()])

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { RotateCcw, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ApiError } from '@/api/http';
 import { useFmt } from '@/shared/format/useFmt';
 import { JobView } from '@/shared/jobs/JobDrawer';
+import { useJobEvents } from '@/shared/jobs/useJobEvents';
 import { PageHeader } from '@/shared/page/PageHeader';
 import { ErrorState, PageSkeleton } from '@/shared/page/states';
 import { useCrumbName } from '@/shared/routing/crumbs';
@@ -28,10 +29,23 @@ export default function JobDetailPage() {
   const fmt = useFmt();
   const navigate = useNavigate();
   const { id } = useParams({ strict: false }) as { id: string };
+  const qc = useQueryClient();
+  const cached = qc.getQueryData<{ state: string; links: { events: string } }>([
+    'admin',
+    'job',
+    id,
+  ]);
+  // SSE (D-106): đang có luồng thì không poll trạng thái job; lỗi luồng → poll 1 giây như cũ.
+  const live = useJobEvents(id, cached?.links.events, cached ? !ACTIVE.has(cached.state) : false, [
+    'admin',
+    'job',
+    id,
+  ]);
   const job = useQuery({
     queryKey: ['admin', 'job', id],
     queryFn: () => get('/jobs/{id}', { path: { id } }),
-    refetchInterval: (q) => (q.state.data && ACTIVE.has(q.state.data.state) ? 1000 : false),
+    refetchInterval: (q) =>
+      !live && q.state.data && ACTIVE.has(q.state.data.state) ? 1000 : false,
   });
   const logs = useQuery({
     queryKey: ['admin', 'job', id, 'logs'],

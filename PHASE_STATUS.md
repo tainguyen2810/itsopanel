@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` (kế hoạch `docs/planning/seed/PHASE_11_PROMPTS.md`, D-101 → D-107 đề xuất; đang làm trên nhánh `phase-11`, người dùng chọn bắt đầu 2026-11-22). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 11.6 Realtime job SSE, dashboard (11.0–11.5 ✓)
-- **Task đang làm:** 11.6
+- **Prompt hiện tại:** 11.7 UI nối API thật (11.0–11.6 ✓)
+- **Task đang làm:** 11.7
 - **Commit cuối:** xem `git log -1` trên `main`
 - **Bước tiếp theo:** làm hàng loạt 11.1 → 11.8, tự merge, phát hành `v0.5.0-beta` (tag local), DỪNG trước Phase 12; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -39,8 +39,8 @@ Phase 11 (bắt đầu 2026-11-22, nhánh `phase-11`) — prompt chi tiết: `do
 - ✓ 11.3 Panel metrics: rollup, prune, API theo khoảng, usage account
 - ✓ 11.4 Panel alerts: rule, bộ máy đánh giá, mất kết nối ≤ 2 phút, uptime
 - ✓ 11.5 Notifications: email/Telegram/webhook, SSRF guard, định tuyến, sự kiện USER
-- ✱ 11.6 Realtime job SSE, dashboard dữ liệu thật
-- ○ 11.7 UI nối API thật
+- ✓ 11.6 Realtime job SSE, dashboard dữ liệu thật
+- ✱ 11.7 UI nối API thật
 - ○ 11.8 e2e, VM Phase 11, review bảo mật, báo cáo, `v0.5.0-beta`, merge
 
 Phase 10: ✓ APPROVED 2026-11-22 (merge `ea528c9`) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`

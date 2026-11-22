@@ -3,7 +3,7 @@ import type { DemoDb } from '../db';
 import { page } from '../list';
 import { created, noContent, ok, on, problem, type Ctx, type Reply } from '../router';
 import { canSeeAccount, canSeeServer, visibility } from '../scope';
-import { actorRef } from './writes';
+import { actorRef, sseSnapshot } from './writes';
 
 /**
  * Phase 11 (mockup 11.0): cảnh báo (ack/silence), uptime theo website, kênh thông báo + nhật ký gửi,
@@ -509,5 +509,11 @@ export function registerMonitoring() {
       : all;
   };
   on('get', P('/notification-events'), (ctx) => page(ctx, events(ctx, false)));
+
+  // -- luồng SSE của job (D-106): demo trả một snapshot rồi đóng; EventSource tự nối lại sau 2 giây (như poll).
+  on('get', P('/jobs/{id}/events'), (ctx) => {
+    const j = ctx.db.data.jobs.find((x) => x.uuid === ctx.params.id);
+    return j ? sseSnapshot(j) : notFound('job');
+  });
   on('get', R('/notification-events'), (ctx) => page(ctx, events(ctx, true)));
 }

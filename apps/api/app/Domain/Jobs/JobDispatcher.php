@@ -11,6 +11,7 @@ use App\Models\JobLog;
 use App\Models\JobStep;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /** Tạo job + các bước (trạng thái queued) rồi đẩy vào queue Redis (D-60). */
@@ -53,7 +54,7 @@ final class JobDispatcher
                 ]);
             }
             JobLog::query()->create(['job_id' => $job->id, 'level' => 'info',
-                'message' => 'Đã xếp hàng: '.count($spec->steps).' bước.']);
+                'message' => 'Đã xếp hàng: '.count($spec->steps).' bước.', 'at' => Carbon::now()]);
 
             return $job;
         });

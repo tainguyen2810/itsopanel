@@ -6,7 +6,7 @@ import { canSeeAccount, visibility } from '../scope';
 import { ADMIN_LISTS, accountOr404, logsOf, registerListSpecs, type ListSpec } from './admin';
 import { registerBackupAccess } from './governance';
 import { registerSites } from './sites';
-import { actorRef, jobActions } from './writes';
+import { actorRef, jobActions, sseSnapshot } from './writes';
 
 /**
  * Prompt 2.7: User Hosting Portal. Mọi handler lọc theo account mà USER đang đăng nhập sở hữu
@@ -243,6 +243,10 @@ export function registerPortal() {
   on('get', P('/jobs/{id}/logs'), (ctx) => {
     const j = findOr404(ctx.db.data.jobs.filter(ownJob(ctx)), ctx.params.id, 'job');
     return isReply(j) ? j : page(ctx, logsOf(j));
+  });
+  on('get', P('/jobs/{id}/events'), (ctx) => {
+    const j = findOr404(ctx.db.data.jobs.filter(ownJob(ctx)), ctx.params.id, 'job');
+    return isReply(j) ? j : sseSnapshot(j);
   });
   for (const action of ['cancel', 'retry'] as const) {
     on('post', P(`/jobs/{id}:${action}`), (ctx) => jobActions(ctx, action, ownJob(ctx)));

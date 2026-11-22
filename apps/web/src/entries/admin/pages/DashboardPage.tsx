@@ -79,6 +79,7 @@ export default function DashboardPage() {
   const summary = useQuery({
     queryKey: ['admin', 'dashboard'],
     queryFn: () => get('/api/v1/admin/dashboard/summary'),
+    refetchInterval: 30_000, // D-106: dashboard poll 30 giây (không WebSocket)
   });
   const servers = useQuery({
     queryKey: ['admin', 'servers', 'all'],

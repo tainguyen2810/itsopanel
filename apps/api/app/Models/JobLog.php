@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Jobs\JobEvents;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -25,6 +26,15 @@ class JobLog extends Model
     protected $guarded = ['id'];
 
     public $timestamps = false;
+
+    /**
+     * Mỗi dòng log phát lên Redis pub/sub `itso:job:<uuid>` (D-106, ADR 0051). Chỉ là tín hiệu: SSE đọc lại job_logs
+     * (nguồn sự thật) nên tin đến trước khi transaction commit không làm sai thứ tự.
+     */
+    protected static function booted(): void
+    {
+        static::created(fn (JobLog $l) => app(JobEvents::class)->published($l));
+    }
 
     protected function casts(): array
     {

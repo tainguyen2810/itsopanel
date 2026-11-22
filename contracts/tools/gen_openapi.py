@@ -498,10 +498,17 @@ def resource_paths(api: Api, realm: str, jobs: JobSeq):
             desc="Chỉ job `failed`, `cancelled`, `timed_out`; job khác → 409 `conflict`. Job mới tham chiếu cùng tài nguyên.",
             job_example=jobs(jobs_ex[1]["type"], jobs_ex[1]["resource"]["type"], jobs_ex[1]["resource"]["uuid"],
                              [st["op"] for st in jobs_ex[1]["steps"]], realm=realm))
-    ev = api.add("get", jp + "/{id}/events", oid("streamJobEvents"), "Luồng tiến độ (SSE qua gateway)", "Jobs",
-                 params=idp, ok=None, desc="`text/event-stream`; mỗi sự kiện là một Job JSON. Fallback polling 2 giây.")
+    ev = api.add("get", jp + "/{id}/events", oid("streamJobEvents"), "Luồng tiến độ (SSE)", "Jobs",
+                 params=idp + [{"name": "Last-Event-ID", "in": "header", "required": False, "schema": s(maxLength=20, pattern="^[0-9]{1,20}$"),
+                                "description": "Nối lại: chỉ gửi sự kiện có id lớn hơn (EventSource tự gửi)."}],
+                 ok=None, desc="`text/event-stream` (D-106, ADR 0051). Sự kiện đầu `event: job` là snapshot Job JSON; sau đó "
+                 "`event: log` (JobLog JSON) cho mỗi dòng log mới và `event: job` khi trạng thái/tiến độ đổi. `id:` = seq của log "
+                 "(tăng dần) để nối lại bằng `Last-Event-ID`. Heartbeat comment mỗi 15 giây; giữ tối đa 5 phút hoặc tới khi job "
+                 "kết thúc; client lỗi SSE thì quay về poll `GET /jobs/{id}` 2 giây. Kiểm quyền như `GET /jobs/{id}`.")
     ev["responses"]["200"]["content"] = {"text/event-stream": {"schema": s(),
-                                                                "example": "event: job\ndata: {\"uuid\":\"%s\",\"state\":\"running\",\"progress\":60}\n\n" % jobs_ex[1]["uuid"]}}
+                                                                "example": ("retry: 2000\nid: 41\nevent: job\ndata: {\"uuid\":\"%s\",\"state\":\"running\",\"progress\":60}\n\n"
+                                                                            "id: 42\nevent: log\ndata: {\"seq\":42,\"at\":\"2026-11-20T08:00:05+07:00\",\"level\":\"info\",\"message\":\"Bước 2 xong.\"}\n\n"
+                                                                            ": ping\n\n") % jobs_ex[1]["uuid"]}}
     # -- notifications
     api.add("get", "/notifications", oid("listNotifications"), "Thông báo", "Notifications", list_=True,
             ok=cref("Notification"), ok_example=page(D.NOTIFICATIONS))
