@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 9 / Prompt 9.8 (tích hợp: e2e 2 agent qua relay, VM, review, make check) — nhánh `phase-9`
+
+Phạm vi: `apps/web/e2e-real/phase9.spec.ts` (mới), sửa lỗi tìm ra nhờ e2e (`MigrationService` preflight repo chưa khởi tạo → cảnh báo; contract `migrate.preflight` thêm `enforce`, agent trả `precondition_failed`, chặng đích gửi `enforce=true`; `JobController` lọc `waiting_agent`), sandbox (`migrate.go` ownership/HTTP, `scripts/dev.sh` CA + URL relay, `Placement` cho chọn server bị loại ở wizard chuyển), `tests/vm/phase9.sh` + `tests/vm/lib/panel_api.php`, `docs/security/multi-server-review.md`, runbook §5, báo cáo `docs/reports/phase-9.md`. Commit (commit 9.8).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 9 | `pnpm -s exec playwright test -c playwright.real.config.ts --trace off e2e-real/phase9.spec.ts` (`make dev`: relay thật, agent local + node sandbox, restic thật) | **4/4 PASS** (5,0 phút). Các lần đầu lỗi: wizard bị drawer theo dõi job (modal) che khỏi cây a11y → test đóng drawer; toast "Đã xong" đè nút khi chuột đứng trên → dời chuột; trang Tác vụ `?state=waiting_agent` → 422 (**lỗi API**, sửa); lượt chuyển thứ hai lỗi `Unknown database` vì sandbox dùng chung MariaDB nên hoàn tác xóa luôn DB nguồn → lượt hoàn tác dùng account không DB. Trước đó (đầu 9.8): preflight chặn account chưa backup (**lỗi API**, sửa), ownership/HTTP trong sandbox, server local bị loại vì đĩa |
+| Toàn bộ e2e stack thật | `ITSO_ACME_EMAIL=ops@itso.local make dev` + `migrate:fresh --seed` + `DemoSeeder` + `make test-e2e-real` | **23/23 PASS** (17,1 phút). Hai lần chạy trước: 21/23 (Phase 3 tạo account: server local bị loại vì đĩa container < 15 % sau cấp → dọn 17 GB clone cũ trong scratchpad; Phase 5 SSL phụ thuộc) và 22/23 (quên `ITSO_ACME_EMAIL` nên SSL sandbox không cấp) |
+| Pest mới | `pest tests/Feature/Phase9/MigrationTest.php` · `NodeTest.php` | 7/7 (271 assertion; mới: repo chưa khởi tạo → cảnh báo, chặng đích `enforce` chặn → `failed`, không `account.ensure`) · 9/9 (thêm lọc `waiting_agent`) |
+| Go | `go test -race ./internal/ops -run 'TestMigrate\|TestHTTPCheck\|TestBackupRestore'` · `go test ./...` | PASS (mới: `enforce` → `precondition_failed`) · PASS |
+| `make check` | `make check` (1 143 s) | **19 PASS · 1 SKIP (staticcheck) · 3 FAIL** lần đầu: `test-e2e` 548/549 (`demo-admin2` còn giả định không có ô "Máy chủ đích" — Phase 9 thêm khôi phục sang server khác → sửa test, chạy lại 3/3), `test-fuzz` (`FuzzFirewallRule` tìm comment `";"` hợp lệ theo contract làm bất biến đếm `;` sai → đếm ngoài chuỗi trích dẫn, giữ input làm corpus; chạy lại `make test-fuzz` PASS), `git-clean` (do corpus fuzz mới, nay commit) |
+| Còn lại trong `make check` | structure, docs-check, check-ci, db-verify (98), contracts-check, codegen-check, tokens-check, lint-web, test-web (562), build-web, build-demo, lint-api, test-api (483), no-exec, lint-agent, test-agent (19 gói), build-agent, units-check, test-installer | PASS |
+| Ảnh Phase 9 | `SCREENSHOT_DIR_P9=… playwright test e2e/screenshots-phase9.spec.ts` | 52/52 (chụp lại wizard sau đổi `Placement`) |
+| Script VM | `bash -n tests/vm/phase9.sh` · `lib/panel_api.php` thử với DB dev (GET servers 200, preflight 422 đúng) | OK (không có shellcheck). **Chờ VM:** N0 3 server online, N1 node không nghe TCP, N2 nftables → `waiting_agent`/`agent_unreachable`, N3 xoay chứng chỉ, N4 WordPress + 2 GB (checksum + HTTP 200, downtime ≤ 300 s), N5 rollback sau cutover, N6 thu hồi |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase9.sh` (Phase 8 DR 2 VM, Phase 9 3 VM).
+
 ## 2026-11-21 — Phase 9 / Prompt 9.7 (UI multi-server khớp API thật) — nhánh `phase-9`
 
 Phạm vi: trang mới **Lượt chuyển máy chủ** (`/admin/hosting-accounts/migrations`, lọc trạng thái, mở wizard); wizard chuyển account: ADMIN (có phạm vi cả hai server) vào được như API, kiểm chứng lệch → cảnh báo + khóa nút cutover, lượt chuyển lỗi → hiện lỗi + hoàn tác (account khóa sau cutover) hoặc chuyển lại, chặng chờ node mất kết nối (`waiting_agent`), dọn nguồn sớm chỉ SA, ghi chú HTTPS cấp lại ở đích; banner danh sách server khi node mất kết nối; Portal: banner "đang chuyển" + cảnh báo tổng quan `account_migrating` (API + MSW); nhãn job `migration.*`; `JobProgress` khóa theo vị trí bước (job thật có thể lặp op `backup.run`). MSW theo hành vi API: quyền ADMIN + phạm vi đích, chỉ account active, `connection`/`accepting` (warn), HTTP chỉ có sau cutover, cutover 409 khi lệch, hoàn tác 409 lúc đang đồng bộ, dọn sớm ADMIN 403, account `migrating` → ghi dữ liệu 409. API: link thông báo lượt chuyển trỏ về wizard của account. Commit b2ef24d.

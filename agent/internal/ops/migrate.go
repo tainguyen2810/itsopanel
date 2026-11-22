@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -167,6 +168,8 @@ type migrateRepoParams struct {
 	Databases     []contracts.BackupDB `json:"databases"`
 	Sites         []string             `json:"sites"`
 	SnapshotID    string               `json:"snapshot_id"`
+	// Enforce (chỉ migrate.preflight): còn mục block → lỗi precondition_failed thay vì trả checks.
+	Enforce bool `json:"enforce"`
 }
 
 func (p *migrateRepoParams) check() error {
@@ -348,8 +351,15 @@ func (d *Deps) migratePreflight(ctx context.Context, env *envelope.Envelope) (ma
 	}
 
 	ok := true
+	var blocks []string
 	for _, c := range checks {
-		ok = ok && c.Level != "block"
+		if c.Level == "block" {
+			ok = false
+			blocks = append(blocks, c.Message)
+		}
+	}
+	if !ok && p.Enforce {
+		return nil, &registry.OpError{Code: "precondition_failed", Message: truncate("kiểm tra trước ở đích chặn: "+strings.Join(blocks, "; "), 1000)}
 	}
 	return toData(contracts.MigratePreflightResult{OK: ok, Checks: checks})
 }
@@ -453,11 +463,11 @@ func (d *Deps) migrateVerify(ctx context.Context, env *envelope.Envelope) (map[s
 	add("files", "manifest", bad == 0, fmt.Sprintf("%d/%d file mẫu khớp sha256", len(keys)-bad, len(keys)))
 
 	// 2. Chủ sở hữu: mọi mục dưới sites/ thuộc uid account.
-	wantUID := int(usr.UID)
+	want := []int{int(usr.UID)}
 	if d.Sandbox {
-		wantUID = os.Getuid() // sandbox không chown được
+		want = append(want, os.Getuid()) // sandbox: chown chỉ làm được khi chạy root, file restore có thể giữ uid tiến trình
 	}
-	foreign, total := d.foreignOwned(home+"/sites", wantUID)
+	foreign, total := d.foreignOwned(home+"/sites", want...)
 	add("ownership", "sites", foreign == 0, fmt.Sprintf("%d/%d mục dưới sites/ thuộc uid %d", total-foreign, total, usr.UID))
 
 	// 3. Database: dump trong repo khớp manifest, DB có ở đích, số bảng khớp (MariaDB).
@@ -475,6 +485,11 @@ func (d *Deps) migrateVerify(ctx context.Context, env *envelope.Envelope) (map[s
 		return nil, err
 	}
 	for _, s := range p.Sites {
+		if d.Sandbox && d.HTTPAddrs == nil {
+			// Sandbox dev không có nginx thật (nginx.vhost.apply chỉ ghi file): không có gì để gọi HTTP.
+			add("http", s, true, "sandbox: không có nginx, bỏ qua kiểm tra HTTP")
+			continue
+		}
 		res := d.doHTTPCheck(ctx, "http", s, "/", nil)
 		hok := res.Status >= 100 && res.Status < 500
 		add("http", s, hok, fmt.Sprintf("HTTP %d qua 127.0.0.1", res.Status))
@@ -531,7 +546,7 @@ func (d *Deps) fileSHA(p string) (string, error) {
 }
 
 // foreignOwned đếm mục (không theo symlink) không thuộc uid; duyệt tối đa backup.ManifestMaxWalk mục.
-func (d *Deps) foreignOwned(dir string, uid int) (int, int) {
+func (d *Deps) foreignOwned(dir string, uids ...int) (int, int) {
 	rp, err := d.FS.Path(dir)
 	if err != nil {
 		return 0, 0
@@ -539,7 +554,7 @@ func (d *Deps) foreignOwned(dir string, uid int) (int, int) {
 	foreign, total := 0, 0
 	_ = walkNoFollow(rp, func(fi fs.FileInfo) bool {
 		total++
-		if st, ok := fi.Sys().(*syscall.Stat_t); ok && int(st.Uid) != uid {
+		if st, ok := fi.Sys().(*syscall.Stat_t); ok && !slices.Contains(uids, int(st.Uid)) {
 			foreign++
 		}
 		return total < backup.ManifestMaxWalk

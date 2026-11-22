@@ -149,6 +149,7 @@ function Preflight({ a, onStart }: { a: Account; onStart: () => void }) {
               setResult(null);
             }}
             exclude={a.server.uuid}
+            lenient
           />
         )}
       </fieldset>

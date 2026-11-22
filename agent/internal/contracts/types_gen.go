@@ -1632,6 +1632,7 @@ type MigratePreflightParams struct {
 	PHPVersions   []PHPVersion `json:"php_versions"`
 	Databases     []BackupDB   `json:"databases"`
 	Sites         []Domain     `json:"sites"`
+	Enforce       *bool        `json:"enforce,omitempty"`
 }
 
 // MigratePreflightResultChecksItem được sinh từ schema.

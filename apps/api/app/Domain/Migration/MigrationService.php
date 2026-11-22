@@ -136,7 +136,15 @@ final class MigrationService
             try {
                 $res = $this->agent->forServer($target->id)->call('migrate.preflight', app(Secrets::class)->resolve($params));
                 if ($res->ok && is_array($res->data['checks'] ?? null)) {
+                    $fresh = $repo->initialized_at === null;
                     foreach ($res->data['checks'] as $c) {
+                        // Repo chưa khởi tạo (account chưa backup lần nào): chặng nguồn init + backup trước, chặng đích
+                        // chạy lại migrate.preflight nên chỉ cảnh báo ở đây.
+                        if ($fresh && $c['key'] === 'repo' && $c['level'] === 'block') {
+                            $add('repo', 'warn', 'Repo backup của account chưa khởi tạo: tạo ở lượt backup đầu của lượt chuyển; server đích kiểm tra đọc repo ở đầu chặng đồng bộ.');
+
+                            continue;
+                        }
                         $add((string) $c['key'], (string) $c['level'], (string) $c['message']);
                     }
                 } else {
@@ -202,7 +210,7 @@ final class MigrationService
         $repo = $this->repo($m);
         $limits = $this->quota->limits($a);
         $spec = new JobSpec('migration.sync', $m, $m->target_server_id, 3, 6 * 3600);
-        $spec->step('migrate.preflight', $this->preflightParams($m, $a, $repo));
+        $spec->step('migrate.preflight', ['enforce' => true] + $this->preflightParams($m, $a, $repo));
         $spec->step('account.ensure', ['account' => ProvisioningService::ref($a), 'home_path' => $a->home_path,
             'shell' => $limits['ssh_allowed'] ? '/bin/bash' : '/usr/sbin/nologin', 'limits' => ProvisioningService::agentLimits($limits)])
             ->step('quota.apply', ['account' => ProvisioningService::ref($a), 'limits' => ProvisioningService::agentLimits($limits)]);

@@ -277,6 +277,9 @@ func TestMigratePreflight(t *testing.T) {
 			t.Errorf("%s phải block: %v", k, c[k])
 		}
 	}
+	// enforce (đầu chặng đích của lượt chuyển): còn block → op lỗi, job dừng trước khi dựng account.
+	p["enforce"] = true
+	dst.h.Fail(contracts.OpMigratePreflight, p, "precondition_failed")
 }
 
 func TestMigrateSyncVerifyCutoverRollback(t *testing.T) {

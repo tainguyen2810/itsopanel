@@ -40,3 +40,10 @@ Chứng chỉ node được panel xoay tự động khi qua 2/3 hạn (`itso-cer
 - **Node mất kết nối:** job mới cho node chờ ở trạng thái `waiting_agent` (D-91); kiểm `itso node status` trên node, mạng ra cổng 28444, `systemctl status itso-relay` trên control plane.
 - **`CA … KHÔNG khớp --ca-sha256`:** lệnh join sai hoặc có thiết bị chặn giữa đường; lấy lại pin bằng `itso pki pin` trên control plane.
 - **Chứng chỉ hết hạn:** relay từ chối bắt tay; chạy `itso node rejoin` với token mới.
+
+## 5. Kiểm thử trên VM (nghiệm thu Phase 9, chờ VM)
+
+`tests/vm/phase9.sh` chạy trên 3 VM dùng một lần (control plane đã cài + 2 Ubuntu sạch), theo thứ tự trong đầu script:
+`--prepare` (P) → join hai node → `--node --panel-ip <IP P>` (N1, từng node) → `--panel-1` (P: N0, N3, tạo account
+WordPress trên node 1) → `--seed-wp …` (node 1: WordPress + 2 GB) → `--panel-2` (P: N4 chuyển, N5 rollback, N2 mất mạng,
+N6 thu hồi). Báo cáo ghi ở `/root/itso-vm-phase9.md` trên từng máy.

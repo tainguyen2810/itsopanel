@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -300,7 +301,9 @@ func FuzzFirewallRule(f *testing.F) {
 		}
 		script := ops.RenderNft(rules, al)
 		// Bất biến: không ký tự điều khiển lạ; luôn có dòng chống tự khóa đứng trước rule người dùng.
-		if strings.ContainsAny(script, "\r\x00") || strings.Count(script, ";") != 4 {
+		// Đếm ";" ngoài chuỗi trích dẫn: comment hợp lệ được chứa ";" (nằm trong "…", nft không tách lệnh ở đó).
+		bare := regexp.MustCompile(`"[^"]*"`).ReplaceAllString(script, `""`)
+		if strings.ContainsAny(script, "\r\x00") || strings.Count(bare, ";") != 4 {
 			t.Fatalf("ruleset có ký tự/dòng lạ:\n%s", script)
 		}
 		anti := strings.Index(script, "itso: chống tự khóa")

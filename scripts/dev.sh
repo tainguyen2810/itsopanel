@@ -68,6 +68,9 @@ if [[ "$ITSO_DEV_AGENT" == sandbox ]]; then
     ( cd agent && go build -o bin/itso-relay ./cmd/itso-relay )
     RLY="$ROOT/.dev/relay" NODE="$ROOT/.dev/node-sandbox"
     agent/bin/itso-relay dev-init --dir "$RLY" --hosts 127.0.0.1,localhost
+    # CA dev cho op pki.sign_csr của agent local (ký CSR khi node join bằng token) + panel ghim CA trong lệnh join.
+    ( umask 077; mkdir -p "$SBX/root/etc/itso/pki" && cp "$RLY/ca.pem" "$RLY/ca.key" "$SBX/root/etc/itso/pki/" )
+    export ITSO_PKI_CA_FILE="$RLY/ca.pem" ITSO_RELAY_PUBLIC_URL="https://127.0.0.1:${RELAY_PORT:-28444}"
     mkdir -p "$NODE/root/etc/itso/node"
     [[ -s "$NODE/uuid" ]] || python3 -c 'import uuid;print(uuid.uuid4())' > "$NODE/uuid"
     NODE_UUID="$(cat "$NODE/uuid")"

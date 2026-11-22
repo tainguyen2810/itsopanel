@@ -39,6 +39,9 @@
             "$ref": "../defs.schema.json#/$defs/Domain"
           },
           "maxItems": 100
+        },
+        "enforce": {
+          "type": "boolean"
         }
       },
       "required": [

@@ -16,6 +16,7 @@ export function Placement({
   value,
   onChange,
   exclude,
+  lenient = false,
 }: {
   id?: string;
   name: string;
@@ -24,11 +25,17 @@ export function Placement({
   onChange: (uuid: string) => void;
   /** Server không được chọn (ví dụ server hiện tại khi chuyển account). */
   exclude?: string;
+  /**
+   * Chuyển account: server bị loại theo gợi ý vẫn chọn được (lý do hiện như cảnh báo) vì "Kiểm tra trước" của
+   * agent đích mới là điều kiện quyết định (đĩa thật, UID, PHP, DB, kết nối).
+   */
+  lenient?: boolean;
 }) {
   const { t } = useTranslation('admin');
   const rows = items.filter((s) => s.server.uuid !== exclude);
-  const ok = rows.filter((s) => s.eligible && s.accepting_new);
-  const out = rows.filter((s) => !(s.eligible && s.accepting_new));
+  const fit = (s: Suggestion) => s.eligible && s.accepting_new;
+  const ok = rows.filter((s) => lenient || fit(s));
+  const out = rows.filter((s) => !lenient && !fit(s));
   return (
     <div className="flex flex-col gap-3">
       <div id={id} role="radiogroup" className="flex flex-col gap-2">
@@ -43,13 +50,21 @@ export function Placement({
           >
             <span className="flex flex-wrap items-center gap-2 font-medium">
               {s.server.name}
-              {i === 0 && <Badge tone="success">{t('accounts.recommended')}</Badge>}
+              {i === 0 && fit(s) && <Badge tone="success">{t('accounts.recommended')}</Badge>}
               <span className="text-sm font-normal text-muted">
                 {t('accounts.score', { score: s.score })} ·{' '}
                 {t('accounts.commit', { pct: s.commit_pct })}
               </span>
             </span>
             <span className="block text-sm text-muted">{s.reasons.join(' · ')}</span>
+            {!fit(s) && (
+              <span className="block text-sm text-warning-text">
+                {(s.excluded_reasons.length
+                  ? s.excluded_reasons
+                  : [t('accounts.notAccepting')]
+                ).join(' · ')}
+              </span>
+            )}
           </ChoiceCard>
         ))}
       </div>

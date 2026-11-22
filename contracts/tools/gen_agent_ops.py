@@ -526,7 +526,10 @@ OPS = [
     ("migrate.preflight", "migrate", "high", True, 9, "root", 600,
      obj({"account": A, "migration_uuid": d("Uuid"), "repo": d("BackupRepo"), "need_bytes": d("Bytes"),
           "php_versions": arr(d("PhpVersion"), maxItems=10, uniqueItems=True), "databases": arr(d("BackupDb"), maxItems=100),
-          "sites": arr(d("Domain"), maxItems=100)}),
+          "sites": arr(d("Domain"), maxItems=100),
+          # enforce: chạy ở đầu chặng đích của lượt chuyển: còn mục block → op lỗi precondition_failed (dừng job).
+          "enforce": b()},
+         ["account", "migration_uuid", "repo", "need_bytes", "php_versions", "databases", "sites"]),
      obj({"ok": b(), "checks": arr(obj({"key": s(pattern="^[a-z_]{2,32}$"), "level": enum("ok", "warn", "block"),
                                         "message": s(maxLength=500)}), maxItems=50)})),
     ("migrate.verify", "migrate", "high", True, 9, "root", 3600,

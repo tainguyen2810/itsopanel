@@ -225,6 +225,9 @@ it('job tới node mất kết nối → waiting_agent; node quay lại → rela
     expect($job->state)->toBe('waiting_agent')->and($job->attempts)->toBe(0)
         ->and((int) round($job->agent_deadline_at->diffInMinutes(now(), true)))->toBe(30);
     assertMatchesContract(P9, 'get', '/api/v1/admin/jobs/{id}', 200, (new Actors($this))->spa('SA')->get('/api/v1/admin/jobs/'.$job->uuid));
+    // Danh sách lọc theo trạng thái waiting_agent (trang Tác vụ có bộ lọc này).
+    $waiting = (new Actors($this))->spa('SA')->get('/api/v1/admin/jobs?filter[state]=waiting_agent')->assertOk();
+    expect(collect($waiting->json('data'))->pluck('uuid')->all())->toBe([$job->uuid]);
     // Node vẫn mất: relay-sync không chạy lại job chưa tới hạn.
     $this->artisan('itso:relay-sync')->assertSuccessful();
     Queue::assertPushed(RunJob::class, 1); // chỉ lần dispatch ban đầu

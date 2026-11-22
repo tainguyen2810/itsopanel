@@ -260,6 +260,40 @@ it('preflight chặn: đích thiếu PHP/đĩa/domain trùng, node mất kết n
     expect($errors)->toBe([]);
 });
 
+it('repo backup chưa khởi tạo: preflight chỉ cảnh báo; chặng đích kiểm tra lại vẫn chặn → lượt chuyển failed, account về active ở nguồn', function () {
+    $errors = [];
+    $calls = [];
+    $state = [];
+    p8agent($errors);
+    $a = new Actors($this);
+    p96setup($a);
+    $sa = $a->spa('SA');
+    $node = p96node();
+    // Agent đích luôn báo không đọc được repo (ở preflight: repo chưa init; ở đầu chặng đích: lỗi thật).
+    // Ở chặng đích panel gửi enforce=true: agent trả lỗi precondition_failed thay vì checks.
+    p96relay($errors, $calls, $state, ['migrate.preflight' => fn (array $env) => ($env['params']['enforce'] ?? false)
+        ? ['__error' => ['precondition_failed', 'kiểm tra trước ở đích chặn: Không đọc được repo backup']]
+        : ['ok' => false, 'checks' => [
+            ['key' => 'repo', 'level' => 'block', 'message' => 'Không đọc được repo backup'],
+            ['key' => 'disk', 'level' => 'ok', 'message' => 'Đủ dung lượng'],
+        ]]]);
+    $acc = $a->account;
+
+    $pf = $sa->post("/api/v1/admin/hosting-accounts/{$acc->uuid}:migrate-preflight", ['target_server_uuid' => $node->uuid]);
+    assertMatchesContract(P96, 'post', '/api/v1/admin/hosting-accounts/{id}:migrate-preflight', 200, $pf);
+    $repo = collect($pf->json('data.checks'))->firstWhere('key', 'repo');
+    expect($pf->json('data.ok'))->toBeTrue()->and($repo['level'])->toBe('warn')->and($repo['message'])->toContain('chưa khởi tạo');
+
+    p96touch($node);
+    $r = p8($sa, 'POST', "/api/v1/admin/hosting-accounts/{$acc->uuid}:migrate", ['target_server_uuid' => $node->uuid]);
+    expect($r->status())->toBe(202);
+    $m = AccountMigration::query()->sole();
+    expect($m->state)->toBe('failed')->and($m->error)->toContain('[precondition_failed] kiểm tra trước ở đích chặn: Không đọc được repo backup')
+        ->and($acc->refresh()->lifecycle_state)->toBe('active')->and($acc->server_id)->toBe($a->server->id)
+        ->and($calls)->not->toContain('account.ensure')->and($calls)->not->toContain('backup.restore');
+    expect($errors)->toBe([]);
+});
+
 it('kiểm chứng lệch → không cutover (409); hoàn tác ở verifying: đích khóa → nguồn mở, account về active ở nguồn', function () {
     $errors = [];
     $calls = [];

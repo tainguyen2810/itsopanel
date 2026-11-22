@@ -74,9 +74,11 @@ test('khôi phục ra bản mới từ nút trên snapshot', async ({ page }) =>
   await page.getByRole('button', { name: 'Tiếp' }).click();
   await page.getByRole('checkbox', { name: /Toàn bộ thư mục sites/ }).check();
   await page.getByRole('button', { name: 'Tiếp' }).click();
-  // Mặc định khôi phục ra bản mới; không có lựa chọn máy chủ khác (Phase 9).
+  // Mặc định khôi phục ra bản mới trên máy chủ hiện tại (Phase 9: Admin chọn được server khác).
   await expect(page.getByRole('radio', { name: /^Ra bản mới/ })).toBeChecked();
-  await expect(page.getByRole('combobox', { name: 'Máy chủ đích' })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Máy chủ đích' })).toContainText(
+    '(máy chủ hiện tại)',
+  );
   await page.getByRole('button', { name: 'Tiếp' }).click();
   await page.getByRole('button', { name: 'Bắt đầu khôi phục' }).click();
   await expect(page.getByText('Đã xong: Khôi phục từ bản sao lưu')).toBeVisible({
