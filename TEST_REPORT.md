@@ -4,7 +4,7 @@
 
 ## 2026-11-22 — Phase 9 / Prompt 9.8 (tích hợp: e2e 2 agent qua relay, VM, review, make check) — nhánh `phase-9`
 
-Phạm vi: `apps/web/e2e-real/phase9.spec.ts` (mới), sửa lỗi tìm ra nhờ e2e (`MigrationService` preflight repo chưa khởi tạo → cảnh báo; contract `migrate.preflight` thêm `enforce`, agent trả `precondition_failed`, chặng đích gửi `enforce=true`; `JobController` lọc `waiting_agent`), sandbox (`migrate.go` ownership/HTTP, `scripts/dev.sh` CA + URL relay, `Placement` cho chọn server bị loại ở wizard chuyển), `tests/vm/phase9.sh` + `tests/vm/lib/panel_api.php`, `docs/security/multi-server-review.md`, runbook §5, báo cáo `docs/reports/phase-9.md`. Commit (commit 9.8).
+Phạm vi: `apps/web/e2e-real/phase9.spec.ts` (mới), sửa lỗi tìm ra nhờ e2e (`MigrationService` preflight repo chưa khởi tạo → cảnh báo; contract `migrate.preflight` thêm `enforce`, agent trả `precondition_failed`, chặng đích gửi `enforce=true`; `JobController` lọc `waiting_agent`), sandbox (`migrate.go` ownership/HTTP, `scripts/dev.sh` CA + URL relay, `Placement` cho chọn server bị loại ở wizard chuyển), `tests/vm/phase9.sh` + `tests/vm/lib/panel_api.php`, `docs/security/multi-server-review.md`, runbook §5, báo cáo `docs/reports/phase-9.md`. Commit 45ebccd.
 
 | Bộ test | Lệnh | Kết quả |
 |---|---|---|

@@ -18,7 +18,7 @@
 | 9.5 Agent | `http.check`, `migrate.preflight/verify/cutover/rollback`, `account.remove` thật, khôi phục chéo server | fe309e5 |
 | 9.6 Điều phối | `MigrationService` (preflight → sync → verifying → cutover → holding → cleanup; rollback; DNS tự động), khôi phục chéo server, `itso:migrations-cleanup` | 8dfa8c2 |
 | 9.7 UI | Trang lượt chuyển, wizard khớp API thật, banner node mất kết nối, Portal "đang chuyển", MSW theo API | b2ef24d |
-| 9.8 Tích hợp | e2e stack thật 2 agent qua relay (4 luồng), sửa 3 lỗi tìm ra nhờ e2e (§4), `tests/vm/phase9.sh` (3 VM, N0–N6), review bảo mật, `make check`, báo cáo | (commit 9.8) |
+| 9.8 Tích hợp | e2e stack thật 2 agent qua relay (4 luồng), sửa 3 lỗi tìm ra nhờ e2e (§4), `tests/vm/phase9.sh` (3 VM, N0–N6), review bảo mật, `make check`, báo cáo | 45ebccd |
 
 ## 2. File chính
 
