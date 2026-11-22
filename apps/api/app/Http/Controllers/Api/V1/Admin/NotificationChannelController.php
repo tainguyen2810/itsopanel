@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Notifications\NotificationDispatcher;
 use App\Domain\Notifications\NotificationSender;
+use App\Domain\Notifications\SsrfGuard;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\NotificationPresenter;
 use App\Http\Support\Listing;
@@ -22,7 +23,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Kênh thông báo (email nhóm, Telegram, webhook) và nhật ký gửi — chỉ SUPER_ADMIN (monitoring.manage), D-103 / ADR 0048.
- * Bí mật chỉ ghi: response, audit và delivery không bao giờ chứa bí mật. SSRF guard kiểm khi gửi (DNS có thể đổi).
+ * Bí mật chỉ ghi: response, audit và delivery không bao giờ chứa bí mật. IP viết thẳng bị chặn khi lưu; SSRF guard kiểm
+ * lại khi gửi (DNS có thể đổi, kênh cũ).
  */
 final class NotificationChannelController
 {
@@ -291,6 +293,16 @@ final class NotificationChannelController
         }
         if ($scheme === 'http' && ! $private) {
             throw ApiProblem::field('config.url', 'Chỉ dùng https://; http:// chỉ cho mạng riêng khi bật tùy chọn.');
+        }
+        // Địa chỉ IP viết thẳng / localhost bị chặn ngay khi lưu (như giao diện); tên miền được kiểm khi gửi (DNS có thể đổi).
+        $host = strtolower(trim((string) $p['host'], '[]'));
+        $why = $host === 'localhost' || str_ends_with($host, '.localhost') ? 'always'
+            : (filter_var($host, FILTER_VALIDATE_IP) !== false ? SsrfGuard::classify($host) : null);
+        if ($why === 'always') {
+            throw ApiProblem::field('config.url', "Địa chỉ $host là loopback/link-local/metadata, luôn bị chặn.");
+        }
+        if ($why === 'private' && ! $private) {
+            throw ApiProblem::field('config.url', "Địa chỉ $host thuộc mạng riêng; bật \"Cho phép mạng riêng\" nếu cố ý.");
         }
 
         return ['url' => $url, 'allow_private_network' => $private];

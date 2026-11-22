@@ -14,6 +14,7 @@ use App\Exceptions\ApiProblem;
 use App\Http\Middleware\RequireStepUp;
 use App\Http\Presenters\BackupPresenter;
 use App\Http\Presenters\JobPresenter;
+use App\Http\Support\IfMatch;
 use App\Http\Support\Listing;
 use App\Models\BackupDestination;
 use App\Models\BackupPolicy;
@@ -111,10 +112,7 @@ final class BackupAdminController
     public function updateDestination(Request $request, string $id): JsonResponse
     {
         $d = self::byUuid(BackupDestination::class, $id);
-        $m = $request->header('If-Match');
-        if (is_string($m) && $m !== '' && $m !== BackupPresenter::etag($d)) {
-            throw new ApiProblem(412, 'precondition_failed', 'Tài nguyên đã thay đổi', 'Tải lại rồi sửa lại.');
-        }
+        IfMatch::check($request, BackupPresenter::etag($d), $d->updated_at);
         self::only($request, ['name', 'type', 'append_only', 'immutable_days', 'config', 'credentials']);
         $in = $request->validate(['name' => ['sometimes', 'string', 'min:1', 'max:120'], 'type' => ['sometimes', 'in:local,sftp,s3,rest'],
             'append_only' => ['sometimes', 'boolean'], 'immutable_days' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:3650'],
@@ -189,10 +187,7 @@ final class BackupAdminController
     public function updatePolicy(Request $request, string $id): JsonResponse
     {
         $p = self::byUuid(BackupPolicy::class, $id);
-        $m = $request->header('If-Match');
-        if (is_string($m) && $m !== '' && $m !== BackupPresenter::etag($p)) {
-            throw new ApiProblem(412, 'precondition_failed', 'Tài nguyên đã thay đổi', 'Tải lại rồi sửa lại.');
-        }
+        IfMatch::check($request, BackupPresenter::etag($p), $p->updated_at);
         self::only($request, array_keys(array_filter(self::policyRules(false), fn ($k) => ! str_contains($k, '*'), ARRAY_FILTER_USE_KEY)));
         $request->validate(self::policyRules(false));
 

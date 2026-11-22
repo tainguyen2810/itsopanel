@@ -102,6 +102,41 @@ function websiteFor(ctx: Ctx, id: string | undefined): Website | Reply {
 const isReply = (x: unknown): x is Reply =>
   typeof x === 'object' && x !== null && 'status' in x && !('uuid' in x);
 
+// ---------------------------------------------------------------- tùy chọn thông báo (D-104)
+
+/**
+ * Kiểm tùy chọn như API (NotificationPreferences): kênh cá nhân theo realm (Portal: in_app + email), sự kiện phải có trong
+ * danh mục của realm, kênh phải cho phép với sự kiện, mức critical luôn có in_app.
+ */
+export function prefsError(
+  db: DemoDb,
+  b: { channels?: Record<string, boolean>; events?: Record<string, string[]> },
+  portal: boolean,
+): Reply | null {
+  const allowed = portal ? ['in_app', 'email'] : ['in_app', 'email', 'telegram'];
+  for (const [c, v] of Object.entries(b.channels ?? {}))
+    if (!allowed.includes(c) || typeof v !== 'boolean')
+      return invalid('Kênh này không có cho tài khoản của bạn.', `channels.${c}`);
+  const catalog = (db.data.notification_events as S['NotificationEvent'][]).filter(
+    (e) => !portal || e.audiences.includes('user'),
+  );
+  for (const [type, list] of Object.entries(b.events ?? {})) {
+    const e = catalog.find((x) => x.type === type);
+    if (!e) return invalid('Sự kiện không có hoặc không dành cho tài khoản này.', `events.${type}`);
+    if (
+      !Array.isArray(list) ||
+      list.some((c) => !allowed.includes(c) || !(e.channels as string[]).includes(c))
+    )
+      return invalid('Kênh không dùng được cho sự kiện này.', `events.${type}`);
+    if (e.in_app_locked && !list.includes('in_app'))
+      return invalid(
+        'Sự kiện mức nghiêm trọng luôn có thông báo trong ứng dụng.',
+        `events.${type}`,
+      );
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------- kênh thông báo (D-103)
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

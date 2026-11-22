@@ -88,6 +88,8 @@ Khi bảng dưới đây khác contract, **contract là chuẩn**. Ghi chú so v
 | Reconcile | `php artisan itso:reconcile [--account=<username>]` tạo job `hosting_account.reconcile` (đẩy lại `account.ensure` + `quota.apply` theo trạng thái mong muốn) để trạng thái observed khớp desired; `make dev` tự chạy sau khi agent sẵn sàng |
 | Dữ liệu demo | `php artisan db:seed --class=DemoSeeder` (từ chối chạy ở production): người dùng, gói, account mẫu; chi tiết ở `docs/runbooks/phase-3-demo.md` |
 
+**If-Match (từ 11.7):** ngoài ETag mạnh trong header, các endpoint rule cảnh báo, user, đích/chính sách backup và tùy chọn thông báo nhận `If-Match: "<updated_at>"` đúng bằng trường `updated_at` API trả về (độ phân giải giây; giao diện và bản demo gửi giá trị này) qua `App\Http\Support\IfMatch`; mốc khác → `412`. Tùy chọn thông báo có ETag chính là `"<updated_at>"`. **SSE job (11.6):** `GET /jobs/{id}/events` — xem ADR 0051.
+
 ## 2. Hosting Provisioning Service (lớp nội bộ)
 
 Đây là lớp domain service trong Laravel (`app/Domain/Hosting/ProvisioningService`), không phải một endpoint. Các method: `createAccount`, `changePackage`, `suspend`, `unsuspend`, `migrate`, `terminate`, `schedulePurge`, `confirmPurge`. Mỗi method kiểm tra quyền và quota, ghi desired state, tạo Job, ghi audit.

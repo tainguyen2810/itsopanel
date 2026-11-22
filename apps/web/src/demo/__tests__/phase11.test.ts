@@ -189,3 +189,54 @@ describe('uptime chỉ trên domain của website (D-105)', () => {
     expect(ev.every((e) => e.channels.every((c) => c === 'in_app' || c === 'email'))).toBe(true);
   });
 });
+
+describe('tùy chọn thông báo: kiểm như API (11.7)', () => {
+  it('Portal không chọn được telegram hay sự kiện chỉ của admin; Admin không chọn webhook; critical luôn in-app', async () => {
+    const tg = await call(
+      'PATCH',
+      P('/notification-preferences'),
+      { events: { 'quota.warning': ['telegram'] } },
+      ANPHAT_USER,
+    );
+    expect(tg.status).toBe(422);
+    const adminOnly = await call(
+      'PATCH',
+      P('/notification-preferences'),
+      { events: { 'security.high': ['in_app'] } },
+      ANPHAT_USER,
+    );
+    expect(adminOnly.status).toBe(422);
+    const okP = await call(
+      'PATCH',
+      P('/notification-preferences'),
+      { events: { 'quota.warning': ['in_app', 'email'] } },
+      ANPHAT_USER,
+    );
+    expect(okP.status, JSON.stringify(okP.body)).toBe(200);
+    const hook = await call('PATCH', A('/notification-preferences'), {
+      events: { 'alert.firing': ['webhook'] },
+    });
+    expect(hook.status).toBe(422);
+    const locked = await call('PATCH', A('/notification-preferences'), {
+      events: { 'security.high': ['email'] },
+    });
+    expect(locked.status).toBe(422);
+    const ev = data<{ channels: string[] }[]>(await call('GET', A('/notification-events')));
+    expect(ev.some((e) => e.channels.includes('webhook'))).toBe(false);
+  });
+  it('webhook IP viết thẳng bị chặn khi lưu, tên miền lưu được (chặn khi gửi như API)', async () => {
+    const base = { type: 'webhook', enabled: true, secret: 'a'.repeat(20) };
+    const meta = await call('POST', A('/notification-channels'), {
+      ...base,
+      name: 'Meta',
+      config: { url: 'https://169.254.169.254/latest', allow_private_network: false },
+    });
+    expect(meta.status).toBe(422);
+    const dns = await call('POST', A('/notification-channels'), {
+      ...base,
+      name: 'Tên miền',
+      config: { url: 'https://hooks.example.vn/itso', allow_private_network: false },
+    });
+    expect(dns.status).toBe(201);
+  });
+});

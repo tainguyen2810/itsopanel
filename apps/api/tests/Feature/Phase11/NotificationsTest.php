@@ -95,6 +95,12 @@ it('SA tạo/sửa/xóa kênh; bí mật không có trong response, audit, deliv
     expect($sa->post('/api/v1/admin/notification-channels', ['type' => 'webhook', 'name' => 'X', 'config' => ['url' => 'https://a.example.test/']])->status())->toBe(422)
         ->and($sa->post('/api/v1/admin/notification-channels', ['type' => 'webhook', 'name' => 'X', 'secret' => P115_SECRET,
             'config' => ['url' => 'http://a.example.test/']])->status())->toBe(422)
+        ->and($sa->post('/api/v1/admin/notification-channels', ['type' => 'webhook', 'name' => 'X', 'secret' => P115_SECRET,
+            'config' => ['url' => 'https://127.0.0.1/x', 'allow_private_network' => true]])->status())->toBe(422)
+        ->and($sa->post('/api/v1/admin/notification-channels', ['type' => 'webhook', 'name' => 'X', 'secret' => P115_SECRET,
+            'config' => ['url' => 'https://169.254.169.254/latest']])->status())->toBe(422)
+        ->and($sa->post('/api/v1/admin/notification-channels', ['type' => 'webhook', 'name' => 'X', 'secret' => P115_SECRET,
+            'config' => ['url' => 'https://10.1.2.3/x']])->status())->toBe(422)
         ->and($sa->post('/api/v1/admin/notification-channels', ['type' => 'telegram', 'name' => 'TG', 'secret' => P115_TOKEN,
             'config' => ['chat_id' => 'abc']])->status())->toBe(422)
         ->and($sa->post('/api/v1/admin/notification-channels', ['type' => 'email', 'name' => 'Webhook trực ca',
@@ -135,7 +141,7 @@ it('SA tạo/sửa/xóa kênh; bí mật không có trong response, audit, deliv
         ->and(NotificationDelivery::query()->count())->toBe(0);
 });
 
-it('SSRF guard: webhook tới 127.0.0.1, 169.254.169.254, tên miền ra IP riêng → blocked, không gửi; bật mạng riêng → gửi', function () {
+it('SSRF guard khi gửi (kênh đã lưu trước, DNS đổi): 127.0.0.1, 169.254.169.254, tên miền ra IP riêng → blocked, không gửi; bật mạng riêng → gửi', function () {
     $a = new Actors($this);
     p115dns();
     Http::fake(['*' => Http::response('ok', 200)]);

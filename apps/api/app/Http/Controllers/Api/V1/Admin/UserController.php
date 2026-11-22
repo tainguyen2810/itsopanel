@@ -10,6 +10,7 @@ use App\Domain\Audit\AuditLogger;
 use App\Domain\Users\UserService;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\UserPresenter;
+use App\Http\Support\IfMatch;
 use App\Http\Support\Listing;
 use App\Models\HostingAccount;
 use App\Models\MfaCredential;
@@ -103,10 +104,7 @@ final class UserController
         $user = $this->target($request, $id);
         $this->requireManageable($actor, $user);
         $etag = self::etag($user);
-        $ifMatch = $request->header('If-Match');
-        if (is_string($ifMatch) && $ifMatch !== '' && $ifMatch !== $etag) {
-            throw new ApiProblem(412, 'precondition_failed', 'Phiên bản đã thay đổi', 'Tải lại user rồi sửa lại.');
-        }
+        IfMatch::check($request, $etag, $user->updated_at, 'Phiên bản đã thay đổi');
         $in = $request->validate([
             'name' => ['sometimes', 'string', 'min:1', 'max:120'],
             'email' => ['sometimes', 'string', 'email', 'max:254'],

@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.7 (UI Monitoring/Alerts/Notifications nối API thật) — nhánh `phase-11`
+
+Phạm vi: đối chiếu mọi đường dẫn API các màn 11.0 dùng (client sinh từ OpenAPI) với `route:list` — đủ. Sửa lệch giữa giao diện và API thật: giao diện gửi `If-Match: "<updated_at>"` còn API so ETag riêng → PATCH rule cảnh báo, tùy chọn thông báo (và **lỗi có từ trước** ở sửa user, đích/chính sách backup) sẽ luôn 412 trên stack thật; thêm `App\Http\Support\IfMatch` nhận ETag mạnh hoặc mốc `updated_at`, ETag tùy chọn = `"<updated_at>"`. Danh mục sự kiện ở API khớp bản demo, chỉ kênh cá nhân (bỏ `webhook` khỏi `alert.firing`, webhook đi theo rule); `account.unsuspended` chỉ USER. Webhook có IP viết thẳng loopback/link-local/metadata (hoặc mạng riêng khi chưa bật) bị từ chối khi lưu như giao diện; tên miền vẫn kiểm khi gửi. MSW: tùy chọn kiểm như API (Portal chỉ in_app + email, sự kiện ngoài danh mục realm → 422, critical luôn in-app, gộp `events` thay vì thay toàn bộ), SSE job một khung.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest | `vendor/bin/pest --parallel` | **534/534 PASS** (mới `Phase11/UiApiTest.php` 2 test: If-Match `updated_at` cho rule/user/tùy chọn, mốc cũ và rác → 412, ETag mạnh vẫn dùng được; danh mục chỉ kênh cá nhân, gửi lại toàn bộ tùy chọn như giao diện; `NotificationsTest` thêm 3 ca IP viết thẳng → 422) |
+| Vitest | `npx vitest run` | **623/623 PASS** (thêm 2 test MSW tùy chọn + webhook) |
+| Playwright demo | `playwright test e2e/demo-audit.spec.ts e2e/demo-smoke.spec.ts --grep "monitoring\|notifications\|jobs\|dashboard"` · `e2e/demo-security7.spec.ts e2e/demo-core.spec.ts` · `e2e/screenshots-phase11.spec.ts --grep "notification-prefs\|channel"` | **26/26**, **8/8**, **20/20 PASS** (axe 0 critical/serious sáng/tối, 390px không tràn, EN không lẫn tiếng Việt; drawer job qua SSE của MSW không lỗi console; ảnh không đổi) |
+| Lint | `make lint-web` (ESLint, Prettier, check-i18n 3499 key vi = en) · `pint` · `phpstan` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.6 (SSE sự kiện job, dashboard dữ liệu thật) — nhánh `phase-11`
 
 Phạm vi: `JobLog` phát mỗi dòng log lên Redis `PUBLISH itso:job:<uuid>` (`App\Domain\Jobs\JobEvents`, lỗi Redis không làm hỏng job). `GET /jobs/{id}/events` (admin + portal) là SSE thật: `retry: 2000`, snapshot `event: job` đầu tiên, sau đó `event: log` (id = seq log, tăng dần) và `event: job` khi trạng thái/tiến độ đổi; `Last-Event-ID` bỏ sự kiện đã nhận; heartbeat `: ping` 15 giây; đóng khi job kết thúc hoặc sau 300 giây; quyền như `GET /jobs/{id}`. Contract `streamJobEvents` mô tả khung + header `Last-Event-ID` (codegen lại). Web: `useJobEvents` (EventSource, ghi cache React Query; lỗi lặp → poll 2 giây) dùng trong drawer theo dõi job và trang chi tiết job; dashboard và chuông thông báo poll 30 giây; MSW trả một khung SSE (EventSource tự nối lại). Dashboard: `alerts_firing` và `security_events_24h` thật theo phạm vi (bỏ giá trị 0 tạm).

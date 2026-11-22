@@ -5,6 +5,7 @@ import type { DemoDb } from '../db';
 import { get as pick, page } from '../list';
 import { created, noContent, ok, on, problem, type Ctx, type Reply } from '../router';
 import { canSeeAccount, canSeeServer, scopeRows, visibility } from '../scope';
+import { prefsError } from './monitoring';
 import { needServer, sshState } from './security';
 import { actorRef, startJob } from './writes';
 
@@ -1546,14 +1547,10 @@ function registerOps() {
     const pre = precondition(ctx, cur.updated_at);
     if (pre) return pre;
     const b = body<S['NotificationPreferences']>(ctx);
-    const CH = ['email', 'telegram', 'in_app'];
-    if (b.channels && !Object.keys(b.channels).every((k) => CH.includes(k)))
-      return invalid('Kênh thông báo không hợp lệ.');
-    for (const list of Object.values(b.events ?? {})) {
-      if (!list.every((c) => CH.includes(c))) return invalid('Kênh thông báo không hợp lệ.');
-    }
+    const err = prefsError(ctx.db, b, false);
+    if (err) return err;
     if (b.channels) cur.channels = { ...cur.channels, ...b.channels };
-    if (b.events) cur.events = { ...b.events };
+    if (b.events) cur.events = { ...cur.events, ...b.events };
     cur.updated_at = ctx.db.now();
     return ok(cur);
   });

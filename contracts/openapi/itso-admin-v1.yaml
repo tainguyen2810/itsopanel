@@ -10486,7 +10486,6 @@ paths:
                   - in_app
                   - email
                   - telegram
-                  - webhook
                   in_app_locked: false
                 - type: alert.resolved
                   group: monitoring

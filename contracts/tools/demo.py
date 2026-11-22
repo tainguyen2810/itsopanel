@@ -1787,7 +1787,7 @@ _ALL = ["super_admin", "admin"]
 NOTIFICATION_EVENTS = [
     {"type": t, "group": g, "severity": sev, "audiences": aud, "channels": ch, "in_app_locked": sev == "critical"}
     for t, g, sev, aud, ch in [
-        ("alert.firing", "monitoring", "high", _ALL, ["in_app", "email", "telegram", "webhook"]),
+        ("alert.firing", "monitoring", "high", _ALL, ["in_app", "email", "telegram"]),
         ("alert.resolved", "monitoring", "info", _ALL, ["in_app", "email"]),
         ("server.unreachable", "monitoring", "critical", _ALL, ["in_app", "email", "telegram"]),
         ("website.down", "monitoring", "high", _ALL + ["user"], ["in_app", "email"]),

@@ -11,6 +11,7 @@ use App\Domain\Monitoring\AlertMetrics;
 use App\Domain\Monitoring\DefaultAlertRules;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\MonitoringPresenter;
+use App\Http\Support\IfMatch;
 use App\Http\Support\Listing;
 use App\Http\Support\OffsetPage;
 use App\Models\Alert;
@@ -81,10 +82,7 @@ final class MonitoringController
     public function updateRule(Request $request, string $id): JsonResponse
     {
         $r = $this->findRule($id);
-        $m = $request->header('If-Match');
-        if (is_string($m) && $m !== '' && $m !== MonitoringPresenter::ruleEtag($r)) {
-            throw new ApiProblem(412, 'precondition_failed', 'Rule đã thay đổi', 'Tải lại rồi sửa lại.');
-        }
+        IfMatch::check($request, MonitoringPresenter::ruleEtag($r), $r->updated_at, 'Rule đã thay đổi');
         $in = $this->ruleInput($request, $r);
         if ($r->is_default) {
             foreach (['metric', 'scope_type', 'scope_id'] as $k) {

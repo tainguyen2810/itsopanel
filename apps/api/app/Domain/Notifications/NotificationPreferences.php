@@ -63,7 +63,8 @@ final class NotificationPreferences
     /** @param  array<string, mixed>  $prefs */
     public static function etag(array $prefs): string
     {
-        return '"'.sha1(json_encode($prefs, JSON_THROW_ON_ERROR)).'"';
+        // Như bản demo và giao diện: If-Match = "<updated_at>".
+        return '"'.(string) $prefs['updated_at'].'"';
     }
 
     /**

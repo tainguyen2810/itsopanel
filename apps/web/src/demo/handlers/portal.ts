@@ -5,6 +5,7 @@ import { created, noContent, ok, on, problem, type ApiPath, type Ctx } from '../
 import { canSeeAccount, visibility } from '../scope';
 import { ADMIN_LISTS, accountOr404, logsOf, registerListSpecs, type ListSpec } from './admin';
 import { registerBackupAccess } from './governance';
+import { prefsError } from './monitoring';
 import { registerSites } from './sites';
 import { actorRef, jobActions, sseSnapshot } from './writes';
 
@@ -309,13 +310,10 @@ export function registerPortal() {
     if (want && want !== cur.updated_at)
       return problem(412, 'precondition_failed', 'Dữ liệu đã thay đổi, tải lại rồi thử lại');
     const b = (ctx.body ?? {}) as Partial<Prefs>;
-    const CH = ['email', 'telegram', 'in_app'];
-    if (b.channels && !Object.keys(b.channels).every((k) => CH.includes(k)))
-      return invalid('Kênh thông báo không hợp lệ.');
-    for (const list of Object.values(b.events ?? {}))
-      if (!list.every((c) => CH.includes(c))) return invalid('Kênh thông báo không hợp lệ.');
+    const err = prefsError(ctx.db, b, true);
+    if (err) return err;
     if (b.channels) cur.channels = { ...cur.channels, ...b.channels };
-    if (b.events) cur.events = { ...b.events };
+    if (b.events) cur.events = { ...cur.events, ...b.events };
     cur.updated_at = ctx.db.now();
     return ok(cur);
   });
