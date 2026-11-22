@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Jobs;
 
 use App\Domain\Backup\DisasterRecovery;
+use App\Domain\WordPress\WordPressSecrets;
 use App\Models\BackupDestination;
 use App\Models\BackupRepository;
 use App\Models\Certificate;
@@ -90,6 +91,10 @@ final class Secrets
         }
         // Khôi phục thảm họa (D-87): bí mật tạm của wizard trong Cache (Crypt), xóa khi job setup.restore xong.
         if ($kind === DisasterRecovery::SECRET_KIND && ($v = DisasterRecovery::secret($uuid)) !== null) {
+            return $v;
+        }
+        // WordPress (D-99): mật khẩu admin một lần (cài, đổi mật khẩu) giữ tạm trong Cache.
+        if ($kind === WordPressSecrets::KIND && ($v = WordPressSecrets::get($uuid)) !== null) {
             return $v;
         }
         // Mật khẩu DB user / FTP-SFTP (D-71, D-73): lưu mã hóa trong panel, chỉ giải ngay trước khi gửi agent.

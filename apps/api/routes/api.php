@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\V1\Shared\DatabaseController;
 use App\Http\Controllers\Api\V1\Shared\FileController;
 use App\Http\Controllers\Api\V1\Shared\TerminalController;
 use App\Http\Controllers\Api\V1\Shared\WebsiteController;
+use App\Http\Controllers\Api\V1\Shared\WordPressController;
 use App\Http\Controllers\Api\V1\SystemController;
 use Illuminate\Support\Facades\Route;
 
@@ -309,6 +310,18 @@ Route::prefix('v1')->group(function (): void {
             Route::post('certificates/{id}:renew', [CertificateController::class, 'renew'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
             Route::delete('certificates/{id}', [CertificateController::class, 'destroy'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
             Route::post('websites/{id}/certificates', [CertificateController::class, 'store'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            // ---- WordPress (Prompt 10.6, D-99).
+            Route::get('wordpress/sites', [WordPressController::class, 'index'])->middleware('itso.perm:websites.read');
+            Route::post('wordpress/sites', [WordPressController::class, 'store'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites:scan', [WordPressController::class, 'scan'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('wordpress/sites/{id}', [WordPressController::class, 'show'])->middleware('itso.perm:websites.read');
+            Route::patch('wordpress/sites/{id}', [WordPressController::class, 'update'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('wordpress/sites/{id}/updates', [WordPressController::class, 'updates'])->middleware('itso.perm:websites.read');
+            Route::post('wordpress/sites/{id}:update', [WordPressController::class, 'runUpdate'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:clone-staging', [WordPressController::class, 'cloneStaging'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:harden', [WordPressController::class, 'harden'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:maintenance', [WordPressController::class, 'maintenance'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:admin-password', [WordPressController::class, 'adminPassword'])->middleware(['itso.perm:websites.write', 'itso.step-up', 'itso.idempotent']);
             // ---- DNS Cloudflare (Prompt 5.4, D-70)
             Route::get('dns/providers', [DnsController::class, 'providers'])->middleware('itso.perm:dns.read');
             Route::post('dns/providers', [DnsController::class, 'storeProvider'])->middleware('itso.perm:dns.providers');
@@ -439,6 +452,18 @@ Route::prefix('v1')->group(function (): void {
             Route::post('certificates/{id}:renew', [CertificateController::class, 'renew'])->middleware(['itso.idempotent']);
             Route::delete('certificates/{id}', [CertificateController::class, 'destroy'])->middleware(['itso.idempotent']);
             Route::post('websites/{id}/certificates', [CertificateController::class, 'store'])->middleware(['itso.idempotent']);
+            // ---- WordPress (Prompt 10.6, D-99).
+            Route::get('wordpress/sites', [WordPressController::class, 'index']);
+            Route::post('wordpress/sites', [WordPressController::class, 'store'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites:scan', [WordPressController::class, 'scan'])->middleware(['itso.idempotent']);
+            Route::get('wordpress/sites/{id}', [WordPressController::class, 'show']);
+            Route::patch('wordpress/sites/{id}', [WordPressController::class, 'update'])->middleware(['itso.idempotent']);
+            Route::get('wordpress/sites/{id}/updates', [WordPressController::class, 'updates']);
+            Route::post('wordpress/sites/{id}:update', [WordPressController::class, 'runUpdate'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:clone-staging', [WordPressController::class, 'cloneStaging'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:harden', [WordPressController::class, 'harden'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:maintenance', [WordPressController::class, 'maintenance'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:admin-password', [WordPressController::class, 'adminPassword'])->middleware(['itso.step-up', 'itso.idempotent']);
             // ---- Dữ liệu hosting (Prompt 6.3): database, SFTP/FTPS, khóa SSH, cron, File Manager
             Route::get('databases', [DatabaseController::class, 'index']);
             Route::post('databases', [DatabaseController::class, 'store'])->middleware('itso.idempotent');

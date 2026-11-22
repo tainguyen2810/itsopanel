@@ -3060,6 +3060,7 @@ type WpInfoResult struct {
 	Components  []WpComponentInfo     `json:"components"`
 	Hardening   WpInfoResultHardening `json:"hardening"`
 	ChecksumsOK *bool                 `json:"checksums_ok"`
+	DBName      json.RawMessage       `json:"db_name"`
 }
 
 // WpInstallParamsDB được sinh từ schema.

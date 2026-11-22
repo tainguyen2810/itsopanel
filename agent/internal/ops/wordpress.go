@@ -283,6 +283,7 @@ var (
 	reWPVersion   = regexp.MustCompile(`\$wp_version\s*=\s*'([0-9][0-9A-Za-z.\-]{0,30})'`)
 	reWPMultisite = regexp.MustCompile(`(?i)define\(\s*['"]MULTISITE['"]\s*,\s*true\s*\)`)
 	reWPFileEdit  = regexp.MustCompile(`(?i)define\(\s*['"]DISALLOW_FILE_EDIT['"]\s*,\s*true\s*\)`)
+	reWPDBName    = regexp.MustCompile(`define\(\s*['"]DB_NAME['"]\s*,\s*['"]([a-z][a-z0-9_]{0,63})['"]\s*\)`)
 )
 
 // ---------- wp.detect ----------
@@ -497,6 +498,10 @@ func (d *Deps) wpInfo(ctx context.Context, env *envelope.Envelope) (map[string]a
 		return nil, err
 	}
 	out.Multisite = reWPMultisite.Match(cfg)
+	out.DBName = json.RawMessage("null")
+	if m := reWPDBName.FindSubmatch(cfg); m != nil {
+		out.DBName = rawStr(string(m[1]))
+	}
 	if res, err := d.wp(ctx, s, 30, nil, "maintenance-mode", "is-active"); err == nil {
 		out.Maintenance = res.ExitCode == 0
 	}

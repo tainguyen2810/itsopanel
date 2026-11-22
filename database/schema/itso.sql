@@ -712,6 +712,8 @@ CREATE TABLE "wordpress_sites" (
   "checksums_ok" boolean,
   "last_scan_at" timestamptz,
   "last_update_at" timestamptz,
+  "database_id" bigint,
+  "last_auto_update_at" timestamptz,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now()),
   "deleted_at" timestamptz
@@ -1771,6 +1773,10 @@ COMMENT ON COLUMN "wordpress_sites"."hardening" IS 'file_edit_disabled, xmlrpc_b
 
 COMMENT ON COLUMN "wordpress_sites"."staging_of_id" IS 'Bản staging trỏ về site gốc; đẩy staging → production DEFERRED';
 
+COMMENT ON COLUMN "wordpress_sites"."database_id" IS 'DB của site (DB_NAME trong wp-config); snapshot pre-wp-update gồm DB này';
+
+COMMENT ON COLUMN "wordpress_sites"."last_auto_update_at" IS 'Lần tự cập nhật gần nhất (scheduler chạy tối đa một lần mỗi cửa sổ)';
+
 COMMENT ON TABLE "wordpress_components" IS 'Cache wp.info: core, plugin, theme và bản mới.';
 
 COMMENT ON COLUMN "wordpress_components"."type" IS 'core|plugin|theme';
@@ -2162,6 +2168,8 @@ ALTER TABLE "wordpress_sites" ADD FOREIGN KEY ("website_id") REFERENCES "website
 ALTER TABLE "wordpress_sites" ADD FOREIGN KEY ("hosting_account_id") REFERENCES "hosting_accounts" ("id");
 
 ALTER TABLE "wordpress_sites" ADD FOREIGN KEY ("staging_of_id") REFERENCES "wordpress_sites" ("id");
+
+ALTER TABLE "wordpress_sites" ADD FOREIGN KEY ("database_id") REFERENCES "databases" ("id");
 
 ALTER TABLE "wordpress_components" ADD FOREIGN KEY ("wordpress_site_id") REFERENCES "wordpress_sites" ("id");
 

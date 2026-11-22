@@ -16,6 +16,8 @@ use App\Domain\Servers\SoftwareJobHandler;
 use App\Domain\Web\CertificateJobHandler;
 use App\Domain\Web\ServerWebJobHandler;
 use App\Domain\Web\WebsiteJobHandler;
+use App\Domain\WordPress\WordPressJobHandler;
+use App\Domain\WordPress\WordPressService;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
@@ -86,7 +88,8 @@ return [
       + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class)
       + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class)
       + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class)
-      + array_fill_keys(DockerJobHandler::TYPES, DockerJobHandler::class),
+      + array_fill_keys(DockerJobHandler::TYPES, DockerJobHandler::class)
+      + array_fill_keys(WordPressService::TYPES, WordPressJobHandler::class),
 
     // Docker (Phase 10, D-94…D-98): giao diện mạng công khai cho DOCKER-USER; giới hạn mặc định chèn vào service
     // compose thiếu limit; số bản rollback image giữ lại mỗi service.

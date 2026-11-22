@@ -37,3 +37,7 @@ Schedule::command('itso:dr-restore')->everyFiveMinutes()->withoutOverlapping();
 
 // Phase 10: catalog phần mềm + bản mới từ agent (D-100).
 Schedule::command('itso:software-refresh')->dailyAt('05:23')->withoutOverlapping();
+
+// Phase 10: WordPress Toolkit (D-99) — làm mới bản mới hằng ngày, tự cập nhật theo cửa sổ giờ (kiểm mỗi giờ).
+Schedule::command('itso:wordpress-auto-update --refresh')->dailyAt('01:37')->withoutOverlapping();
+Schedule::command('itso:wordpress-auto-update')->hourlyAt(5)->withoutOverlapping();

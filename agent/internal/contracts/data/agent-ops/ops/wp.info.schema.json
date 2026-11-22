@@ -76,6 +76,16 @@
             "boolean",
             "null"
           ]
+        },
+        "db_name": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/DbName"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -85,7 +95,8 @@
         "maintenance",
         "components",
         "hardening",
-        "checksums_ok"
+        "checksums_ok",
+        "db_name"
       ],
       "additionalProperties": false
     }

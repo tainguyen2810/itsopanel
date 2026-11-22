@@ -372,6 +372,8 @@ t("hosting", "wordpress_sites", ID + [
     "hardening jsonb [not null, default: `'{}'::jsonb`, note: 'file_edit_disabled, xmlrpc_blocked, php_in_uploads_blocked, wp_config_protected, version_hidden, salts_rotated']",
     "staging_of_id bigint [ref: > wordpress_sites.id, note: 'Bản staging trỏ về site gốc; đẩy staging → production DEFERRED']",
     "checksums_ok boolean", "last_scan_at timestamptz", "last_update_at timestamptz",
+    "database_id bigint [ref: > databases.id, note: 'DB của site (DB_NAME trong wp-config); snapshot pre-wp-update gồm DB này']",
+    "last_auto_update_at timestamptz [note: 'Lần tự cập nhật gần nhất (scheduler chạy tối đa một lần mỗi cửa sổ)']",
 ] + TS + SOFT, ["hosting_account_id", "staging_of_id"], "Site WordPress do Toolkit quản lý (D-99, ADR 0044).")
 t("hosting", "wordpress_components", IDN + [
     "wordpress_site_id bigint [not null, ref: > wordpress_sites.id]",

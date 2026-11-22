@@ -7,6 +7,7 @@ namespace App\Domain\Web;
 use App\Domain\Data\DataSpec;
 use App\Domain\Hosting\ProvisioningService;
 use App\Domain\Jobs\JobSpec;
+use App\Domain\WordPress\WordPressService;
 use App\Exceptions\ApiProblem;
 use App\Models\Certificate;
 use App\Models\HostingAccount;
@@ -164,6 +165,9 @@ final class WebsiteSpec
         }
         if ($w->type === 'proxy' || $w->type === 'docker') {
             $p['proxy_port'] = self::proxyPort($w);
+        }
+        if (($wpFlags = WordPressService::vhostFlags($w)) !== null) {
+            $p['wp_hardening'] = $wpFlags; // WordPress Toolkit (10.6): chặn xmlrpc.php / PHP trong uploads
         }
         $cert = $cert === null ? self::certificate($w) : ($cert === false ? null : $cert);
         if ($cert !== null) {

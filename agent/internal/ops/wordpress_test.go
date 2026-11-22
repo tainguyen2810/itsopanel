@@ -82,7 +82,7 @@ func TestWPInstallInfoDetect(t *testing.T) {
 	e.h.Fail(contracts.OpWpInstall, wpInstallParams("sites/anphat.vn/public"), "already_exists")
 
 	info := e.h.OK(contracts.OpWpInfo, map[string]any{"site": wpSite("sites/anphat.vn/public")})
-	if info["version"] != "6.6.2" || info["site_url"] != "https://anphat.vn" || info["maintenance"] != false || info["checksums_ok"] != true {
+	if info["version"] != "6.6.2" || info["site_url"] != "https://anphat.vn" || info["maintenance"] != false || info["checksums_ok"] != true || info["db_name"] != "anphat_wp" {
 		t.Fatal(info)
 	}
 	comps := info["components"].([]any)

@@ -25,6 +25,7 @@ use App\Models\SftpAccount;
 use App\Models\SshKey;
 use App\Models\User;
 use App\Models\Website;
+use App\Models\WordPressSite;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -50,6 +51,7 @@ final class JobPresenter
         'account_migration' => AccountMigration::class,
         'compose_project' => ComposeProject::class,
         'registry' => Registry::class,
+        'wordpress_site' => WordPressSite::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */
