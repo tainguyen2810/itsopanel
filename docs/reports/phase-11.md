@@ -39,14 +39,17 @@
 
 ## 4. Kết quả test
 
-`make check`: xem `TEST_REPORT.md` (Prompt 11.8).
+`make check` (2026-11-22, PostgreSQL 16 + Redis cục bộ): **21 PASS · 1 SKIP (staticcheck) · 1 FAIL** (1 396 s); FAIL là `codegen-check` do file sinh sau khi sửa `demo.py` ở 11.7 chưa được commit (chỉ ví dụ), đã `make codegen` và commit `aa3457f`, `codegen-check` OK. Chi tiết ở `TEST_REPORT.md` (Prompt 11.8).
 
 | Bộ test | Kết quả |
 |---|---|
 | Pest (PostgreSQL 16 + Redis) | 536/536 (Phase 11: 31 test trong `Phase11/*`) |
-| Go (agent) | PASS |
+| Go (agent) + fuzz | PASS |
 | Vitest | 623/623 |
-| Playwright stack thật | `phase11.spec.ts` 5/5; toàn bộ: xem TEST_REPORT |
+| Playwright (demo MSW + Design System + mockup, gồm axe) | 708/708 |
+| Playwright stack thật (`make test-e2e-real`, DB sạch) | **32/32** (22,7 phút), gồm 5 luồng mới Phase 11 |
+| db-verify · lint · no-exec · installer · unit systemd | xanh (db-verify 178, migration Phase 3 → 11 khớp) |
+| `make release` | `build/release/0.5.0-beta` ký Ed25519 (khóa DEV tạm), SBOM; thiếu `frankenphp` như alpha |
 | Script VM | `bash -n tests/vm/phase11.sh` OK; M0–M5 **chờ VM** |
 
 E2E stack thật Phase 11 (`e2e-real/phase11.spec.ts`, agent sandbox, 3,6 phút):

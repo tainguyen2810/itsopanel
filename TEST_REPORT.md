@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.8 (Tích hợp: e2e stack thật, VM, review bảo mật, make check, v0.5.0-beta) — nhánh `phase-11`
+
+Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue `default,notifications` + Vite + itso-agent `--sandbox` + node sandbox), DB `migrate:fresh --seed` + `DemoSeeder`. Webhook giả nghe trên IP dải riêng `10.99.0.1` thêm vào `lo` (SsrfGuard chặn loopback và `192.0.2.0/24` của container); SMTP giả Node trên `127.0.0.1:2525`. Container không có cgroup v2/systemd/nftables thật: `tests/vm/phase11.sh` **chờ VM**.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 11 | `playwright test -c playwright.real.config.ts e2e-real/phase11.spec.ts` | **5/5 PASS** (3,6 phút): số liệu server từ agent sandbox, RAM account = `memory.current` của cgroup giả; disk 92 % → firing < 120 giây → webhook nhận tin ký HMAC đúng + SMTP giả nhận thư (link `/admin/monitoring/alerts`) → 80 % → resolved; `offline=true` → "Server mất kết nối" < 120 giây → resolved; uptime down sau 3 lần → cảnh báo, Portal thấy `down` → up; USER không có rule/kênh/deliveries/alerts |
+| E2E stack thật toàn bộ (DB sạch) | `make test-e2e-real` | **32/32 PASS** (22,7 phút). Lượt trước trên DB cũ 27/32: thư của rule khác đến trước (spec chọn thư disk), mẫu disk giả còn lại làm wizard Phase 3 loại server (spec thu mẫu thật ở `afterAll`) |
+| Lỗi e2e tìm ra | — | (1) webhook **500** trên stack thật: `'stream' => true` chuyển Guzzle sang StreamHandler, từ chối `CURLOPT_RESOLVE` (Pest dùng `Http::fake` nên không thấy) → bỏ `stream`, body ≤ 64 KB bằng callback progress, thêm `WebhookTransportTest` (HTTP thật qua `php -S`); (2) webhook đi qua `HTTPS_PROXY` của môi trường, mất ghim IP → `proxy=''`; (3) Cài đặt SMTP không xóa trống `username` (`""` → `null` → 422); (4) link email/Telegram thiếu `/admin`, `/portal`; (5) review bảo mật: trần 200 rule tự tạo (409). Mỗi lỗi có test hồi quy |
+| Pest | `vendor/bin/pest --parallel` | **536/536 PASS** (mới `WebhookTransportTest`, rule thứ 201 → 409; `itso:uptime-probe --all`; Settings xóa trống chuỗi; link theo realm; proxy rỗng + ghim IP) |
+| `make check` | `make check` | **21 PASS · 1 SKIP (staticcheck) · 1 FAIL** (1 396 s): `codegen-check` lệch vì file sinh sau khi sửa `demo.py` ở 11.7 chưa commit (chỉ ví dụ trong comment/JSON) → `make codegen`, commit `aa3457f`, `make codegen-check` **OK**. Trong đó: Pest 536/536, Vitest 623/623, Playwright demo + mockup 708/708, Go + fuzz PASS, db-verify 178 + migration Phase 3 → 11 khớp, lint web/api/agent, no-exec, installer, unit systemd |
+| Release | `make release` | `build/release/0.5.0-beta`: tarball, `itso`, `install.sh`, SBOM, `manifest.json` + `manifest.sig` (khóa DEV tạm); thiếu `frankenphp` (như alpha, ghi `missing_components`) |
+| Script VM | `bash -n tests/vm/phase11.sh` | OK; M0–M5 **chờ VM** |
+
+**Test bị bỏ qua:** không (staticcheck chưa cài trên container, như các Phase trước).
+
 ## 2026-11-22 — Phase 11 / Prompt 11.7 (UI Monitoring/Alerts/Notifications nối API thật) — nhánh `phase-11`
 
 Phạm vi: đối chiếu mọi đường dẫn API các màn 11.0 dùng (client sinh từ OpenAPI) với `route:list` — đủ. Sửa lệch giữa giao diện và API thật: giao diện gửi `If-Match: "<updated_at>"` còn API so ETag riêng → PATCH rule cảnh báo, tùy chọn thông báo (và **lỗi có từ trước** ở sửa user, đích/chính sách backup) sẽ luôn 412 trên stack thật; thêm `App\Http\Support\IfMatch` nhận ETag mạnh hoặc mốc `updated_at`, ETag tùy chọn = `"<updated_at>"`. Danh mục sự kiện ở API khớp bản demo, chỉ kênh cá nhân (bỏ `webhook` khỏi `alert.firing`, webhook đi theo rule); `account.unsuspended` chỉ USER. Webhook có IP viết thẳng loopback/link-local/metadata (hoặc mạng riêng khi chưa bật) bị từ chối khi lưu như giao diện; tên miền vẫn kiểm khi gửi. MSW: tùy chọn kiểm như API (Portal chỉ in_app + email, sự kiện ngoài danh mục realm → 422, critical luôn in-app, gộp `events` thay vì thay toàn bộ), SSE job một khung.

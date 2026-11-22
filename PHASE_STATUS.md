@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` (kế hoạch `docs/planning/seed/PHASE_11_PROMPTS.md`, D-101 → D-107 đề xuất; đang làm trên nhánh `phase-11`, người dùng chọn bắt đầu 2026-11-22). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 11.8 Tích hợp và phát hành (11.0–11.7 ✓)
-- **Task đang làm:** 11.8
+- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` ✓ hoàn tất phần không cần VM, **chờ duyệt** (báo cáo `docs/reports/phase-11.md`, release notes `docs/releases/v0.5.0-beta.md`; merge `--no-ff` vào `main`, tag local `v0.5.0-beta`). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** — (11.0–11.8 ✓)
+- **Task đang làm:** không; DỪNG trước Phase 12, chờ người dùng duyệt Phase 11
 - **Commit cuối:** xem `git log -1` trên `main`
-- **Bước tiếp theo:** làm hàng loạt 11.1 → 11.8, tự merge, phát hành `v0.5.0-beta` (tag local), DỪNG trước Phase 12; chạy `tests/vm/phase4–10.sh` khi có VM
+- **Bước tiếp theo:** người dùng duyệt Phase 11 / `v0.5.0-beta`, rồi chọn bắt đầu Phase 12; chạy `tests/vm/phase4–11.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -26,7 +26,7 @@
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
-| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✱ đang làm (nhánh `phase-11`) |
+| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✓ chờ duyệt (báo cáo `docs/reports/phase-11.md`; `v0.5.0-beta` tag local; tiêu chí cần VM: chờ VM) |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
@@ -41,7 +41,7 @@ Phase 11 (bắt đầu 2026-11-22, nhánh `phase-11`) — prompt chi tiết: `do
 - ✓ 11.5 Notifications: email/Telegram/webhook, SSRF guard, định tuyến, sự kiện USER
 - ✓ 11.6 Realtime job SSE, dashboard dữ liệu thật
 - ✓ 11.7 UI nối API thật
-- ✱ 11.8 e2e, VM Phase 11, review bảo mật, báo cáo, `v0.5.0-beta`, merge
+- ✓ 11.8 e2e stack thật Phase 11 (5 luồng; toàn bộ 32/32 trên DB sạch), `tests/vm/phase11.sh` (M0–M5 chờ VM), review bảo mật, runbook, 5 lỗi e2e tìm ra đã sửa, `make check` (21 PASS · 1 SKIP · codegen-check sửa xong), `make release`, báo cáo, merge, tag local `v0.5.0-beta`
 
 Phase 10: ✓ APPROVED 2026-11-22 (merge `ea528c9`) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`
 
