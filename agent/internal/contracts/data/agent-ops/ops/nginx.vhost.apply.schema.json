@@ -120,6 +120,25 @@
         },
         "suspended": {
           "type": "boolean"
+        },
+        "wp_hardening": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "xmlrpc_blocked": {
+              "type": "boolean"
+            },
+            "php_in_uploads_blocked": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "xmlrpc_blocked",
+            "php_in_uploads_blocked"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

@@ -28,6 +28,7 @@ type Sim struct {
 	sec       *secSim              // nft, fail2ban-client (Phase 7)
 	// Docker: engine giả cho `docker compose` (Phase 10). Nil = docker chưa cài.
 	Docker *docker.Fake
+	wp     *wpSim // WP-CLI (Phase 10)
 }
 
 // NewSim tạo trình mô phỏng trên fs. Dịch vụ (.service, .timer) mặc định đang chạy; slice chưa chạy.
@@ -75,6 +76,9 @@ func fail(code int, msg string) platform.Result {
 func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
 	if c.Bin == "docker" {
 		return s.dockerCLI(c), true
+	}
+	if isWPCLI(c) {
+		return s.wpHandle(c), true
 	}
 	if r, handled := s.sec.handle(c); handled {
 		return r, true

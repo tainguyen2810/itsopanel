@@ -19,12 +19,53 @@
         },
         "minor_only": {
           "type": "boolean"
+        },
+        "snapshot": {
+          "type": "object",
+          "properties": {
+            "repo": {
+              "$ref": "../defs.schema.json#/$defs/BackupRepo"
+            },
+            "db": {
+              "oneOf": [
+                {
+                  "$ref": "../defs.schema.json#/$defs/BackupDb"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "$ref": "../defs.schema.json#/$defs/BackupTag"
+              },
+              "maxItems": 10,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "repo",
+            "db",
+            "tags"
+          ],
+          "additionalProperties": false
+        },
+        "check_scheme": {
+          "type": "string",
+          "enum": [
+            "http",
+            "https"
+          ]
         }
       },
       "required": [
         "site",
         "components",
-        "minor_only"
+        "minor_only",
+        "snapshot",
+        "check_scheme"
       ],
       "additionalProperties": false
     },
@@ -87,11 +128,44 @@
         },
         "checksums_ok": {
           "type": "boolean"
+        },
+        "http_status": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 599
+        },
+        "snapshot_id": {
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "db_snapshot_id": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rolled_back": {
+          "type": "boolean"
+        },
+        "rollback_error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
         }
       },
       "required": [
         "results",
-        "checksums_ok"
+        "checksums_ok",
+        "http_status",
+        "snapshot_id",
+        "db_snapshot_id",
+        "rolled_back",
+        "rollback_error"
       ],
       "additionalProperties": false
     }

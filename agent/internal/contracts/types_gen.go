@@ -2324,6 +2324,12 @@ type NginxVhostApplyParamsRedirectsItem struct {
 	Code string `json:"code"`
 }
 
+// NginxVhostApplyParamsWpHardening được sinh từ schema.
+type NginxVhostApplyParamsWpHardening struct {
+	XmlrpcBlocked       bool `json:"xmlrpc_blocked"`
+	PHPInUploadsBlocked bool `json:"php_in_uploads_blocked"`
+}
+
 // NginxVhostApplyParams — params của op nginx.vhost.apply (ops/nginx.vhost.apply.schema.json).
 type NginxVhostApplyParams struct {
 	Account           Account                              `json:"account"`
@@ -2341,6 +2347,7 @@ type NginxVhostApplyParams struct {
 	ExtraHeaders      map[string]HeaderValue               `json:"extra_headers,omitempty"`
 	Redirects         []NginxVhostApplyParamsRedirectsItem `json:"redirects,omitempty"`
 	Suspended         *bool                                `json:"suspended,omitempty"`
+	WpHardening       *NginxVhostApplyParamsWpHardening    `json:"wp_hardening,omitempty"`
 }
 
 // NginxVhostApplyResult — result của op nginx.vhost.apply (ops/nginx.vhost.apply.schema.json).
@@ -3094,11 +3101,21 @@ type WpMaintenanceResult struct {
 	Enabled bool `json:"enabled"`
 }
 
+// WpUpdateParamsSnapshot được sinh từ schema.
+type WpUpdateParamsSnapshot struct {
+	Repo BackupRepo      `json:"repo"`
+	DB   json.RawMessage `json:"db"`
+	Tags []BackupTag     `json:"tags"`
+}
+
 // WpUpdateParams — params của op wp.update (ops/wp.update.schema.json).
 type WpUpdateParams struct {
-	Site       WpSite        `json:"site"`
-	Components []WpComponent `json:"components"`
-	MinorOnly  bool          `json:"minor_only"`
+	Site       WpSite                 `json:"site"`
+	Components []WpComponent          `json:"components"`
+	MinorOnly  bool                   `json:"minor_only"`
+	Snapshot   WpUpdateParamsSnapshot `json:"snapshot"`
+	// Giá trị: "http", "https".
+	CheckScheme string `json:"check_scheme"`
 }
 
 // WpUpdateResultResultsItem được sinh từ schema.
@@ -3114,8 +3131,13 @@ type WpUpdateResultResultsItem struct {
 
 // WpUpdateResult — result của op wp.update (ops/wp.update.schema.json).
 type WpUpdateResult struct {
-	Results     []WpUpdateResultResultsItem `json:"results"`
-	ChecksumsOK bool                        `json:"checksums_ok"`
+	Results       []WpUpdateResultResultsItem `json:"results"`
+	ChecksumsOK   bool                        `json:"checksums_ok"`
+	HTTPStatus    int64                       `json:"http_status"`
+	SnapshotID    ResticSnapshotID            `json:"snapshot_id"`
+	DBSnapshotID  json.RawMessage             `json:"db_snapshot_id"`
+	RolledBack    bool                        `json:"rolled_back"`
+	RollbackError *string                     `json:"rollback_error"`
 }
 
 // NewParams trả về con trỏ tới struct Params của op, nil nếu op chưa có schema.

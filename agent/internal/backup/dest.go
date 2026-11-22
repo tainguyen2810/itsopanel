@@ -36,7 +36,7 @@ var (
 	reAbsPath   = regexp.MustCompile(`^/[^\x00-\x1f]*$`)
 	reHostKey   = regexp.MustCompile(`^SHA256:[A-Za-z0-9+/]{43}$`)
 	reSnapshot  = regexp.MustCompile(`^[0-9a-f]{8,64}$`)
-	reTag       = regexp.MustCompile(`^(itso|type:(files|db|config|panel|docker)|account:[0-9a-f-]{36}|compose:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|final)$`)
+	reTag       = regexp.MustCompile(`^(itso|type:(files|db|config|panel|docker)|account:[0-9a-f-]{36}|compose:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|pre-wp-update|auto|final)$`)
 	reExclude   = regexp.MustCompile(`^[A-Za-z0-9._*?/@+-]+$`)
 )
 

@@ -90,6 +90,16 @@ server {
     }
 {{- end}}
 {{- if eq .Type "php"}}
+{{- if .WPBlockXMLRPC}}
+    location = /xmlrpc.php {
+        deny all;
+    }
+{{- end}}
+{{- if .WPBlockUploadsPHP}}
+    location ~* ^/wp-content/uploads/.*\.(?:php[0-9]?|phtml|phar)$ {
+        deny all;
+    }
+{{- end}}
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
