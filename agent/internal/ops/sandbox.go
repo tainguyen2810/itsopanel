@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"itso.local/agent/internal/docker"
 	"itso.local/agent/internal/platform"
 )
 
@@ -25,6 +26,8 @@ type Sim struct {
 	quota     map[string][4]string // uid → block soft/hard, inode soft/hard
 	data      *dbSim               // DB, Pure-FTPd, sshd, systemd-run (Phase 6)
 	sec       *secSim              // nft, fail2ban-client (Phase 7)
+	// Docker: engine giả cho `docker compose` (Phase 10). Nil = docker chưa cài.
+	Docker *docker.Fake
 }
 
 // NewSim tạo trình mô phỏng trên fs. Dịch vụ (.service, .timer) mặc định đang chạy; slice chưa chạy.
@@ -37,6 +40,14 @@ func NewSim(fs *platform.FS) *Sim {
 func SandboxRunner(d *Deps) *platform.FakeRunner {
 	sim := NewSim(d.FS)
 	sim.SeedBase()
+	if d.Docker == nil {
+		fk := docker.NewFake()
+		fk.MkdirMount = func(p string) { _ = d.FS.MkdirAll(p) }
+		d.Docker = fk
+	}
+	if fk, ok := d.Docker.(*docker.Fake); ok {
+		sim.Docker = fk
+	}
 	f := platform.NewFake()
 	f.Hook = sim.Handle
 	f.StreamHook = sim.Stream
@@ -62,6 +73,9 @@ func fail(code int, msg string) platform.Result {
 
 // Handle mô phỏng một lệnh. Luôn trả handled=true.
 func (s *Sim) Handle(c platform.Cmd) (platform.Result, bool) {
+	if c.Bin == "docker" {
+		return s.dockerCLI(c), true
+	}
 	if r, handled := s.sec.handle(c); handled {
 		return r, true
 	}

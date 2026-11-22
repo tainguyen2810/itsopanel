@@ -22,6 +22,7 @@ import (
 
 	"itso.local/agent/internal/audit"
 	"itso.local/agent/internal/auth"
+	"itso.local/agent/internal/docker"
 	"itso.local/agent/internal/fsx"
 	"itso.local/agent/internal/ops"
 	"itso.local/agent/internal/platform"
@@ -117,7 +118,9 @@ func run(o options, log *slog.Logger) error {
 		RootTerminal: pol.RootTerminal(), RecordUser: pol.File.RecordUser, NodeMode: o.mode == "node"}
 	if o.sandbox {
 		deps.FS = platform.NewFS(o.root, os.Geteuid() != 0)
-		deps.Run = ops.SandboxRunner(deps)
+		deps.Run = ops.SandboxRunner(deps) // gắn docker.Fake
+	} else {
+		deps.Docker = docker.NewClient(docker.DefaultSocket)
 	}
 	var streamLn net.Listener
 	var streamAllow auth.UIDAllow

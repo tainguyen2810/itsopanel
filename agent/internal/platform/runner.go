@@ -69,6 +69,10 @@ var Bins = map[string]string{
 	"php-fpm8.2": "/usr/sbin/php-fpm8.2",
 	"php-fpm8.4": "/usr/sbin/php-fpm8.4",
 	"apt-cache":  "/usr/bin/apt-cache",
+	// docker: CHỈ để chạy `docker --config … compose -p itso_<uuid> …` (argv cố định, ops/compose.go); mọi thao tác
+	// khác đi qua Engine API. iptables-restore: nạp chuỗi DOCKER-USER (stdin).
+	"docker":           "/usr/bin/docker",
+	"iptables-restore": "/usr/sbin/iptables-restore",
 }
 
 // allowedEnv là biến môi trường được phép đặt thêm cho một lệnh (ngoài env tối giản cố định).

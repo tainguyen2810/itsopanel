@@ -525,7 +525,7 @@
     },
     "BackupTag": {
       "type": "string",
-      "pattern": "^(itso|type:(files|db|config|panel)|account:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|final)$",
+      "pattern": "^(itso|type:(files|db|config|panel|docker)|account:[0-9a-f-]{36}|compose:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|final)$",
       "description": "Tag snapshot theo danh sách cố định (D-82)."
     },
     "RepoPassword": {

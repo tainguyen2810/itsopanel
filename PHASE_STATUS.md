@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 10 — Docker Manager, WordPress Toolkit, Software (bắt đầu 2026-11-22; kế hoạch `docs/planning/seed/PHASE_10_PROMPTS.md`, D-94 → D-100 đề xuất). Phase 9 ✓ APPROVED 2026-11-22 (merge `8d2a613`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 10.3 Agent Docker (✱)
-- **Task đang làm:** 10.3
+- **Prompt hiện tại:** 10.4 Panel Docker (✱)
+- **Task đang làm:** 10.4
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-10`
 - **Bước tiếp theo:** làm hàng loạt 10.0 → 10.8, tự merge, DỪNG trước Phase 11; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -36,8 +36,8 @@ Phase 10 (bắt đầu 2026-11-22, đang làm) — prompt chi tiết: `docs/plan
 - ✓ 10.0 Mockup Docker, WordPress, Software trên bản demo (`docs/screenshots/phase-10/`)
 - ✓ 10.1 ADR 0039–0045 (D-94…D-100), contracts, migration Phase 10
 - ✓ 10.2 Software Manager: catalog, PHP nhiều bản, upgrade
-- ✱ 10.3 Agent Docker: Engine client, validator compose, DOCKER-USER, image/volume
-- ○ 10.4 Panel Docker: hosts, compose, cổng, registry, website Docker
+- ✓ 10.3 Agent Docker: Engine client, validator compose, DOCKER-USER, image/volume (log realtime qua gateway: hoãn, dùng tail)
+- ✱ 10.4 Panel Docker: hosts, compose, cổng, registry, website Docker
 - ○ 10.5 Agent WordPress: wp.* dưới UID account
 - ○ 10.6 Panel WordPress: Admin + Portal
 - ○ 10.7 UI nối API thật

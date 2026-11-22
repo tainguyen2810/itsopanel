@@ -101,7 +101,7 @@ DEFS = {
     "ResticSnapshotId": s(pattern="^[0-9a-f]{8,64}$", description="Id snapshot restic (hex 8–64); không nhận `latest` hay chuỗi tự do."),
     "BackupRepoPath": s(pattern="^itso/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(acct-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|server)$",
                         description="Đường dẫn repo trong đích, cố định theo server × account (D-82); agent dựng URL repo từ đây."),
-    "BackupTag": s(pattern="^(itso|type:(files|db|config|panel)|account:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|final)$",
+    "BackupTag": s(pattern="^(itso|type:(files|db|config|panel|docker)|account:[0-9a-f-]{36}|compose:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|final)$",
                    description="Tag snapshot theo danh sách cố định (D-82)."),
     "RepoPassword": {"type": "string", "minLength": 16, "maxLength": 256, "pattern": "^[\\x21-\\x7e]+$", "writeOnly": True,
                      "description": "Mật khẩu repo restic; tới agent qua tham chiếu bí mật `backup_repo_password` (D-69), agent ghi file 0600 rồi dùng RESTIC_PASSWORD_FILE, không qua argv."},
