@@ -8,6 +8,7 @@ use App\Jobs\SendNotification;
 use App\Models\NotificationChannel;
 use App\Models\NotificationDelivery;
 use App\Models\User;
+use GuzzleHttp\Exception\TransferException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Carbon;
@@ -138,16 +139,31 @@ final class NotificationSender
         $body = json_encode(self::webhookBody($d), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $ts = (string) Carbon::now()->getTimestamp();
         $ip = str_contains($dest['ip'], ':') ? '['.$dest['ip'].']' : $dest['ip'];
+        $tooBig = false;
         try {
             /** @var Response $res */
             $res = Http::timeout(self::TIMEOUT_SEC)->connectTimeout(self::TIMEOUT_SEC)
-                ->withOptions(['allow_redirects' => false, 'stream' => true,
+                // proxy '' = CURLOPT_PROXY rỗng: bỏ HTTPS_PROXY/HTTP_PROXY của môi trường (proxy tự phân giải DNS,
+                // làm mất ghim IP của SsrfGuard ⇒ DNS rebinding). Webhook luôn đi thẳng.
+                // Không dùng 'stream' (StreamHandler bỏ qua tùy chọn cURL ⇒ mất CURLOPT_RESOLVE): body giới hạn bằng
+                // callback progress (trả true ⇒ cURL hủy khi đã nhận > 64 KB, kể cả chunked) + timeout tổng 5 giây.
+                ->withOptions(['allow_redirects' => false, 'proxy' => '',
+                    'progress' => static function (int $total, int $got) use (&$tooBig): bool {
+                        return $tooBig = $got > self::MAX_RESPONSE_BYTES;
+                    },
                     'curl' => [CURLOPT_RESOLVE => [$dest['host'].':'.$dest['port'].':'.$ip]]])
                 ->withHeaders(['X-ITSO-Timestamp' => $ts, 'X-ITSO-Signature' => 'sha256='.self::sign($secret, $ts, $body),
                     'X-ITSO-Event' => $d->event_type, 'X-ITSO-Delivery' => $d->uuid, 'User-Agent' => 'ITSO-Panel-Webhook/1'])
                 ->withBody($body, 'application/json')->post($url);
-        } catch (ConnectionException $e) {
-            throw new SendFailure('Webhook: không kết nối được tới '.$dest['host'].'.');
+        } catch (ConnectionException|TransferException $e) {
+            if ($tooBig) {
+                throw new SendFailure('Webhook: phản hồi quá lớn (> 64 KB) từ '.$dest['host'].'; đã ngắt.', null, false);
+            }
+            if ($e instanceof ConnectionException) {
+                throw new SendFailure('Webhook: không kết nối được tới '.$dest['host'].'.');
+            }
+            // Lỗi truyền sau khi kết nối: không đưa URL/chi tiết cURL vào lỗi.
+            throw new SendFailure('Webhook: kết nối tới '.$dest['host'].' bị ngắt khi nhận phản hồi.');
         }
         $snippet = mb_substr(trim((string) $res->toPsrResponse()->getBody()->read(self::MAX_RESPONSE_BYTES)), 0, 120);
         if ($res->status() >= 300 && $res->status() < 400) {
@@ -182,8 +198,23 @@ final class NotificationSender
     private static function text(NotificationDelivery $d): string
     {
         $p = $d->payload;
-        $link = is_string($p['link'] ?? null) ? "\n".rtrim((string) config('app.url'), '/').$p['link'] : '';
+        $link = is_string($p['link'] ?? null) ? "\n".self::absoluteLink($d, $p['link']) : '';
 
         return '['.strtoupper($d->severity).'] '.$d->title."\n".(string) ($p['body'] ?? '').$link;
+    }
+
+    /**
+     * Link trong payload là đường dẫn trong realm (vd. `/monitoring/alerts`, như in-app). Email/Telegram cần URL đầy đủ
+     * kèm tiền tố realm: kênh admin → `/admin`, email cá nhân theo realm của người nhận.
+     */
+    private static function absoluteLink(NotificationDelivery $d, string $link): string
+    {
+        $realm = 'admin';
+        if ($d->recipient_user_id !== null) {
+            $realm = (string) (User::query()->whereKey($d->recipient_user_id)->value('realm') ?? 'admin');
+        }
+        $path = preg_match('#^/(admin|portal)(/|$)#', $link) === 1 ? $link : '/'.$realm.'/'.ltrim($link, '/');
+
+        return rtrim((string) config('app.url'), '/').$path;
     }
 }

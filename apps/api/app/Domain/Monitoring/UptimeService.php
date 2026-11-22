@@ -55,13 +55,13 @@ final class UptimeService
      *
      * @return array{checked: int, failed_servers: int}
      */
-    public function probeDue(?Carbon $now = null): array
+    public function probeDue(?Carbon $now = null, bool $all = false): array
     {
         $now ??= Carbon::now();
         $checks = UptimeCheck::query()->with('website')->where('enabled', true)
             ->whereHas('website', fn ($w) => $w->whereNotIn('status', ['deleting', 'pending']))
-            ->where(fn ($q) => $q->whereNull('last_checked_at')
-                ->orWhereRaw('last_checked_at <= ?::timestamptz - make_interval(secs => interval_sec - 5)', [$now->toIso8601String()]))
+            ->when(! $all, fn ($q) => $q->where(fn ($q) => $q->whereNull('last_checked_at')
+                ->orWhereRaw('last_checked_at <= ?::timestamptz - make_interval(secs => interval_sec - 5)', [$now->toIso8601String()])))
             ->orderBy('id')->get();
         $out = ['checked' => 0, 'failed_servers' => 0];
         foreach ($checks->groupBy(fn (UptimeCheck $c): int => $c->website->server_id) as $serverId => $group) {

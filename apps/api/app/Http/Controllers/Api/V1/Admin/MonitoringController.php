@@ -65,11 +65,17 @@ final class MonitoringController
         return response()->json(['data' => $this->present->rule($r)])->header('ETag', MonitoringPresenter::ruleEtag($r));
     }
 
+    public const MAX_RULES = 200;
+
     public function createRule(Request $request): JsonResponse
     {
         $in = $this->ruleInput($request, null);
         if (AlertRule::query()->where('name', $in['name'])->exists()) {
             throw ApiProblem::conflict('Đã có rule cùng tên.');
+        }
+        // Chặn DoS bộ đánh giá mỗi phút (rule × đối tượng): tối đa MAX_RULES rule tự tạo.
+        if (AlertRule::query()->where('is_default', false)->count() >= self::MAX_RULES) {
+            throw ApiProblem::conflict('Đã đạt giới hạn '.self::MAX_RULES.' rule cảnh báo; xóa rule không dùng trước.');
         }
         $r = new AlertRule(['is_default' => false]);
         $this->fillRule($r, $in);

@@ -184,8 +184,10 @@ it('webhook ký HMAC(secret, timestamp.body), không theo redirect, giới hạn
     p115dns();
     $seen = null;
     $redirect = false;
-    Http::fake(function (HttpRequest $r) use (&$seen, &$redirect) {
+    $opts = [];
+    Http::fake(function (HttpRequest $r, array $o) use (&$seen, &$redirect, &$opts) {
         $seen = $r;
+        $opts = $o;
 
         return $redirect ? Http::response('', 302, ['Location' => 'http://169.254.169.254/']) : Http::response('{"ok":true}', 200);
     });
@@ -198,7 +200,10 @@ it('webhook ký HMAC(secret, timestamp.body), không theo redirect, giới hạn
         ->and(abs((int) $ts - now()->getTimestamp()))->toBeLessThan(5)
         ->and(json_decode($seen->body(), true))->toMatchArray(['event' => 'alert.firing', 'title' => 'Disk 95%', 'severity' => 'high',
             'delivery' => $d->uuid])
-        ->and($seen->body())->not->toContain(P115_SECRET);
+        ->and($seen->body())->not->toContain(P115_SECRET)
+        // Không đi qua proxy môi trường (HTTPS_PROXY): proxy tự phân giải DNS → bỏ qua ghim IP của SSRF guard.
+        ->and($opts['proxy'] ?? null)->toBe('')
+        ->and($opts['curl'][CURLOPT_RESOLVE] ?? null)->toBe(['hooks.example.test:443:93.184.216.34']);
     // Redirect không được theo: 302 → failed, không thử lại.
     $redirect = true;
     $d2 = app(NotificationDispatcher::class)->toChannel($c, 'alert.firing', 'Lần 2', '', 'high');
@@ -284,6 +289,8 @@ it('định tuyến: ADMIN chỉ nhận sự kiện trong phạm vi; USER chủ 
     $events->quota($a->account, 85.0);
     $events->quota($a->account, 90.0); // cùng mức → không báo lại
     expect($mail->sent)->toHaveCount(1)->and($mail->sent[0][0])->toBe([$a->owner->email])
+        // Link đầy đủ theo realm của người nhận (e2e 11.8: email thiếu tiền tố /admin, /portal).
+        ->and($mail->sent[0][2])->toContain(rtrim((string) config('app.url'), '/').'/portal/')
         ->and(Notification::query()->where('type', 'quota.warning')->where('user_id', $a->owner->id)->count())->toBe(0)
         ->and(Notification::query()->where('type', 'quota.warning')->where('user_id', $a->sa->id)->count())->toBe(1);
     $d = NotificationDelivery::query()->where('recipient_user_id', $a->owner->id)->sole();
@@ -356,6 +363,7 @@ it('sự kiện USER: website down/up, account khóa/mở, chứng chỉ 14/7/1 
     expect(NotificationDelivery::query()->where('alert_id', $al->id)->where('channel_id', $hook->id)->value('state'))->toBe('sent')
         ->and(NotificationDelivery::query()->where('alert_id', $al->id)->where('channel_id', $grp->id)->value('state'))->toBe('sent')
         ->and(collect($mail->sent)->pluck(0)->all())->toContain(['ops@itso.vn'])
+        ->and(collect($mail->sent)->firstWhere(0, ['ops@itso.vn'])[2])->toContain(rtrim((string) config('app.url'), '/').'/admin/monitoring/alerts')
         ->and(Notification::query()->where('type', 'alert.firing')->where('user_id', $a->owner->id)->count())->toBe(0);
     $ch = $a->spa('SA')->get('/api/v1/admin/notification-channels');
     expect(collect($ch->json('data'))->firstWhere('uuid', $hook->uuid)['last_delivery']['state'])->toBe('sent');

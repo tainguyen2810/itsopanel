@@ -43,7 +43,11 @@ final class SettingsController
             throw ApiProblem::field((string) reset($unknown), 'Không có cài đặt này trong nhóm '.$group.'.');
         }
         $rules = [];
-        foreach ($input as $k => $_) {
+        foreach ($input as $k => $v) {
+            // ConvertEmptyStringsToNull biến "" thành null: khóa chuỗi có mặc định "" (vd. smtp.username) được xóa trống.
+            if ($v === null && ($def[$k]['default'] ?? null) === '') {
+                $input[$k] = '';
+            }
             $rules[$k] = array_merge(['present'], $def[$k]['rules']);
         }
         $data = Validator::make($input, $rules)->validate();

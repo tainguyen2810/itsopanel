@@ -122,6 +122,9 @@ it('cài đặt: chỉ SA, không trả secret, ETag/If-Match 412, khóa lạ 42
     expect($sa->call('PATCH', '/api/v1/admin/settings/smtp', ['port' => 25], ['If-Match' => $etag])->status())->toBe(412);
     assertMatchesContract(XA, 'patch', '/api/v1/admin/settings/{group}', 422, $sa->call('PATCH', '/api/v1/admin/settings/smtp', ['khong_co' => 1]));
     assertMatchesContract(XA, 'patch', '/api/v1/admin/settings/{group}', 422, $sa->call('PATCH', '/api/v1/admin/settings/smtp', ['port' => 70000]));
+    // Xóa trống chuỗi có mặc định "" (SMTP không AUTH): "" không bị đổi thành null rồi 422.
+    $e = $sa->call('PATCH', '/api/v1/admin/settings/smtp', ['username' => '', 'host' => 'smtp.itso.local']);
+    expect($e->status())->toBe(200)->and($e->json('data.values.username') ?? $e->json('data.username'))->toBe('');
     expect($sa->call('PATCH', '/api/v1/admin/settings/security', ['admin_mfa_required' => false])->status())->toBe(422);
     assertMatchesContract(XA, 'get', '/api/v1/admin/settings/{group}', 404, $sa->get('/api/v1/admin/settings/khac'));
     assertMatchesContract(XA, 'get', '/api/v1/admin/settings/{group}', 403, $a->spa('AD_IN')->get('/api/v1/admin/settings/general'));

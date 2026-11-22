@@ -12,6 +12,7 @@ use App\Models\UptimeCheck;
 use App\Models\Website;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Support\Actors;
 use Tests\Support\FakeAgent;
 
@@ -202,7 +203,10 @@ it('uptime: website SSL tự bật check; 3 lỗi → down → cảnh báo cho a
     $before = count($agent->calls);
     $this->artisan('itso:uptime-probe')->assertSuccessful();
     expect(count($agent->calls))->toBe($before);
-    $this->travel(30)->seconds();
+    // --all bỏ qua interval (vận hành kiểm lại ngay).
+    $this->artisan('itso:uptime-probe', ['--all' => true])->assertSuccessful();
+    expect(count($agent->calls))->toBe($before + 1)->and($c->refresh()->consecutive_failures)->toBe(4);
+    $this->travel(90)->seconds();
     $ok = true;
     $this->artisan('itso:uptime-probe')->assertSuccessful();
     expect($c->refresh()->state)->toBe('up')->and($c->consecutive_failures)->toBe(0)->and($c->down_since)->toBeNull()
@@ -211,13 +215,13 @@ it('uptime: website SSL tự bật check; 3 lỗi → down → cảnh báo cho a
     $this->travel(60)->seconds();
     p114eval();
     expect(Alert::query()->sole()->state)->toBe('resolved');
-    expect(DB::table('uptime_results')->where('check_id', $c->id)->count())->toBe(4);
+    expect(DB::table('uptime_results')->where('check_id', $c->id)->count())->toBe(5);
 
     // API: % uptime, kết quả, Portal của chủ website; USER khác 404.
     $sa = $a->spa('SA');
     $l = $sa->get('/api/v1/admin/uptime-checks');
     assertMatchesContract(P114A, 'get', '/api/v1/admin/uptime-checks', 200, $l);
-    expect($l->json('data.0'))->toMatchArray(['state' => 'up', 'uptime_24h' => 25, 'url' => 'https://anphat.vn/']);
+    expect($l->json('data.0'))->toMatchArray(['state' => 'up', 'uptime_24h' => 20, 'url' => 'https://anphat.vn/']);
     $r = $sa->get("/api/v1/admin/uptime-checks/{$c->uuid}/results?limit=3");
     assertMatchesContract(P114A, 'get', '/api/v1/admin/uptime-checks/{id}/results', 200, $r);
     expect($r->json('data'))->toHaveCount(3)->and($r->json('data.0.ok'))->toBeTrue()->and($r->json('meta.next_cursor'))->toBeString();
@@ -350,4 +354,16 @@ it('uptime: rollup giờ cho % 30 ngày (sau khi uptime_results bị drop), prun
         ->toContain('uptime_results_'.now()->utc()->addDays(2)->format('Ymd'));
     expect(DB::table('uptime_rollups')->where('bucket', '<', now()->subDays(90))->count())->toBe(0);
     expect($w->refresh()->exists)->toBeTrue();
+});
+
+it('rule tự tạo tối đa 200 (chặn DoS bộ đánh giá mỗi phút) → 409', function () {
+    $a = new Actors($this);
+    $now = now();
+    DB::table('alert_rules')->insert(array_map(fn (int $i) => ['uuid' => (string) Str::uuid(), 'name' => "R$i", 'metric' => 'cpu_pct',
+        'scope_type' => 'server', 'operator' => 'gt', 'threshold' => 99, 'duration_sec' => 60, 'severity' => 'low', 'repeat_sec' => 14400,
+        'channels' => '{in_app}', 'enabled' => false, 'is_default' => false, 'created_at' => $now, 'updated_at' => $now], range(1, 200)));
+    $r = $a->spa('SA')->post('/api/v1/admin/alert-rules', ['name' => 'R201', 'metric' => 'cpu_pct', 'scope_type' => 'server',
+        'operator' => 'gt', 'threshold' => 99, 'for_sec' => 60, 'severity' => 'low', 'channels' => ['in_app']]);
+    assertMatchesContract(P114A, 'post', '/api/v1/admin/alert-rules', 409, $r);
+    expect($r->json('detail'))->toContain('200');
 });
