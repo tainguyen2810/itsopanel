@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Backup;
 
 use App\Domain\Jobs\JobHandler;
+use App\Domain\Notifications\UserEvents;
 use App\Models\BackupDestination;
 use App\Models\BackupJob;
 use App\Models\BackupPolicy;
@@ -33,7 +34,7 @@ final class BackupJobHandler implements JobHandler
     public const TYPES = ['backup.run', 'backup.verify', 'backup.forget', 'backup.destination_test', 'backup.restore', 'hosting_account.purge',
         DisasterRecovery::JOB_TYPE];
 
-    public function __construct(private readonly BackupService $backups) {}
+    public function __construct(private readonly BackupService $backups, private readonly UserEvents $events) {}
 
     public function succeeded(Job $job): void
     {
@@ -207,6 +208,9 @@ final class BackupJobHandler implements JobHandler
      */
     private function runFinished(Job $job, bool $ok, array $snaps, array $repos, Carbon $now): void
     {
+        if (! $ok && $job->type === 'backup.run') {
+            $this->events->backupFailed($job, $job->resource_type === 'hosting_account' ? $job->resource_id : null);
+        }
         foreach (BackupJob::query()->where('job_id', $job->id)->get() as $bj) {
             $mine = array_values(array_filter($snaps, fn (array $s) => $s[0]->id === $bj->repository_id));
             $bj->forceFill(['status' => $ok ? 'succeeded' : 'failed', 'finished_at' => $now,

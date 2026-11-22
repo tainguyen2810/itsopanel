@@ -707,14 +707,15 @@ t("ops", "notification_preferences", [
     "updated_at timestamptz [not null, default: `now()`]",
 ], ["(user_id, event_type) [pk]"], "D-104: người × sự kiện × kênh; mức critical luôn in-app (kiểm ở ứng dụng).")
 t("ops", "notification_deliveries", ID + [
-    "channel_id bigint [not null, ref: > notification_channels.id]",
+    "channel_id bigint [ref: > notification_channels.id, note: 'NULL = email cá nhân tới recipient_user_id']",
+    "recipient_user_id bigint [ref: > users.id, note: 'Email cá nhân theo notification_preferences (D-104)']",
     "alert_id bigint [ref: > alerts.id]",
     "event_type text [not null]", "severity text [not null]", "title text [not null]",
     "payload jsonb [not null, default: `'{}'`, note: 'Nội dung đã dựng, không chứa bí mật']",
     "state text [not null, default: 'queued', note: 'queued|sending|sent|retrying|failed|blocked']",
-    "attempts int [not null, default: 0]", "error text", "next_retry_at timestamptz", "sent_at timestamptz",
-    "resend_of_id bigint [ref: > notification_deliveries.id]",
-] + TS, ["(channel_id, created_at)", "(state, next_retry_at)"])
+    "attempts int [not null, default: 0]", "error text", "response_code int", "next_retry_at timestamptz",
+    "sent_at timestamptz", "resend_of_id bigint [ref: > notification_deliveries.id]",
+] + TS, ["(channel_id, created_at)", "(state, next_retry_at)", "(recipient_user_id)"])
 t("ops", "settings", IDN + [
     "group_key text [not null]", "key text [not null]", "value jsonb",
     "is_encrypted boolean [not null, default: false]", "updated_by_user_id bigint [ref: > users.id]",

@@ -109,7 +109,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | Docker | `/admin/servers/{id}/docker/*`, `/admin/compose-projects` |
 | WordPress | `/admin/wordpress/*` |
 | Git deploy | `GET/POST /admin/git-repositories`, `GET/PATCH/DELETE …/{id}`, `POST …:rotate-webhook-secret`, `GET/POST …/{id}/deployments`, `POST /admin/git-deployments/{id}:rollback`. Webhook công khai `POST /hooks/git/{token}` (HMAC) để Phase 10 |
-| Monitoring, Audit, Jobs, Settings, Notifications | `/admin/metrics/*`, `/admin/alert-rules`, `/admin/audit-logs`, `/admin/jobs`, `/admin/settings/*` |
+| Monitoring, Audit, Jobs, Settings, Notifications | `/admin/metrics/*`, `/admin/alert-rules`, `/admin/audit-logs`, `/admin/jobs`, `/admin/settings/*` (SMTP: nhóm `smtp`, mật khẩu chỉ ghi); `/admin/notification-channels` (+ `:test` gửi đồng bộ, SA `monitoring.manage`, bí mật chỉ ghi), `/admin/notification-deliveries` (+ `:resend` cho failed/blocked, khác → 409), `/admin/notification-events`, `/admin/notification-preferences` (11.5) |
 | Terminal | `POST /admin/terminal/sessions` (root terminal chỉ chạy khi policy cục bộ cho phép) |
 
 ## 4. Portal API (USER, chỉ trên tài nguyên của mình)
@@ -127,7 +127,7 @@ Admin controller, CLI `itso account …` (gọi qua Admin API bằng token cục
 | WordPress | `/portal/wordpress/*` |
 | Git deploy | `/portal/git-repositories*`, `/portal/git-deployments/{id}:rollback` (khi gói cho phép) |
 | Terminal | `POST /portal/terminal/sessions` (chỉ khi gói cho SSH; shell trong jail) |
-| Jobs, Notifications, Profile | `/portal/jobs/{id}`, `/portal/notifications`, `/portal/profile`, `/portal/mfa/*`, `/portal/sessions` |
+| Jobs, Notifications, Profile | `/portal/jobs/{id}`, `/portal/notifications`, `/portal/notification-events` (chỉ sự kiện của USER), `/portal/notification-preferences` (in_app + email), `/portal/profile`, `/portal/mfa/*`, `/portal/sessions` |
 
 Portal **không có**: servers, packages, users, firewall, docker, software, settings hệ thống. Truy cập tài nguyên không thuộc mình trả `404`.
 

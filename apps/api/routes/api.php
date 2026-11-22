@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
 use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
 use App\Http\Controllers\Api\V1\Admin\MonitoringController;
+use App\Http\Controllers\Api\V1\Admin\NotificationChannelController;
 use App\Http\Controllers\Api\V1\Admin\RegistryController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Internal\NodeEnrollController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\NotificationPreferenceController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
 use App\Http\Controllers\Api\V1\Portal\PortalMonitoringController;
 use App\Http\Controllers\Api\V1\Security\FirewallController;
@@ -146,6 +148,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('notifications', [NotificationController::class, 'index']);
             Route::post('notifications/{id}:read', [NotificationController::class, 'read']);
             Route::post('notifications:read-all', [NotificationController::class, 'readAll']);
+            Route::get('notification-events', [NotificationPreferenceController::class, 'events']);
+            Route::get('notification-preferences', [NotificationPreferenceController::class, 'show']);
+            Route::patch('notification-preferences', [NotificationPreferenceController::class, 'update']);
             Route::get('settings/{group}', [SettingsController::class, 'show'])->middleware('itso.perm:settings.read');
             Route::patch('settings/{group}', [SettingsController::class, 'update'])
                 ->middleware(['itso.perm:settings.write', 'itso.step-up']);
@@ -217,6 +222,13 @@ Route::prefix('v1')->group(function (): void {
             Route::get('metrics/servers/{id}', [ServerOpsController::class, 'serverMetrics'])->middleware('itso.perm:servers.read');
             Route::get('metrics/servers/{id}/accounts', [ServerOpsController::class, 'serverAccountUsage'])->middleware('itso.perm:accounts.read');
             // Phase 11 (D-102, D-105): rule cảnh báo (SA), cảnh báo, uptime check.
+            Route::get('notification-channels', [NotificationChannelController::class, 'index'])->middleware('itso.perm:monitoring.manage');
+            Route::post('notification-channels', [NotificationChannelController::class, 'store'])->middleware('itso.perm:monitoring.manage');
+            Route::patch('notification-channels/{id}', [NotificationChannelController::class, 'update'])->middleware('itso.perm:monitoring.manage');
+            Route::delete('notification-channels/{id}', [NotificationChannelController::class, 'destroy'])->middleware('itso.perm:monitoring.manage');
+            Route::post('notification-channels/{id}:test', [NotificationChannelController::class, 'test'])->middleware('itso.perm:monitoring.manage');
+            Route::get('notification-deliveries', [NotificationChannelController::class, 'deliveries'])->middleware('itso.perm:monitoring.manage');
+            Route::post('notification-deliveries/{id}:resend', [NotificationChannelController::class, 'resend'])->middleware('itso.perm:monitoring.manage');
             Route::get('alert-rules', [MonitoringController::class, 'rules'])->middleware('itso.perm:monitoring.read');
             Route::post('alert-rules', [MonitoringController::class, 'createRule'])->middleware('itso.perm:monitoring.manage');
             Route::post('alert-rules:preview', [MonitoringController::class, 'preview'])->middleware('itso.perm:monitoring.manage');
@@ -444,6 +456,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('notifications', [NotificationController::class, 'index']);
             Route::post('notifications/{id}:read', [NotificationController::class, 'read']);
             Route::post('notifications:read-all', [NotificationController::class, 'readAll']);
+            Route::get('notification-events', [NotificationPreferenceController::class, 'events']);
+            Route::get('notification-preferences', [NotificationPreferenceController::class, 'show']);
+            Route::patch('notification-preferences', [NotificationPreferenceController::class, 'update']);
             Route::get('overview', [PortalController::class, 'overview']);
             Route::get('profile', [PortalController::class, 'profile']);
             Route::patch('profile', [PortalController::class, 'updateProfile']);

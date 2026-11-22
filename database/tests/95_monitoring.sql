@@ -86,6 +86,10 @@ SELECT itso_test.expect_ok('Lượt gửi queued',
   $$INSERT INTO notification_deliveries (channel_id, event_type, severity, title) VALUES (1, 'alert.firing', 'high', 'Disk')$$);
 SELECT itso_test.expect_error('Trạng thái gửi lạ bị từ chối',
   $$INSERT INTO notification_deliveries (channel_id, event_type, severity, title, state) VALUES (1, 'x', 'high', 'x', 'lost')$$, '23514');
+SELECT itso_test.expect_error('Lượt gửi không có kênh lẫn người nhận bị từ chối',
+  $$INSERT INTO notification_deliveries (event_type, severity, title) VALUES ('x', 'high', 'x')$$, '23514');
+SELECT itso_test.expect_ok('Email cá nhân: lượt gửi tới người nhận, không có kênh',
+  $$INSERT INTO notification_deliveries (recipient_user_id, event_type, severity, title) VALUES (1, 'quota.warning', 'medium', 'Quota')$$);
 SELECT itso_test.expect_error('Tùy chọn có kênh webhook (USER không có) bị từ chối',
   $$INSERT INTO notification_preferences (user_id, event_type, channels) VALUES (1, 'backup.failed', '{in_app,webhook}')$$, '23514');
 

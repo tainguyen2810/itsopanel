@@ -6,20 +6,20 @@ namespace App\Domain\Notifications;
 
 use App\Models\Notification;
 use App\Models\User;
-use Illuminate\Support\Carbon;
 
-/** Thông báo in-app (bảng notifications). Kênh email/Telegram: Phase 11. */
-final class Notifier
+/**
+ * Thông báo tới một người (giữ API cũ): đi qua NotificationDispatcher — in-app như trước (trừ khi người nhận tắt và sự kiện
+ * không phải critical), thêm email cá nhân / Telegram theo tùy chọn (Phase 11, D-104).
+ */
+class Notifier
 {
     public const SEVERITIES = ['info', 'low', 'medium', 'high', 'critical'];
 
+    public function __construct(private readonly NotificationDispatcher $dispatcher) {}
+
     public function notify(User $user, string $type, string $title, string $body = '', string $severity = 'info',
-        ?string $link = null): Notification
+        ?string $link = null): ?Notification
     {
-        return Notification::query()->create([
-            'user_id' => $user->id, 'type' => $type, 'title' => mb_substr($title, 0, 200), 'body' => mb_substr($body, 0, 2000),
-            'data' => ['severity' => in_array($severity, self::SEVERITIES, true) ? $severity : 'info', 'link' => $link],
-            'created_at' => Carbon::now(),
-        ]);
+        return $this->dispatcher->toUser($user, $type, $title, $body, $severity, $link);
     }
 }

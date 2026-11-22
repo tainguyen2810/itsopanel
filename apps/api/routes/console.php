@@ -48,3 +48,6 @@ Schedule::command('itso:metrics-prune')->dailyAt('00:13')->withoutOverlapping();
 // Phase 11: cảnh báo (D-102) và uptime (D-105) mỗi phút.
 Schedule::command('itso:uptime-probe')->everyMinute()->withoutOverlapping();
 Schedule::command('itso:alerts-evaluate')->everyMinute()->withoutOverlapping();
+// Phase 11 (ADR 0048/0049): tin tóm tắt + thử lại thông báo, chứng chỉ sắp hết hạn.
+Schedule::command('itso:notifications-tick')->everyMinute()->withoutOverlapping();
+Schedule::command('itso:certificates-expiry')->dailyAt('08:17')->withoutOverlapping();

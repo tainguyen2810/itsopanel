@@ -377,3 +377,5 @@ ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_state
 ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_severity_chk
   CHECK (severity IN ('info', 'low', 'medium', 'high', 'critical'));
 ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_attempts_chk CHECK (attempts BETWEEN 0 AND 10);
+ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_target_chk
+  CHECK (channel_id IS NOT NULL OR recipient_user_id IS NOT NULL);

@@ -101,7 +101,7 @@ pids+=($!)
 ( cd apps/api && exec php artisan serve --host=127.0.0.1 --port="$API_PORT" --no-reload ) > >(prefix api) 2>&1 &
 pids+=($!)
 # Worker chạy job nghiệp vụ (D-60: queue Redis theo QUEUE_CONNECTION trong apps/api/.env).
-( cd apps/api && exec php artisan queue:work --sleep=1 --tries=1 --timeout=900 ) > >(prefix queue) 2>&1 &
+( cd apps/api && exec php artisan queue:work --queue=default,notifications --sleep=1 --tries=1 --timeout=900 ) > >(prefix queue) 2>&1 &
 pids+=($!)
 ( cd apps/web && exec node node_modules/vite/bin/vite.js ) > >(prefix web) 2>&1 &
 pids+=($!)

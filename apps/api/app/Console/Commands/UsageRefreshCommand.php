@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Domain\Hosting\QuotaService;
+use App\Domain\Notifications\UserEvents;
 use App\Domain\Servers\MetricsCollector;
 use App\Infrastructure\Agent\AgentClient;
 use App\Infrastructure\Agent\AgentUnavailable;
@@ -27,7 +28,7 @@ final class UsageRefreshCommand extends Command
 
     protected $description = 'Cập nhật mức dùng của các hosting account từ agent (quota.report)';
 
-    public function handle(AgentClient $agent, QuotaService $quota, MetricsCollector $metrics): int
+    public function handle(AgentClient $agent, QuotaService $quota, MetricsCollector $metrics, UserEvents $events): int
     {
         $accounts = HostingAccount::query()->whereIn('lifecycle_state', ['active', 'suspended'])->orderBy('id')->get();
         if ($accounts->isEmpty()) {
@@ -77,6 +78,9 @@ final class UsageRefreshCommand extends Command
                         'tasks' => (int) ($c['pids_current'] ?? 0)];
                 }
                 $metrics->insertSamples($a->server_id, $a->id, $samples, $now);
+                if ((int) $l['disk_mb'] > 0) {
+                    $events->quota($a, (float) $samples['disk_pct']); // quota.warning 80 % / quota.exceeded 100 %
+                }
                 $n++;
             }
         }

@@ -167,7 +167,7 @@ it('ack ngừng nhắc lại; silence hết hạn thì nhắc lại; rule tắt 
     expect(DB::table('audit_logs')->whereIn('action', ['alert.ack', 'alert.silence'])->count())->toBe(2);
 });
 
-it('uptime: website SSL tự bật check; 3 lỗi → down → cảnh báo cho admin + USER chủ; 1 lần thành công → up', function () {
+it('uptime: website SSL tự bật check; 3 lỗi → down → cảnh báo cho admin, website.down cho USER chủ; 1 lần thành công → up', function () {
     $a = new Actors($this);
     p114agent($a);
     p114only('uptime_down');
@@ -192,7 +192,10 @@ it('uptime: website SSL tự bật check; 3 lỗi → down → cảnh báo cho a
     expect($call['params']['targets'][0])->toMatchArray(['host' => 'anphat.vn', 'path' => '/', 'scheme' => 'https'])
         ->and($call['params']['timeout_sec'])->toBe(10);
     expect(Alert::query()->where('state', 'firing')->count())->toBe(1)
-        ->and(Notification::query()->where('type', 'alert.firing')->pluck('user_id')->all())->toContain($a->owner->id, $a->sa->id)
+        ->and(Notification::query()->where('type', 'alert.firing')->pluck('user_id')->all())->toContain($a->sa->id)
+        ->not->toContain($a->owner->id, $a->otherUser->id)
+        // USER chủ nhận sự kiện nghiệp vụ website.down (11.5), không nhận cảnh báo rule.
+        ->and(Notification::query()->where('type', 'website.down')->pluck('user_id')->all())->toContain($a->owner->id, $a->sa->id)
         ->not->toContain($a->otherUser->id);
     // Chưa đến hạn (interval 60 giây) → không gọi lại.
     $this->travel(-30)->seconds();

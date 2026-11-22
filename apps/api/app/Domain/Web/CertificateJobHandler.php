@@ -6,12 +6,11 @@ namespace App\Domain\Web;
 
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Jobs\JobHandler;
-use App\Domain\Notifications\Notifier;
+use App\Domain\Notifications\UserEvents;
 use App\Models\Certificate;
 use App\Models\HostingAccount;
 use App\Models\Job;
 use App\Models\JobStep;
-use App\Models\User;
 use App\Models\Website;
 use Illuminate\Support\Carbon;
 
@@ -22,7 +21,7 @@ use Illuminate\Support\Carbon;
  */
 final class CertificateJobHandler implements JobHandler
 {
-    public function __construct(private readonly Notifier $notifier, private readonly AuditLogger $audit) {}
+    public function __construct(private readonly UserEvents $events, private readonly AuditLogger $audit) {}
 
     public function succeeded(Job $job): void
     {
@@ -130,12 +129,8 @@ final class CertificateJobHandler implements JobHandler
         if ($job->requested_by_user_id !== null) {
             return;
         }
-        $site = Website::withTrashed()->find($c->website_id)->primary_domain ?? $c->uuid;
-        $users = User::query()->where('realm', 'admin')->whereHas('roles', fn ($q) => $q->where('key', 'SUPER_ADMIN'))->get();
-        foreach ($users as $u) {
-            $this->notifier->notify($u, 'certificate.renew_failed', "Gia hạn chứng chỉ thất bại: $site",
-                $msg.' Hết hạn: '.($c->not_after?->toDateString() ?? '?').'.', 'high', '/jobs/'.$job->uuid);
-        }
+        // SUPER_ADMIN, ADMIN trong phạm vi và USER chủ website (certificate.renew_failed, ADR 0049 §4).
+        $this->events->certificateRenewFailed($job, $c, $msg);
     }
 
     private static function time(mixed $v): ?Carbon

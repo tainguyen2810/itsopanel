@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Monitoring;
 
+use App\Domain\Notifications\UserEvents;
 use App\Infrastructure\Agent\AgentClient;
 use App\Infrastructure\Agent\AgentUnavailable;
 use App\Models\UptimeCheck;
@@ -28,7 +29,7 @@ final class UptimeService
 
     public const ROLLUP_RETENTION_DAYS = 90;
 
-    public function __construct(private readonly AgentClient $agent) {}
+    public function __construct(private readonly AgentClient $agent, private readonly UserEvents $events) {}
 
     /** URL hiển thị (không do người dùng nhập): scheme theo SSL của website + domain chính + path. */
     public static function url(Website $w, string $path): string
@@ -113,6 +114,7 @@ final class UptimeService
         if (is_string($r['cert_expires_at'] ?? null)) {
             $c->cert_expires_at = Carbon::parse($r['cert_expires_at']);
         }
+        $wasDown = $c->state === 'down';
         if ($ok) {
             $c->consecutive_failures = 0;
             $c->state = 'up';
@@ -125,6 +127,12 @@ final class UptimeService
             }
         }
         $c->save();
+        // Sự kiện cho USER chủ website + admin (website.down / website.up, ADR 0049 §4).
+        if ($c->state === 'down' && ! $wasDown) {
+            $this->events->websiteState($c, true);
+        } elseif ($wasDown && $c->state === 'up') {
+            $this->events->websiteState($c, false);
+        }
     }
 
     /**
