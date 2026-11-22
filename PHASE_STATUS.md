@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 9 — Multi-server & chuyển tài khoản (kế hoạch ✓ duyệt 2026-11-21 cùng D-88 → D-93; 9.0 → 9.8 ✓, merge `main`, **chờ duyệt**, dừng trước Phase 10). Phase 8 ✓ APPROVED 2026-11-21 cùng D-82 → D-87 và mốc `v0.1.0-alpha` (kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 9.8 ✓ (Phase 9 xong, báo cáo `docs/reports/phase-9.md`). Prompt chi tiết `docs/planning/seed/PHASE_9_PROMPTS.md`
-- **Task đang làm:** không
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-9`
-- **Bước tiếp theo:** chờ người dùng duyệt Phase 9 (không tự sang Phase 10); chạy `tests/vm/phase4–9.sh` (gồm DR 2 VM, Phase 9 cần 3 VM) khi có VM
+- **Phase:** 10 — Docker Manager, WordPress Toolkit, Software (bắt đầu 2026-11-22; kế hoạch `docs/planning/seed/PHASE_10_PROMPTS.md`, D-94 → D-100 đề xuất). Phase 9 ✓ APPROVED 2026-11-22 (merge `8d2a613`; kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 10.0 Mockup (✱)
+- **Task đang làm:** 10.0
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-10`
+- **Bước tiếp theo:** làm hàng loạt 10.0 → 10.8, tự merge, DỪNG trước Phase 11; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -24,14 +24,26 @@
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
 | 7 | Security Center | ✓ APPROVED (báo cáo `docs/reports/phase-7.md`; tiêu chí cần VM: chờ VM) |
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
-| 9 | Multi-server & chuyển tài khoản | ✓ chờ duyệt (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
-| 10 | Docker Manager, WordPress Toolkit, Software | ○ |
+| 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
+| 10 | Docker Manager, WordPress Toolkit, Software | ✱ đang làm |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
 
-Phase 9 (kế hoạch ✓ duyệt 2026-11-21, đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
+Phase 10 (bắt đầu 2026-11-22, đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`
+
+- ✱ 10.0 Mockup Docker, WordPress, Software trên bản demo (`docs/screenshots/phase-10/`)
+- ○ 10.1 ADR 0039–0045 (D-94…D-100), contracts, migration Phase 10
+- ○ 10.2 Software Manager: catalog, PHP nhiều bản, upgrade
+- ○ 10.3 Agent Docker: Engine client, validator compose, DOCKER-USER, image/volume
+- ○ 10.4 Panel Docker: hosts, compose, cổng, registry, website Docker
+- ○ 10.5 Agent WordPress: wp.* dưới UID account
+- ○ 10.6 Panel WordPress: Admin + Portal
+- ○ 10.7 UI nối API thật
+- ○ 10.8 e2e, VM Phase 10, review bảo mật, báo cáo, merge
+
+Phase 9: ✓ APPROVED 2026-11-22 (merge `8d2a613`) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
 
 - ✓ 9.0 Mockup Multi-server & chuyển tài khoản trên bản demo (`docs/screenshots/phase-9/`, 48 ảnh) — 7d94e0e
 - ✓ 9.1 ADR 0034–0038 (D-88…D-93), contracts, migration Phase 9 — 611cfa4
@@ -179,3 +191,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 9.0 | Mockup Phase 9 trên demo: server theo vai trò/kênh/kết nối + chứng chỉ, thêm node (token một lần + ghim CA), node mất kết nối (banner, job `waiting_agent`, job lỗi `agent_unreachable`), thu hồi node (trạng thái `revoked`), gợi ý server có lý do loại + % cam kết, chuyển account 6 bước (kiểm tra trước → đồng bộ → kiểm tra dữ liệu → cutover có DNS/ước tính → giữ nguồn → dọn nguồn), khôi phục sang server khác; contracts: `:migrate-preflight`, `:cleanup`, `servers/{id}:revoke`, `MigrationPreflight`, `AccountMigration` mới | 7d94e0e |
 | 2026-11-21 | 9 / kế hoạch | Kế hoạch Phase 9 Multi-server & chuyển tài khoản theo yêu cầu người dùng: `PHASE_9_PROMPTS.md` (9.0 mockup → 9.8 tích hợp), đề xuất D-88 (vai trò cài đặt), D-89 (`itso-relay` mTLS, node chỉ kết nối ra), D-90 (CA nội bộ, chứng chỉ 30 ngày), D-91 (job khi node offline), D-92 (gợi ý server), D-93 (chuyển account qua repo restic, cutover + rollback); nhánh `phase-9` từ `main` | 628a6a6 |
 | 2026-11-21 | 8 / duyệt | Người dùng duyệt những gì đã làm: Phase 8 + D-82 → D-87 (ADR 0029–0033 Accepted) + mốc `v0.1.0-alpha`; kế hoạch Phase 9 + D-88 → D-93; ROADMAP Phase 1 ghi APPROVED | 02adc94 |
+| 2026-11-22 | 9 / duyệt · 10 / kế hoạch | Người dùng duyệt Phase 9 (merge `8d2a613`) và chọn bắt đầu Phase 10; kế hoạch `PHASE_10_PROMPTS.md` (10.0 mockup → 10.8 tích hợp), đề xuất D-94 → D-100 | — |
