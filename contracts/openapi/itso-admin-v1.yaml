@@ -12477,6 +12477,83 @@ paths:
           $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/admin/servers/{id}/docker/port-allocations:
+    get:
+      operationId: listPortAllocations
+      summary: Cổng compose đã cấp
+      tags:
+      - Docker
+      description: Dải 20000–29999 mỗi server; cổng 22/80/443/cổng panel không bao giờ được cấp (D-97).
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/PortAllocation'
+                  required:
+                  - data
+              example:
+                data:
+                - port: 20011
+                  protocol: tcp
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  compose_project:
+                    uuid: 01938a1e-0001-7000-8000-00001e000001
+                    name: cache
+                  service: redis
+                  container_port: 6379
+                  allocated_at: '2026-11-18T09:30:00+07:00'
+                - port: 20021
+                  protocol: tcp
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  compose_project:
+                    uuid: 01938a1e-0002-7000-8000-00001e000002
+                    name: bi
+                  service: metabase
+                  container_port: 3000
+                  allocated_at: '2026-11-18T09:30:00+07:00'
+                - port: 20031
+                  protocol: tcp
+                  server:
+                    uuid: 01938a02-0001-7000-8000-000002000001
+                    name: srv-hn-01
+                  compose_project:
+                    uuid: 01938a1e-0003-7000-8000-00001e000003
+                    name: status
+                  service: app
+                  container_port: 3001
+                  allocated_at: '2026-11-19T14:05:00+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
   /api/v1/admin/servers/{id}/docker/volumes:
     get:
       operationId: listDockerVolumes
@@ -23042,6 +23119,51 @@ components:
       - created_at
       - updated_at
       additionalProperties: false
+    PortAllocation:
+      type: object
+      properties:
+        port:
+          type: integer
+          minimum: 20000
+          maximum: 29999
+        protocol:
+          type: string
+          enum:
+          - tcp
+          - udp
+        server:
+          $ref: ./common.yaml#/components/schemas/ServerRef
+        compose_project:
+          type: object
+          properties:
+            uuid:
+              type: string
+              format: uuid
+            name:
+              type: string
+          required:
+          - uuid
+          - name
+          additionalProperties: false
+        service:
+          type: string
+        container_port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        allocated_at:
+          type: string
+          format: date-time
+      required:
+      - port
+      - protocol
+      - server
+      - compose_project
+      - service
+      - container_port
+      - allocated_at
+      additionalProperties: false
+      description: Cổng host đã cấp cho service compose; unique theo (server, port, protocol) (D-97).
     ComposeProjectInput:
       type: object
       properties:

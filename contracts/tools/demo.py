@@ -652,6 +652,14 @@ COMPOSE_PREVIEW = {
     "overrides": [], "validated_yaml": None,
 }
 
+# Cổng 20000–29999 đã cấp cho compose (D-97), suy từ ports của COMPOSE.
+PORT_ALLOCATIONS = [
+    {"port": pm["host_port"], "protocol": pm["protocol"], "server": c["server"],
+     "compose_project": {"uuid": c["uuid"], "name": c["name"]}, "service": pm["service"],
+     "container_port": pm["container_port"], "allocated_at": c["created_at"]}
+    for c in COMPOSE for pm in c["ports"]
+]
+
 COMPOSE_REVISIONS = [
     {"number": 3, "compose_yaml": COMPOSE[0]["compose_yaml"], "validated_yaml": None, "ok": True, "findings": 0,
      "overrides": 0, "created_by": user_ref(0), "created_at": T1, "current": True},

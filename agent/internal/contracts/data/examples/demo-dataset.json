@@ -7021,6 +7021,53 @@
     "overrides": [],
     "validated_yaml": null
   },
+  "port_allocations": [
+    {
+      "port": 20011,
+      "protocol": "tcp",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "compose_project": {
+        "uuid": "01938a1e-0001-7000-8000-00001e000001",
+        "name": "cache"
+      },
+      "service": "redis",
+      "container_port": 6379,
+      "allocated_at": "2026-11-18T09:30:00+07:00"
+    },
+    {
+      "port": 20021,
+      "protocol": "tcp",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "compose_project": {
+        "uuid": "01938a1e-0002-7000-8000-00001e000002",
+        "name": "bi"
+      },
+      "service": "metabase",
+      "container_port": 3000,
+      "allocated_at": "2026-11-18T09:30:00+07:00"
+    },
+    {
+      "port": 20031,
+      "protocol": "tcp",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "compose_project": {
+        "uuid": "01938a1e-0003-7000-8000-00001e000003",
+        "name": "status"
+      },
+      "service": "app",
+      "container_port": 3001,
+      "allocated_at": "2026-11-19T14:05:00+07:00"
+    }
+  ],
   "compose_revisions": [
     {
       "number": 3,

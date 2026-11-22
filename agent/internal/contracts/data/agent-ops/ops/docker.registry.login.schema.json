@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.registry.login.schema.json",
+  "title": "docker.registry.login",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "registry_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "url": {
+          "$ref": "../defs.schema.json#/$defs/HttpsUrl"
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9._@-]+$"
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[\\x21-\\x7e]+$",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "registry_uuid",
+        "url",
+        "username",
+        "password"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "ok",
+        "message"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

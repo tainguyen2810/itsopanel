@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/wp.update.schema.json",
+  "title": "wp.update",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "site": {
+          "$ref": "../defs.schema.json#/$defs/WpSite"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/WpComponent"
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "minor_only": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "site",
+        "components",
+        "minor_only"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "core",
+                  "plugin",
+                  "theme"
+                ]
+              },
+              "slug": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/WpSlug"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "from_version": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "to_version": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "error": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "type",
+              "slug",
+              "from_version",
+              "to_version",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 200
+        },
+        "checksums_ok": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "results",
+        "checksums_ok"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

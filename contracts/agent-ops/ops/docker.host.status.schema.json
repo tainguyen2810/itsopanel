@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.host.status.schema.json",
+  "title": "docker.host.status",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "installed": {
+          "type": "boolean"
+        },
+        "engine_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "compose_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "api_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "enum": [
+                  "daemon_json",
+                  "docker_group_empty",
+                  "docker_user_chain",
+                  "socket_root_only",
+                  "compose_plugin"
+                ]
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "detail": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "key",
+              "ok",
+              "detail"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 10
+        },
+        "docker_group_members": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Username"
+          },
+          "maxItems": 100
+        },
+        "counts": {
+          "type": "object",
+          "properties": {
+            "containers": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "running": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "images": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "volumes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "projects": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "containers",
+            "running",
+            "images",
+            "volumes",
+            "projects"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "installed",
+        "engine_version",
+        "compose_version",
+        "api_version",
+        "checks",
+        "docker_group_members",
+        "counts"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

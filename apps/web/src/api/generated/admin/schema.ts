@@ -2680,6 +2680,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/servers/{id}/docker/port-allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cổng compose đã cấp
+         * @description Dải 20000–29999 mỗi server; cổng 22/80/443/cổng panel không bao giờ được cấp (D-97).
+         */
+        get: operations["listPortAllocations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/servers/{id}/docker/volumes": {
         parameters: {
             query?: never;
@@ -5689,6 +5709,22 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        /** @description Cổng host đã cấp cho service compose; unique theo (server, port, protocol) (D-97). */
+        PortAllocation: {
+            port: number;
+            /** @enum {string} */
+            protocol: "tcp" | "udp";
+            server: components["schemas"]["ServerRef"];
+            compose_project: {
+                /** Format: uuid */
+                uuid: string;
+                name: string;
+            };
+            service: string;
+            container_port: number;
+            /** Format: date-time */
+            allocated_at: string;
         };
         ComposeProjectInput: {
             /** Format: uuid */
@@ -22255,6 +22291,100 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["CursorPage"] & {
                         data: components["schemas"]["DockerNetwork"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listPortAllocations: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "port": 20011,
+                     *           "protocol": "tcp",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "compose_project": {
+                     *             "uuid": "01938a1e-0001-7000-8000-00001e000001",
+                     *             "name": "cache"
+                     *           },
+                     *           "service": "redis",
+                     *           "container_port": 6379,
+                     *           "allocated_at": "2026-11-18T09:30:00+07:00"
+                     *         },
+                     *         {
+                     *           "port": 20021,
+                     *           "protocol": "tcp",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "compose_project": {
+                     *             "uuid": "01938a1e-0002-7000-8000-00001e000002",
+                     *             "name": "bi"
+                     *           },
+                     *           "service": "metabase",
+                     *           "container_port": 3000,
+                     *           "allocated_at": "2026-11-18T09:30:00+07:00"
+                     *         },
+                     *         {
+                     *           "port": 20031,
+                     *           "protocol": "tcp",
+                     *           "server": {
+                     *             "uuid": "01938a02-0001-7000-8000-000002000001",
+                     *             "name": "srv-hn-01"
+                     *           },
+                     *           "compose_project": {
+                     *             "uuid": "01938a1e-0003-7000-8000-00001e000003",
+                     *             "name": "status"
+                     *           },
+                     *           "service": "app",
+                     *           "container_port": 3001,
+                     *           "allocated_at": "2026-11-19T14:05:00+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["PortAllocation"][];
                     };
                 };
             };

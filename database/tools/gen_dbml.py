@@ -360,11 +360,35 @@ t("hosting", "terminal_sessions", ID + [
     "started_at timestamptz [not null, default: `now()`]", "ended_at timestamptz",
     "ended_reason text [note: 'closed|idle|expired|error']", "recording_ref text",
 ], ["user_id", "hosting_account_id"])
-t("hosting", "wordpress_sites", [
-    "website_id bigint [pk, ref: - websites.id]", "version text", "admin_user text",
-    "auto_update text [not null, default: 'minor']", "hardened boolean [not null, default: false]",
-    "components jsonb [not null, default: `'[]'::jsonb`]", "observed_at timestamptz",
-])
+t("hosting", "wordpress_sites", ID + [
+    "website_id bigint [not null, unique, ref: - websites.id]",
+    "hosting_account_id bigint [not null, ref: > hosting_accounts.id]",
+    "path text [not null, note: 'Docroot tương đối home account (RelPath); agent kiểm lại sau khi resolve symlink']",
+    "version text", "admin_user text", "multisite boolean [not null, default: false]",
+    "state text [not null, default: 'ok', note: 'ok|updating|cloning|maintenance|error (D-99)']",
+    "auto_update text [not null, default: 'minor', note: 'off|minor|all']",
+    "update_window text [not null, default: '02:00-05:00', note: 'HH:00-HH:00 theo giờ server']",
+    "maintenance boolean [not null, default: false]",
+    "hardening jsonb [not null, default: `'{}'::jsonb`, note: 'file_edit_disabled, xmlrpc_blocked, php_in_uploads_blocked, wp_config_protected, version_hidden, salts_rotated']",
+    "staging_of_id bigint [ref: > wordpress_sites.id, note: 'Bản staging trỏ về site gốc; đẩy staging → production DEFERRED']",
+    "checksums_ok boolean", "last_scan_at timestamptz", "last_update_at timestamptz",
+] + TS + SOFT, ["hosting_account_id", "staging_of_id"], "Site WordPress do Toolkit quản lý (D-99, ADR 0044).")
+t("hosting", "wordpress_components", IDN + [
+    "wordpress_site_id bigint [not null, ref: > wordpress_sites.id]",
+    "type text [not null, note: 'core|plugin|theme']", "slug text [note: 'null với core; ^[a-z0-9][a-z0-9_-]{0,99}$']",
+    "name text [not null]", "version text [not null]", "update_version text", "active boolean [not null, default: true]",
+    "observed_at timestamptz [not null, default: `now()`]",
+], ["(wordpress_site_id, type, slug) [unique]"], "Cache wp.info: core, plugin, theme và bản mới.")
+t("hosting", "wordpress_updates", ID + [
+    "wordpress_site_id bigint [not null, ref: > wordpress_sites.id]",
+    "job_id bigint [ref: > jobs.id]", "trigger text [not null, default: 'manual', note: 'manual|auto']",
+    "items jsonb [not null, default: `'[]'::jsonb`, note: '[{type, slug, from_version, to_version, ok}]']",
+    "steps jsonb [not null, default: `'[]'::jsonb`, note: 'snapshot|maintenance|update|verify|rollback → done|failed|skipped']",
+    "state text [not null, default: 'running', note: 'running|succeeded|rolled_back|failed']",
+    "snapshot_id bigint [ref: > backup_snapshots.id, note: 'Snapshot pre-wp-update dùng để khôi phục']",
+    "error text", "requested_by_user_id bigint [ref: > users.id]",
+    "started_at timestamptz", "finished_at timestamptz",
+] + TS, ["(wordpress_site_id, created_at)"], "Lịch sử cập nhật an toàn (D-99).")
 t("hosting", "git_repositories", ID + [
     "website_id bigint [not null, unique, ref: - websites.id]",
     "repo_url text [not null, note: 'ssh://git@host/owner/repo.git hoặc https://']",
@@ -394,31 +418,57 @@ t("hosting", "git_deployments", ID + [
 # ---------------------------------------------------------------- Docker (chỉ admin)
 t("docker", "docker_hosts", [
     "server_id bigint [pk, ref: - servers.id]", "enabled boolean [not null, default: false]",
-    "daemon_config jsonb [not null, default: `'{}'::jsonb`]", "observed_at timestamptz",
-])
+    "state text [not null, default: 'not_installed', note: 'not_installed|installing|enabled|degraded']",
+    "engine_version text", "compose_version text", "api_version text",
+    "daemon_config jsonb [not null, default: `'{}'::jsonb`, note: 'daemon.json do panel quản lý (D-94)']",
+    "checks jsonb [not null, default: `'[]'::jsonb`]",
+    "port_range_from int [not null, default: 20000]", "port_range_to int [not null, default: 29999]",
+    "firewall_synced_at timestamptz", "observed_at timestamptz",
+] + TS, [], "Docker trên server (D-94, D-95). Nhóm docker phải rỗng; chỉ agent chạm socket.")
 t("docker", "registries", ID + [
     "name text [not null, unique]", "url text [not null]", "username text",
-    "password_encrypted bytea",
-] + TS)
+    "password_encrypted bytea [note: 'Crypt; tới agent qua secret_ref, không vào params job/audit (D-98)']",
+    "last_test_at timestamptz", "last_test_ok boolean", "last_test_message text",
+    "created_by_user_id bigint [ref: > users.id]",
+] + TS + SOFT)
 t("docker", "compose_projects", ID + [
     "server_id bigint [not null, ref: > servers.id]", "name text [not null]",
+    "run_state text [not null, default: 'stopped', note: 'running|stopped|partial|error|deploying (API: status)']",
+    "template text", "env_encrypted bytea [note: 'Biến môi trường (JSON, Crypt); ghi .env 0600 trên node']",
     "current_revision_id bigint [ref: > compose_revisions.id]",
-] + DO + TS + SOFT, ["(server_id, name) [unique]"])
+    "created_by_user_id bigint [ref: > users.id]",
+] + DO + TS + SOFT, ["(server_id, name) [unique]"], "Compose project chỉ admin (D-96); Docker cho USER DEFERRED.")
 t("docker", "compose_revisions", IDN + [
-    "project_id bigint [not null, ref: > compose_projects.id]", "yaml text [not null]",
-    "validated_yaml text", "validation_report jsonb", "created_by_user_id bigint [ref: > users.id]",
+    "project_id bigint [not null, ref: > compose_projects.id]", "number int [not null]", "yaml text [not null]",
+    "validated_yaml text", "validated_sha256 text",
+    "ok boolean [not null, default: false]", "findings_count int [not null, default: 0]",
+    "validation_report jsonb [note: 'findings + rewrites của compose.validate']",
+    "overrides jsonb [not null, default: `'[]'::jsonb`, note: '[{rule, reason, by_user_uuid, at}] chỉ SUPER_ADMIN']",
+    "created_by_user_id bigint [ref: > users.id]",
     "created_at timestamptz [not null, default: `now()`]",
-], ["project_id"])
+], ["(project_id, number) [unique]"], "Revision bất biến (ADR 0041).")
 t("docker", "containers", IDN + [
     "server_id bigint [not null, ref: > servers.id]", "docker_id text [not null]", "name text [not null]",
-    "image text [not null]", "project_id bigint [ref: > compose_projects.id]", "state text",
+    "image text [not null]", "image_digest text", "project_id bigint [ref: > compose_projects.id]", "service text",
+    "state text", "health text",
     "ports jsonb [not null, default: `'[]'::jsonb`]", "observed_at timestamptz [not null]",
-], ["(server_id, docker_id) [unique]"], "Cache observed từ agent.")
+], ["(server_id, docker_id) [unique]", "project_id"], "Cache observed từ agent.")
 t("docker", "port_allocations", IDN + [
     "server_id bigint [not null, ref: > servers.id]", "port int [not null]",
-    "owner_type text [not null]", "owner_id bigint [not null]",
+    "protocol text [not null, default: 'tcp', note: 'tcp|udp']",
+    "compose_project_id bigint [not null, ref: > compose_projects.id]", "service text [not null]",
+    "container_port int [not null]",
     "created_at timestamptz [not null, default: `now()`]",
-], ["(server_id, port) [unique]"])
+], ["(server_id, port, protocol) [unique]", "compose_project_id"], "Dải 20000–29999 mỗi server, cấp trong transaction (D-97).")
+t("docker", "image_rollbacks", IDN + [
+    "compose_project_id bigint [not null, ref: > compose_projects.id]", "service text [not null]",
+    "from_digest text [not null]", "to_digest text [not null]",
+    "rollback_tag text [not null, note: 'itso-rollback/<project>-<service>:<yyyymmddhhmmss>']",
+    "state text [not null, default: 'running', note: 'running|succeeded|rolled_back|failed']",
+    "reason text", "job_id bigint [ref: > jobs.id]", "requested_by_user_id bigint [ref: > users.id]",
+    "released_at timestamptz [note: 'Hết giữ (quá 2 bản/service) → prune được xóa']",
+    "created_at timestamptz [not null, default: `now()`]",
+], ["(compose_project_id, service, created_at)"], "Cập nhật image có rollback (D-98, ADR 0043).")
 
 # ---------------------------------------------------------------- Backup (D-82…D-87, ADR 0029–0033)
 t("backup", "backup_destinations", ID + [

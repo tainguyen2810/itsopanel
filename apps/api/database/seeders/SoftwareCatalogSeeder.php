@@ -15,10 +15,10 @@ class SoftwareCatalogSeeder extends Seeder
 {
     /** @var list<array{0: string, 1: string, 2: string, 3: string}> key, tên, nhóm, bản noble */
     public const RECIPES = [
-        ['acl', 'ACL (setfacl/getfacl)', 'system', '2.3.2'],
-        ['quota', 'Disk quota (quota tools)', 'system', '4.06'],
+        ['acl', 'ACL (setfacl/getfacl)', 'base', '2.3.2'],
+        ['quota', 'Disk quota (quota tools)', 'base', '4.06'],
         ['nftables', 'nftables', 'security', '1.0.9'],
-        ['restic', 'Restic (sao lưu)', 'backup', '0.16.4'],
+        ['restic', 'Restic (sao lưu)', 'base', '0.16.4'],
         ['stress-ng', 'stress-ng (kiểm tải VM test)', 'tools', '0.17.06'],
         // Phase 5 (web stack). PHP 8.3 quản lý ở PHP Manager (php.version.install), không qua recipe.
         ['nginx', 'Nginx', 'web', '1.24.0'],

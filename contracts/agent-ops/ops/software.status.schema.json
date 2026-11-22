@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/software.status.schema.json",
+  "title": "software.status",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "recipes": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Recipe"
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "recipes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "software": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/SoftwareInfo"
+          },
+          "maxItems": 100
+        },
+        "pending_security": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "software",
+        "pending_security"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

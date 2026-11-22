@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/compose.apply.schema.json",
+  "title": "compose.apply",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "../defs.schema.json#/$defs/ComposeProjectRef"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "validated_yaml": {
+          "$ref": "../defs.schema.json#/$defs/ComposeYaml"
+        },
+        "validated_sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        },
+        "env": {
+          "type": "object",
+          "maxProperties": 200,
+          "propertyNames": {
+            "pattern": "^[A-Z_][A-Z0-9_]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 4096,
+            "not": {
+              "pattern": "[\\r\\n\\x00]"
+            }
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ComposePortMap"
+          },
+          "maxItems": 200
+        },
+        "registry_uuids": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Uuid"
+          },
+          "maxItems": 10,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "project",
+        "revision",
+        "validated_yaml",
+        "validated_sha256",
+        "env",
+        "ports",
+        "registry_uuids"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "$ref": "../defs.schema.json#/$defs/ComposeServiceName"
+              },
+              "state": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "container_id": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/ContainerId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "service",
+              "state",
+              "container_id"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "services"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

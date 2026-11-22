@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.container.list.schema.json",
+  "title": "docker.container.list",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project_uuid": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "project_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "../defs.schema.json#/$defs/ContainerId"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "image": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "running",
+                  "exited",
+                  "paused",
+                  "restarting",
+                  "created",
+                  "dead"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "project_uuid": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/Uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "service": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "health": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "healthy",
+                  "unhealthy",
+                  "starting",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "image",
+              "state",
+              "status",
+              "project_uuid",
+              "service",
+              "health"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 2000
+        }
+      },
+      "required": [
+        "containers"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.image.list.schema.json",
+  "title": "docker.image.list",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "../defs.schema.json#/$defs/ImageDigest"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "maxItems": 50
+              },
+              "size_bytes": {
+                "$ref": "../defs.schema.json#/$defs/Bytes"
+              },
+              "created_at": {
+                "type": "string"
+              },
+              "in_use": {
+                "type": "boolean"
+              },
+              "dangling": {
+                "type": "boolean"
+              },
+              "rollback": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "tags",
+              "size_bytes",
+              "created_at",
+              "in_use",
+              "dangling",
+              "rollback"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 5000
+        }
+      },
+      "required": [
+        "images"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

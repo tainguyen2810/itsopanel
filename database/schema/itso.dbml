@@ -835,13 +835,69 @@ Table terminal_sessions {
 }
 
 Table wordpress_sites {
-  website_id bigint [pk, ref: - websites.id]
+  id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
+  website_id bigint [not null, unique, ref: - websites.id]
+  hosting_account_id bigint [not null, ref: > hosting_accounts.id]
+  path text [not null, note: 'Docroot tương đối home account (RelPath); agent kiểm lại sau khi resolve symlink']
   version text
   admin_user text
-  auto_update text [not null, default: 'minor']
-  hardened boolean [not null, default: false]
-  components jsonb [not null, default: `'[]'::jsonb`]
-  observed_at timestamptz
+  multisite boolean [not null, default: false]
+  state text [not null, default: 'ok', note: 'ok|updating|cloning|maintenance|error (D-99)']
+  auto_update text [not null, default: 'minor', note: 'off|minor|all']
+  update_window text [not null, default: '02:00-05:00', note: 'HH:00-HH:00 theo giờ server']
+  maintenance boolean [not null, default: false]
+  hardening jsonb [not null, default: `'{}'::jsonb`, note: 'file_edit_disabled, xmlrpc_blocked, php_in_uploads_blocked, wp_config_protected, version_hidden, salts_rotated']
+  staging_of_id bigint [ref: > wordpress_sites.id, note: 'Bản staging trỏ về site gốc; đẩy staging → production DEFERRED']
+  checksums_ok boolean
+  last_scan_at timestamptz
+  last_update_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+  indexes {
+    hosting_account_id
+    staging_of_id
+  }
+  Note: 'Site WordPress do Toolkit quản lý (D-99, ADR 0044).'
+}
+
+Table wordpress_components {
+  id bigint [pk, increment]
+  wordpress_site_id bigint [not null, ref: > wordpress_sites.id]
+  type text [not null, note: 'core|plugin|theme']
+  slug text [note: 'null với core; ^[a-z0-9][a-z0-9_-]{0,99}$']
+  name text [not null]
+  version text [not null]
+  update_version text
+  active boolean [not null, default: true]
+  observed_at timestamptz [not null, default: `now()`]
+  indexes {
+    (wordpress_site_id, type, slug) [unique]
+  }
+  Note: 'Cache wp.info: core, plugin, theme và bản mới.'
+}
+
+Table wordpress_updates {
+  id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
+  wordpress_site_id bigint [not null, ref: > wordpress_sites.id]
+  job_id bigint [ref: > jobs.id]
+  trigger text [not null, default: 'manual', note: 'manual|auto']
+  items jsonb [not null, default: `'[]'::jsonb`, note: '[{type, slug, from_version, to_version, ok}]']
+  steps jsonb [not null, default: `'[]'::jsonb`, note: 'snapshot|maintenance|update|verify|rollback → done|failed|skipped']
+  state text [not null, default: 'running', note: 'running|succeeded|rolled_back|failed']
+  snapshot_id bigint [ref: > backup_snapshots.id, note: 'Snapshot pre-wp-update dùng để khôi phục']
+  error text
+  requested_by_user_id bigint [ref: > users.id]
+  started_at timestamptz
+  finished_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  indexes {
+    (wordpress_site_id, created_at)
+  }
+  Note: 'Lịch sử cập nhật an toàn (D-99).'
 }
 
 Table git_repositories {
@@ -897,8 +953,19 @@ Table git_deployments {
 Table docker_hosts {
   server_id bigint [pk, ref: - servers.id]
   enabled boolean [not null, default: false]
-  daemon_config jsonb [not null, default: `'{}'::jsonb`]
+  state text [not null, default: 'not_installed', note: 'not_installed|installing|enabled|degraded']
+  engine_version text
+  compose_version text
+  api_version text
+  daemon_config jsonb [not null, default: `'{}'::jsonb`, note: 'daemon.json do panel quản lý (D-94)']
+  checks jsonb [not null, default: `'[]'::jsonb`]
+  port_range_from int [not null, default: 20000]
+  port_range_to int [not null, default: 29999]
+  firewall_synced_at timestamptz
   observed_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  Note: 'Docker trên server (D-94, D-95). Nhóm docker phải rỗng; chỉ agent chạm socket.'
 }
 
 Table registries {
@@ -907,9 +974,14 @@ Table registries {
   name text [not null, unique]
   url text [not null]
   username text
-  password_encrypted bytea
+  password_encrypted bytea [note: 'Crypt; tới agent qua secret_ref, không vào params job/audit (D-98)']
+  last_test_at timestamptz
+  last_test_ok boolean
+  last_test_message text
+  created_by_user_id bigint [ref: > users.id]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
 }
 
 Table compose_projects {
@@ -917,7 +989,11 @@ Table compose_projects {
   uuid uuid [not null, unique, default: `gen_random_uuid()`]
   server_id bigint [not null, ref: > servers.id]
   name text [not null]
+  run_state text [not null, default: 'stopped', note: 'running|stopped|partial|error|deploying (API: status)']
+  template text
+  env_encrypted bytea [note: 'Biến môi trường (JSON, Crypt); ghi .env 0600 trên node']
   current_revision_id bigint [ref: > compose_revisions.id]
+  created_by_user_id bigint [ref: > users.id]
   spec_version int [not null, default: 1, note: 'Desired: tăng mỗi lần đổi cấu hình']
   observed_version int [not null, default: 0, note: 'Observed: phiên bản agent đã áp dụng']
   status text [not null, default: 'pending', note: 'pending|provisioning|ready|degraded|failed|suspended|deleting']
@@ -931,19 +1007,26 @@ Table compose_projects {
   indexes {
     (server_id, name) [unique]
   }
+  Note: 'Compose project chỉ admin (D-96); Docker cho USER DEFERRED.'
 }
 
 Table compose_revisions {
   id bigint [pk, increment]
   project_id bigint [not null, ref: > compose_projects.id]
+  number int [not null]
   yaml text [not null]
   validated_yaml text
-  validation_report jsonb
+  validated_sha256 text
+  ok boolean [not null, default: false]
+  findings_count int [not null, default: 0]
+  validation_report jsonb [note: 'findings + rewrites của compose.validate']
+  overrides jsonb [not null, default: `'[]'::jsonb`, note: '[{rule, reason, by_user_uuid, at}] chỉ SUPER_ADMIN']
   created_by_user_id bigint [ref: > users.id]
   created_at timestamptz [not null, default: `now()`]
   indexes {
-    project_id
+    (project_id, number) [unique]
   }
+  Note: 'Revision bất biến (ADR 0041).'
 }
 
 Table containers {
@@ -952,12 +1035,16 @@ Table containers {
   docker_id text [not null]
   name text [not null]
   image text [not null]
+  image_digest text
   project_id bigint [ref: > compose_projects.id]
+  service text
   state text
+  health text
   ports jsonb [not null, default: `'[]'::jsonb`]
   observed_at timestamptz [not null]
   indexes {
     (server_id, docker_id) [unique]
+    project_id
   }
   Note: 'Cache observed từ agent.'
 }
@@ -966,12 +1053,35 @@ Table port_allocations {
   id bigint [pk, increment]
   server_id bigint [not null, ref: > servers.id]
   port int [not null]
-  owner_type text [not null]
-  owner_id bigint [not null]
+  protocol text [not null, default: 'tcp', note: 'tcp|udp']
+  compose_project_id bigint [not null, ref: > compose_projects.id]
+  service text [not null]
+  container_port int [not null]
   created_at timestamptz [not null, default: `now()`]
   indexes {
-    (server_id, port) [unique]
+    (server_id, port, protocol) [unique]
+    compose_project_id
   }
+  Note: 'Dải 20000–29999 mỗi server, cấp trong transaction (D-97).'
+}
+
+Table image_rollbacks {
+  id bigint [pk, increment]
+  compose_project_id bigint [not null, ref: > compose_projects.id]
+  service text [not null]
+  from_digest text [not null]
+  to_digest text [not null]
+  rollback_tag text [not null, note: 'itso-rollback/<project>-<service>:<yyyymmddhhmmss>']
+  state text [not null, default: 'running', note: 'running|succeeded|rolled_back|failed']
+  reason text
+  job_id bigint [ref: > jobs.id]
+  requested_by_user_id bigint [ref: > users.id]
+  released_at timestamptz [note: 'Hết giữ (quá 2 bản/service) → prune được xóa']
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (compose_project_id, service, created_at)
+  }
+  Note: 'Cập nhật image có rollback (D-98, ADR 0043).'
 }
 
 Table backup_destinations {
@@ -1601,6 +1711,8 @@ TableGroup hosting [note: 'Hosting'] {
   file_operations
   terminal_sessions
   wordpress_sites
+  wordpress_components
+  wordpress_updates
   git_repositories
   git_deployments
 }
@@ -1612,6 +1724,7 @@ TableGroup docker [note: 'Docker (chỉ admin)'] {
   compose_revisions
   containers
   port_allocations
+  image_rollbacks
 }
 
 TableGroup backup [note: 'Backup và Restore'] {

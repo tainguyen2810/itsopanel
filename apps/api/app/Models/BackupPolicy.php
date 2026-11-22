@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_run_at
  * @property Carbon|null $next_run_at
  * @property string|null $last_status
+ * @property string $volume_consistency
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read Collection<int, BackupDestination> $destinations

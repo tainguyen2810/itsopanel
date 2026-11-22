@@ -57,7 +57,7 @@ final class BackupPresenter
         $dests = $p->destinations()->get();
 
         return ['uuid' => $p->uuid, 'name' => $p->name, 'scope_type' => $p->scope_type, 'scope_uuid' => PolicyService::scopeUuid($p),
-            'contents' => $p->contents, 'excludes' => $p->excludes, 'schedule' => $p->schedule,
+            'contents' => $p->contents, 'volume_consistency' => $p->volume_consistency, 'excludes' => $p->excludes, 'schedule' => $p->schedule,
             'destination_uuids' => $dests->pluck('uuid')->values()->all(), 'retention' => (object) $p->retention,
             'retention_mode' => $dests->contains(fn (BackupDestination $d) => $d->immutable()) ? 'cli' : 'panel', 'enabled' => $p->enabled,
             'last_run_at' => $p->last_run_at?->toIso8601String(), 'next_run_at' => $p->next_run_at?->toIso8601String(),
@@ -85,7 +85,7 @@ final class BackupPresenter
         return ['uuid' => $s->uuid, 'hosting_account' => self::accountRef($s->hosting_account_id), 'destination' => ['uuid' => $d->uuid, 'name' => $d->name],
             'repository_uuid' => BackupRepository::withTrashed()->whereKey($s->repository_id)->value('uuid'), 'scope_type' => $s->scope_type,
             'website' => $w instanceof Website ? ['uuid' => $w->uuid, 'primary_domain' => $w->primary_domain] : null, 'databases' => $s->databases,
-            'restic_snapshot_id' => $s->restic_snapshot_id, 'size_mb' => self::mb($s->size_bytes), 'taken_at' => $s->taken_at->toIso8601String(),
+            'volumes' => [], 'restic_snapshot_id' => $s->restic_snapshot_id, 'size_mb' => self::mb($s->size_bytes), 'taken_at' => $s->taken_at->toIso8601String(),
             'verified_at' => $s->verified_at?->toIso8601String(), 'contents' => $s->contents, 'tags' => $s->tags, 'panel_version' => $s->panel_version,
             'locked_until' => $s->locked_until?->toIso8601String()];
     }

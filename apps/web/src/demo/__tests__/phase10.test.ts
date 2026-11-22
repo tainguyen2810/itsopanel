@@ -183,6 +183,15 @@ describe('API giả lập Phase 10 (Docker, Compose, Software, WordPress)', () =
     expect((await call('POST', `/api/v1/admin/servers/${S2}/docker:enable`)).status).toBe(409);
   });
 
+  it('cổng compose đã cấp: trong dải 20000–29999, khớp project, không trùng', async () => {
+    const r = await call('GET', `/api/v1/admin/servers/${S1}/docker/port-allocations`);
+    expect(r.status).toBe(200);
+    const rows = data<{ port: number; protocol: string; compose_project: { name: string } }[]>(r);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((x) => x.port >= 20000 && x.port <= 29999)).toBe(true);
+    expect(new Set(rows.map((x) => `${x.port}/${x.protocol}`)).size).toBe(rows.length);
+    expect(rows.map((x) => x.compose_project.name)).toContain('cache');
+  });
   it('volume đang dùng không xóa được (409); volume rời xóa được; prune image không tag', async () => {
     expect(
       (await call('DELETE', `/api/v1/admin/servers/${S1}/docker/volumes/cache_data`)).status,

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.volume.list.schema.json",
+  "title": "docker.volume.list",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "../defs.schema.json#/$defs/DockerVolumeName"
+              },
+              "driver": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "size_bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "used_by": {
+                "type": "array",
+                "items": {
+                  "$ref": "../defs.schema.json#/$defs/ContainerId"
+                },
+                "maxItems": 100
+              },
+              "project_uuid": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/Uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "driver",
+              "size_bytes",
+              "used_by",
+              "project_uuid"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 5000
+        }
+      },
+      "required": [
+        "volumes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

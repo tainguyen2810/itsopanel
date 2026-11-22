@@ -32,6 +32,9 @@ const PHASE7_TABLES = ['security_events', 'firewall_rules', 'malware_scans', 'ma
     'terminal_recordings'];
 
 const PHASE9_TABLES = ['agent_enrollment_tokens', 'agent_certificates', 'account_migrations'];
+const PHASE10_TABLES = ['docker_hosts', 'registries', 'compose_projects', 'compose_revisions', 'containers',
+    'port_allocations', 'image_rollbacks', 'wordpress_sites', 'wordpress_components', 'wordpress_updates',
+    'git_repositories', 'git_deployments'];
 const PHASE8_TABLES = ['backup_destinations', 'backup_repositories', 'backup_policies', 'backup_policy_destinations',
     'backup_jobs', 'backup_snapshots', 'backup_verifications', 'restore_jobs', 'purge_records'];
 
@@ -47,12 +50,12 @@ function rejects(callable $fn, string $pattern): void
     throw new RuntimeException('Mong đợi lỗi DB khớp '.$pattern);
 }
 
-it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 + 9 bảng Phase 8 + 3 bảng Phase 9 (không hơn), audit_logs, metric_samples và waf_events có partition mặc định', function () {
+it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 + 9 bảng Phase 8 + 3 bảng Phase 9 + 12 bảng Phase 10 (không hơn), audit_logs, metric_samples và waf_events có partition mặc định', function () {
     $tables = collect(DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         ->pluck('tablename')
         ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default', 'waf_events_default'], true))
         ->sort()->values()->all();
-    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES, ...PHASE7_TABLES, ...PHASE8_TABLES, ...PHASE9_TABLES])->sort()->values()->all());
+    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES, ...PHASE7_TABLES, ...PHASE8_TABLES, ...PHASE9_TABLES, ...PHASE10_TABLES])->sort()->values()->all());
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'metric_samples_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'audit_logs_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'waf_events_default'"))->toBe(1);

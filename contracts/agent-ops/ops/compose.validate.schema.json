@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/compose.validate.schema.json",
+  "title": "compose.validate",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "../defs.schema.json#/$defs/ComposeProjectRef"
+        },
+        "compose_yaml": {
+          "$ref": "../defs.schema.json#/$defs/ComposeYaml"
+        },
+        "allocated_ports": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 20000,
+            "maximum": 29999
+          },
+          "maxItems": 200,
+          "uniqueItems": true
+        },
+        "defaults": {
+          "$ref": "../defs.schema.json#/$defs/ComposeLimits"
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ComposeOverride"
+          },
+          "maxItems": 10
+        },
+        "allow_home_bind": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "project",
+        "compose_yaml",
+        "allocated_ports",
+        "defaults",
+        "overrides",
+        "allow_home_bind"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ComposeFinding"
+          },
+          "maxItems": 500
+        },
+        "rewrites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "$ref": "../defs.schema.json#/$defs/ComposeServiceName"
+              },
+              "path": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "before": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 1000
+              },
+              "after": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "service",
+              "path",
+              "before",
+              "after"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 500
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ComposePortMap"
+          },
+          "maxItems": 200
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/DockerImageRef"
+          },
+          "maxItems": 100
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/DockerVolumeName"
+          },
+          "maxItems": 100
+        },
+        "validated_yaml": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/ComposeYaml"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "validated_sha256": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "ok",
+        "findings",
+        "rewrites",
+        "ports",
+        "images",
+        "volumes",
+        "validated_yaml",
+        "validated_sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

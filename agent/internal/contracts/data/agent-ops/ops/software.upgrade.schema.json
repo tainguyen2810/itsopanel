@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/software.upgrade.schema.json",
+  "title": "software.upgrade",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "recipe": {
+          "$ref": "../defs.schema.json#/$defs/Recipe"
+        }
+      },
+      "required": [
+        "recipe"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "from_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "from_version",
+        "version",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

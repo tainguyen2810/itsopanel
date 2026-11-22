@@ -127,6 +127,31 @@
       "description": "Token join sai, hết hạn, đã dùng, hoặc CSR không hợp lệ (D-90)"
     },
     {
+      "code": "compose_rejected",
+      "retryable": false,
+      "description": "Validator compose còn lỗi chặn chưa được ghi đè, hoặc YAML apply khác bản đã validate (D-96)"
+    },
+    {
+      "code": "port_unavailable",
+      "retryable": true,
+      "description": "Cổng host đã cấp đang bị tiến trình khác chiếm (D-97)"
+    },
+    {
+      "code": "in_use",
+      "retryable": false,
+      "description": "Tài nguyên đang được dùng (volume gắn container, image đang chạy, recipe có site dùng)"
+    },
+    {
+      "code": "docker_unavailable",
+      "retryable": true,
+      "description": "Docker chưa cài hoặc socket không phản hồi (D-94)"
+    },
+    {
+      "code": "wp_update_failed",
+      "retryable": false,
+      "description": "Cập nhật WordPress lỗi kiểm tra sau cập nhật, đã khôi phục snapshot (D-99)"
+    },
+    {
       "code": "internal",
       "retryable": true,
       "description": "Lỗi nội bộ agent"

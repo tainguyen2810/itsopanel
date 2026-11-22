@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/compose.down.schema.json",
+  "title": "compose.down",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "../defs.schema.json#/$defs/ComposeProjectRef"
+        }
+      },
+      "required": [
+        "project"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "stopped": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "stopped"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

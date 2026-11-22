@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 10 — Docker Manager, WordPress Toolkit, Software (bắt đầu 2026-11-22; kế hoạch `docs/planning/seed/PHASE_10_PROMPTS.md`, D-94 → D-100 đề xuất). Phase 9 ✓ APPROVED 2026-11-22 (merge `8d2a613`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 10.1 ADR + contracts + migration (✱)
-- **Task đang làm:** 10.1
+- **Prompt hiện tại:** 10.2 Software Manager (✱)
+- **Task đang làm:** 10.2
 - **Commit cuối:** xem `git log -1` trên nhánh `phase-10`
 - **Bước tiếp theo:** làm hàng loạt 10.0 → 10.8, tự merge, DỪNG trước Phase 11; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -34,8 +34,8 @@
 Phase 10 (bắt đầu 2026-11-22, đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`
 
 - ✓ 10.0 Mockup Docker, WordPress, Software trên bản demo (`docs/screenshots/phase-10/`)
-- ✱ 10.1 ADR 0039–0045 (D-94…D-100), contracts, migration Phase 10
-- ○ 10.2 Software Manager: catalog, PHP nhiều bản, upgrade
+- ✓ 10.1 ADR 0039–0045 (D-94…D-100), contracts, migration Phase 10
+- ✱ 10.2 Software Manager: catalog, PHP nhiều bản, upgrade
 - ○ 10.3 Agent Docker: Engine client, validator compose, DOCKER-USER, image/volume
 - ○ 10.4 Panel Docker: hosts, compose, cổng, registry, website Docker
 - ○ 10.5 Agent WordPress: wp.* dưới UID account
@@ -193,3 +193,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 8 / duyệt | Người dùng duyệt những gì đã làm: Phase 8 + D-82 → D-87 (ADR 0029–0033 Accepted) + mốc `v0.1.0-alpha`; kế hoạch Phase 9 + D-88 → D-93; ROADMAP Phase 1 ghi APPROVED | 02adc94 |
 | 2026-11-22 | 9 / duyệt · 10 / kế hoạch | Người dùng duyệt Phase 9 (merge `8d2a613`) và chọn bắt đầu Phase 10; kế hoạch `PHASE_10_PROMPTS.md` (10.0 mockup → 10.8 tích hợp), đề xuất D-94 → D-100 | — |
 | 2026-11-22 | 10.0 | Mockup Phase 10 trên demo (MSW): Software Manager dạng catalog theo nhóm (xung đột Redis↔Valkey, phụ thuộc, gỡ bị chặn kèm lý do, PPA ondrej/php) + tự cập nhật OS không reboot; Docker host (kiểm tra an toàn, daemon, firewall DOCKER-USER, bật Docker cho SA), image (prune, tag rollback), volume (dùng bởi, backup, xóa khi rời); compose: validator mô phỏng D-96 (privileged, docker.sock, host network/pid, cap_add, bind mount, viết lại cổng 20000–29999, thêm mem_limit), override chỉ SA kèm lý do, revision + diff, cập nhật/quay lại image, mẫu; website loại `docker`; registry kiểm đăng nhập; backup phạm vi compose project + volume; WordPress: trang chi tiết dùng chung Admin/Portal (cập nhật chọn lọc có snapshot/rollback + lịch sử bước, hardening 6 mục, bảo trì, tự cập nhật theo cửa sổ giờ, staging, đổi mật khẩu admin); 68 ảnh `docs/screenshots/phase-10/` | — |
+| 2026-11-22 | 10.1 | ADR 0039–0045 Accepted; agent-ops 41 op Phase 10 có schema + 5 mã lỗi + 69 vector độc; OpenAPI port-allocations; DBML 12 bảng Phase 10 + ALTER bảng Phase 4/5/8; migration Phase 10; db-verify 138, Pest 483, Vitest 591 xanh | — |

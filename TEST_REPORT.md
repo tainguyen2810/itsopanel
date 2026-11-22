@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 10 / Prompt 10.1 (ADR, contracts, DBML, migration) — nhánh `phase-10`
+
+Phạm vi: ADR 0039–0045 (D-94…D-100, Accepted); agent-ops viết đủ schema 41 op Phase 10 (software.catalog/status/upgrade, os.auto_updates; docker.host.*, docker.container.list/inspect/control/logs/stats, docker.image.list/pull/prune/update/rollback, docker.registry.login, docker.volume.list/create/remove/backup/restore, docker.network.list/create/remove, docker.firewall.sync; compose.validate/apply/up/down/pull/remove; wp.detect/info/install/update/clone/harden/admin_password/maintenance), defs mới (ComposeProjectName, DockerImageRef, ContainerId, DockerVolumeName, ComposeRule/Override/Finding, WpSlug, WpSite…), Recipe thêm 10 recipe, 5 mã lỗi mới (compose_rejected, port_unavailable, in_use, docker_unavailable, wp_update_failed); 69 vector độc mới; OpenAPI thêm `GET /servers/{id}/docker/port-allocations`; DBML: docker_hosts, registries, compose_projects/revisions (số revision, override, sha256), containers, port_allocations (server×port×protocol, 20000–29999), image_rollbacks, wordpress_sites/components/updates; ALTER `/* phase:10 */` cho software_catalog, server_software (state, latest_version, upgrade_available), websites (compose_project_id/service), backup_policies (compose_project, docker_volumes, volume_consistency), backup_snapshots; migration `2026_11_20_000010_phase_10_schema.php` (sinh tự động). Laravel: trình bày thêm trường bắt buộc mới (Software, chính sách/snapshot backup) và nhóm catalog khớp enum.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `check_demo.py` | PASS: OpenAPI 410 operation (admin 290, portal 120); agent-ops 157 op có schema, 2 op khai báo (git.*); evil 318 vector (276 tầng schema, 42 tầng nghiệp vụ) · OK |
+| Codegen | `make codegen` · `make codegen-check` | OK |
+| Agent Go | `cd agent && go test -race ./...` | PASS (lần đầu `TestEvilVectors` đỏ vì vector recipe `docker`/`wp-cli` accept trước khi agent có recipe → chuyển vector sang 10.2 cùng allowlist Go) |
+| DB | `make db-schema` · `make db-verify` | PASS: 93 bảng; **138 test SQL** (mới `90_docker_wordpress.sql` 40 test; lần đầu 1 lỗi: CHECK slug plugin để lọt NULL → thêm `slug IS NOT NULL`); migration Phase 3 → 10 khớp đặc tả, áp lần lượt = itso.sql + extras.sql. Lần đầu `db-schema` lỗi cột `status` trùng nhóm Desired/Observed → đổi thành `run_state`; đổi ghi chú `websites.type` làm lệch migration Phase 5 đã phát hành → hoàn tác |
+| Pest | `make test-api` (PostgreSQL 16 cluster tạm + Redis cục bộ) | **483/483 PASS** (5599 assertion). Lần đầu 4 lỗi: SchemaTest thiếu 12 bảng Phase 10; response Software thiếu `source/service/core/conflicts/requires/in_use/remove_blocked` và nhóm `system`/`backup` ngoài enum; chính sách backup thiếu `volume_consistency`, snapshot thiếu `volumes` (schema đổi từ 10.0) → sửa presenter/seeder |
+| Vitest | `pnpm -s vitest run` | 591/591 PASS (mới: cổng compose đã cấp) |
+| Lint | `pnpm -s lint` · PHPStan · Pint · `make docs-check` | sạch (docs-check lần đầu lỗi bảng lồng trong ADR 0041 và `<port>` trong DECISIONS → sửa) |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 10 / Prompt 10.0 (mockup Docker, WordPress, Software trên demo) — nhánh `phase-10`
 
 Phạm vi: contracts (schema Docker/Compose/WordPress/Software/OS updates, endpoint mới, op khai báo), dataset demo, MSW `demo/handlers/docker.ts` (mới: Docker host, bật Docker, firewall, prune, volume, validator compose mô phỏng D-96, revision, image update/rollback, mẫu, registry test, OS updates) + `infra.ts` (compose tạo/sửa chạy validator, override chỉ SA, Software xung đột/phụ thuộc/gỡ bị chặn) + `sites.ts` (WordPress chi tiết/cài đặt/lịch sử/quét/cập nhật chọn lọc/hardening/bảo trì/mật khẩu/staging, website `docker`); UI: `ServerSoftwarePage`, `ServerDockerPage`, `ComposePage`, `ComposeDetailPage`, `docker/validation.tsx`, `RegistriesPage`, `WordPressPage` + `WordPressDetailPage` (mới, Admin + Portal), website loại docker, chính sách backup compose. Dữ liệu demo: thay plugin mẫu WooCommerce bằng WP Mail SMTP (ngoài phạm vi), thêm site WordPress cho An Phát (Portal).

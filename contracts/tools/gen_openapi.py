@@ -953,6 +953,9 @@ def admin_paths(api: Api):
             params=dk + [Api.p("VolumeName")], job=True, step_up=True,
             job_example=jobs("docker.volume_remove", "server", srv["uuid"], ["docker.volume.remove"]),
             desc="Volume đang được container dùng → 409 `resource_locked`.")
+    api.add("get", "/servers/{id}/docker/port-allocations", "listPortAllocations", "Cổng compose đã cấp", "Docker", params=dk,
+            list_=True, ok=ref("PortAllocation"), ok_example=page(D.PORT_ALLOCATIONS),
+            desc="Dải 20000–29999 mỗi server; cổng 22/80/443/cổng panel không bao giờ được cấp (D-97).")
     api.add("get", "/servers/{id}/docker/containers", "listContainers", "Container", "Docker", params=dk, list_=True,
             ok=ref("Container"), ok_example=page(D.CONTAINERS))
     api.add("post", "/servers/{id}/docker/containers/{container}:{action}", "controlContainer", "start/stop/restart",

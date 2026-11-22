@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/wp.info.schema.json",
+  "title": "wp.info",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "site": {
+          "$ref": "../defs.schema.json#/$defs/WpSite"
+        }
+      },
+      "required": [
+        "site"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "site_url": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "multisite": {
+          "type": "boolean"
+        },
+        "maintenance": {
+          "type": "boolean"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/WpComponentInfo"
+          },
+          "maxItems": 1000
+        },
+        "hardening": {
+          "type": "object",
+          "properties": {
+            "file_edit_disabled": {
+              "type": "boolean"
+            },
+            "xmlrpc_blocked": {
+              "type": "boolean"
+            },
+            "php_in_uploads_blocked": {
+              "type": "boolean"
+            },
+            "wp_config_protected": {
+              "type": "boolean"
+            },
+            "version_hidden": {
+              "type": "boolean"
+            },
+            "salts_rotated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "file_edit_disabled",
+            "xmlrpc_blocked",
+            "php_in_uploads_blocked",
+            "wp_config_protected",
+            "version_hidden",
+            "salts_rotated"
+          ],
+          "additionalProperties": false
+        },
+        "checksums_ok": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "site_url",
+        "multisite",
+        "maintenance",
+        "components",
+        "hardening",
+        "checksums_ok"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

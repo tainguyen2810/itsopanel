@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/os.auto_updates.schema.json",
+  "title": "os.auto_updates",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "security_only": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled",
+        "security_only"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "security_only": {
+          "type": "boolean"
+        },
+        "auto_reboot": {
+          "const": false
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled",
+        "security_only",
+        "auto_reboot",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.container.logs.schema.json",
+  "title": "docker.container.logs",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "../defs.schema.json#/$defs/ContainerId"
+        },
+        "lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000
+        }
+      },
+      "required": [
+        "id",
+        "lines"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 8192
+          },
+          "maxItems": 5000
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "lines",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

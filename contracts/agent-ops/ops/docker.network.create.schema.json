@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.network.create.schema.json",
+  "title": "docker.network.create",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "../defs.schema.json#/$defs/DockerNetworkName"
+        },
+        "internal": {
+          "type": "boolean"
+        },
+        "project_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "name",
+        "internal",
+        "project_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "created"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

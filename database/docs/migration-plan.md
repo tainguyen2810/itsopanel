@@ -13,9 +13,9 @@ Phase 1 chỉ có **đặc tả** (DBML + SQL + test). Laravel migrations có t�
 | 7 — Bảo mật | `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `fim_baselines`, `firewall_applies`, `security_settings`, `waf_settings`, `waf_events` (partition tháng), `fim_changes`, `terminal_recordings` | 6 |
 | 8 — Backup, purge | `backup_destinations`, `backup_repositories`, `backup_policies`, `backup_policy_destinations`, `backup_jobs`, `backup_snapshots`, `backup_verifications`, `restore_jobs`, `purge_records` | 7 |
 | 9 — Multi-server, chuyển account | `agent_enrollment_tokens`, `account_migrations` | 2 |
-| 10 — Docker, WordPress | `docker_hosts`, `registries`, `compose_projects`, `compose_revisions`, `containers`, `port_allocations`, `wordpress_sites`, `git_repositories`, `git_deployments` | 9 |
+| 10 — Docker, WordPress, Software | `docker_hosts`, `registries`, `compose_projects`, `compose_revisions`, `containers`, `port_allocations`, `image_rollbacks`, `wordpress_sites`, `wordpress_components`, `wordpress_updates`, `git_repositories`, `git_deployments` (+ ALTER `software_catalog`, `server_software`, `websites`, `backup_policies`, `backup_snapshots`) | 12 |
 | 11 — Giám sát, cảnh báo | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `notification_channels`, `notification_preferences` | 6 |
-| **Tổng** | | **81** |
+| **Tổng** | | **84** |
 
 Prompt 7.4 bổ sung cột mà API Security Center cần (migration Phase 7 chưa phát hành nên sinh lại, không viết migration mới): `uuid` cho `security_events`, `firewall_rules`, `malware_scans`, `malware_findings`, `quarantine_items`, `waf_events` (không unique vì là bảng partition); `security_events.message`, `acknowledged_at`; `firewall_rules.direction`, `enabled`; `malware_scans.target`, `engines`; `malware_findings.sha256`, `size`, `found_at`; `quarantine_items.signature`, `size`; CHECK direction/protocol/priority, engine/action/sha256.
 

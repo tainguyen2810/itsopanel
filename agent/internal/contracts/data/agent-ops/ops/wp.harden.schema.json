@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/wp.harden.schema.json",
+  "title": "wp.harden",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "site": {
+          "$ref": "../defs.schema.json#/$defs/WpSite"
+        },
+        "enable": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/WpHardening"
+          },
+          "maxItems": 6,
+          "uniqueItems": true
+        },
+        "disable": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/WpHardening"
+          },
+          "maxItems": 6,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "site",
+        "enable",
+        "disable"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "applied": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/WpHardening"
+          },
+          "maxItems": 6
+        },
+        "needs_vhost_reload": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "applied",
+        "needs_vhost_reload"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

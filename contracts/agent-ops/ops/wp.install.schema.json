@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/wp.install.schema.json",
+  "title": "wp.install",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "site": {
+          "$ref": "../defs.schema.json#/$defs/WpSite"
+        },
+        "url": {
+          "$ref": "../defs.schema.json#/$defs/HttpsUrl"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "not": {
+            "pattern": "[\\x00-\\x1f]"
+          }
+        },
+        "admin_user": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{2,59}$"
+        },
+        "admin_email": {
+          "$ref": "../defs.schema.json#/$defs/Email"
+        },
+        "admin_password": {
+          "$ref": "../defs.schema.json#/$defs/SecretPassword",
+          "writeOnly": true
+        },
+        "locale": {
+          "type": "string",
+          "enum": [
+            "vi",
+            "en_US"
+          ]
+        },
+        "db": {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "string",
+              "enum": [
+                "mariadb",
+                "mysql"
+              ]
+            },
+            "name": {
+              "$ref": "../defs.schema.json#/$defs/DbName"
+            },
+            "user": {
+              "$ref": "../defs.schema.json#/$defs/DbName"
+            },
+            "password": {
+              "$ref": "../defs.schema.json#/$defs/SecretPassword",
+              "writeOnly": true
+            }
+          },
+          "required": [
+            "engine",
+            "name",
+            "user",
+            "password"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "site",
+        "url",
+        "title",
+        "admin_user",
+        "admin_email",
+        "admin_password",
+        "locale",
+        "db"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "installed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "version",
+        "installed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

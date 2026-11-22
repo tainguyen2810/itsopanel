@@ -390,6 +390,26 @@ export function registerDocker() {
     if (isReply(s)) return s;
     return ok(dockerHost(ctx.db, s));
   });
+  // Cổng đã cấp (D-97): suy từ ports của compose project hiện có trên server, nên luôn khớp sau tạo/sửa/xóa.
+  on('get', '/api/v1/admin/servers/{id}/docker/port-allocations', (ctx) => {
+    const s = serverOf(ctx);
+    if (isReply(s)) return s;
+    const rows: S['PortAllocation'][] = (ctx.db.data.compose as S['ComposeProject'][])
+      .filter((c) => c.server.uuid === s.uuid)
+      .flatMap((c) =>
+        c.ports.map((pm) => ({
+          port: pm.host_port,
+          protocol: pm.protocol,
+          server: c.server,
+          compose_project: { uuid: c.uuid, name: c.name },
+          service: pm.service,
+          container_port: pm.container_port,
+          allocated_at: c.created_at,
+        })),
+      )
+      .sort((a, b) => a.port - b.port);
+    return page(ctx, rows);
+  });
   on('post', '/api/v1/admin/servers/{id}/docker:enable', (ctx) => {
     const deny = SA_ONLY(ctx);
     if (deny) return deny;

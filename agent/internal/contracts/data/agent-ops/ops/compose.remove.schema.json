@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/compose.remove.schema.json",
+  "title": "compose.remove",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "../defs.schema.json#/$defs/ComposeProjectRef"
+        },
+        "remove_volumes": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "project",
+        "remove_volumes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "boolean"
+        },
+        "volumes_removed": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/DockerVolumeName"
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "removed",
+        "volumes_removed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

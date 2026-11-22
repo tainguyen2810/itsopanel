@@ -191,7 +191,9 @@ final class ServerOpsController
         };
 
         return ['key' => $c->key, 'name' => $c->name, 'category' => $c->category, 'installed_version' => $installed,
-            'latest_version' => $latest, 'state' => $state];
+            'latest_version' => $latest, 'state' => $state, 'source' => $c->source, 'service' => null,
+            'core' => $c->core, 'conflicts' => $c->conflicts, 'requires' => $c->requires,
+            'in_use' => [], 'remove_blocked' => null];
     }
 
     /** @param list<string> $types */
