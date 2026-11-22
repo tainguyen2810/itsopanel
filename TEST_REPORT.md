@@ -2,6 +2,21 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 10 / Prompt 10.8 (tích hợp: e2e stack thật, VM, review, make check) — nhánh `phase-10`
+
+Phạm vi: `apps/web/e2e-real/phase10.spec.ts` (mới, 4 luồng), file điều khiển sandbox (`/var/lib/itso-sandbox/docker-control.json`: publish image mới + unhealthy; `wp-control.json`: available/fail/checksum_fail) và `FakeEngine.BeforePull`, `scripts/dev.sh` bật `docker: true` trong policy agent sandbox, `tests/vm/phase10.sh` (V0–V6), `docs/security/docker-wordpress-review.md`, `docs/runbooks/phase-10-docker-wordpress.md`, báo cáo `docs/reports/phase-10.md`. Commit f1e0602.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 10 | `pnpm -s exec playwright test -c playwright.real.config.ts --trace off e2e-real/phase10.spec.ts` (`make dev`, Engine Docker giả, WP-CLI mô phỏng, restic thật) | **4/4 PASS** (1,7 phút). Các lần đầu lỗi do test/môi trường: danh sách software phân trang (`per_page=100`, trường `installed_version`), PHP 8.3 chưa cài, Docker `op_disabled` vì policy sandbox (→ `dev.sh`), trường compose là `status`, cache wp.info 5 phút (→ `itso:wordpress-auto-update --refresh`), thông báo lỗi có tiền tố (→ `toContain`) |
+| Toàn bộ e2e stack thật | `ITSO_ACME_EMAIL=ops@itso.local make dev` + `migrate:fresh --seed` + `DemoSeeder` + `make test-e2e-real` | **26/27 PASS** (19,4 phút). 1 lỗi môi trường: Phase 3 tạo account, server local bị loại "Đĩa còn dưới 15 % sau khi cấp" → xóa cache composer + go-build (8,5 GB), chạy `itso:server-local` để làm mới heartbeat, chạy lại luồng đó: PASS. Hai luồng Portal Phase 3 khi chạy lại riêng dừng ở màn MFA vì luồng Phase 8 đã bật MFA cho user portal (phụ thuộc thứ tự, xanh trong lượt toàn bộ). Lượt đầu tiên (trước đó) có 8 lỗi do DB/sandbox bẩn sau nhiều lần chạy (quota 10/10 website) và thiếu `agent/bin/itso` → build lại, xóa sandbox, chạy sạch |
+| Go | `go test ./...` · `go test ./internal/ops -run 'TestWPSandboxControlFile\|TestSandboxDockerControlFile'` | PASS (21 gói) · PASS |
+| Lint | `make lint-agent` · `pnpm -s lint` | sạch (i18n 3282 key, vi = en) |
+| `make check` | `make check` (1 304 s, trên f1e0602) | **22 PASS · 1 SKIP (staticcheck) · 0 FAIL** ngay lần đầu: db-verify 142, test-web 593, test-e2e 622, test-api 505, test-agent 21 gói, test-fuzz 56 990 lượt, git-clean sạch |
+| Script VM | `bash -n tests/vm/phase10.sh` | OK (không có shellcheck). **Chờ VM:** V0 Docker thật + Engine API, V1 cổng `0.0.0.0` không lộ (quét từ ngoài) rồi mở bằng rule `scope=docker`, V2 validator trên daemon thật, V3 image lỗi quay về, V4 backup/khôi phục volume, V5 WordPress thật (cài, update lỗi → khôi phục, hardening, không lộ mật khẩu), V6 PHP nhiều bản |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase10.sh`.
+
 ## 2026-11-22 — Phase 10 / Prompt 10.7 (UI nối API thật) — nhánh `phase-10`
 
 Phạm vi: các màn Software, Docker (server, compose, registry, website Docker, backup volume) và WordPress đã dùng client sinh từ OpenAPI từ 10.0; prompt này rà hành vi MSW theo API thật (10.2–10.6) và sửa chỗ lệch. WordPress: dialog cài hiện mật khẩu quản trị **một lần** (`SecretDialog`, API không lưu), staging hiện basic auth **tắt + lý do** "chưa có ở bản này" và không gửi `basic_auth`; MSW: cài tạo job `wordpress_site` với op thật (`db.mysql.*` → `wp.install` → `wp.info`), trả `secret`, hardening mặc định tắt; cập nhật chưa có đích backup → 409 `precondition_failed`, op `wp.update/backup.stats/wp.info`; staging `basic_auth: true` → 422; đổi mật khẩu khi chưa biết user admin → 409 `precondition_failed`; quét khi không có website PHP → 409; tên quản trị `admin`/`administrator` → 422; registry chỉ SUPER_ADMIN (403, như `docker.manage`). API chỉnh theo UI: body `:update` rỗng = mọi thành phần có bản mới (theo cache), không còn gì → 409; core trong lịch sử có slug `wordpress` (như ví dụ OpenAPI); chặn tên quản trị `admin`/`administrator`. Chụp lại 4 ảnh `admin-wordpress-staging-*`.
