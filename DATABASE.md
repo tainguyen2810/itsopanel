@@ -63,4 +63,6 @@ Chi tiết đầy đủ 81 bảng và nguyên tắc expand/contract: [database/d
 | 8 | `backup_*`, `restore_jobs`, `purge_records` |
 | 9 | `agent_enrollment_tokens`, mở rộng `agents`, `account_migrations` |
 | 10 | docker_*, `compose_*`, `port_allocations`, `wordpress_*` |
-| 11 | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `notification_channels`, `notification_preferences` |
+| 11 | `metric_rollups`, `alert_rules`, `alerts`, `uptime_checks`, `uptime_results`, `notification_channels`, `notification_preferences`, `notification_deliveries` |
+
+**Lưu trữ số liệu (D-101, từ 11.3):** `metric_samples` 1 phút, partition theo ngày, giữ 7 ngày; `itso:metrics-prune` (hằng ngày) tạo trước partition 2 ngày tới, drop partition cũ (không DELETE) và xóa `metric_rollups` quá 90 ngày. `itso:metrics-rollup` (mỗi giờ) upsert min/avg/max/số mẫu theo giờ UTC, chạy bù khi trễ. API: khoảng ≤ 24 giờ đọc samples, dài hơn đọc rollup (trung bình theo số mẫu), tối đa ~500 điểm. Số liệu account (cpu_pct, ram, IO, tasks) lấy từ một lần `metrics.cgroup` theo lô mỗi server trong `itso:usage-refresh` (5 phút).

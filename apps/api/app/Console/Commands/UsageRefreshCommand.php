@@ -15,7 +15,10 @@ use Illuminate\Support\Carbon;
 
 /**
  * Đọc mức dùng (disk, inode, CPU, RAM) qua op quota.report, ghi account_usage_snapshots (bản mới nhất được
- * /hosting-accounts/{id}/usage đọc) và metric_samples theo account (cpu_pct, ram_pct, disk_pct).
+ * /hosting-accounts/{id}/usage đọc) và metric_samples theo account. Phase 11 (D-101): thêm một lần metrics.cgroup
+ * chế độ lô cho mỗi server (mọi slice, không gọi theo từng account) → cpu_pct, ram, IO, tasks.
+ * Metric account: cpu_pct (% một core, giới hạn gói cpu_percent), ram_pct/disk_pct/inode_pct (% giới hạn gói),
+ * io_read/io_write (byte/giây), tasks; ram_mb/disk_mb là số tuyệt đối cho bảng top account.
  * Lịch: mỗi 5 phút (routes/console.php).
  */
 final class UsageRefreshCommand extends Command
@@ -53,17 +56,27 @@ final class UsageRefreshCommand extends Command
                 continue;
             }
             $byUser = collect((array) ($res->data['usage'] ?? []))->keyBy('username');
+            $cg = $this->cgroups($agent, (int) $serverId);
             foreach ($group as $a) {
                 $u = $byUser->get($a->username);
                 if (! is_array($u)) {
                     continue;
                 }
+                $c = $cg[$a->username] ?? null;
+                $ramMb = $c !== null ? (int) ($c['memory_current_mb'] ?? 0) : (int) $u['ram_mb'];
                 AccountUsageSnapshot::query()->create(['hosting_account_id' => $a->id, 'disk_mb' => (int) $u['disk_mb'],
-                    'inode_count' => (int) $u['inodes'], 'mem_peak_mb' => (int) $u['ram_mb'], 'at' => $now]);
+                    'inode_count' => (int) $u['inodes'], 'mem_peak_mb' => $ramMb, 'at' => $now]);
                 $l = $quota->limits($a);
                 $pct = fn (int|float $used, int $limit): float => $limit > 0 ? round($used * 100 / $limit, 2) : 0.0;
-                $metrics->insertSamples($a->server_id, $a->id, ['cpu_pct' => (float) $u['cpu_pct'],
-                    'ram_pct' => $pct((int) $u['ram_mb'], (int) $l['ram_mb']), 'disk_pct' => $pct((int) $u['disk_mb'], (int) $l['disk_mb'])], $now);
+                $samples = ['cpu_pct' => $c !== null ? (float) ($c['cpu_pct'] ?? 0) : (float) $u['cpu_pct'],
+                    'ram_pct' => $pct($ramMb, (int) $l['ram_mb']), 'disk_pct' => $pct((int) $u['disk_mb'], (int) $l['disk_mb']),
+                    'inode_pct' => $pct((int) $u['inodes'], (int) $l['inode_limit']),
+                    'ram_mb' => $ramMb, 'disk_mb' => (int) $u['disk_mb']];
+                if ($c !== null) {
+                    $samples += ['io_read' => (float) ($c['io_read_bps'] ?? 0), 'io_write' => (float) ($c['io_write_bps'] ?? 0),
+                        'tasks' => (int) ($c['pids_current'] ?? 0)];
+                }
+                $metrics->insertSamples($a->server_id, $a->id, $samples, $now);
                 $n++;
             }
         }
@@ -73,5 +86,30 @@ final class UsageRefreshCommand extends Command
         $this->info("Đã ghi {$n} snapshot.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Một lần metrics.cgroup (accounts rỗng = mọi slice) cho server. Lỗi/agent cũ → rỗng (vẫn ghi số liệu quota.report).
+     *
+     * @return array<string, array<string, mixed>> theo username
+     */
+    private function cgroups(AgentClient $agent, int $serverId): array
+    {
+        try {
+            $res = $agent->forServer($serverId)->call('metrics.cgroup', []);
+        } catch (AgentUnavailable) {
+            return [];
+        }
+        if (! $res->ok) {
+            return [];
+        }
+        $out = [];
+        foreach ((array) ($res->data['accounts'] ?? []) as $row) {
+            if (is_array($row) && is_string($row['username'] ?? null)) {
+                $out[$row['username']] = $row;
+            }
+        }
+
+        return $out;
     }
 }

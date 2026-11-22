@@ -213,6 +213,7 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('registries/{id}', [RegistryController::class, 'destroy'])->middleware('itso.perm:docker.manage');
             Route::post('registries/{id}:test', [RegistryController::class, 'test'])->middleware(['itso.perm:docker.manage', 'itso.idempotent']);
             Route::get('metrics/servers/{id}', [ServerOpsController::class, 'serverMetrics'])->middleware('itso.perm:servers.read');
+            Route::get('metrics/servers/{id}/accounts', [ServerOpsController::class, 'serverAccountUsage'])->middleware('itso.perm:accounts.read');
             Route::get('metrics/hosting-accounts/{id}', [ServerOpsController::class, 'accountMetrics'])->middleware('itso.perm:accounts.read');
 
             // Gói, account hosting (3.5)
@@ -432,6 +433,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('hosting-accounts/{id}', [PortalController::class, 'account']);
             Route::get('hosting-accounts/{id}/features', [PortalController::class, 'features']);
             Route::get('hosting-accounts/{id}/usage', [PortalController::class, 'usage']);
+            Route::get('hosting-accounts/{id}/usage-history', [PortalController::class, 'usageHistory']);
 
             // ---- Website (Prompt 5.3); quét mã độc/WAF: khối Security Center (Phase 7) bên dưới.
             Route::get('websites', [WebsiteController::class, 'index']);

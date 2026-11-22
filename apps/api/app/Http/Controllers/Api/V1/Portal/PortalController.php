@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1\Portal;
 
 use App\Auth\Access;
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Servers\MetricsQuery;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\HostingPresenter;
 use App\Http\Presenters\UserPresenter;
@@ -62,6 +63,15 @@ final class PortalController
     public function usage(Request $request, string $id): JsonResponse
     {
         return response()->json(['data' => $this->present->account($this->find($request, $id))['usage']]);
+    }
+
+    /** Chuỗi số liệu account của tôi so với giới hạn gói (D-101); account không thuộc mình → 404. */
+    public function usageHistory(Request $request, string $id): JsonResponse
+    {
+        $a = $this->find($request, $id);
+        [$metric, $range] = MetricsQuery::validate($request, MetricsQuery::ACCOUNT_METRICS);
+
+        return response()->json(['data' => app(MetricsQuery::class)->accountSeries($a, $metric, $range)]);
     }
 
     public function overview(Request $request): JsonResponse

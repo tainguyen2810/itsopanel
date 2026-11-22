@@ -2,6 +2,18 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.3 (Panel metrics: rollup, prune, API theo khoảng, usage account) — nhánh `phase-11`
+
+Phạm vi: `MetricsCollector` ghi thêm swap_pct, inode_pct, net_in/net_out (tổng interface), io_read/io_write, tasks (agent cũ không trả thì bỏ qua, không ghi 0); `itso:usage-refresh` gọi một `metrics.cgroup` lô mỗi server → cpu_pct, ram, IO, tasks theo account (account chưa có slice dùng số quota.report); `MetricsRollup` + `itso:metrics-rollup` (mỗi giờ, upsert theo khóa NULLS NOT DISTINCT, chạy bù, tính lại giờ mới nhất); `itso:metrics-prune` (hằng ngày: tạo trước 2 ngày, drop partition > 7 ngày, xóa rollup > 90 ngày; `itso:metrics-collect` thôi tự prune); `MetricsQuery`: range 1h/24h (samples) và 7d/30d/90d (rollup, trung bình theo số mẫu), ≤ 500 điểm, `unit`/`source`/`limit`; API mới `GET /admin/metrics/servers/{id}/accounts` (top account, sort/q/cursor, phạm vi ADMIN) và `GET /portal/hosting-accounts/{id}/usage-history`; usage hiện tại của account (Portal/dashboard) dùng số cgroup.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest | `make test-api` | **511/511 PASS** (mới `Phase11/MetricsTest.php` 6 test, 174 assertion). Lần đầu 3 lỗi: rollup chạy bù tính lại thừa một giờ (sửa mốc bắt đầu); **lỗi thật** `GROUP BY bucket` của PostgreSQL gộp theo cột `metric_rollups.bucket` thay vì bí danh → đổi bí danh `ts`; test dùng `travelTo` về quá khứ làm cookie phiên hết hạn (419) → dùng mốc tương đối |
+| Lint | `pint --test` · `phpstan` | PASS (sửa một lỗi kiểu `list<int>`) |
+| Khác | `make no-exec` · `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.2 (Agent: metrics mở rộng, cgroup theo lô, uptime.probe) — nhánh `phase-11`
 
 Phạm vi: `internal/ops/metrics.go` (swap/inode/load/tasks, IO bps từ `/proc/diskstats` chỉ đĩa vật lý, net theo interface từ `/proc/net/dev`, mounts ext4/xfs/btrfs; tốc độ tính từ mốc đọc trước, bộ đếm quay về → 0), `metrics.cgroup` lô (accounts rỗng = mọi slice `itso-acct-<uid>` có user trong passwd, bỏ slice thiếu/tên lạ/ngoài dải UID; cpu_pct, IO bytes/bps), `internal/ops/uptime.go` (`uptime.probe`: kiểm lại domain/path/keyword/≤ 50 mục/timeout; dial cố định 127.0.0.1 với Host/SNI = domain, không proxy, redirect chỉ cùng host và cổng 80/443, tối đa 3; đọc ≤ 64 KB tìm từ khóa; hạn chứng chỉ; song song 8), sandbox: `metrics-control.json` (disk_pct, offline → `agent_unreachable`, uptime_down, cert_days) + cây cgroup giả trong gốc sandbox. Registry: `agent_unreachable` trả `retryable: true` đúng `errors.json`.

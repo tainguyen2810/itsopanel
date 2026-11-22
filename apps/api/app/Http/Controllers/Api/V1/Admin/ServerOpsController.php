@@ -9,6 +9,7 @@ use App\Auth\Realm;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Jobs\JobDispatcher;
 use App\Domain\Jobs\JobSpec;
+use App\Domain\Servers\AccountUsageQuery;
 use App\Domain\Servers\MetricsCollector;
 use App\Domain\Servers\MetricsQuery;
 use App\Domain\Servers\OsUpdates;
@@ -41,6 +42,7 @@ final class ServerOpsController
         private readonly JobPresenter $jobs,
         private readonly MetricsCollector $collector,
         private readonly MetricsQuery $metrics,
+        private readonly AccountUsageQuery $usage,
         private readonly SoftwareService $software,
         private readonly AuditLogger $audit,
     ) {}
@@ -172,9 +174,54 @@ final class ServerOpsController
         if (! $a instanceof HostingAccount) {
             throw new NotFoundHttpException;
         }
-        [$metric, $range] = MetricsQuery::validate($request, ['cpu_pct', 'ram_pct', 'disk_pct']);
+        [$metric, $range] = MetricsQuery::validate($request, MetricsQuery::ACCOUNT_METRICS);
 
-        return response()->json(['data' => $this->metrics->series('hosting_account', $a->uuid, $a->server_id, $a->id, $metric, $range)]);
+        return response()->json(['data' => $this->metrics->accountSeries($a, $metric, $range)]);
+    }
+
+    /**
+     * Số liệu cgroup gần nhất theo account trên server (top account, D-101). ADMIN chỉ thấy server được giao và
+     * account trong phạm vi. Tối đa vài trăm account/server nên sắp xếp/lọc trong bộ nhớ; cursor là vị trí.
+     */
+    public function serverAccountUsage(Request $request, string $id): JsonResponse
+    {
+        $s = $this->find($request, $id);
+        $limit = $request->query('limit', '50');
+        if (! is_string($limit) || ! ctype_digit($limit) || (int) $limit < 1 || (int) $limit > 200) {
+            throw ApiProblem::field('limit', 'limit phải là số nguyên 1–200.');
+        }
+        $sort = $request->query('sort', '-cpu_pct');
+        $keys = ['cpu_pct' => 'cpu_pct', 'ram_mb' => 'ram_mb', 'io_write_bps' => 'io_write_bps', 'io_read_bps' => 'io_read_bps',
+            'disk_mb' => 'disk_mb', 'tasks' => 'tasks', 'username' => 'username'];
+        if (! is_string($sort) || ! isset($keys[ltrim($sort, '-')])) {
+            throw ApiProblem::field('sort', 'sort không hợp lệ.');
+        }
+        $cursor = $request->query('cursor');
+        $offset = 0;
+        if (is_string($cursor) && $cursor !== '') {
+            $raw = base64_decode($cursor, true);
+            if ($raw === false || preg_match('/^o:(\d{1,6})$/', $raw, $m) !== 1) {
+                throw ApiProblem::field('cursor', 'cursor không hợp lệ.');
+            }
+            $offset = (int) $m[1];
+        }
+        $q = $this->access->accounts($this->actor($request))->where('server_id', $s->id)
+            ->whereIn('lifecycle_state', ['active', 'suspended']);
+        Listing::search($request, $q, ['hosting_accounts.username']);
+        $rows = $this->usage->rows($s, $q->orderBy('username')->get());
+        $key = ltrim($sort, '-');
+        $desc = str_starts_with($sort, '-');
+        usort($rows, function (array $a, array $b) use ($key, $desc): int {
+            $va = $key === 'username' ? $a['hosting_account']['username'] : $a[$key];
+            $vb = $key === 'username' ? $b['hosting_account']['username'] : $b[$key];
+            $c = $desc ? $vb <=> $va : $va <=> $vb;
+
+            return $c !== 0 ? $c : strcmp($a['hosting_account']['username'], $b['hosting_account']['username']);
+        });
+        $page = array_slice($rows, $offset, (int) $limit);
+        $next = $offset + (int) $limit < count($rows) ? base64_encode('o:'.($offset + (int) $limit)) : null;
+
+        return response()->json(['data' => $page, 'meta' => ['next_cursor' => $next, 'limit' => (int) $limit]]);
     }
 
     /** @param list<string> $types */
