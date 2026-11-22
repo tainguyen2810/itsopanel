@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 10 — Docker Manager, WordPress Toolkit, Software (bắt đầu 2026-11-22; kế hoạch `docs/planning/seed/PHASE_10_PROMPTS.md`, D-94 → D-100 đề xuất). Phase 9 ✓ APPROVED 2026-11-22 (merge `8d2a613`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 10.8 ✓ — Phase 10 hoàn tất phần không cần VM, **chờ duyệt** (báo cáo `docs/reports/phase-10.md`)
-- **Task đang làm:** không (dừng trước Phase 11)
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-10`
-- **Bước tiếp theo:** chờ người dùng duyệt Phase 10 (đã merge `--no-ff` vào `main` ở Git local, không push); chạy `tests/vm/phase4–10.sh` khi có VM
+- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` (kế hoạch `docs/planning/seed/PHASE_11_PROMPTS.md`, D-101 → D-107 đề xuất; **chờ người dùng chọn bắt đầu**). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** chưa bắt đầu (11.0 Mockup là prompt đầu)
+- **Task đang làm:** không
+- **Commit cuối:** xem `git log -1` trên `main`
+- **Bước tiếp theo:** khi người dùng chọn bắt đầu: tạo nhánh `phase-11`, làm hàng loạt 11.0 → 11.8, tự merge, phát hành `v0.5.0-beta` (tag local), DỪNG trước Phase 12; chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -25,13 +25,25 @@
 | 7 | Security Center | ✓ APPROVED (báo cáo `docs/reports/phase-7.md`; tiêu chí cần VM: chờ VM) |
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
-| 10 | Docker Manager, WordPress Toolkit, Software | ✓ chờ duyệt (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
-| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ |
+| 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
+| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ kế hoạch xong, chờ bắt đầu |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
 
-Phase 10 (bắt đầu 2026-11-22, hoàn tất 2026-11-22, chờ duyệt) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`
+Phase 11 (kế hoạch 2026-11-22, chờ bắt đầu) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
+
+- ○ 11.0 Mockup Monitoring, Uptime, Alerts, kênh + tùy chọn thông báo trên bản demo (`docs/screenshots/phase-11/`)
+- ○ 11.1 ADR 0046–0052 (D-101…D-107), contracts, migration Phase 11
+- ○ 11.2 Agent: metrics mở rộng, cgroup theo lô, `uptime.probe`
+- ○ 11.3 Panel metrics: rollup, prune, API theo khoảng, usage account
+- ○ 11.4 Panel alerts: rule, bộ máy đánh giá, mất kết nối ≤ 2 phút, uptime
+- ○ 11.5 Notifications: email/Telegram/webhook, SSRF guard, định tuyến, sự kiện USER
+- ○ 11.6 Realtime job SSE, dashboard dữ liệu thật
+- ○ 11.7 UI nối API thật
+- ○ 11.8 e2e, VM Phase 11, review bảo mật, báo cáo, `v0.5.0-beta`, merge
+
+Phase 10: ✓ APPROVED 2026-11-22 (merge `ea528c9`) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`
 
 - ✓ 10.0 Mockup Docker, WordPress, Software trên bản demo (`docs/screenshots/phase-10/`)
 - ✓ 10.1 ADR 0039–0045 (D-94…D-100), contracts, migration Phase 10
@@ -201,3 +213,4 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-22 | 10.6 | Panel WordPress: model WordPressSite/Component/Update (+ cột `database_id`, `last_auto_update_at` vào migration Phase 10 chưa phát hành), `WordPressService` (cài: DB + DB user theo gói, mật khẩu admin sinh một lần qua ref `wp_password:<uuid>` giữ tạm trong Cache + Crypt, trả `secret` một lần; quét theo server; chi tiết làm mới wp.info ≤ 5 phút; cập nhật cần đích backup + quota backup chưa tạm dừng → repo.init? → wp.update (snapshot tag `account:`, manual/auto) → backup.stats → wp.info; staging tính giới hạn website + DB của gói, basic auth → 422; hardening lưu cờ vhost rồi áp `nginx.vhost.apply`; đổi mật khẩu admin step-up; bảo trì), `WordPressJobHandler` (lịch sử bước, snapshot `pre-wp-update` vào backup_snapshots, thông báo khi rolled_back/failed, xóa secret khi job xong), lệnh `itso:wordpress-auto-update` mỗi giờ (cửa sổ qua nửa đêm, ≥ 20 giờ/lần, minor → `--minor`), API `/admin` + `/portal/wordpress/*`; wp.info trả `db_name`; Pest 505 | 6a7e374 |
 | 2026-11-22 | 10.7 | UI nối API thật: cài WordPress hiện mật khẩu quản trị một lần (`secret`), staging hiện basic auth tắt + lý do (API 422), MSW WordPress theo API (job `wordpress_site`, op thật, cần đích backup → 409, basic auth → 422, user admin chưa biết → `precondition_failed`, quét không có website PHP → 409, tên quản trị admin/administrator → 422), registry chỉ SA (403 như `docker.manage`); API: body cập nhật rỗng = mọi thành phần có bản mới, core trong lịch sử có slug `wordpress`, chặn tên quản trị admin/administrator; Vitest 593, Playwright demo + axe 100, Pest 505 | 18ea187 |
 | 2026-11-22 | 10.8 | Tích hợp: e2e stack thật `phase10.spec.ts` 4 luồng (Software PHP 8.3 + 8.2, gỡ đang dùng 409; Docker bật + step-up, privileged 422, apply, website docker, image unhealthy → `rolled_back`, registry, backup volume; WordPress secret một lần, update lỗi → `rolled_back` với restic thật, staging, harden; USER không chạm Docker); file điều khiển sandbox `docker-control.json`/`wp-control.json`; `make dev` bật docker trong policy sandbox; `tests/vm/phase10.sh` V0–V6; review bảo mật `docs/security/docker-wordpress-review.md`; runbook; e2e stack thật toàn bộ 26/27 lượt đầu (đĩa < 15 %, dọn cache, chạy lại xanh); `make check` 22 PASS · 1 SKIP · 0 FAIL; báo cáo `docs/reports/phase-10.md` | f1e0602 |
+| 2026-11-22 | 10 / duyệt · 11 / kế hoạch | Người dùng duyệt Phase 10 (merge `ea528c9`) và yêu cầu lên kế hoạch tiếp; kế hoạch `PHASE_11_PROMPTS.md` (11.0 mockup → 11.8 tích hợp + `v0.5.0-beta`), đề xuất D-101 → D-107 | — |
