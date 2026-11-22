@@ -104,4 +104,14 @@ SELECT itso_test.assert('Policy volume mặc định pause',
 SELECT itso_test.expect_error('Nhất quán volume lạ bị từ chối',
   $$UPDATE backup_policies SET volume_consistency = 'freeze' WHERE name = 'vol'$$, '23514');
 
+SELECT itso_test.expect_ok('Rule firewall scope docker mở cổng container',
+  $$INSERT INTO firewall_rules (server_id, priority, action, direction, protocol, port_range, scope) VALUES (1, 40, 'accept', 'in', 'tcp', '20001', 'docker')$$);
+SELECT itso_test.assert('Rule firewall mặc định scope host',
+  (SELECT scope FROM firewall_rules WHERE priority = 40 AND scope = 'docker') = 'docker'
+  AND (SELECT column_default FROM information_schema.columns WHERE table_name = 'firewall_rules' AND column_name = 'scope') LIKE '%host%');
+SELECT itso_test.expect_error('Rule docker chỉ accept/in (drop bị từ chối)',
+  $$INSERT INTO firewall_rules (server_id, priority, action, direction, protocol, port_range, scope) VALUES (1, 41, 'drop', 'in', 'tcp', '20002', 'docker')$$, '23514');
+SELECT itso_test.expect_error('Rule docker phải có cổng',
+  $$INSERT INTO firewall_rules (server_id, priority, action, direction, protocol, scope) VALUES (1, 42, 'accept', 'in', 'tcp', 'docker')$$, '23514');
+
 ROLLBACK;

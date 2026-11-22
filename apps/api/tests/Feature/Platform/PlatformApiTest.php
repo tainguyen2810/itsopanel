@@ -195,7 +195,7 @@ it('dashboard summary theo phạm vi, khớp hợp đồng', function () {
 
 it('endpoint chưa có route ở bản này → 404 type not_available (UI hiện "chưa có ở bản này")', function () {
     $a = new Actors($this);
-    $r = $a->spa('SA')->get('/api/v1/admin/compose-projects'); // Docker/Compose: Phase sau
+    $r = $a->spa('SA')->get('/api/v1/admin/wordpress/sites'); // WordPress Toolkit: prompt 10.6
     expect($r->status())->toBe(404)->and($r->json('type'))->toEndWith('/not_available')->and($r->json('code'))->toBe('not_found');
     $real = $a->spa('SA')->get('/api/v1/admin/servers/00000000-0000-4000-8000-000000000000');
     expect($real->status())->toBe(404)->and($real->json('type'))->toEndWith('/not_found');

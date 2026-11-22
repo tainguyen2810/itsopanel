@@ -443,6 +443,14 @@ ALTER TABLE "image_rollbacks" ADD FOREIGN KEY ("requested_by_user_id") REFERENCE
 
 /* phase:10 */ ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_volume_consistency_chk CHECK (volume_consistency IN ('pause', 'none'));
 
+/* phase:10 */ ALTER TABLE firewall_rules ADD COLUMN scope text NOT NULL DEFAULT 'host';
+
+/* phase:10 */ ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_scope_chk CHECK (scope IN ('host', 'docker'));
+
+/* phase:10 */ ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_docker_chk CHECK (
+  scope = 'host' OR (action = 'accept' AND direction = 'in' AND protocol IN ('tcp', 'udp') AND port_range IS NOT NULL)
+);
+
 /* phase:10 */ ALTER TABLE backup_snapshots DROP CONSTRAINT backup_snapshot_scope_chk;
 
 /* phase:10 */ ALTER TABLE backup_snapshots ADD CONSTRAINT backup_snapshot_scope_chk

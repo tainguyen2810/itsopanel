@@ -20,6 +20,7 @@ use App\Models\BackupPolicy;
 use App\Models\BackupRepository;
 use App\Models\BackupSnapshot;
 use App\Models\BackupVerification;
+use App\Models\ComposeProject;
 use App\Models\Database;
 use App\Models\HostingAccount;
 use App\Models\Job;
@@ -227,6 +228,13 @@ final class BackupService
                     $repos[] = $r;
                     if ($account !== null) {
                         $this->accountSteps($spec, $r, $account, $p->contents, [$tag], $p->excludes, $website, $db);
+                    } elseif ($p->scope_type === 'compose_project') {
+                        // Volume Docker (D-98): vào repo server, tag compose:<uuid>; pause = dừng tạm container khi chụp.
+                        $cp = ComposeProject::query()->with('currentRevision')->find($p->scope_id);
+                        $this->initStep($spec, $r);
+                        $spec->step('docker.volume.backup', ['repo' => BackupSpec::repo($r), 'volumes' => self::composeVolumes($cp),
+                            'consistency' => $p->volume_consistency, 'tags' => [$tag, 'type:docker', 'compose:'.$cp?->uuid]]);
+                        $spec->step('backup.stats', ['repo' => BackupSpec::repo($r)]);
                     } else {
                         $this->initStep($spec, $r);
                         $kind = $p->scope_type === 'panel' ? 'panel' : 'config';
@@ -249,6 +257,15 @@ final class BackupService
         }
 
         return $jobs;
+    }
+
+    /** @return list<string> volume có tên (đầy đủ itso_<uuid>_<tên>) của revision hiện hành */
+    public static function composeVolumes(?ComposeProject $p): array
+    {
+        $v = (array) ($p?->currentRevision?->validation_report['volumes'] ?? []);
+
+        return array_values(array_slice(array_filter(array_map('strval', $v),
+            fn (string $x): bool => preg_match('/^[a-z0-9][a-z0-9_.-]{0,127}$/', $x) === 1), 0, 50));
     }
 
     /** @return list<array{0: Server, 1: HostingAccount|null, 2: Website|null, 3: Database|null}> */
@@ -285,6 +302,12 @@ final class BackupService
                 $s = Server::query()->find($p->scope_id);
                 if ($s instanceof Server) {
                     $out[] = [$s, null, null, null];
+                }
+                break;
+            case 'compose_project':
+                $cp = ComposeProject::query()->with('currentRevision')->find($p->scope_id);
+                if ($cp instanceof ComposeProject && self::composeVolumes($cp) !== []) {
+                    $out[] = [Server::query()->findOrFail($cp->server_id), null, null, null];
                 }
                 break;
             case 'panel':

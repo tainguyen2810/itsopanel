@@ -4,11 +4,14 @@ use App\Http\Controllers\Api\V1\Admin\AccountMigrationController;
 use App\Http\Controllers\Api\V1\Admin\ApiTokenController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\BackupAdminController;
+use App\Http\Controllers\Api\V1\Admin\ComposeController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DnsController;
+use App\Http\Controllers\Api\V1\Admin\DockerController;
 use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
 use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
+use App\Http\Controllers\Api\V1\Admin\RegistryController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
 use App\Http\Controllers\Api\V1\Admin\ServerOpsController;
@@ -172,6 +175,42 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers/{id}/nginx', [ServerWebController::class, 'nginx'])->middleware('itso.perm:servers.read');
             Route::patch('servers/{id}/nginx', [ServerWebController::class, 'updateNginx'])
                 ->middleware(['itso.perm:servers.write', 'itso.idempotent']);
+            // Docker (10.4, D-94…D-98): chỉ realm Admin; USER/Portal không có route nào.
+            Route::get('servers/{id}/docker', [DockerController::class, 'show'])->middleware('itso.perm:docker.read');
+            Route::post('servers/{id}/docker:enable', [DockerController::class, 'enable'])
+                ->middleware(['itso.perm:docker.manage', 'itso.step-up', 'itso.idempotent']);
+            Route::post('servers/{id}/docker:sync-firewall', [DockerController::class, 'syncFirewall'])
+                ->middleware(['itso.perm:docker.manage', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/containers', [DockerController::class, 'containers'])->middleware('itso.perm:docker.read');
+            Route::get('servers/{id}/docker/containers/{container}/logs', [DockerController::class, 'logs'])->middleware('itso.perm:docker.read');
+            Route::post('servers/{id}/docker/containers/{container}:{action}', [DockerController::class, 'controlContainer'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/images', [DockerController::class, 'images'])->middleware('itso.perm:docker.read');
+            Route::post('servers/{id}/docker/images:prune', [DockerController::class, 'prune'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/volumes', [DockerController::class, 'volumes'])->middleware('itso.perm:docker.read');
+            Route::delete('servers/{id}/docker/volumes/{volume}', [DockerController::class, 'deleteVolume'])
+                ->middleware(['itso.perm:docker.write', 'itso.step-up', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/networks', [DockerController::class, 'networks'])->middleware('itso.perm:docker.read');
+            Route::get('servers/{id}/docker/port-allocations', [DockerController::class, 'portAllocations'])->middleware('itso.perm:docker.read');
+            Route::get('compose-templates', [ComposeController::class, 'templates'])->middleware('itso.perm:docker.read');
+            Route::post('compose-projects:validate', [ComposeController::class, 'preview'])->middleware('itso.perm:docker.write');
+            Route::get('compose-projects', [ComposeController::class, 'index'])->middleware('itso.perm:docker.read');
+            Route::post('compose-projects', [ComposeController::class, 'store'])->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('compose-projects/{id}', [ComposeController::class, 'show'])->middleware('itso.perm:docker.read');
+            Route::patch('compose-projects/{id}', [ComposeController::class, 'update'])->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::delete('compose-projects/{id}', [ComposeController::class, 'destroy'])->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('compose-projects/{id}/revisions', [ComposeController::class, 'revisions'])->middleware('itso.perm:docker.read');
+            Route::post('compose-projects/{id}:update-images', [ComposeController::class, 'updateImages'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::post('compose-projects/{id}:rollback-images', [ComposeController::class, 'rollbackImages'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::post('compose-projects/{id}:{action}', [ComposeController::class, 'action'])
+                ->where('action', 'validate|up|down|pull')->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('registries', [RegistryController::class, 'index'])->middleware('itso.perm:docker.manage');
+            Route::post('registries', [RegistryController::class, 'store'])->middleware('itso.perm:docker.manage');
+            Route::delete('registries/{id}', [RegistryController::class, 'destroy'])->middleware('itso.perm:docker.manage');
+            Route::post('registries/{id}:test', [RegistryController::class, 'test'])->middleware(['itso.perm:docker.manage', 'itso.idempotent']);
             Route::get('metrics/servers/{id}', [ServerOpsController::class, 'serverMetrics'])->middleware('itso.perm:servers.read');
             Route::get('metrics/hosting-accounts/{id}', [ServerOpsController::class, 'accountMetrics'])->middleware('itso.perm:accounts.read');
 

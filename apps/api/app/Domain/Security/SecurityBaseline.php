@@ -33,7 +33,7 @@ final class SecurityBaseline
     public function apply(Server $s, User $actor, string $clientIp, array $allowlist): array
     {
         DB::transaction(function () use ($s, $allowlist, $actor, $clientIp): void {
-            if (! FirewallRule::query()->where('server_id', $s->id)->exists()) {
+            if (! FirewallRule::query()->where('server_id', $s->id)->where('scope', 'host')->exists()) {
                 FirewallRule::query()->create(['server_id' => $s->id] + self::WEB_RULE);
             }
             $cidrs = array_values(array_filter($allowlist, fn (string $c): bool => Net::cidr($c) !== null));

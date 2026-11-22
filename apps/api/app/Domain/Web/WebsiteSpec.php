@@ -10,6 +10,7 @@ use App\Domain\Jobs\JobSpec;
 use App\Exceptions\ApiProblem;
 use App\Models\Certificate;
 use App\Models\HostingAccount;
+use App\Models\PortAllocation;
 use App\Models\Website;
 use App\Models\WebsiteDomain;
 use App\Models\WebsiteSetting;
@@ -50,6 +51,14 @@ final class WebsiteSpec
 
     public static function proxyPort(Website $w): ?int
     {
+        // Website docker: luôn theo cổng đang cấp cho service (cổng có thể đổi khi sửa compose).
+        if ($w->type === 'docker' && $w->compose_project_id !== null) {
+            $port = PortAllocation::query()->where('compose_project_id', $w->compose_project_id)
+                ->where('service', (string) $w->compose_service)->where('protocol', 'tcp')->orderBy('port')->value('port');
+            if ($port !== null) {
+                return (int) $port;
+            }
+        }
         $p = $w->settings instanceof WebsiteSetting ? ($w->settings->nginx['proxy_port'] ?? null) : null;
 
         return is_int($p) ? $p : null;
@@ -146,14 +155,14 @@ final class WebsiteSpec
         }
         $ng = self::nginx($w);
         $p = ['account' => ProvisioningService::ref($a), 'website_uuid' => $w->uuid, 'site_dir' => $w->primary_domain,
-            'type' => $w->type, 'server_names' => $names, 'redirect_names' => $redirects, 'document_root' => $w->document_root,
+            'type' => $w->type === 'docker' ? 'proxy' : $w->type, 'server_names' => $names, 'redirect_names' => $redirects, 'document_root' => $w->document_root,
             'http2' => (bool) $ng['http2'], 'client_max_body_size' => (string) $ng['client_max_body_size'],
             'redirects' => array_values((array) $ng['redirects']), 'suspended' => $suspended ?? self::suspended($a)];
         // jsonb → mảng PHP: object rỗng thành [] (sai schema) nên chỉ gửi khi có header.
         if ((array) $ng['extra_headers'] !== []) {
             $p['extra_headers'] = (array) $ng['extra_headers'];
         }
-        if ($w->type === 'proxy') {
+        if ($w->type === 'proxy' || $w->type === 'docker') {
             $p['proxy_port'] = self::proxyPort($w);
         }
         $cert = $cert === null ? self::certificate($w) : ($cert === false ? null : $cert);

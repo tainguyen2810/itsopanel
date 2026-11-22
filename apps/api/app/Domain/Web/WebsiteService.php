@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Web;
 
+use App\Auth\Realm;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Hosting\ProvisioningService;
 use App\Domain\Hosting\QuotaService;
@@ -13,9 +14,11 @@ use App\Exceptions\ApiProblem;
 use App\Infrastructure\Agent\AgentClient;
 use App\Infrastructure\Agent\AgentUnavailable;
 use App\Models\Certificate;
+use App\Models\ComposeProject;
 use App\Models\HostingAccount;
 use App\Models\Job;
 use App\Models\PhpVersion;
+use App\Models\PortAllocation;
 use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteDomain;
@@ -62,13 +65,20 @@ final class WebsiteService
         } elseif (($in['proxy_target'] ?? null) !== null) {
             throw ApiProblem::field('proxy_target', 'Chỉ website loại proxy mới có proxy_target.');
         }
+        $docker = null;
+        if ($type === 'docker') {
+            $docker = self::dockerTarget($actor, $a, $in['docker_target'] ?? null);
+            $proxyPort = $docker['port'];
+        } elseif (($in['docker_target'] ?? null) !== null) {
+            throw ApiProblem::field('docker_target', 'Chỉ website loại docker mới có docker_target.');
+        }
         $limits = $this->quota->limits($a);
         if (($in['ssl_mode'] ?? 'none') === 'acme') {
             WebsiteSpec::acmeEmail();
             WebsiteSpec::acmeDirectory();
         }
 
-        return DB::transaction(function () use ($actor, $a, $type, $domain, $docRoot, $php, $proxyPort, $in, $limits): array {
+        return DB::transaction(function () use ($actor, $a, $type, $domain, $docRoot, $php, $proxyPort, $in, $limits, $docker): array {
             /** @var HostingAccount $acc */
             $acc = HostingAccount::query()->lockForUpdate()->findOrFail($a->id);
             if ($acc->lifecycle_state !== 'active') {
@@ -78,7 +88,8 @@ final class WebsiteService
             $this->quota->ensureCanAdd($acc, 'websites');
             $w = Website::query()->create(['hosting_account_id' => $acc->id, 'server_id' => $acc->server_id,
                 'primary_domain' => $domain, 'type' => $type, 'document_root' => $docRoot, 'php_version' => $php,
-                'ssl_mode' => (string) ($in['ssl_mode'] ?? 'none'), 'status' => 'provisioning', 'spec_version' => 1]);
+                'ssl_mode' => (string) ($in['ssl_mode'] ?? 'none'), 'status' => 'provisioning', 'spec_version' => 1,
+                'compose_project_id' => $docker['project_id'] ?? null, 'compose_service' => $docker['service'] ?? null]);
             WebsiteDomain::query()->create(['website_id' => $w->id, 'name' => $domain, 'type' => 'primary']);
             $nginx = WebsiteSpec::NGINX_DEFAULTS;
             if ($proxyPort !== null) {
@@ -448,6 +459,33 @@ final class WebsiteService
         }
 
         return $v;
+    }
+
+    /**
+     * Website loại docker (D-97): chỉ Admin; project compose cùng server với account, service có cổng TCP đã cấp —
+     * vhost là proxy tới 127.0.0.1:<cổng đó>.
+     *
+     * @return array{project_id: int, service: string, port: int}
+     */
+    private static function dockerTarget(User $actor, HostingAccount $a, mixed $t): array
+    {
+        if ($actor->realm !== Realm::ADMIN) {
+            throw ApiProblem::forbidden('Website loại docker chỉ Admin tạo được.');
+        }
+        if (! is_array($t) || ! is_string($t['compose_project_uuid'] ?? null) || ! is_string($t['service'] ?? null)) {
+            throw ApiProblem::field('docker_target', 'Website docker cần docker_target {compose_project_uuid, service}.');
+        }
+        $p = ComposeProject::query()->where('uuid', $t['compose_project_uuid'])->first();
+        if (! $p instanceof ComposeProject || $p->server_id !== $a->server_id) {
+            throw ApiProblem::field('docker_target.compose_project_uuid', 'Không tìm thấy compose project trên cùng máy chủ với account.');
+        }
+        $port = PortAllocation::query()->where('compose_project_id', $p->id)->where('service', $t['service'])
+            ->where('protocol', 'tcp')->orderBy('port')->value('port');
+        if ($port === null) {
+            throw ApiProblem::field('docker_target.service', 'Service không có cổng TCP được cấp (khai báo ports trong compose).');
+        }
+
+        return ['project_id' => $p->id, 'service' => $t['service'], 'port' => (int) $port];
     }
 
     private static function proxyPort(mixed $target): int

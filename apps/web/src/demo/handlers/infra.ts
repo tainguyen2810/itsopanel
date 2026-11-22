@@ -394,6 +394,7 @@ export function registerInfra() {
       source: b.source,
       comment: b.comment ?? null,
       enabled: b.enabled ?? true,
+      scope: b.scope ?? 'host',
       created_at: ctx.db.now(),
       updated_at: ctx.db.now(),
     } as S['FirewallRule'];

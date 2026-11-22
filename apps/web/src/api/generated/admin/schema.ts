@@ -5291,6 +5291,11 @@ export interface components {
             source: components["schemas"]["Cidr"];
             comment: string;
             enabled: boolean;
+            /**
+             * @description host = nftables của máy; docker = chuỗi DOCKER-USER (Phase 10, D-95): chỉ accept/in/tcp|udp, đồng bộ bằng docker:sync-firewall.
+             * @enum {string}
+             */
+            scope: "host" | "docker";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -5308,6 +5313,11 @@ export interface components {
             source: components["schemas"]["Cidr"];
             comment?: string;
             enabled?: boolean;
+            /**
+             * @description Mặc định host.
+             * @enum {string}
+             */
+            scope?: "host" | "docker";
         };
         FirewallApply: {
             /** @description Safe-apply: tự hoàn tác nếu không xác nhận. */
@@ -22893,7 +22903,8 @@ export interface operations {
                      *           "comment": "SSH chỉ từ mạng nội bộ",
                      *           "enabled": true,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *           "updated_at": "2026-11-19T14:05:00+07:00",
+                     *           "scope": "host"
                      *         },
                      *         {
                      *           "uuid": "01938a19-0002-7000-8000-000019000002",
@@ -22906,7 +22917,8 @@ export interface operations {
                      *           "comment": "Web",
                      *           "enabled": true,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *           "updated_at": "2026-11-19T14:05:00+07:00",
+                     *           "scope": "host"
                      *         },
                      *         {
                      *           "uuid": "01938a19-0003-7000-8000-000019000003",
@@ -22919,7 +22931,8 @@ export interface operations {
                      *           "comment": "Admin Panel",
                      *           "enabled": true,
                      *           "created_at": "2026-11-18T09:30:00+07:00",
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *           "updated_at": "2026-11-19T14:05:00+07:00",
+                     *           "scope": "host"
                      *         }
                      *       ],
                      *       "meta": {
@@ -22987,7 +23000,8 @@ export interface operations {
                      *         "comment": "SSH chỉ từ mạng nội bộ",
                      *         "enabled": true,
                      *         "created_at": "2026-11-18T09:30:00+07:00",
-                     *         "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         "updated_at": "2026-11-19T14:05:00+07:00",
+                     *         "scope": "host"
                      *       }
                      *     }
                      */

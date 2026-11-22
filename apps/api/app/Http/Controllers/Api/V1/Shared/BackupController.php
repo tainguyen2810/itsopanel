@@ -13,6 +13,7 @@ use App\Http\Presenters\JobPresenter;
 use App\Http\Support\Listing;
 use App\Models\BackupDestination;
 use App\Models\BackupSnapshot;
+use App\Models\ComposeProject;
 use App\Models\RestoreJob;
 use App\Models\Server;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,6 +44,12 @@ final class BackupController extends DataController
         $accounts = $this->access->accounts($actor)->select('hosting_accounts.id');
         if ($this->realm($request) === 'admin' && $this->access->can($actor, 'backups.manage')) {
             $q->where(fn (Builder $w) => $w->whereIn('backup_snapshots.hosting_account_id', $accounts)->orWhereNull('backup_snapshots.hosting_account_id'));
+        } elseif ($this->realm($request) === 'admin' && $this->access->can($actor, 'docker.read')) {
+            // Phase 10: snapshot volume Docker của compose project trên server được giao.
+            $servers = $this->access->servers($actor)->select('servers.id');
+            $q->where(fn (Builder $w) => $w->whereIn('backup_snapshots.hosting_account_id', $accounts)
+                ->orWhere(fn (Builder $c) => $c->where('backup_snapshots.scope_type', 'compose_project')
+                    ->whereIn('backup_snapshots.scope_id', ComposeProject::withTrashed()->whereIn('server_id', $servers)->select('id'))));
         } else {
             $q->whereIn('backup_snapshots.hosting_account_id', $accounts);
         }
@@ -63,7 +70,7 @@ final class BackupController extends DataController
     public function index(Request $request): JsonResponse
     {
         $request->validate(['filter.hosting_account' => ['sometimes', 'uuid'], 'filter.destination' => ['sometimes', 'uuid'],
-            'filter.scope_type' => ['sometimes', 'in:hosting_account,website,database,server_config,panel']]);
+            'filter.scope_type' => ['sometimes', 'in:hosting_account,website,database,server_config,panel,compose_project']]);
         $q = $this->snapshots($request);
         if (is_string($acc = $request->input('filter.hosting_account'))) {
             $q->where('backup_snapshots.hosting_account_id', $this->account($request, $acc, 'filter.hosting_account')->id);
@@ -163,7 +170,7 @@ final class BackupController extends DataController
     {
         self::only($request, ['snapshot_uuid', 'mode', 'items', 'target_server_uuid', 'confirm']);
         $in = $request->validate(['snapshot_uuid' => ['required', 'uuid'], 'mode' => ['required', 'in:new,overwrite'],
-            'items' => ['required', 'array', 'min:1', 'max:50'], 'items.*' => ['string', 'max:1100', 'regex:/^(files:.+|database:[a-z][a-z0-9_]{0,63}|config)$/'],
+            'items' => ['required', 'array', 'min:1', 'max:50'], 'items.*' => ['string', 'max:1100', 'regex:/^(files:.+|database:[a-z][a-z0-9_]{0,63}|config|volume:[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127})$/'],
             'target_server_uuid' => ['sometimes', 'nullable', 'uuid'], 'confirm' => ['sometimes', 'nullable', 'string', 'max:64']]);
         $s = Str::isUuid($in['snapshot_uuid']) ? $this->snapshots($request)->where('backup_snapshots.uuid', $in['snapshot_uuid'])->first() : null;
         if (! $s instanceof BackupSnapshot) {

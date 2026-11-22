@@ -3,6 +3,7 @@
 use App\Domain\Backup\BackupJobHandler;
 use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
+use App\Domain\Docker\DockerJobHandler;
 use App\Domain\Hosting\AccountJobHandler;
 use App\Domain\Migration\MigrationJobHandler;
 use App\Domain\Migration\MigrationService;
@@ -84,7 +85,19 @@ return [
       + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class)
       + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class)
       + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class)
-      + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class),
+      + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class)
+      + array_fill_keys(DockerJobHandler::TYPES, DockerJobHandler::class),
+
+    // Docker (Phase 10, D-94…D-98): giao diện mạng công khai cho DOCKER-USER; giới hạn mặc định chèn vào service
+    // compose thiếu limit; số bản rollback image giữ lại mỗi service.
+    'docker' => [
+        'public_interface' => env('ITSO_DOCKER_PUBLIC_IFACE', 'eth0'),
+        'default_mem_limit_mb' => (int) env('ITSO_DOCKER_DEFAULT_MEM_MB', 512),
+        'default_cpus' => (float) env('ITSO_DOCKER_DEFAULT_CPUS', 1.0),
+        'default_pids_limit' => (int) env('ITSO_DOCKER_DEFAULT_PIDS', 512),
+        'keep_rollbacks' => 2,
+        'health_timeout_sec' => 60,
+    ],
 
     // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
     'panel_steps' => [

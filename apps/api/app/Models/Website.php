@@ -25,6 +25,8 @@ use Illuminate\Support\Carbon;
  * @property string $document_root
  * @property string|null $php_version
  * @property string $ssl_mode
+ * @property int|null $compose_project_id Phase 10: website loại docker
+ * @property string|null $compose_service
  * @property int $spec_version
  * @property int $observed_version
  * @property string $status

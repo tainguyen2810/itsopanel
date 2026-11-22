@@ -9,6 +9,7 @@ use App\Domain\Data\CronSchedule;
 use App\Exceptions\ApiProblem;
 use App\Models\BackupDestination;
 use App\Models\BackupPolicy;
+use App\Models\ComposeProject;
 use App\Models\Database;
 use App\Models\HostingAccount;
 use App\Models\Server;
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
 /** Chính sách backup (D-86): phạm vi, nội dung, lịch cron, đích (3-2-1), retention mong muốn. */
 final class PolicyService
 {
-    public const SCOPES = ['all_accounts', 'hosting_account', 'website', 'database', 'server', 'panel'];
+    public const SCOPES = ['all_accounts', 'hosting_account', 'website', 'database', 'server', 'panel', 'compose_project'];
 
     public const RETENTION_KEYS = ['last', 'hourly', 'daily', 'weekly', 'monthly'];
 
@@ -84,7 +85,8 @@ final class PolicyService
             }
         } else {
             $model = match ($scope) {
-                'hosting_account' => HostingAccount::class, 'website' => Website::class, 'database' => Database::class, default => Server::class,
+                'hosting_account' => HostingAccount::class, 'website' => Website::class, 'database' => Database::class,
+                'compose_project' => ComposeProject::class, default => Server::class,
             };
             $id = is_string($scopeUuid) && Str::isUuid($scopeUuid) ? $model::query()->where('uuid', $scopeUuid)->value('id') : null;
             if ($id === null) {
@@ -95,6 +97,7 @@ final class PolicyService
         $contents = array_values(array_unique(array_map('strval', (array) ($in['contents'] ?? $p->contents ?? ['files', 'databases']))));
         $allowed = match ($scope) {
             'server' => [['config']], 'panel' => [['config'], []], 'database' => [['databases']],
+            'compose_project' => [['docker_volumes']],
             default => [['files'], ['databases'], ['files', 'databases'], ['databases', 'files']],
         };
         if (! in_array($contents, $allowed, true)) {
@@ -102,8 +105,13 @@ final class PolicyService
                 'server' => 'Phạm vi server chỉ backup cấu hình (config).',
                 'panel' => 'Phạm vi panel: dump DB panel + /etc/itso (để contents trống hoặc config).',
                 'database' => 'Phạm vi database chỉ có databases.',
+                'compose_project' => 'Phạm vi compose project chỉ backup volume Docker (docker_volumes).',
                 default => 'Account/website: files và/hoặc databases.',
             });
+        }
+        $consistency = (string) ($in['volume_consistency'] ?? $p->volume_consistency ?? 'pause');
+        if (! in_array($consistency, ['pause', 'none'], true)) {
+            throw ApiProblem::field('volume_consistency', 'pause (dừng tạm container khi chụp) hoặc none.');
         }
         if ($scope === 'website' && $contents !== ['files']) {
             throw ApiProblem::field('contents', 'Phạm vi website chỉ backup files của website (DB backup theo phạm vi database).');
@@ -140,7 +148,7 @@ final class PolicyService
 
         return ['name' => trim((string) ($in['name'] ?? $p?->name)), 'scope_type' => $scope, 'scope_id' => $scopeId,
             'contents' => $scope === 'panel' ? ['config'] : $contents, 'excludes' => $excludes, 'schedule' => $schedule, 'retention' => $retention,
-            'enabled' => $enabled, 'next_run_at' => $enabled ? self::next($schedule, Carbon::now()) : null, '_dests' => array_values(array_unique($destIds))];
+            'volume_consistency' => $consistency, 'enabled' => $enabled, 'next_run_at' => $enabled ? self::next($schedule, Carbon::now()) : null, '_dests' => array_values(array_unique($destIds))];
     }
 
     public static function next(string $schedule, Carbon $after): Carbon
@@ -155,7 +163,7 @@ final class PolicyService
         }
         $model = match ($p->scope_type) {
             'hosting_account' => HostingAccount::class, 'website' => Website::class, 'database' => Database::class, 'server' => Server::class,
-            default => null,
+            'compose_project' => ComposeProject::class, default => null,
         };
         $uuid = $model !== null ? $model::withTrashed()->whereKey($p->scope_id)->value('uuid') : null;
 

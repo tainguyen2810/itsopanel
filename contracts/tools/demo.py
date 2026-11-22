@@ -438,7 +438,11 @@ FIREWALL_RULES = [
      "ports": "80,443", "source": "0.0.0.0/0", "comment": "Web", "enabled": True, **ts()},
     {"uuid": u("firewall_rule", 3), "priority": 30, "action": "accept", "direction": "in", "protocol": "tcp",
      "ports": "8443", "source": "10.10.0.0/16", "comment": "Admin Panel", "enabled": True, **ts()},
+    {"uuid": u("firewall_rule", 4), "priority": 40, "action": "accept", "direction": "in", "protocol": "tcp",
+     "ports": "20001", "source": "10.10.0.0/16", "comment": "Uptime Kuma (container)", "enabled": True, "scope": "docker", **ts()},
 ]
+for _r in FIREWALL_RULES:
+    _r.setdefault("scope", "host")
 
 SECURITY_EVENTS = [
     {"uuid": u("security_event", 1), "type": "waf.block", "severity": "high", "server": server_ref(0),

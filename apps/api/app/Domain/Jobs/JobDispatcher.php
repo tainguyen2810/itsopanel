@@ -22,6 +22,7 @@ final class JobDispatcher
     {
         return match (true) {
             $m === null => null,
+            $m->getTable() === 'registries' => 'registry',
             default => rtrim($m->getTable(), 's'),
         };
     }

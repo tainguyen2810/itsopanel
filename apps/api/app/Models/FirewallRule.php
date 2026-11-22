@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $source_cidr
  * @property string|null $comment
  * @property string $managed_by
+ * @property string $scope host|docker (Phase 10: docker = chuỗi DOCKER-USER)
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */

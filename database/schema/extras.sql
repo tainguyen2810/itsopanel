@@ -300,6 +300,12 @@ ALTER TABLE agent_enrollment_tokens ADD CONSTRAINT agent_enrollment_tokens_hash_
   CHECK (contents <@ ARRAY['files', 'databases', 'config', 'docker_volumes']::text[]);
 /* phase:10 */ ALTER TABLE backup_policies ADD COLUMN volume_consistency text NOT NULL DEFAULT 'pause';
 /* phase:10 */ ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_volume_consistency_chk CHECK (volume_consistency IN ('pause', 'none'));
+/* phase:10 */ ALTER TABLE firewall_rules ADD COLUMN scope text NOT NULL DEFAULT 'host';
+/* phase:10 */ ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_scope_chk CHECK (scope IN ('host', 'docker'));
+-- Rule DOCKER-USER chỉ mở cổng vào (D-95): accept/in/tcp|udp, phải có cổng.
+/* phase:10 */ ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_docker_chk CHECK (
+  scope = 'host' OR (action = 'accept' AND direction = 'in' AND protocol IN ('tcp', 'udp') AND port_range IS NOT NULL)
+);
 /* phase:10 */ ALTER TABLE backup_snapshots DROP CONSTRAINT backup_snapshot_scope_chk;
 /* phase:10 */ ALTER TABLE backup_snapshots ADD CONSTRAINT backup_snapshot_scope_chk
   CHECK (scope_type IN ('hosting_account', 'website', 'database', 'server_config', 'panel', 'compose_project'));

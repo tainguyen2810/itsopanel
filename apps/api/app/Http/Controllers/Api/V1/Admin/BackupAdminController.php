@@ -170,7 +170,8 @@ final class BackupAdminController
         $req = $create ? 'required' : 'sometimes';
 
         return ['name' => [$req, 'string', 'min:1', 'max:120'], 'scope_type' => [$req, 'in:'.implode(',', PolicyService::SCOPES)],
-            'scope_uuid' => ['sometimes', 'nullable', 'uuid'], 'contents' => ['sometimes', 'array'], 'contents.*' => ['string', 'in:files,databases,config'],
+            'scope_uuid' => ['sometimes', 'nullable', 'uuid'], 'contents' => ['sometimes', 'array'], 'contents.*' => ['string', 'in:files,databases,config,docker_volumes'],
+            'volume_consistency' => ['sometimes', 'in:pause,none'],
             'excludes' => ['sometimes', 'array', 'max:50'], 'excludes.*' => ['string', 'max:200'], 'schedule' => [$req, 'string', 'max:100'],
             'destination_uuids' => [$req, 'array', 'min:1', 'max:10'], 'destination_uuids.*' => ['uuid'], 'retention' => ['sometimes', 'array'],
             'enabled' => ['sometimes', 'boolean']];
