@@ -20300,8 +20300,7 @@ export interface operations {
                      *           "channels": [
                      *             "in_app",
                      *             "email",
-                     *             "telegram",
-                     *             "webhook"
+                     *             "telegram"
                      *           ],
                      *           "in_app_locked": false
                      *         },
