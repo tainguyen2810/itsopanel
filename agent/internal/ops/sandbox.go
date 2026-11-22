@@ -48,6 +48,7 @@ func SandboxRunner(d *Deps) *platform.FakeRunner {
 	}
 	if fk, ok := d.Docker.(*docker.Fake); ok {
 		sim.Docker = fk
+		sim.dockerControl(fk)
 	}
 	f := platform.NewFake()
 	f.Hook = sim.Handle

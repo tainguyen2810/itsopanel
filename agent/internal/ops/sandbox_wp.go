@@ -50,6 +50,37 @@ func (s *Sim) SetDBDump(engine, name, body string) {
 	s.data.dumps[engine+"/"+name] = []byte(body)
 }
 
+// SimWPControl: file điều khiển trình mô phỏng WP-CLI khi chạy `itso-agent --sandbox` (e2e stack thật). Chỉ sandbox
+// đọc file này; agent thật không có đường nào tới nó. Dạng {"available": {...}, "fail": {...}, "checksum_fail": bool};
+// khóa nào có mặt thì thay giá trị tương ứng của wpSim trước mỗi lệnh.
+const SimWPControl = "/var/lib/itso-sandbox/wp-control.json"
+
+func (s *Sim) wpControl(w *wpSim) {
+	b, err := s.FS.ReadFile(SimWPControl)
+	if err != nil {
+		return
+	}
+	var c struct {
+		Available    map[string]string `json:"available"`
+		Fail         map[string]string `json:"fail"`
+		ChecksumFail *bool             `json:"checksum_fail"`
+	}
+	if json.Unmarshal(b, &c) != nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if c.Available != nil {
+		w.Available = c.Available
+	}
+	if c.Fail != nil {
+		w.Fail = c.Fail
+	}
+	if c.ChecksumFail != nil {
+		w.ChecksumFail = *c.ChecksumFail
+	}
+}
+
 func isWPCLI(c platform.Cmd) bool {
 	return c.Bin == "systemd-run" && contains(c.Args, WPCLIPath)
 }
@@ -62,6 +93,7 @@ var (
 
 func (s *Sim) wpHandle(c platform.Cmd) platform.Result {
 	w := s.WP()
+	s.wpControl(w)
 	i := slicesIndex(c.Args, WPCLIPath)
 	var site string
 	var args []string

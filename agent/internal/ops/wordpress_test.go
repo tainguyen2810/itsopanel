@@ -413,3 +413,24 @@ func TestVhostWPHardening(t *testing.T) {
 	q["wp_hardening"] = map[string]any{"xmlrpc_blocked": true, "php_in_uploads_blocked": false}
 	e.h.Fail(contracts.OpNginxVhostApply, q, "invalid_params")
 }
+
+// File điều khiển sandbox (e2e stack thật): bản cập nhật có sẵn + lỗi giả lập đọc lại trước mỗi lệnh WP-CLI.
+func TestWPSandboxControlFile(t *testing.T) {
+	e, _ := wpEnv(t)
+	write(t, e.fs.Root, strings.TrimPrefix(ops.SimWPControl, "/"), `{"available":{"plugin/akismet":"5.4"},"fail":{"plugin update akismet":"Download failed."}}`)
+	info := e.h.OK(contracts.OpWpInfo, map[string]any{"site": wpSite("sites/anphat.vn/public")})
+	found := false
+	for _, c := range info["components"].([]any) {
+		if m := c.(map[string]any); m["slug"] == "akismet" && m["update_version"] == "5.4" {
+			found = true
+		}
+	}
+	if !found || e.sim.WP().Fail["plugin update akismet"] != "Download failed." {
+		t.Fatal("file điều khiển không được áp dụng", info)
+	}
+	write(t, e.fs.Root, strings.TrimPrefix(ops.SimWPControl, "/"), `{"fail":{}}`)
+	e.h.OK(contracts.OpWpInfo, map[string]any{"site": wpSite("sites/anphat.vn/public")})
+	if len(e.sim.WP().Fail) != 0 || e.sim.WP().Available["plugin/akismet"] != "5.4" {
+		t.Fatal("chỉ khóa có mặt mới bị thay")
+	}
+}

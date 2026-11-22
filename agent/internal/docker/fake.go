@@ -31,6 +31,8 @@ type Fake struct {
 	MkdirMount func(path string)
 	// Pulls ghi lại tham chiếu đã pull (kèm user nếu có auth).
 	Pulls []string
+	// BeforePull (tùy chọn): gọi trước mỗi lần pull, ngoài khóa (sandbox dùng để Publish bản mới theo file điều khiển).
+	BeforePull func(ref string)
 }
 
 // NewFake tạo Fake trống với các network hệ thống.
@@ -278,6 +280,9 @@ func (f *Fake) untag(tag string) {
 
 // Pull lấy bản "trên registry" (chưa Publish thì tạo bản đầu tiên) và gắn tag.
 func (f *Fake) Pull(_ context.Context, ref string, auth *Auth) error {
+	if f.BeforePull != nil {
+		f.BeforePull(ref)
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if err := f.up(); err != nil {

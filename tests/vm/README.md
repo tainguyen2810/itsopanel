@@ -79,3 +79,27 @@ bash tests/vm/phase7.sh --client-ip "${SSH_CLIENT%% *}"   # → /root/itso-vm-ph
 | S5 | FIM: baseline → thêm file `/usr/local/bin`, sửa `/etc/ssh/sshd_config.d`, xóa file, setuid → `fim.check` báo added/modified/removed/metadata |
 | S6 | Điểm bảo mật mặc định sau cài ≥ 80 (`artisan itso:security-audit`, đọc `security_settings`); chưa xong wizard → SKIP |
 | S7 | Terminal root: policy tắt → `op_disabled`; `itso policy set terminal.root on` + restart agent → shell uid 0, bản ghi `/var/lib/itso/recordings/<uuid>.cast` 0600 root có output, `pty.recording.read` đọc được; tắt lại → `op_disabled` |
+
+## Docker, WordPress, Software (Phase 10, Prompt 10.8)
+
+Trong VM đã cài (sau `run-all.sh --release … --no-uninstall`), bằng root, cần Internet (Docker Hub, wordpress.org)
+và một máy ngoài để thăm dò cổng. Script cài Docker, đổi chuỗi `DOCKER-USER`, chạy registry thử và chặn tạm
+`downloads.wordpress.org` trong `/etc/hosts` nên chỉ chạy trong VM dùng một lần:
+
+```bash
+sudo bash tests/vm/phase10.sh                              # V0 V2–V6 + chuẩn bị V1 → /root/itso-vm-phase10.md
+bash tests/vm/phase10.sh --probe <IP VM> 18080 closed      # trên máy ngoài: cổng publish ngoài panel bị chặn
+sudo bash tests/vm/phase10.sh --v1-open                    # mở 18080 trong panel (rule scope=docker)
+bash tests/vm/phase10.sh --probe <IP VM> 18080 open        # trên máy ngoài: vào được
+sudo bash tests/vm/phase10.sh --cleanup
+```
+
+| Mã | Kiểm |
+|---|---|
+| V0 | `itso policy set docker on` → bật Docker qua panel: recipe docker, `daemon.json` (userland-proxy tắt, no-new-privileges, giới hạn log), nhóm `docker` rỗng, `DOCKER-USER` có rule |
+| V1 | Container publish `0.0.0.0:18080` ngoài panel → máy ngoài không vào được; mở trong panel (`scope=docker`) → vào được |
+| V2 | Compose thật qua validator (privileged → 422) → cổng `127.0.0.1:20000–29999` → website Docker trả nội dung; HTTPS khi `ITSO_VM_ACME=1` |
+| V3 | Registry thử `localhost:5000`: bản mới `HEALTHCHECK false` → `update-images` tự quay về image cũ (`rolled_back`, cùng image id) |
+| V4 | Backup volume (pause) → khôi phục ra volume mới → sha256 nội dung giống hệt |
+| V5 | WordPress thật: cài qua panel (mật khẩu chỉ trong response), cập nhật akismet khi tải bị chặn → `rolled_back`, file plugin như cũ, site 200; staging 200; harden → `xmlrpc.php` 403, PHP trong uploads 403, `wp-config.php` 0400 |
+| V6 | PHP 8.1/8.2/8.4 cài song song, mỗi site trả đúng phiên bản, 3 FPM active |

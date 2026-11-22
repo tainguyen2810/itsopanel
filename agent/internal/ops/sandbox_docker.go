@@ -2,12 +2,64 @@ package ops
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
+	"sync"
 
 	"itso.local/agent/internal/compose"
 	"itso.local/agent/internal/docker"
 	"itso.local/agent/internal/platform"
 )
+
+// SimDockerControl: file điều khiển Engine giả khi chạy `itso-agent --sandbox` (e2e stack thật), chỉ sandbox đọc.
+// Dạng {"publish": {"nginx:1.27": "<thế hệ>"}, "unhealthy": bool}: trước mỗi lần pull, ref có thế hệ mới được
+// Publish (bản mới trên "registry"); unhealthy=true thì container chạy bản mới đó báo unhealthy (test rollback image).
+const SimDockerControl = "/var/lib/itso-sandbox/docker-control.json"
+
+func (s *Sim) dockerControl(fk *docker.Fake) {
+	if fk.BeforePull != nil || fk.Health != nil {
+		return // test tự điều khiển Fake
+	}
+	var mu sync.Mutex
+	applied := map[string]string{}
+	bad := map[string]bool{}
+	fk.BeforePull = func(ref string) {
+		b, err := s.FS.ReadFile(SimDockerControl)
+		if err != nil {
+			return
+		}
+		var c struct {
+			Publish   map[string]string `json:"publish"`
+			Unhealthy bool              `json:"unhealthy"`
+		}
+		if json.Unmarshal(b, &c) != nil {
+			return
+		}
+		repo, tag := docker.SplitRef(ref)
+		key := repo + ":" + tag
+		gen, ok := c.Publish[key]
+		if !ok {
+			gen, ok = c.Publish[ref]
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if !ok || applied[key] == gen {
+			return
+		}
+		applied[key] = gen
+		if id := fk.Publish(ref); c.Unhealthy {
+			bad[id] = true
+		}
+	}
+	fk.Health = func(_, imageID string) string {
+		mu.Lock()
+		defer mu.Unlock()
+		if bad[imageID] {
+			return "unhealthy"
+		}
+		return "healthy"
+	}
+}
 
 // dockerCLI mô phỏng `docker [--config d] compose -p P --project-directory D -f F --env-file E <lệnh>` trên docker.Fake
 // (sandbox/test). Đọc compose.yaml qua FS giả.
