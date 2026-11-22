@@ -34,3 +34,10 @@ Schedule::command('itso:backup-due')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('itso:backup-verify')->dailyAt('04:41')->withoutOverlapping();
 // 8.5: khôi phục thảm họa: xếp hàng khôi phục dữ liệu account sau khi panel được khôi phục (không làm gì khi chưa bật).
 Schedule::command('itso:dr-restore')->everyFiveMinutes()->withoutOverlapping();
+
+// Phase 10: catalog phần mềm + bản mới từ agent (D-100).
+Schedule::command('itso:software-refresh')->dailyAt('05:23')->withoutOverlapping();
+
+// Phase 10: WordPress Toolkit (D-99) — làm mới bản mới hằng ngày, tự cập nhật theo cửa sổ giờ (kiểm mỗi giờ).
+Schedule::command('itso:wordpress-auto-update --refresh')->dailyAt('01:37')->withoutOverlapping();
+Schedule::command('itso:wordpress-auto-update')->hourlyAt(5)->withoutOverlapping();

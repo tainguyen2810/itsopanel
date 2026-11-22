@@ -39,7 +39,16 @@ final class FirewallService
                 default => 'priority',
             }, ucfirst($err).'.');
         }
-        if (($in['enabled'] ?? true) && FirewallRuleset::locksOut($r, SecurityContext::sshPort($s), SecurityContext::panelPort(), $clientIp)) {
+        $scope = (string) ($in['scope'] ?? 'host');
+        if ($scope === 'docker') {
+            // DOCKER-USER (D-95): chỉ mở cổng vào cho container; không chạm SSH/panel nên không có nguy cơ tự khóa.
+            if ($r['action'] !== 'accept' || $r['direction'] !== 'in' || ! in_array($r['protocol'], ['tcp', 'udp'], true)) {
+                throw ApiProblem::field('scope', 'Rule Docker chỉ nhận action accept, chiều in, giao thức tcp/udp.');
+            }
+            if ($r['ports'] === null || preg_match('/^[0-9]{1,5}(,[0-9]{1,5})*$/', $r['ports']) !== 1) {
+                throw ApiProblem::field('ports', 'Rule Docker cần danh sách cổng cụ thể (không dùng dải).');
+            }
+        } elseif (($in['enabled'] ?? true) && FirewallRuleset::locksOut($r, SecurityContext::sshPort($s), SecurityContext::panelPort(), $clientIp)) {
             throw FirewallRuleset::lockout('Rule này chặn cổng SSH/panel từ IP bạn đang dùng ('.$clientIp.').');
         }
         if (FirewallRule::query()->where('server_id', $s->id)->count() >= 500) {
@@ -47,8 +56,9 @@ final class FirewallService
         }
         $rule = FirewallRule::query()->create(['server_id' => $s->id, 'priority' => $r['priority'], 'action' => $r['action'],
             'direction' => $r['direction'], 'protocol' => $r['protocol'], 'port_range' => $r['ports'],
-            'source_cidr' => Net::normalize($r['source']), 'comment' => $r['comment'], 'enabled' => (bool) ($in['enabled'] ?? true)]);
-        $this->audit->record('firewall.rule_create', $rule, $r, 'success', $s->id, null, $actor);
+            'source_cidr' => Net::normalize($r['source']), 'comment' => $r['comment'], 'enabled' => (bool) ($in['enabled'] ?? true),
+            'scope' => $scope]);
+        $this->audit->record('firewall.rule_create', $rule, $r + ['scope' => $scope], 'success', $s->id, null, $actor);
 
         return $rule;
     }
@@ -63,7 +73,7 @@ final class FirewallService
     /** @return list<array<string, mixed>> */
     public function rules(Server $s): array
     {
-        return FirewallRuleset::params(FirewallRule::query()->where('server_id', $s->id)->orderBy('priority')->orderBy('id')->get());
+        return FirewallRuleset::params(FirewallRule::query()->where('server_id', $s->id)->where('scope', 'host')->orderBy('priority')->orderBy('id')->get());
     }
 
     /** @return array{server: array{uuid: string, name: string}, ruleset: string, rules_active: int, warnings: list<string>, lockout_risk: bool} */

@@ -372,6 +372,11 @@ func (d *Deps) phpVersionInstall(ctx context.Context, env *envelope.Envelope) (m
 	if err != nil {
 		return nil, opErr(err)
 	}
+	if validate.PHPFromPPA[string(p.Version)] { // kho ondrej/php chỉ thêm khi cài bản cần nó (D-100)
+		if _, err := d.ensurePPA(ctx); err != nil {
+			return nil, err
+		}
+	}
 	added, err := d.aptEnsure(ctx, pkgs)
 	if err != nil {
 		return nil, err

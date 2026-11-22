@@ -7,6 +7,7 @@ import { useFmt } from '@/shared/format/useFmt';
 import { SelectField, TextField } from '@/shared/page/fields';
 import { FormDialog } from '@/shared/page/FormDialog';
 import { ListPage } from '@/shared/page/ListPage';
+import { useUrlState } from '@/shared/page/useUrlState';
 import { AppLink } from '@/ui/AppLink';
 import { Badge, StatusBadge } from '@/ui/Badge';
 import { Button, buttonVariants } from '@/ui/Button';
@@ -22,17 +23,31 @@ import {
   useRealmLinks,
   type Website,
 } from './common';
-import { SITE_TYPES, certDaysLeft, websiteSchema, type WebsiteForm } from './forms';
+import {
+  ADMIN_SITE_TYPES,
+  SITE_TYPES,
+  certDaysLeft,
+  websiteSchema,
+  type DockerTarget,
+  type WebsiteForm,
+} from './forms';
 
 /**
  * Danh sách website (Admin và Portal). Admin truyền thêm bộ lọc chỉ Admin có (server) qua
  * `extraFilters`; cột server/WAF chỉ hiện ở Admin.
  */
-export default function WebsitesPage({ extraFilters = [] }: { extraFilters?: ListFilter[] }) {
+export default function WebsitesPage({
+  extraFilters = [],
+  dockerTargets,
+}: {
+  extraFilters?: ListFilter[];
+  dockerTargets?: DockerTarget[];
+}) {
   const { t } = useTranslation('admin');
   const fmt = useFmt();
   const links = useRealmLinks();
   const [creating, setCreating] = useState(false);
+  const [url, setUrl] = useUrlState();
   const accountFilter = useAccountFilter();
   const columns: ColumnDef<Website, unknown>[] = [
     {
@@ -135,7 +150,17 @@ export default function WebsitesPage({ extraFilters = [] }: { extraFilters?: Lis
         getRowId={(w) => w.uuid}
         primaryColumnId="domain"
       />
-      <CreateWebsite open={creating} onOpenChange={setCreating} />
+      <CreateWebsite
+        open={creating || url.new === 'docker'}
+        onOpenChange={(o) => {
+          setCreating(o);
+          if (!o && url.new) setUrl({ new: undefined, project: undefined });
+        }}
+        {...(dockerTargets ? { dockerTargets } : {})}
+        {...(url.new === 'docker'
+          ? { preset: { type: 'docker' as const, compose_project_uuid: url.project ?? '' } }
+          : {})}
+      />
     </>
   );
 }
@@ -168,16 +193,31 @@ const EMPTY: WebsiteForm = {
   document_root: 'public',
   ssl_mode: 'acme',
   proxy_target: 'http://127.0.0.1:3000',
+  compose_project_uuid: '',
+  service: '',
 };
 
 /** Form tạo website: dùng cho hộp thoại (Admin, chi tiết account) và trang riêng (Portal). */
-function useCreateWebsite(account: string | undefined, enabled: boolean, onCreated: () => void) {
+function useCreateWebsite(
+  account: string | undefined,
+  enabled: boolean,
+  onCreated: () => void,
+  preset: Partial<WebsiteForm> = {},
+  targets?: DockerTarget[],
+) {
   const { accounts, options } = useActiveAccounts(enabled);
+  const initial = { ...EMPTY, ...preset, hosting_account_uuid: account ?? '' };
   const form = useForm<WebsiteForm>({
     resolver: zodResolver(websiteSchema),
-    defaultValues: { ...EMPTY, hosting_account_uuid: account ?? '' },
+    defaultValues: initial,
   });
-  const [accId, type] = useWatch({ control: form.control, name: ['hosting_account_uuid', 'type'] });
+  const [accId, type, projectId] = useWatch({
+    control: form.control,
+    name: ['hosting_account_uuid', 'type', 'compose_project_uuid'],
+  });
+  // Loại docker (chỉ Admin): chọn compose project và service có cổng đã cấp.
+  const project = targets?.find((p) => p.uuid === projectId);
+
   const acc = accounts.find((a) => a.uuid === accId);
   // Phiên bản PHP chọn được theo gói (phiên bản gói hiện hành của account).
   const features = useFeatures(acc?.uuid);
@@ -192,12 +232,17 @@ function useCreateWebsite(account: string | undefined, enabled: boolean, onCreat
           ssl_mode: v.ssl_mode,
           php_version: v.type === 'php' ? v.php_version : null,
           proxy_target: v.type === 'proxy' ? v.proxy_target : null,
+          ...(v.type === 'docker'
+            ? {
+                docker_target: { compose_project_uuid: v.compose_project_uuid, service: v.service },
+              }
+            : {}),
         },
       }),
     {
       invalidate: [['admin', 'websites']],
       onSuccess: () => {
-        form.reset({ ...EMPTY, hosting_account_uuid: account ?? '' });
+        form.reset(initial);
         onCreated();
       },
     },
@@ -211,14 +256,17 @@ function useCreateWebsite(account: string | undefined, enabled: boolean, onCreat
     full: acc ? acc.usage.websites.used >= acc.usage.websites.limit : false,
     create,
     submit: () => void form.handleSubmit((v) => create.mutate(v))(),
-    reset: () => form.reset({ ...EMPTY, hosting_account_uuid: account ?? '' }),
+    reset: () => form.reset(initial),
+    isAdmin: targets !== undefined,
+    projects: targets ?? [],
+    project,
   };
 }
 
 function WebsiteFields({ f }: { f: ReturnType<typeof useCreateWebsite> }) {
   const { t } = useTranslation('admin');
   const { control } = f.form;
-  const { acc, full, type, phpVersions, options } = f;
+  const { acc, full, type, phpVersions, options, project } = f;
   return (
     <>
       <SelectField
@@ -246,7 +294,10 @@ function WebsiteFields({ f }: { f: ReturnType<typeof useCreateWebsite> }) {
           control={control}
           name="type"
           label={t('sites.type')}
-          options={SITE_TYPES.map((x) => ({ value: x, label: t(`sites.types.${x}`) }))}
+          options={(f.isAdmin ? ADMIN_SITE_TYPES : SITE_TYPES).map((x) => ({
+            value: x,
+            label: t(`sites.types.${x}`),
+          }))}
         />
         {type === 'php' && (
           <SelectField
@@ -266,13 +317,40 @@ function WebsiteFields({ f }: { f: ReturnType<typeof useCreateWebsite> }) {
           />
         )}
       </div>
+      {type === 'docker' && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField
+            control={control}
+            name="compose_project_uuid"
+            label={t('sites.composeProject')}
+            options={f.projects.map((p) => ({
+              value: p.uuid,
+              label: `${p.name} (${p.server.name})`,
+            }))}
+            placeholder={t('sites.pickProject')}
+          />
+          <SelectField
+            control={control}
+            name="service"
+            label={t('sites.service')}
+            options={(project?.ports ?? []).map((p) => ({
+              value: p.service,
+              label: `${p.service} → 127.0.0.1:${p.host_port}`,
+            }))}
+            placeholder={project ? t('sites.pickService') : t('sites.pickProjectFirst')}
+            description={t('sites.dockerHint')}
+          />
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
-          control={control}
-          name="document_root"
-          label={t('sites.docRoot')}
-          description={t('sites.docRootHint')}
-        />
+        {type !== 'docker' && (
+          <TextField
+            control={control}
+            name="document_root"
+            label={t('sites.docRoot')}
+            description={t('sites.docRootHint')}
+          />
+        )}
         <SelectField
           control={control}
           name="ssl_mode"
@@ -291,13 +369,18 @@ export function CreateWebsite({
   open,
   onOpenChange,
   account,
+  preset,
+  dockerTargets,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   account?: string;
+  preset?: Partial<WebsiteForm>;
+  /** Chỉ Admin: bật loại website `docker`. */
+  dockerTargets?: DockerTarget[];
 }) {
   const { t } = useTranslation('admin');
-  const f = useCreateWebsite(account, open, () => onOpenChange(false));
+  const f = useCreateWebsite(account, open, () => onOpenChange(false), preset, dockerTargets);
   const close = (o: boolean) => {
     if (!o) f.reset();
     onOpenChange(o);

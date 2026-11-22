@@ -111,31 +111,33 @@ it('dịch vụ: start/stop/restart qua job service.<action> (op service.control
     expect(p4idem($sa, "/api/v1/admin/servers/$id/services/cron:stop")->status())->toBe(202);
 });
 
-it('phần mềm: catalog + trạng thái; cài qua job software.install ghi bản thật; gỡ gói nền tảng/nâng cấp → 409', function () {
+it('phần mềm: catalog + trạng thái; cài qua job software.install ghi bản thật; gỡ gói nền tảng → 409; nâng cấp qua job', function () {
     $a = new Actors($this);
-    $agent = p4agent(['software.install' => fn () => ['installed' => true, 'version' => '0.16.4-1', 'changed' => true]]);
+    $agent = p4agent(['software.install' => fn () => ['installed' => true, 'version' => '0.17.06-1', 'changed' => true],
+        'software.upgrade' => fn () => ['from_version' => '0.17.06-1', 'version' => '0.17.06-2', 'changed' => true]]);
     $sa = $a->spa('SA');
     $id = $a->server->uuid;
     $l = $sa->get("/api/v1/admin/servers/$id/software");
     assertMatchesContract(P4, 'get', '/api/v1/admin/servers/{id}/software', 200, $l);
-    expect(collect($l->json('data'))->pluck('key')->all())->toBe(['acl', 'lego', 'nftables', 'nginx', 'quota', 'restic', 'stress-ng'])
-        ->and(collect($l->json('data'))->firstWhere('key', 'restic'))->toMatchArray(['state' => 'available', 'installed_version' => null]);
+    expect(collect($l->json('data'))->pluck('key')->all())->toContain('acl', 'restic', 'stress-ng', 'php8.4', 'redis', 'valkey', 'docker', 'wp-cli')
+        ->and(collect($l->json('data'))->firstWhere('key', 'stress-ng'))->toMatchArray(['state' => 'available', 'installed_version' => null]);
 
-    $r = p4idem($sa, "/api/v1/admin/servers/$id/software/restic:install");
+    $r = p4idem($sa, "/api/v1/admin/servers/$id/software/stress-ng:install");
     assertMatchesContract(P4, 'post', '/api/v1/admin/servers/{id}/software/{key}:{action}', 202, $r);
-    expect(collect($agent->calls)->firstWhere('op', 'software.install')['params'])->toBe(['recipe' => 'restic']);
-    expect(ServerSoftware::query()->where('software_key', 'restic')->first())
-        ->status->toBe('ready')->version->toBe('0.16.4-1');
-    expect(collect($sa->get("/api/v1/admin/servers/$id/software")->json('data'))->firstWhere('key', 'restic'))
-        ->toMatchArray(['state' => 'installed', 'installed_version' => '0.16.4-1']);
+    expect(collect($agent->calls)->firstWhere('op', 'software.install')['params'])->toBe(['recipe' => 'stress-ng']);
+    expect(ServerSoftware::query()->where('software_key', 'stress-ng')->first())
+        ->status->toBe('ready')->version->toBe('0.17.06-1');
+    expect(collect($sa->get("/api/v1/admin/servers/$id/software")->json('data'))->firstWhere('key', 'stress-ng'))
+        ->toMatchArray(['state' => 'installed', 'installed_version' => '0.17.06-1']);
 
     $core = p4idem($sa, "/api/v1/admin/servers/$id/software/acl:remove");
     assertMatchesContract(P4, 'post', '/api/v1/admin/servers/{id}/software/{key}:{action}', 409, $core);
-    expect(p4idem($sa, "/api/v1/admin/servers/$id/software/restic:upgrade")->status())->toBe(409)
-        ->and(p4idem($sa, "/api/v1/admin/servers/$id/software/mysql:install")->status())->toBe(404);
+    expect(p4idem($sa, "/api/v1/admin/servers/$id/software/mysql:install")->status())->toBe(404);
+    expect(p4idem($sa, "/api/v1/admin/servers/$id/software/stress-ng:upgrade")->status())->toBe(202);
+    expect(ServerSoftware::query()->where('software_key', 'stress-ng')->value('version'))->toBe('0.17.06-2');
 
-    expect(p4idem($sa, "/api/v1/admin/servers/$id/software/restic:remove")->status())->toBe(202);
-    expect(collect($sa->get("/api/v1/admin/servers/$id/software")->json('data'))->firstWhere('key', 'restic')['state'])->toBe('available');
+    expect(p4idem($sa, "/api/v1/admin/servers/$id/software/stress-ng:remove")->status())->toBe(202);
+    expect(collect($sa->get("/api/v1/admin/servers/$id/software")->json('data'))->firstWhere('key', 'stress-ng')['state'])->toBe('available');
 });
 
 it('cài phần mềm thất bại → trạng thái failed; đang cài → 409', function () {

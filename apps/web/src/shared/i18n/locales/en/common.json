@@ -85,7 +85,17 @@
     "unreachable": "Unreachable",
     "waiting_agent": "Waiting for node",
     "holding": "Holding source",
-    "revoked": "Revoked"
+    "revoked": "Revoked",
+    "partial": "Partial",
+    "deploying": "Deploying",
+    "enabled": "Enabled",
+    "not_installed": "Not installed",
+    "installing": "Installing",
+    "healthy": "Healthy",
+    "unhealthy": "Unhealthy",
+    "starting": "Starting",
+    "updating": "Updating",
+    "cloning": "Cloning"
   },
   "table": {
     "selected_one": "{{count}} row selected",

@@ -37,6 +37,7 @@ export const ADMIN_PAGES: PageLoaders = {
   dns: () => import('./sites/DnsPage'),
   cron: () => import('@/shared/hosting/pages/CronPage'),
   wordpress: () => import('@/shared/hosting/pages/WordPressPage'),
+  wordpressDetail: () => import('@/shared/hosting/pages/WordPressDetailPage'),
   gitDeployments: () => import('./sites/GitDeploymentsPage'),
   security: () => import('./security/SecurityPage'),
   securityWaf: () => import('./security/WafPage'),

@@ -3,6 +3,7 @@
 use App\Domain\Backup\BackupJobHandler;
 use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
+use App\Domain\Docker\DockerJobHandler;
 use App\Domain\Hosting\AccountJobHandler;
 use App\Domain\Migration\MigrationJobHandler;
 use App\Domain\Migration\MigrationService;
@@ -15,6 +16,8 @@ use App\Domain\Servers\SoftwareJobHandler;
 use App\Domain\Web\CertificateJobHandler;
 use App\Domain\Web\ServerWebJobHandler;
 use App\Domain\Web\WebsiteJobHandler;
+use App\Domain\WordPress\WordPressJobHandler;
+use App\Domain\WordPress\WordPressService;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
@@ -73,6 +76,8 @@ return [
     ], AccountJobHandler::class) + [
         'software.install' => SoftwareJobHandler::class,
         'software.remove' => SoftwareJobHandler::class,
+        'software.upgrade' => SoftwareJobHandler::class,
+        'software.os_updates' => SoftwareJobHandler::class,
     ] + array_fill_keys(['website.create', 'website.update', 'website.nginx.update', 'website.php.update',
         'website.domain.add', 'website.domain.remove', 'website.delete'], WebsiteJobHandler::class)
       + array_fill_keys(['php.version.install', 'php.version.remove', 'php.extensions.install', 'setup.stack'],
@@ -82,7 +87,20 @@ return [
       + array_fill_keys(DataJobHandler::TYPES, DataJobHandler::class)
       + array_fill_keys(SecurityJobHandler::TYPES, SecurityJobHandler::class)
       + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class)
-      + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class),
+      + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class)
+      + array_fill_keys(DockerJobHandler::TYPES, DockerJobHandler::class)
+      + array_fill_keys(WordPressService::TYPES, WordPressJobHandler::class),
+
+    // Docker (Phase 10, D-94…D-98): giao diện mạng công khai cho DOCKER-USER; giới hạn mặc định chèn vào service
+    // compose thiếu limit; số bản rollback image giữ lại mỗi service.
+    'docker' => [
+        'public_interface' => env('ITSO_DOCKER_PUBLIC_IFACE', 'eth0'),
+        'default_mem_limit_mb' => (int) env('ITSO_DOCKER_DEFAULT_MEM_MB', 512),
+        'default_cpus' => (float) env('ITSO_DOCKER_DEFAULT_CPUS', 1.0),
+        'default_pids_limit' => (int) env('ITSO_DOCKER_DEFAULT_PIDS', 512),
+        'keep_rollbacks' => 2,
+        'health_timeout_sec' => 60,
+    ],
 
     // Bước job chạy trong panel (không qua agent): op → lớp PanelStep.
     'panel_steps' => [

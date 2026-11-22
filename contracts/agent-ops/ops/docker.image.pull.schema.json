@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.image.pull.schema.json",
+  "title": "docker.image.pull",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "../defs.schema.json#/$defs/DockerImageRef"
+        },
+        "registry_uuid": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "image",
+        "registry_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "$ref": "../defs.schema.json#/$defs/ImageDigest"
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "digest",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

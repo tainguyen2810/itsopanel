@@ -42,7 +42,8 @@ PHASES: dict[int, list[str]] = {
         "backup_verifications", "restore_jobs", "purge_records"],
     9: ["agent_enrollment_tokens", "agent_certificates", "account_migrations"],
     10: ["docker_hosts", "registries", "compose_projects", "compose_revisions", "containers",
-         "port_allocations", "wordpress_sites", "git_repositories", "git_deployments"],
+         "port_allocations", "image_rollbacks", "wordpress_sites", "wordpress_components", "wordpress_updates",
+         "git_repositories", "git_deployments"],
     11: ["metric_rollups", "alert_rules", "alerts", "uptime_checks", "notification_channels",
          "notification_preferences"],
 }

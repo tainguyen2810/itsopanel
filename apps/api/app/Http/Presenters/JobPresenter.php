@@ -7,6 +7,7 @@ namespace App\Http\Presenters;
 use App\Auth\Realm;
 use App\Models\AccountMigration;
 use App\Models\Certificate;
+use App\Models\ComposeProject;
 use App\Models\CronJob;
 use App\Models\Database;
 use App\Models\DatabaseUser;
@@ -18,11 +19,13 @@ use App\Models\JobLog;
 use App\Models\JobStep;
 use App\Models\MalwareFinding;
 use App\Models\QuarantineItem;
+use App\Models\Registry;
 use App\Models\Server;
 use App\Models\SftpAccount;
 use App\Models\SshKey;
 use App\Models\User;
 use App\Models\Website;
+use App\Models\WordPressSite;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -46,6 +49,9 @@ final class JobPresenter
         'malware_finding' => MalwareFinding::class,
         'quarantine_item' => QuarantineItem::class,
         'account_migration' => AccountMigration::class,
+        'compose_project' => ComposeProject::class,
+        'registry' => Registry::class,
+        'wordpress_site' => WordPressSite::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */

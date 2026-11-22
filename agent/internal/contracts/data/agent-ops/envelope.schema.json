@@ -138,16 +138,46 @@
         "migrate.verify",
         "migrate.cutover",
         "migrate.rollback",
+        "software.catalog",
+        "software.status",
+        "software.upgrade",
+        "os.auto_updates",
+        "docker.host.status",
+        "docker.host.configure",
+        "docker.firewall.sync",
+        "docker.container.list",
+        "docker.container.inspect",
         "docker.container.control",
+        "docker.container.logs",
+        "docker.container.stats",
+        "docker.image.list",
+        "docker.image.pull",
+        "docker.image.prune",
+        "docker.image.update",
+        "docker.image.rollback",
+        "docker.registry.login",
+        "docker.volume.list",
+        "docker.volume.create",
+        "docker.volume.remove",
+        "docker.volume.backup",
+        "docker.volume.restore",
+        "docker.network.list",
+        "docker.network.create",
+        "docker.network.remove",
         "compose.validate",
         "compose.apply",
         "compose.up",
         "compose.down",
         "compose.pull",
+        "compose.remove",
+        "wp.detect",
+        "wp.info",
         "wp.install",
         "wp.update",
         "wp.clone",
         "wp.harden",
+        "wp.admin_password",
+        "wp.maintenance",
         "git.deploy",
         "git.rollback"
       ]
@@ -2422,6 +2452,766 @@
         "properties": {
           "params": {
             "$ref": "ops/migrate.rollback.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "software.catalog"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/software.catalog.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "software.status"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/software.status.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "software.upgrade"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/software.upgrade.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "os.auto_updates"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/os.auto_updates.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.host.status"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.host.status.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.host.configure"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.host.configure.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.firewall.sync"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.firewall.sync.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.container.list"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.container.list.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.container.inspect"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.container.inspect.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.container.control"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.container.control.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.container.logs"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.container.logs.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.container.stats"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.container.stats.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.image.list"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.image.list.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.image.pull"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.image.pull.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.image.prune"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.image.prune.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.image.update"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.image.update.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.image.rollback"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.image.rollback.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.registry.login"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.registry.login.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.volume.list"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.volume.list.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.volume.create"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.volume.create.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.volume.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.volume.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.volume.backup"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.volume.backup.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.volume.restore"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.volume.restore.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.network.list"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.network.list.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.network.create"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.network.create.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "docker.network.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/docker.network.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "compose.validate"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/compose.validate.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "compose.apply"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/compose.apply.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "compose.up"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/compose.up.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "compose.down"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/compose.down.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "compose.pull"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/compose.pull.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "compose.remove"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/compose.remove.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.detect"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.detect.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.info"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.info.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.install"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.install.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.update"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.update.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.clone"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.clone.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.harden"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.harden.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.admin_password"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.admin_password.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "wp.maintenance"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/wp.maintenance.schema.json#/$defs/params"
           }
         }
       }

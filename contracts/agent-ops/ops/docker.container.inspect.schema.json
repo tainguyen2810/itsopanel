@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.container.inspect.schema.json",
+  "title": "docker.container.inspect",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "../defs.schema.json#/$defs/ContainerId"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "../defs.schema.json#/$defs/ContainerId"
+        },
+        "image_digest": {
+          "$ref": "../defs.schema.json#/$defs/ImageDigest"
+        },
+        "state": {
+          "type": "string"
+        },
+        "restart_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "volume",
+                  "bind",
+                  "tmpfs"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "target": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            },
+            "required": [
+              "type",
+              "source",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host_ip": {
+                "$ref": "../defs.schema.json#/$defs/IpAddress"
+              },
+              "host_port": {
+                "$ref": "../defs.schema.json#/$defs/Port"
+              },
+              "container_port": {
+                "$ref": "../defs.schema.json#/$defs/Port"
+              },
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "tcp",
+                  "udp"
+                ]
+              }
+            },
+            "required": [
+              "host_ip",
+              "host_port",
+              "container_port",
+              "protocol"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        },
+        "privileged": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "image_digest",
+        "state",
+        "restart_count",
+        "mounts",
+        "ports",
+        "privileged"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.image.prune.schema.json",
+  "title": "docker.image.prune",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "keep_rollback": {
+          "type": "boolean"
+        },
+        "dangling_only": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "keep_rollback",
+        "dangling_only"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reclaimed_bytes": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        }
+      },
+      "required": [
+        "removed",
+        "reclaimed_bytes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

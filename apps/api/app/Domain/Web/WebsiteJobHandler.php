@@ -12,6 +12,7 @@ use App\Models\JobStep;
 use App\Models\Website;
 use App\Models\WebsiteDomain;
 use App\Models\WebsiteSetting;
+use App\Models\WordPressSite;
 use Illuminate\Support\Carbon;
 
 /**
@@ -31,6 +32,7 @@ final class WebsiteJobHandler implements JobHandler
             WebsiteDomain::query()->where('website_id', $w->id)->delete();
             WebsiteSetting::query()->where('website_id', $w->id)->delete();
             Certificate::query()->where('website_id', $w->id)->delete();
+            WordPressSite::query()->where('website_id', $w->id)->delete(); // dữ liệu WordPress trong home giữ nguyên
             $w->observed_at = Carbon::now();
             $w->save();
             $w->delete();

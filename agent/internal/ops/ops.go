@@ -13,6 +13,7 @@ import (
 
 	"itso.local/agent/internal/audit"
 	"itso.local/agent/internal/contracts"
+	"itso.local/agent/internal/docker"
 	"itso.local/agent/internal/envelope"
 	"itso.local/agent/internal/platform"
 	"itso.local/agent/internal/registry"
@@ -49,6 +50,12 @@ type Deps struct {
 	NodeMode bool
 	// HTTPAddrs (tùy chọn, test): địa chỉ http.check gọi theo scheme; mặc định 127.0.0.1:80 / 127.0.0.1:443.
 	HTTPAddrs map[string]string
+	// Fetch (tùy chọn, test): tải tệp HTTPS có hash ghim (wp-cli). Nil = net/http.
+	Fetch func(ctx context.Context, url string, limit int64) ([]byte, error)
+	// Docker: client Engine API (máy thật: unix socket; sandbox/test: docker.Fake). Nil = docker chưa cấu hình.
+	Docker docker.Engine
+	// DockerPoll: chu kỳ kiểm health khi cập nhật image (mặc định 2s; test đặt nhỏ).
+	DockerPoll time.Duration
 
 	mu       sync.Mutex
 	inflight map[string]context.CancelFunc

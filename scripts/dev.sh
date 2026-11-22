@@ -55,6 +55,9 @@ if [[ "$ITSO_DEV_AGENT" == sandbox ]]; then
   [[ -s "$ITSO_AGENT_KEY_FILE" ]] || od -An -N32 -tx1 /dev/urandom | tr -d ' \n' > "$ITSO_AGENT_KEY_FILE"
   chmod 600 "$ITSO_AGENT_KEY_FILE"
   [[ -s "$SBX/policy.yaml" ]] || printf 'version: 1\n' > "$SBX/policy.yaml"
+  # Phase 10: sandbox dùng Engine Docker giả (không có daemon thật) nên bật cờ docker để e2e chạy được op docker.*/compose.*.
+  # Máy thật vẫn mặc định tắt, chỉ bật bằng `itso policy set docker on` (ADR 0039).
+  grep -q '^docker:' "$SBX/policy.yaml" || printf 'docker: true\n' >> "$SBX/policy.yaml"
   chmod 600 "$SBX/policy.yaml"
   umask 022
   rm -f "$ITSO_AGENT_SOCKET"

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.image.update.schema.json",
+  "title": "docker.image.update",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "../defs.schema.json#/$defs/ComposeProjectRef"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ComposeServiceName"
+          },
+          "minItems": 1,
+          "maxItems": 50,
+          "uniqueItems": true
+        },
+        "health_timeout_sec": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 300
+        },
+        "keep_rollbacks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      },
+      "required": [
+        "project",
+        "services",
+        "health_timeout_sec",
+        "keep_rollbacks"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "$ref": "../defs.schema.json#/$defs/ComposeServiceName"
+              },
+              "from_digest": {
+                "$ref": "../defs.schema.json#/$defs/ImageDigest"
+              },
+              "to_digest": {
+                "$ref": "../defs.schema.json#/$defs/ImageDigest"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "unchanged",
+                  "updated",
+                  "rolled_back"
+                ]
+              },
+              "rollback_tag": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "service",
+              "from_digest",
+              "to_digest",
+              "state",
+              "rollback_tag",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 50
+        }
+      },
+      "required": [
+        "services"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

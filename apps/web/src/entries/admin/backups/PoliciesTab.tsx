@@ -35,6 +35,7 @@ const SCOPES = [
   'database',
   'server',
   'panel',
+  'compose_project',
 ] as const;
 const CONTENTS = ['files', 'databases', 'config'] as const;
 
@@ -241,6 +242,10 @@ function PolicyDialog({
     queryKey: ['admin', 'servers', 'options'],
     queryFn: () => list('/api/v1/admin/servers'),
   });
+  const projects = useQuery({
+    queryKey: ['admin', 'compose', 'options'],
+    queryFn: () => list('/api/v1/admin/compose-projects'),
+  });
   const { control, handleSubmit } = useForm<PolicyForm>({
     resolver: zodResolver(policySchema),
     defaultValues: {
@@ -248,6 +253,7 @@ function PolicyDialog({
       scope_type: policy?.scope_type ?? 'all_accounts',
       scope_uuid: policy?.scope_uuid ?? '',
       contents: policy?.contents ?? ['files', 'databases', 'config'],
+      volume_consistency: policy?.volume_consistency ?? 'pause',
       excludes: (policy?.excludes ?? ['tmp/**', '**/cache/**']).join('\n'),
       schedule: policy?.schedule ?? '0 1 * * *',
       destination_uuids: policy?.destination_uuids ?? [],
@@ -273,8 +279,14 @@ function PolicyDialog({
             ? (['files'] as const)
             : v.scope_type === 'database'
               ? (['databases'] as const)
-              : (['config'] as const),
-        excludes: v.scope_type === 'database' ? [] : excludeLines(v.excludes),
+              : v.scope_type === 'compose_project'
+                ? (['docker_volumes'] as const)
+                : (['config'] as const),
+        volume_consistency: v.scope_type === 'compose_project' ? v.volume_consistency : null,
+        excludes:
+          v.scope_type === 'database' || v.scope_type === 'compose_project'
+            ? []
+            : excludeLines(v.excludes),
         schedule: v.schedule,
         destination_uuids: v.destination_uuids,
         retention: Object.fromEntries(
@@ -337,6 +349,18 @@ function PolicyDialog({
             placeholder={t('bk.pickWebsite')}
           />
         )}
+        {scope === 'compose_project' && (
+          <SelectField
+            control={control}
+            name="scope_uuid"
+            label={t('compose.title')}
+            options={(projects.data ?? []).map((p) => ({
+              value: p.uuid,
+              label: `${p.name} · ${p.server.name}`,
+            }))}
+            placeholder={t('bk.pickProject')}
+          />
+        )}
         {scope === 'database' && (
           <SelectField
             control={control}
@@ -358,7 +382,19 @@ function PolicyDialog({
           options={CONTENTS.map((c) => ({ value: c, label: t(`bk.content.${c}`) }))}
         />
       )}
-      {scope !== 'database' && scope !== 'panel' && (
+      {scope === 'compose_project' && (
+        <SelectField
+          control={control}
+          name="volume_consistency"
+          label={t('bk.volumeConsistency')}
+          description={t('bk.volumeConsistencyHint')}
+          options={(['pause', 'none'] as const).map((c) => ({
+            value: c,
+            label: t(`bk.consistency.${c}`),
+          }))}
+        />
+      )}
+      {scope !== 'database' && scope !== 'panel' && scope !== 'compose_project' && (
         <TextareaField
           control={control}
           name="excludes"

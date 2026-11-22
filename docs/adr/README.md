@@ -42,5 +42,12 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0036](0036-internal-ca.md) | CA nội bộ, chứng chỉ node 30 ngày, token join | Accepted | D-90 |
 | [0037](0037-jobs-offline-placement.md) | Job chờ node, trạng thái kết nối, gợi ý server | Accepted | D-91, D-92 |
 | [0038](0038-account-migration.md) | Chuyển account qua repo restic, giữ nguồn, dọn dẹp | Accepted | D-93 |
+| [0039](0039-docker-engine.md) | Cài Docker từ Ubuntu, daemon.json, Engine API qua socket | Accepted | D-94 |
+| [0040](0040-docker-firewall.md) | Chain DOCKER-USER, Docker không vượt tường lửa | Accepted | D-95 |
+| [0041](0041-compose-validator.md) | Validator compose, override của Super Admin, revision | Accepted | D-96 |
+| [0042](0042-docker-ports-sites.md) | Dải cổng 20000–29999, website loại docker | Accepted | D-97 |
+| [0043](0043-docker-images-volumes.md) | Cập nhật image có rollback, registry, backup volume | Accepted | D-98 |
+| [0044](0044-wordpress-toolkit.md) | WordPress Toolkit (WP-CLI dưới UID account, cập nhật an toàn) | Accepted | D-99 |
+| [0045](0045-software-manager.md) | Software Manager (catalog, PPA ghim khóa, unattended-upgrades) | Accepted | D-100 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

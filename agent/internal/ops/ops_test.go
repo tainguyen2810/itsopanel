@@ -322,11 +322,12 @@ func TestServiceAndSoftwareGolden(t *testing.T) {
 	if d := e.step("service.control.stop", contracts.OpServiceControl, map[string]any{"name": "nginx", "action": "stop"}, true); d["active"] != false {
 		t.Fatal(d)
 	}
-	if d := e.step("software.install", contracts.OpSoftwareInstall, map[string]any{"recipe": "restic"}, true); d["changed"] != true || d["version"] != "1.0-sandbox" {
+	if d := e.step("software.install", contracts.OpSoftwareInstall, map[string]any{"recipe": "stress-ng"}, true); d["changed"] != true || d["version"] != "1.0-sandbox" {
 		t.Fatal(d)
 	}
 	e.h.Fail(contracts.OpSoftwareRemove, map[string]any{"recipe": "quota"}, "precondition_failed")
-	e.step("software.remove", contracts.OpSoftwareRemove, map[string]any{"recipe": "restic"}, true)
+	e.h.Fail(contracts.OpSoftwareRemove, map[string]any{"recipe": "restic"}, "precondition_failed") // lõi của Backup Center (D-100)
+	e.step("software.remove", contracts.OpSoftwareRemove, map[string]any{"recipe": "stress-ng"}, true)
 }
 
 // Lệnh hệ thống lỗi → mã lỗi đúng, không panic, lỗi tạm thời có retryable.

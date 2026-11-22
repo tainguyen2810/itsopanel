@@ -1652,6 +1652,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal/wordpress/sites/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chi tiết site WordPress */
+        get: operations["portalGetWordPressSite"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Chính sách tự cập nhật */
+        patch: operations["portalUpdateWordPressSettings"];
+        trace?: never;
+    };
+    "/api/v1/portal/wordpress/sites/{id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lịch sử cập nhật */
+        get: operations["portalListWordPressUpdates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/wordpress/sites/{id}:admin-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Đổi mật khẩu admin WordPress
+         * @description Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+         *
+         *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["portalWordPressAdminPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portal/wordpress/sites/{id}:clone-staging": {
         parameters: {
             query?: never;
@@ -1692,6 +1749,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal/wordpress/sites/{id}:maintenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bật/tắt chế độ bảo trì
+         * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["portalWordPressMaintenance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portal/wordpress/sites/{id}:update": {
         parameters: {
             query?: never;
@@ -1702,10 +1779,32 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Cập nhật core/plugin/theme
+         * Cập nhật core/plugin/theme (snapshot trước, lỗi thì rollback)
          * @description Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
          */
         post: operations["portalWordPressUpdate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/wordpress/sites:scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quét phát hiện site WordPress
+         * @description Quét docroot các website trong phạm vi (wp.detect, D-99); site mới xuất hiện trong danh sách.
+         *
+         *     Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.
+         */
+        post: operations["portalScanWordPressSites"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1873,16 +1972,17 @@ export interface components {
             /** Format: uuid */
             repository_uuid: string | null;
             /** @enum {string} */
-            scope_type: "hosting_account" | "website" | "database" | "server_config" | "panel";
+            scope_type: "hosting_account" | "website" | "database" | "server_config" | "panel" | "compose_project";
             website: components["schemas"]["WebsiteRef"] | null;
             databases: components["schemas"]["DbName"][];
+            volumes: string[];
             restic_snapshot_id: string;
             size_mb: number;
             /** Format: date-time */
             taken_at: string;
             /** Format: date-time */
             verified_at: string | null;
-            contents: ("files" | "databases" | "config")[];
+            contents: ("files" | "databases" | "config" | "docker_volumes")[];
             tags: string[];
             panel_version: string | null;
             /**
@@ -2612,12 +2712,18 @@ export interface components {
             hosting_account_uuid: string;
             primary_domain: components["schemas"]["Domain"];
             /** @enum {string} */
-            type: "php" | "static" | "proxy";
+            type: "php" | "static" | "proxy" | "docker";
             document_root?: components["schemas"]["RelPath"];
             php_version?: components["schemas"]["PhpVersion"] | null;
             /** @enum {string} */
             ssl_mode?: "none" | "acme";
             proxy_target?: string | null;
+            /** @description Chỉ Admin, type=docker (Phase 10, D-97): vhost proxy tới cổng 127.0.0.1 đã cấp cho service. */
+            docker_target?: {
+                /** Format: uuid */
+                compose_project_uuid: string;
+                service: string;
+            } | null;
         };
         WebsiteUpdate: {
             document_root?: components["schemas"]["RelPath"];
@@ -2694,9 +2800,25 @@ export interface components {
             themes_outdated: number;
             /** @enum {string} */
             auto_update: "off" | "minor" | "all";
+            /** @description Cửa sổ giờ tự cập nhật (giờ server). */
+            update_window: string;
+            /** @description Khóa: file_edit_disabled, xmlrpc_blocked, php_in_uploads_blocked, wp_config_protected, salts_rotated, version_hidden. */
             hardening: {
                 [key: string]: boolean;
             };
+            maintenance: boolean;
+            admin_username: string | null;
+            php_version: components["schemas"]["PhpVersion"] | null;
+            /** @enum {string} */
+            state: "ready" | "updating" | "cloning" | "error";
+            last_update: {
+                /** Format: uuid */
+                uuid: string;
+                /** @enum {string} */
+                state: "running" | "succeeded" | "rolled_back" | "failed";
+                /** Format: date-time */
+                at: string;
+            } | null;
             /** Format: uuid */
             staging_of: string | null;
             /** Format: date-time */
@@ -2711,6 +2833,89 @@ export interface components {
             admin_email: string;
             /** @enum {string} */
             locale: "vi" | "en_US";
+        };
+        WordPressComponent: {
+            /** @enum {string} */
+            type: "plugin" | "theme";
+            slug: string;
+            name: string;
+            version: string;
+            latest_version: string | null;
+            active: boolean;
+            auto_update: boolean;
+        };
+        WordPressSiteDetail: {
+            site: components["schemas"]["WordPressSite"];
+            core: {
+                version: string;
+                latest_version: string;
+                checksums_ok: boolean | null;
+            };
+            components: components["schemas"]["WordPressComponent"][];
+            staging: {
+                /** Format: uuid */
+                uuid: string;
+                domain: components["schemas"]["Domain"];
+                /** Format: date-time */
+                created_at: string;
+            }[];
+        };
+        WordPressSettings: {
+            /** @enum {string} */
+            auto_update?: "off" | "minor" | "all";
+            update_window?: string;
+        };
+        /** @description Một lượt cập nhật (D-99): snapshot trước, kiểm tra sau, lỗi thì khôi phục snapshot. */
+        WordPressUpdate: {
+            /** Format: uuid */
+            uuid: string;
+            /** Format: uuid */
+            site_uuid: string;
+            /** @enum {string} */
+            trigger: "manual" | "auto";
+            /** @enum {string} */
+            state: "running" | "succeeded" | "rolled_back" | "failed";
+            items: {
+                /** @enum {string} */
+                type: "core" | "plugin" | "theme";
+                slug: string;
+                from: string;
+                to: string;
+            }[];
+            steps: {
+                /** @enum {string} */
+                key: "snapshot" | "maintenance" | "update" | "verify" | "rollback";
+                /** @enum {string} */
+                state: "pending" | "running" | "done" | "failed" | "skipped";
+            }[];
+            /** Format: uuid */
+            snapshot_uuid: string | null;
+            error: string | null;
+            requested_by: components["schemas"]["UserRef"] | null;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            finished_at: string | null;
+        };
+        WordPressPassword: {
+            password: components["schemas"]["SecretPassword"];
+        };
+        WordPressCloneRequest: {
+            subdomain: string;
+            basic_auth?: boolean;
+            noindex?: boolean;
+        };
+        WordPressHardenRequest: {
+            items: ("file_edit_disabled" | "xmlrpc_blocked" | "php_in_uploads_blocked" | "wp_config_protected" | "salts_rotated" | "version_hidden")[];
+            enabled: boolean;
+        };
+        WordPressMaintenance: {
+            enabled: boolean;
+        };
+        WordPressUpdateRequest: {
+            core?: boolean;
+            plugins?: string[];
+            themes?: string[];
         };
         Health: {
             /** @enum {string} */
@@ -2894,7 +3099,7 @@ export interface components {
         /** @description Lọc theo account. */
         FilterHostingAccount: string;
         /** @description Lọc theo loại backup. */
-        FilterScopeType: "hosting_account" | "website" | "database" | "server_config" | "panel";
+        FilterScopeType: "hosting_account" | "website" | "database" | "server_config" | "panel" | "compose_project";
         /** @description Đường dẫn tương đối với home account. */
         PathQuery: components["schemas"]["RelPath"];
         /** @description Hạn chữ ký (Unix giây). */
@@ -3679,7 +3884,8 @@ export interface operations {
                      *             "anphat_web",
                      *             "anphat_shop"
                      *           ],
-                     *           "locked_until": "2026-12-20T01:12:00+07:00"
+                     *           "locked_until": "2026-12-20T01:12:00+07:00",
+                     *           "volumes": []
                      *         }
                      *       ],
                      *       "meta": {
@@ -5659,7 +5865,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-014f-7000-8000-00000f00014f",
+                     *         "uuid": "01938a0f-0152-7000-8000-00000f000152",
                      *         "type": "git.rollback",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -5693,8 +5899,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f",
-                     *           "events": "/api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f/events"
+                     *           "self": "/api/v1/portal/jobs/01938a0f-0152-7000-8000-00000f000152",
+                     *           "events": "/api/v1/portal/jobs/01938a0f-0152-7000-8000-00000f000152/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -6175,7 +6381,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-014e-7000-8000-00000f00014e",
+                     *         "uuid": "01938a0f-0151-7000-8000-00000f000151",
                      *         "type": "git.deploy",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -6209,8 +6415,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e",
-                     *           "events": "/api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e/events"
+                     *           "self": "/api/v1/portal/jobs/01938a0f-0151-7000-8000-00000f000151",
+                     *           "events": "/api/v1/portal/jobs/01938a0f-0151-7000-8000-00000f000151/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7115,7 +7321,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0151-7000-8000-00000f000151",
+                     *         "uuid": "01938a0f-0154-7000-8000-00000f000154",
                      *         "type": "malware.scan",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7149,8 +7355,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0154-7000-8000-00000f000154",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0154-7000-8000-00000f000154/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -7763,7 +7969,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0150-7000-8000-00000f000150",
+                     *         "uuid": "01938a0f-0153-7000-8000-00000f000153",
                      *         "type": "website.create",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -7818,8 +8024,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150",
-                     *           "events": "/api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150/events"
+                     *           "self": "/api/v1/portal/jobs/01938a0f-0153-7000-8000-00000f000153",
+                     *           "events": "/api/v1/portal/jobs/01938a0f-0153-7000-8000-00000f000153/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8440,7 +8646,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0153-7000-8000-00000f000153",
+                     *         "uuid": "01938a0f-0156-7000-8000-00000f000156",
                      *         "type": "malware.delete",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8474,8 +8680,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0156-7000-8000-00000f000156",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0156-7000-8000-00000f000156/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -8518,7 +8724,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-0152-7000-8000-00000f000152",
+                     *         "uuid": "01938a0f-0155-7000-8000-00000f000155",
                      *         "type": "malware.quarantine",
                      *         "state": "queued",
                      *         "progress": 0,
@@ -8552,8 +8758,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152",
-                     *           "events": "/api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152/events"
+                     *           "self": "/api/v1/admin/jobs/01938a0f-0155-7000-8000-00000f000155",
+                     *           "events": "/api/v1/admin/jobs/01938a0f-0155-7000-8000-00000f000155/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -10668,15 +10874,66 @@ export interface operations {
                      *           "plugins_outdated": 3,
                      *           "themes_outdated": 1,
                      *           "auto_update": "minor",
+                     *           "update_window": "02:00-05:00",
                      *           "hardening": {
-                     *             "xmlrpc_disabled": true,
-                     *             "file_edit_disabled": true
+                     *             "file_edit_disabled": true,
+                     *             "xmlrpc_blocked": true,
+                     *             "php_in_uploads_blocked": false,
+                     *             "wp_config_protected": true,
+                     *             "salts_rotated": false,
+                     *             "version_hidden": false
+                     *           },
+                     *           "maintenance": false,
+                     *           "admin_username": "marketing_admin",
+                     *           "php_version": "8.3",
+                     *           "state": "ready",
+                     *           "last_update": {
+                     *             "uuid": "01938a37-0002-7000-8000-000037000002",
+                     *             "state": "rolled_back",
+                     *             "at": "2026-11-20T08:15:00+07:00"
                      *           },
                      *           "staging_of": null,
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         },
                      *         {
                      *           "uuid": "01938a11-0002-7000-8000-000011000002",
+                     *           "website": {
+                     *             "uuid": "01938a06-0001-7000-8000-000006000001",
+                     *             "primary_domain": "anphat.vn"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0001-7000-8000-000005000001",
+                     *             "username": "anphat"
+                     *           },
+                     *           "wp_version": "6.7.1",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 6,
+                     *           "plugins_outdated": 1,
+                     *           "themes_outdated": 0,
+                     *           "auto_update": "all",
+                     *           "update_window": "01:00-04:00",
+                     *           "hardening": {
+                     *             "file_edit_disabled": true,
+                     *             "xmlrpc_blocked": true,
+                     *             "php_in_uploads_blocked": true,
+                     *             "wp_config_protected": true,
+                     *             "salts_rotated": true,
+                     *             "version_hidden": false
+                     *           },
+                     *           "maintenance": false,
+                     *           "admin_username": "anphat_web",
+                     *           "php_version": "8.3",
+                     *           "state": "ready",
+                     *           "last_update": {
+                     *             "uuid": "01938a37-0003-7000-8000-000037000003",
+                     *             "state": "succeeded",
+                     *             "at": "2026-11-19T01:03:40+07:00"
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a11-0003-7000-8000-000011000003",
                      *           "website": {
                      *             "uuid": "01938a06-0008-7000-8000-000006000008",
                      *             "primary_domain": "saomai.edu.vn"
@@ -10691,33 +10948,20 @@ export interface operations {
                      *           "plugins_outdated": 1,
                      *           "themes_outdated": 1,
                      *           "auto_update": "minor",
+                     *           "update_window": "02:00-05:00",
                      *           "hardening": {
-                     *             "xmlrpc_disabled": true,
-                     *             "file_edit_disabled": true
+                     *             "file_edit_disabled": true,
+                     *             "xmlrpc_blocked": true,
+                     *             "php_in_uploads_blocked": true,
+                     *             "wp_config_protected": true,
+                     *             "salts_rotated": false,
+                     *             "version_hidden": true
                      *           },
-                     *           "staging_of": null,
-                     *           "updated_at": "2026-11-19T14:05:00+07:00"
-                     *         },
-                     *         {
-                     *           "uuid": "01938a11-0003-7000-8000-000011000003",
-                     *           "website": {
-                     *             "uuid": "01938a06-000b-7000-8000-00000600000b",
-                     *             "primary_domain": "thientam.vn"
-                     *           },
-                     *           "hosting_account": {
-                     *             "uuid": "01938a05-0008-7000-8000-000005000008",
-                     *             "username": "thientam"
-                     *           },
-                     *           "wp_version": "6.7.1",
-                     *           "latest_version": "6.7.1",
-                     *           "plugins_total": 11,
-                     *           "plugins_outdated": 0,
-                     *           "themes_outdated": 1,
-                     *           "auto_update": "minor",
-                     *           "hardening": {
-                     *             "xmlrpc_disabled": true,
-                     *             "file_edit_disabled": true
-                     *           },
+                     *           "maintenance": false,
+                     *           "admin_username": "saomai_admin",
+                     *           "php_version": "8.3",
+                     *           "state": "ready",
+                     *           "last_update": null,
                      *           "staging_of": null,
                      *           "updated_at": "2026-11-19T14:05:00+07:00"
                      *         }
@@ -10834,7 +11078,419 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
-    portalWordPressCloneStaging: {
+    portalGetWordPressSite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "site": {
+                     *           "uuid": "01938a11-0001-7000-8000-000011000001",
+                     *           "website": {
+                     *             "uuid": "01938a06-0004-7000-8000-000006000004",
+                     *             "primary_domain": "lehoa.blog"
+                     *           },
+                     *           "hosting_account": {
+                     *             "uuid": "01938a05-0003-7000-8000-000005000003",
+                     *             "username": "lehoa"
+                     *           },
+                     *           "wp_version": "6.6.2",
+                     *           "latest_version": "6.7.1",
+                     *           "plugins_total": 14,
+                     *           "plugins_outdated": 3,
+                     *           "themes_outdated": 1,
+                     *           "auto_update": "minor",
+                     *           "update_window": "02:00-05:00",
+                     *           "hardening": {
+                     *             "file_edit_disabled": true,
+                     *             "xmlrpc_blocked": true,
+                     *             "php_in_uploads_blocked": false,
+                     *             "wp_config_protected": true,
+                     *             "salts_rotated": false,
+                     *             "version_hidden": false
+                     *           },
+                     *           "maintenance": false,
+                     *           "admin_username": "marketing_admin",
+                     *           "php_version": "8.3",
+                     *           "state": "ready",
+                     *           "last_update": {
+                     *             "uuid": "01938a37-0002-7000-8000-000037000002",
+                     *             "state": "rolled_back",
+                     *             "at": "2026-11-20T08:15:00+07:00"
+                     *           },
+                     *           "staging_of": null,
+                     *           "updated_at": "2026-11-19T14:05:00+07:00"
+                     *         },
+                     *         "core": {
+                     *           "version": "6.6.2",
+                     *           "latest_version": "6.7.1",
+                     *           "checksums_ok": true
+                     *         },
+                     *         "components": [
+                     *           {
+                     *             "type": "plugin",
+                     *             "slug": "wp-mail-smtp",
+                     *             "name": "WP Mail SMTP",
+                     *             "version": "4.2.0",
+                     *             "latest_version": "4.3.0",
+                     *             "active": true,
+                     *             "auto_update": false
+                     *           },
+                     *           {
+                     *             "type": "plugin",
+                     *             "slug": "wordpress-seo",
+                     *             "name": "Yoast SEO",
+                     *             "version": "23.8",
+                     *             "latest_version": "23.9",
+                     *             "active": true,
+                     *             "auto_update": true
+                     *           },
+                     *           {
+                     *             "type": "plugin",
+                     *             "slug": "contact-form-7",
+                     *             "name": "Contact Form 7",
+                     *             "version": "6.0.1",
+                     *             "latest_version": "6.0.1",
+                     *             "active": true,
+                     *             "auto_update": true
+                     *           },
+                     *           {
+                     *             "type": "plugin",
+                     *             "slug": "elementor",
+                     *             "name": "Elementor",
+                     *             "version": "3.25.4",
+                     *             "latest_version": "3.25.9",
+                     *             "active": true,
+                     *             "auto_update": false
+                     *           },
+                     *           {
+                     *             "type": "plugin",
+                     *             "slug": "hello-dolly",
+                     *             "name": "Hello Dolly",
+                     *             "version": "1.7.2",
+                     *             "latest_version": null,
+                     *             "active": false,
+                     *             "auto_update": false
+                     *           },
+                     *           {
+                     *             "type": "theme",
+                     *             "slug": "astra",
+                     *             "name": "Astra",
+                     *             "version": "4.8.3",
+                     *             "latest_version": "4.8.6",
+                     *             "active": true,
+                     *             "auto_update": false
+                     *           },
+                     *           {
+                     *             "type": "theme",
+                     *             "slug": "twentytwentyfour",
+                     *             "name": "Twenty Twenty-Four",
+                     *             "version": "1.3",
+                     *             "latest_version": "1.3",
+                     *             "active": false,
+                     *             "auto_update": true
+                     *           }
+                     *         ],
+                     *         "staging": []
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["WordPressSiteDetail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalUpdateWordPressSettings: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description ETag (theo spec_version) để tránh ghi đè đồng thời; sai trả 412. */
+                "If-Match"?: components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "auto_update": "minor",
+                 *       "update_window": "02:00-05:00"
+                 *     }
+                 */
+                "application/json": components["schemas"]["WordPressSettings"];
+            };
+        };
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "uuid": "01938a11-0001-7000-8000-000011000001",
+                     *         "website": {
+                     *           "uuid": "01938a06-0004-7000-8000-000006000004",
+                     *           "primary_domain": "lehoa.blog"
+                     *         },
+                     *         "hosting_account": {
+                     *           "uuid": "01938a05-0003-7000-8000-000005000003",
+                     *           "username": "lehoa"
+                     *         },
+                     *         "wp_version": "6.6.2",
+                     *         "latest_version": "6.7.1",
+                     *         "plugins_total": 14,
+                     *         "plugins_outdated": 3,
+                     *         "themes_outdated": 1,
+                     *         "auto_update": "minor",
+                     *         "update_window": "02:00-05:00",
+                     *         "hardening": {
+                     *           "file_edit_disabled": true,
+                     *           "xmlrpc_blocked": true,
+                     *           "php_in_uploads_blocked": false,
+                     *           "wp_config_protected": true,
+                     *           "salts_rotated": false,
+                     *           "version_hidden": false
+                     *         },
+                     *         "maintenance": false,
+                     *         "admin_username": "marketing_admin",
+                     *         "php_version": "8.3",
+                     *         "state": "ready",
+                     *         "last_update": {
+                     *           "uuid": "01938a37-0002-7000-8000-000037000002",
+                     *           "state": "rolled_back",
+                     *           "at": "2026-11-20T08:15:00+07:00"
+                     *         },
+                     *         "staging_of": null,
+                     *         "updated_at": "2026-11-19T14:05:00+07:00"
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        data: components["schemas"]["WordPressSite"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalListWordPressUpdates: {
+        parameters: {
+            query?: {
+                /** @description Cursor trang tiếp theo. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Số bản ghi mỗi trang. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Sắp xếp, ví dụ `-created_at`. */
+                sort?: components["parameters"]["Sort"];
+                /** @description Tìm kiếm tự do. */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "uuid": "01938a37-0002-7000-8000-000037000002",
+                     *           "site_uuid": "01938a11-0001-7000-8000-000011000001",
+                     *           "trigger": "manual",
+                     *           "state": "rolled_back",
+                     *           "items": [
+                     *             {
+                     *               "type": "plugin",
+                     *               "slug": "wp-mail-smtp",
+                     *               "from": "4.2.0",
+                     *               "to": "4.3.0"
+                     *             },
+                     *             {
+                     *               "type": "core",
+                     *               "slug": "wordpress",
+                     *               "from": "6.6.2",
+                     *               "to": "6.7.1"
+                     *             }
+                     *           ],
+                     *           "steps": [
+                     *             {
+                     *               "key": "snapshot",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "maintenance",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "update",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "verify",
+                     *               "state": "failed"
+                     *             },
+                     *             {
+                     *               "key": "rollback",
+                     *               "state": "done"
+                     *             }
+                     *           ],
+                     *           "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+                     *           "error": "Kiểm tra sau cập nhật: trang chủ trả 500 (PHP Fatal error trong wp-mail-smtp/src/Core.php). Đã khôi phục file + DB từ snapshot.",
+                     *           "requested_by": {
+                     *             "uuid": "01938a01-0004-7000-8000-000001000004",
+                     *             "name": "Phòng Marketing",
+                     *             "email": "marketing@itso.vn"
+                     *           },
+                     *           "started_at": "2026-11-20T08:15:00+07:00",
+                     *           "finished_at": "2026-11-20T08:19:30+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a37-0001-7000-8000-000037000001",
+                     *           "site_uuid": "01938a11-0001-7000-8000-000011000001",
+                     *           "trigger": "auto",
+                     *           "state": "succeeded",
+                     *           "items": [
+                     *             {
+                     *               "type": "plugin",
+                     *               "slug": "wordpress-seo",
+                     *               "from": "23.7",
+                     *               "to": "23.8"
+                     *             }
+                     *           ],
+                     *           "steps": [
+                     *             {
+                     *               "key": "snapshot",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "maintenance",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "update",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "verify",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "rollback",
+                     *               "state": "skipped"
+                     *             }
+                     *           ],
+                     *           "snapshot_uuid": "01938a0e-0001-7000-8000-00000e000001",
+                     *           "error": null,
+                     *           "requested_by": null,
+                     *           "started_at": "2026-11-19T03:00:00+07:00",
+                     *           "finished_at": "2026-11-19T03:02:10+07:00"
+                     *         },
+                     *         {
+                     *           "uuid": "01938a37-0003-7000-8000-000037000003",
+                     *           "site_uuid": "01938a11-0002-7000-8000-000011000002",
+                     *           "trigger": "auto",
+                     *           "state": "succeeded",
+                     *           "items": [
+                     *             {
+                     *               "type": "core",
+                     *               "slug": "wordpress",
+                     *               "from": "6.7",
+                     *               "to": "6.7.1"
+                     *             }
+                     *           ],
+                     *           "steps": [
+                     *             {
+                     *               "key": "snapshot",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "maintenance",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "update",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "verify",
+                     *               "state": "done"
+                     *             },
+                     *             {
+                     *               "key": "rollback",
+                     *               "state": "skipped"
+                     *             }
+                     *           ],
+                     *           "snapshot_uuid": null,
+                     *           "error": null,
+                     *           "requested_by": null,
+                     *           "started_at": "2026-11-19T01:00:00+07:00",
+                     *           "finished_at": "2026-11-19T01:03:40+07:00"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "next_cursor": null,
+                     *         "limit": 50
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CursorPage"] & {
+                        data: components["schemas"]["WordPressUpdate"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalWordPressAdminPassword: {
         parameters: {
             query?: never;
             header: {
@@ -10847,7 +11503,16 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "password": "N3w-Strong.Pass2026"
+                 *     }
+                 */
+                "application/json": components["schemas"]["WordPressPassword"];
+            };
+        };
         responses: {
             /** @description Đã nhận, Job được tạo */
             202: {
@@ -10858,8 +11523,8 @@ export interface operations {
                     /**
                      * @example {
                      *       "job": {
-                     *         "uuid": "01938a0f-014c-7000-8000-00000f00014c",
-                     *         "type": "wordpress.clone_staging",
+                     *         "uuid": "01938a0f-014f-7000-8000-00000f00014f",
+                     *         "type": "wordpress.admin_password",
                      *         "state": "queued",
                      *         "progress": 0,
                      *         "resource": {
@@ -10869,7 +11534,7 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "wp.clone",
+                     *             "op": "wp.admin_password",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -10892,8 +11557,8 @@ export interface operations {
                      *         "started_at": null,
                      *         "finished_at": null,
                      *         "links": {
-                     *           "self": "/api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c",
-                     *           "events": "/api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c/events"
+                     *           "self": "/api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f",
+                     *           "events": "/api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f/events"
                      *         }
                      *       },
                      *       "resource": {
@@ -10913,7 +11578,7 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
-    portalWordPressHarden: {
+    portalWordPressCloneStaging: {
         parameters: {
             query?: never;
             header: {
@@ -10926,7 +11591,18 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "subdomain": "staging",
+                 *       "basic_auth": true,
+                 *       "noindex": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["WordPressCloneRequest"];
+            };
+        };
         responses: {
             /** @description Đã nhận, Job được tạo */
             202: {
@@ -10938,7 +11614,7 @@ export interface operations {
                      * @example {
                      *       "job": {
                      *         "uuid": "01938a0f-014d-7000-8000-00000f00014d",
-                     *         "type": "wordpress.harden",
+                     *         "type": "wordpress.clone_staging",
                      *         "state": "queued",
                      *         "progress": 0,
                      *         "resource": {
@@ -10948,7 +11624,21 @@ export interface operations {
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "wp.harden",
+                     *             "op": "fs.site_layout.ensure",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 2,
+                     *             "op": "nginx.vhost.apply",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 3,
+                     *             "op": "wp.clone",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -10992,6 +11682,193 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    portalWordPressHarden: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "items": [
+                 *         "xmlrpc_blocked",
+                 *         "php_in_uploads_blocked"
+                 *       ],
+                 *       "enabled": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["WordPressHardenRequest"];
+            };
+        };
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-014e-7000-8000-00000f00014e",
+                     *         "type": "wordpress.harden",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "wordpress_site",
+                     *           "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "wp.harden",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 2,
+                     *             "op": "nginx.vhost.apply",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *           "name": "srv-hcm-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e",
+                     *           "events": "/api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "wordpress_site",
+                     *         "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalWordPressMaintenance: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description UUID tài nguyên. */
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "enabled": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["WordPressMaintenance"];
+            };
+        };
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-0150-7000-8000-00000f000150",
+                     *         "type": "wordpress.maintenance",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "wordpress_site",
+                     *           "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "wp.maintenance",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *           "name": "srv-hcm-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150",
+                     *           "events": "/api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "wordpress_site",
+                     *         "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     portalWordPressUpdate: {
         parameters: {
             query?: never;
@@ -11003,6 +11880,116 @@ export interface operations {
                 /** @description UUID tài nguyên. */
                 id: components["parameters"]["Id"];
             };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "core": true,
+                 *       "plugins": [
+                 *         "wp-mail-smtp"
+                 *       ],
+                 *       "themes": []
+                 *     }
+                 */
+                "application/json": components["schemas"]["WordPressUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Đã nhận, Job được tạo */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "job": {
+                     *         "uuid": "01938a0f-014c-7000-8000-00000f00014c",
+                     *         "type": "wordpress.update",
+                     *         "state": "queued",
+                     *         "progress": 0,
+                     *         "resource": {
+                     *           "type": "wordpress_site",
+                     *           "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *         },
+                     *         "steps": [
+                     *           {
+                     *             "seq": 1,
+                     *             "op": "backup.run",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 2,
+                     *             "op": "wp.maintenance",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 3,
+                     *             "op": "wp.update",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           },
+                     *           {
+                     *             "seq": 4,
+                     *             "op": "http.check",
+                     *             "state": "pending",
+                     *             "started_at": null,
+                     *             "finished_at": null
+                     *           }
+                     *         ],
+                     *         "attempts": 0,
+                     *         "max_attempts": 3,
+                     *         "timeout_sec": 600,
+                     *         "error": null,
+                     *         "server": {
+                     *           "uuid": "01938a02-0003-7000-8000-000002000003",
+                     *           "name": "srv-hcm-01"
+                     *         },
+                     *         "requested_by": {
+                     *           "uuid": "01938a01-0001-7000-8000-000001000001",
+                     *           "name": "Quản trị hệ thống",
+                     *           "email": "superadmin@itso.local"
+                     *         },
+                     *         "created_at": "2026-11-20T08:15:00+07:00",
+                     *         "started_at": null,
+                     *         "finished_at": null,
+                     *         "links": {
+                     *           "self": "/api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c",
+                     *           "events": "/api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c/events"
+                     *         }
+                     *       },
+                     *       "resource": {
+                     *         "type": "wordpress_site",
+                     *         "uuid": "01938a11-0001-7000-8000-000011000001"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    portalScanWordPressSites: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Bắt buộc cho mọi POST tạo job. Lưu 24 giờ; trùng key khác body trả 409. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -11017,17 +12004,14 @@ export interface operations {
                      * @example {
                      *       "job": {
                      *         "uuid": "01938a0f-014b-7000-8000-00000f00014b",
-                     *         "type": "wordpress.update",
+                     *         "type": "wordpress.scan",
                      *         "state": "queued",
                      *         "progress": 0,
-                     *         "resource": {
-                     *           "type": "wordpress_site",
-                     *           "uuid": "01938a11-0001-7000-8000-000011000001"
-                     *         },
+                     *         "resource": null,
                      *         "steps": [
                      *           {
                      *             "seq": 1,
-                     *             "op": "wp.update",
+                     *             "op": "wp.detect",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null
@@ -11054,10 +12038,7 @@ export interface operations {
                      *           "events": "/api/v1/portal/jobs/01938a0f-014b-7000-8000-00000f00014b/events"
                      *         }
                      *       },
-                     *       "resource": {
-                     *         "type": "wordpress_site",
-                     *         "uuid": "01938a11-0001-7000-8000-000011000001"
-                     *       }
+                     *       "resource": null
                      *     }
                      */
                     "application/json": components["schemas"]["JobAccepted"];
@@ -11065,7 +12046,6 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];

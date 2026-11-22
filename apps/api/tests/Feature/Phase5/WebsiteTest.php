@@ -274,7 +274,7 @@ it('ma trận quyền: ADMIN ngoài phạm vi/USER khác → 404; PHP Manager/Ng
         ->and($out->get("/api/v1/admin/servers/$sid/nginx")->status())->toBe(404);
 });
 
-it('PHP Manager: liệt kê, cài 8.3 qua job, bản khác 409, gỡ khi còn site 409, thêm extension; Nginx toàn server', function () {
+it('PHP Manager: liệt kê, cài 8.3 qua job, bản ngoài catalog 409, gỡ khi còn site 409, thêm extension; Nginx toàn server', function () {
     $agent = w5agent();
     $a = new Actors($this);
     $sa = $a->spa('SA');
@@ -282,7 +282,8 @@ it('PHP Manager: liệt kê, cài 8.3 qua job, bản khác 409, gỡ khi còn si
 
     $l = $sa->get("/api/v1/admin/servers/$sid/php-versions");
     assertMatchesContract(W5A, 'get', '/api/v1/admin/servers/{id}/php-versions', 200, $l);
-    expect($l->json('data.0'))->toMatchArray(['version' => '8.3', 'installed' => false, 'default' => true]);
+    expect(collect($l->json('data'))->pluck('version')->all())->toBe(['8.1', '8.2', '8.3', '8.4']) // 8.1/8.2/8.4 qua PPA (D-100)
+        ->and(collect($l->json('data'))->firstWhere('version', '8.3'))->toMatchArray(['version' => '8.3', 'installed' => false, 'default' => true]);
     $ext0 = w5($sa, 'POST', "/api/v1/admin/servers/$sid/php-versions/8.3/extensions", ['extensions' => ['gd']]);
     assertMatchesContract(W5A, 'post', '/api/v1/admin/servers/{id}/php-versions/{version}/extensions', 409, $ext0);
 
@@ -290,7 +291,7 @@ it('PHP Manager: liệt kê, cài 8.3 qua job, bản khác 409, gỡ khi còn si
     assertMatchesContract(W5A, 'post', '/api/v1/admin/servers/{id}/php-versions/{version}:{action}', 202, $i);
     expect($agent->ops())->toBe(['php.version.install'])
         ->and(PhpVersion::query()->where('server_id', $a->server->id)->value('status'))->toBe('ready');
-    $old = w5($sa, 'POST', "/api/v1/admin/servers/$sid/php-versions/8.2:install");
+    $old = w5($sa, 'POST', "/api/v1/admin/servers/$sid/php-versions/7.4:install");
     assertMatchesContract(W5A, 'post', '/api/v1/admin/servers/{id}/php-versions/{version}:{action}', 409, $old);
     expect(w5($sa, 'POST', "/api/v1/admin/servers/$sid/php-versions/8.3:upgrade")->status())->toBe(422);
 
@@ -298,14 +299,14 @@ it('PHP Manager: liệt kê, cài 8.3 qua job, bản khác 409, gỡ khi còn si
     $e = w5($sa, 'POST', "/api/v1/admin/servers/$sid/php-versions/8.3/extensions", ['extensions' => ['gd', 'redis']]);
     assertMatchesContract(W5A, 'post', '/api/v1/admin/servers/{id}/php-versions/{version}/extensions', 202, $e);
     expect($agent->calls[0]['params'])->toBe(['version' => '8.3', 'extensions' => ['gd', 'redis']])
-        ->and($sa->get("/api/v1/admin/servers/$sid/php-versions")->json('data.0.extensions'))->toContain('gd', 'redis', 'intl');
+        ->and($sa->get("/api/v1/admin/servers/$sid/php-versions")->json('data.2.extensions'))->toContain('gd', 'redis', 'intl');
     expect(w5($sa, 'POST', "/api/v1/admin/servers/$sid/php-versions/8.3/extensions", ['extensions' => ['evil;rm']])->status())->toBe(422);
 
     w5create($sa, $a, 'admin', 'anphat.vn')->assertStatus(202);
     $rm = w5($sa, 'POST', "/api/v1/admin/servers/$sid/php-versions/8.3:remove");
     assertMatchesContract(W5A, 'post', '/api/v1/admin/servers/{id}/php-versions/{version}:{action}', 409, $rm);
     expect($rm->json('code'))->toBe('resource_locked')
-        ->and($sa->get("/api/v1/admin/servers/$sid/php-versions")->json('data.0.sites_count'))->toBe(1);
+        ->and($sa->get("/api/v1/admin/servers/$sid/php-versions")->json('data.2.sites_count'))->toBe(1);
 
     $g = $sa->get("/api/v1/admin/servers/$sid/nginx");
     assertMatchesContract(W5A, 'get', '/api/v1/admin/servers/{id}/nginx', 200, $g);

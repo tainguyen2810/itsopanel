@@ -719,6 +719,7 @@ paths:
                   - anphat_web
                   - anphat_shop
                   locked_until: '2026-12-20T01:12:00+07:00'
+                  volumes: []
                 meta:
                   next_cursor: null
                   limit: 50
@@ -2361,7 +2362,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014f-7000-8000-00000f00014f
+                  uuid: 01938a0f-0152-7000-8000-00000f000152
                   type: git.rollback
                   state: queued
                   progress: 0
@@ -2389,8 +2390,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f
-                    events: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f/events
+                    self: /api/v1/portal/jobs/01938a0f-0152-7000-8000-00000f000152
+                    events: /api/v1/portal/jobs/01938a0f-0152-7000-8000-00000f000152/events
                 resource:
                   type: git_repository
                   uuid: 01938a2e-0001-7000-8000-00002e000001
@@ -2806,7 +2807,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014e-7000-8000-00000f00014e
+                  uuid: 01938a0f-0151-7000-8000-00000f000151
                   type: git.deploy
                   state: queued
                   progress: 0
@@ -2834,8 +2835,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e
-                    events: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e/events
+                    self: /api/v1/portal/jobs/01938a0f-0151-7000-8000-00000f000151
+                    events: /api/v1/portal/jobs/01938a0f-0151-7000-8000-00000f000151/events
                 resource:
                   type: git_repository
                   uuid: 01938a2e-0001-7000-8000-00002e000001
@@ -3638,7 +3639,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0151-7000-8000-00000f000151
+                  uuid: 01938a0f-0154-7000-8000-00000f000154
                   type: malware.scan
                   state: queued
                   progress: 0
@@ -3666,8 +3667,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151
-                    events: /api/v1/admin/jobs/01938a0f-0151-7000-8000-00000f000151/events
+                    self: /api/v1/admin/jobs/01938a0f-0154-7000-8000-00000f000154
+                    events: /api/v1/admin/jobs/01938a0f-0154-7000-8000-00000f000154/events
                 resource:
                   type: hosting_account
                   uuid: 01938a05-0001-7000-8000-000005000001
@@ -4174,7 +4175,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0150-7000-8000-00000f000150
+                  uuid: 01938a0f-0153-7000-8000-00000f000153
                   type: website.create
                   state: queued
                   progress: 0
@@ -4217,8 +4218,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150
-                    events: /api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150/events
+                    self: /api/v1/portal/jobs/01938a0f-0153-7000-8000-00000f000153
+                    events: /api/v1/portal/jobs/01938a0f-0153-7000-8000-00000f000153/events
                 resource:
                   type: website
                   uuid: 01938a06-0002-7000-8000-000006000002
@@ -4738,7 +4739,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0153-7000-8000-00000f000153
+                  uuid: 01938a0f-0156-7000-8000-00000f000156
                   type: malware.delete
                   state: queued
                   progress: 0
@@ -4766,8 +4767,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153
-                    events: /api/v1/admin/jobs/01938a0f-0153-7000-8000-00000f000153/events
+                    self: /api/v1/admin/jobs/01938a0f-0156-7000-8000-00000f000156
+                    events: /api/v1/admin/jobs/01938a0f-0156-7000-8000-00000f000156/events
                 resource:
                   type: malware_finding
                   uuid: 01938a32-0002-7000-8000-000032000002
@@ -4800,7 +4801,7 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-0152-7000-8000-00000f000152
+                  uuid: 01938a0f-0155-7000-8000-00000f000155
                   type: malware.quarantine
                   state: queued
                   progress: 0
@@ -4828,8 +4829,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152
-                    events: /api/v1/admin/jobs/01938a0f-0152-7000-8000-00000f000152/events
+                    self: /api/v1/admin/jobs/01938a0f-0155-7000-8000-00000f000155
+                    events: /api/v1/admin/jobs/01938a0f-0155-7000-8000-00000f000155/events
                 resource:
                   type: malware_finding
                   uuid: 01938a32-0002-7000-8000-000032000002
@@ -6605,12 +6606,56 @@ paths:
                   plugins_outdated: 3
                   themes_outdated: 1
                   auto_update: minor
+                  update_window: 02:00-05:00
                   hardening:
-                    xmlrpc_disabled: true
                     file_edit_disabled: true
+                    xmlrpc_blocked: true
+                    php_in_uploads_blocked: false
+                    wp_config_protected: true
+                    salts_rotated: false
+                    version_hidden: false
+                  maintenance: false
+                  admin_username: marketing_admin
+                  php_version: '8.3'
+                  state: ready
+                  last_update:
+                    uuid: 01938a37-0002-7000-8000-000037000002
+                    state: rolled_back
+                    at: '2026-11-20T08:15:00+07:00'
                   staging_of: null
                   updated_at: '2026-11-19T14:05:00+07:00'
                 - uuid: 01938a11-0002-7000-8000-000011000002
+                  website:
+                    uuid: 01938a06-0001-7000-8000-000006000001
+                    primary_domain: anphat.vn
+                  hosting_account:
+                    uuid: 01938a05-0001-7000-8000-000005000001
+                    username: anphat
+                  wp_version: 6.7.1
+                  latest_version: 6.7.1
+                  plugins_total: 6
+                  plugins_outdated: 1
+                  themes_outdated: 0
+                  auto_update: all
+                  update_window: 01:00-04:00
+                  hardening:
+                    file_edit_disabled: true
+                    xmlrpc_blocked: true
+                    php_in_uploads_blocked: true
+                    wp_config_protected: true
+                    salts_rotated: true
+                    version_hidden: false
+                  maintenance: false
+                  admin_username: anphat_web
+                  php_version: '8.3'
+                  state: ready
+                  last_update:
+                    uuid: 01938a37-0003-7000-8000-000037000003
+                    state: succeeded
+                    at: '2026-11-19T01:03:40+07:00'
+                  staging_of: null
+                  updated_at: '2026-11-19T14:05:00+07:00'
+                - uuid: 01938a11-0003-7000-8000-000011000003
                   website:
                     uuid: 01938a06-0008-7000-8000-000006000008
                     primary_domain: saomai.edu.vn
@@ -6623,27 +6668,19 @@ paths:
                   plugins_outdated: 1
                   themes_outdated: 1
                   auto_update: minor
+                  update_window: 02:00-05:00
                   hardening:
-                    xmlrpc_disabled: true
                     file_edit_disabled: true
-                  staging_of: null
-                  updated_at: '2026-11-19T14:05:00+07:00'
-                - uuid: 01938a11-0003-7000-8000-000011000003
-                  website:
-                    uuid: 01938a06-000b-7000-8000-00000600000b
-                    primary_domain: thientam.vn
-                  hosting_account:
-                    uuid: 01938a05-0008-7000-8000-000005000008
-                    username: thientam
-                  wp_version: 6.7.1
-                  latest_version: 6.7.1
-                  plugins_total: 11
-                  plugins_outdated: 0
-                  themes_outdated: 1
-                  auto_update: minor
-                  hardening:
-                    xmlrpc_disabled: true
-                    file_edit_disabled: true
+                    xmlrpc_blocked: true
+                    php_in_uploads_blocked: true
+                    wp_config_protected: true
+                    salts_rotated: false
+                    version_hidden: true
+                  maintenance: false
+                  admin_username: saomai_admin
+                  php_version: '8.3'
+                  state: ready
+                  last_update: null
                   staging_of: null
                   updated_at: '2026-11-19T14:05:00+07:00'
                 meta:
@@ -6734,16 +6771,350 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/portal/wordpress/sites/{id}:clone-staging:
-    post:
-      operationId: portalWordPressCloneStaging
-      summary: Tạo bản staging
+  /api/v1/portal/wordpress/sites/{id}:
+    get:
+      operationId: portalGetWordPressSite
+      summary: Chi tiết site WordPress
       tags:
       - WordPress
-      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/WordPressSiteDetail
+                required:
+                - data
+              example:
+                data:
+                  site:
+                    uuid: 01938a11-0001-7000-8000-000011000001
+                    website:
+                      uuid: 01938a06-0004-7000-8000-000006000004
+                      primary_domain: lehoa.blog
+                    hosting_account:
+                      uuid: 01938a05-0003-7000-8000-000005000003
+                      username: lehoa
+                    wp_version: 6.6.2
+                    latest_version: 6.7.1
+                    plugins_total: 14
+                    plugins_outdated: 3
+                    themes_outdated: 1
+                    auto_update: minor
+                    update_window: 02:00-05:00
+                    hardening:
+                      file_edit_disabled: true
+                      xmlrpc_blocked: true
+                      php_in_uploads_blocked: false
+                      wp_config_protected: true
+                      salts_rotated: false
+                      version_hidden: false
+                    maintenance: false
+                    admin_username: marketing_admin
+                    php_version: '8.3'
+                    state: ready
+                    last_update:
+                      uuid: 01938a37-0002-7000-8000-000037000002
+                      state: rolled_back
+                      at: '2026-11-20T08:15:00+07:00'
+                    staging_of: null
+                    updated_at: '2026-11-19T14:05:00+07:00'
+                  core:
+                    version: 6.6.2
+                    latest_version: 6.7.1
+                    checksums_ok: true
+                  components:
+                  - type: plugin
+                    slug: wp-mail-smtp
+                    name: WP Mail SMTP
+                    version: 4.2.0
+                    latest_version: 4.3.0
+                    active: true
+                    auto_update: false
+                  - type: plugin
+                    slug: wordpress-seo
+                    name: Yoast SEO
+                    version: '23.8'
+                    latest_version: '23.9'
+                    active: true
+                    auto_update: true
+                  - type: plugin
+                    slug: contact-form-7
+                    name: Contact Form 7
+                    version: 6.0.1
+                    latest_version: 6.0.1
+                    active: true
+                    auto_update: true
+                  - type: plugin
+                    slug: elementor
+                    name: Elementor
+                    version: 3.25.4
+                    latest_version: 3.25.9
+                    active: true
+                    auto_update: false
+                  - type: plugin
+                    slug: hello-dolly
+                    name: Hello Dolly
+                    version: 1.7.2
+                    latest_version: null
+                    active: false
+                    auto_update: false
+                  - type: theme
+                    slug: astra
+                    name: Astra
+                    version: 4.8.3
+                    latest_version: 4.8.6
+                    active: true
+                    auto_update: false
+                  - type: theme
+                    slug: twentytwentyfour
+                    name: Twenty Twenty-Four
+                    version: '1.3'
+                    latest_version: '1.3'
+                    active: false
+                    auto_update: true
+                  staging: []
+          headers:
+            ETag:
+              $ref: ./common.yaml#/components/headers/ETag
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+    patch:
+      operationId: portalUpdateWordPressSettings
+      summary: Chính sách tự cập nhật
+      tags:
+      - WordPress
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IfMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/WordPressSettings
+            example:
+              auto_update: minor
+              update_window: 02:00-05:00
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: ./common.yaml#/components/schemas/WordPressSite
+                required:
+                - data
+              example:
+                data:
+                  uuid: 01938a11-0001-7000-8000-000011000001
+                  website:
+                    uuid: 01938a06-0004-7000-8000-000006000004
+                    primary_domain: lehoa.blog
+                  hosting_account:
+                    uuid: 01938a05-0003-7000-8000-000005000003
+                    username: lehoa
+                  wp_version: 6.6.2
+                  latest_version: 6.7.1
+                  plugins_total: 14
+                  plugins_outdated: 3
+                  themes_outdated: 1
+                  auto_update: minor
+                  update_window: 02:00-05:00
+                  hardening:
+                    file_edit_disabled: true
+                    xmlrpc_blocked: true
+                    php_in_uploads_blocked: false
+                    wp_config_protected: true
+                    salts_rotated: false
+                    version_hidden: false
+                  maintenance: false
+                  admin_username: marketing_admin
+                  php_version: '8.3'
+                  state: ready
+                  last_update:
+                    uuid: 01938a37-0002-7000-8000-000037000002
+                    state: rolled_back
+                    at: '2026-11-20T08:15:00+07:00'
+                  staging_of: null
+                  updated_at: '2026-11-19T14:05:00+07:00'
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+        '412':
+          $ref: ./common.yaml#/components/responses/PreconditionFailed
+  /api/v1/portal/wordpress/sites/{id}/updates:
+    get:
+      operationId: portalListWordPressUpdates
+      summary: Lịch sử cập nhật
+      tags:
+      - WordPress
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Cursor
+      - $ref: ./common.yaml#/components/parameters/Limit
+      - $ref: ./common.yaml#/components/parameters/Sort
+      - $ref: ./common.yaml#/components/parameters/Q
+      - $ref: ./common.yaml#/components/parameters/Id
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: ./common.yaml#/components/schemas/CursorPage
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: ./common.yaml#/components/schemas/WordPressUpdate
+                  required:
+                  - data
+              example:
+                data:
+                - uuid: 01938a37-0002-7000-8000-000037000002
+                  site_uuid: 01938a11-0001-7000-8000-000011000001
+                  trigger: manual
+                  state: rolled_back
+                  items:
+                  - type: plugin
+                    slug: wp-mail-smtp
+                    from: 4.2.0
+                    to: 4.3.0
+                  - type: core
+                    slug: wordpress
+                    from: 6.6.2
+                    to: 6.7.1
+                  steps:
+                  - key: snapshot
+                    state: done
+                  - key: maintenance
+                    state: done
+                  - key: update
+                    state: done
+                  - key: verify
+                    state: failed
+                  - key: rollback
+                    state: done
+                  snapshot_uuid: 01938a0e-0001-7000-8000-00000e000001
+                  error: 'Kiểm tra sau cập nhật: trang chủ trả 500 (PHP Fatal error trong wp-mail-smtp/src/Core.php). Đã khôi
+                    phục file + DB từ snapshot.'
+                  requested_by:
+                    uuid: 01938a01-0004-7000-8000-000001000004
+                    name: Phòng Marketing
+                    email: marketing@itso.vn
+                  started_at: '2026-11-20T08:15:00+07:00'
+                  finished_at: '2026-11-20T08:19:30+07:00'
+                - uuid: 01938a37-0001-7000-8000-000037000001
+                  site_uuid: 01938a11-0001-7000-8000-000011000001
+                  trigger: auto
+                  state: succeeded
+                  items:
+                  - type: plugin
+                    slug: wordpress-seo
+                    from: '23.7'
+                    to: '23.8'
+                  steps:
+                  - key: snapshot
+                    state: done
+                  - key: maintenance
+                    state: done
+                  - key: update
+                    state: done
+                  - key: verify
+                    state: done
+                  - key: rollback
+                    state: skipped
+                  snapshot_uuid: 01938a0e-0001-7000-8000-00000e000001
+                  error: null
+                  requested_by: null
+                  started_at: '2026-11-19T03:00:00+07:00'
+                  finished_at: '2026-11-19T03:02:10+07:00'
+                - uuid: 01938a37-0003-7000-8000-000037000003
+                  site_uuid: 01938a11-0002-7000-8000-000011000002
+                  trigger: auto
+                  state: succeeded
+                  items:
+                  - type: core
+                    slug: wordpress
+                    from: '6.7'
+                    to: 6.7.1
+                  steps:
+                  - key: snapshot
+                    state: done
+                  - key: maintenance
+                    state: done
+                  - key: update
+                    state: done
+                  - key: verify
+                    state: done
+                  - key: rollback
+                    state: skipped
+                  snapshot_uuid: null
+                  error: null
+                  requested_by: null
+                  started_at: '2026-11-19T01:00:00+07:00'
+                  finished_at: '2026-11-19T01:03:40+07:00'
+                meta:
+                  next_cursor: null
+                  limit: 50
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+  /api/v1/portal/wordpress/sites/{id}:admin-password:
+    post:
+      operationId: portalWordPressAdminPassword
+      summary: Đổi mật khẩu admin WordPress
+      tags:
+      - WordPress
+      x-itso-step-up: true
+      description: 'Yêu cầu step-up MFA (xác thực lại trong 10 phút), nếu không trả 403 `mfa_step_up_required`.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/WordPressPassword
+            example:
+              password: N3w-Strong.Pass2026
       responses:
         '202':
           description: Đã nhận, Job được tạo
@@ -6753,8 +7124,8 @@ paths:
                 $ref: ./common.yaml#/components/schemas/JobAccepted
               example:
                 job:
-                  uuid: 01938a0f-014c-7000-8000-00000f00014c
-                  type: wordpress.clone_staging
+                  uuid: 01938a0f-014f-7000-8000-00000f00014f
+                  type: wordpress.admin_password
                   state: queued
                   progress: 0
                   resource:
@@ -6762,7 +7133,7 @@ paths:
                     uuid: 01938a11-0001-7000-8000-000011000001
                   steps:
                   - seq: 1
-                    op: wp.clone
+                    op: wp.admin_password
                     state: pending
                     started_at: null
                     finished_at: null
@@ -6781,8 +7152,8 @@ paths:
                   started_at: null
                   finished_at: null
                   links:
-                    self: /api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c
-                    events: /api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c/events
+                    self: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f
+                    events: /api/v1/portal/jobs/01938a0f-014f-7000-8000-00000f00014f/events
                 resource:
                   type: wordpress_site
                   uuid: 01938a11-0001-7000-8000-000011000001
@@ -6798,16 +7169,26 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/portal/wordpress/sites/{id}:harden:
+  /api/v1/portal/wordpress/sites/{id}:clone-staging:
     post:
-      operationId: portalWordPressHarden
-      summary: Áp dụng hardening
+      operationId: portalWordPressCloneStaging
+      summary: Tạo bản staging
       tags:
       - WordPress
       description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
       - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/WordPressCloneRequest
+            example:
+              subdomain: staging
+              basic_auth: true
+              noindex: true
       responses:
         '202':
           description: Đã nhận, Job được tạo
@@ -6818,7 +7199,7 @@ paths:
               example:
                 job:
                   uuid: 01938a0f-014d-7000-8000-00000f00014d
-                  type: wordpress.harden
+                  type: wordpress.clone_staging
                   state: queued
                   progress: 0
                   resource:
@@ -6826,7 +7207,17 @@ paths:
                     uuid: 01938a11-0001-7000-8000-000011000001
                   steps:
                   - seq: 1
-                    op: wp.harden
+                    op: fs.site_layout.ensure
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: nginx.vhost.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 3
+                    op: wp.clone
                     state: pending
                     started_at: null
                     finished_at: null
@@ -6862,15 +7253,259 @@ paths:
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':
           $ref: ./common.yaml#/components/responses/Conflict
-  /api/v1/portal/wordpress/sites/{id}:update:
+  /api/v1/portal/wordpress/sites/{id}:harden:
     post:
-      operationId: portalWordPressUpdate
-      summary: Cập nhật core/plugin/theme
+      operationId: portalWordPressHarden
+      summary: Áp dụng hardening
       tags:
       - WordPress
       description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
       parameters:
       - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/WordPressHardenRequest
+            example:
+              items:
+              - xmlrpc_blocked
+              - php_in_uploads_blocked
+              enabled: true
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-014e-7000-8000-00000f00014e
+                  type: wordpress.harden
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: wordpress_site
+                    uuid: 01938a11-0001-7000-8000-000011000001
+                  steps:
+                  - seq: 1
+                    op: wp.harden
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: nginx.vhost.apply
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e
+                    events: /api/v1/portal/jobs/01938a0f-014e-7000-8000-00000f00014e/events
+                resource:
+                  type: wordpress_site
+                  uuid: 01938a11-0001-7000-8000-000011000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/wordpress/sites/{id}:maintenance:
+    post:
+      operationId: portalWordPressMaintenance
+      summary: Bật/tắt chế độ bảo trì
+      tags:
+      - WordPress
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/WordPressMaintenance
+            example:
+              enabled: true
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-0150-7000-8000-00000f000150
+                  type: wordpress.maintenance
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: wordpress_site
+                    uuid: 01938a11-0001-7000-8000-000011000001
+                  steps:
+                  - seq: 1
+                    op: wp.maintenance
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150
+                    events: /api/v1/portal/jobs/01938a0f-0150-7000-8000-00000f000150/events
+                resource:
+                  type: wordpress_site
+                  uuid: 01938a11-0001-7000-8000-000011000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/wordpress/sites/{id}:update:
+    post:
+      operationId: portalWordPressUpdate
+      summary: Cập nhật core/plugin/theme (snapshot trước, lỗi thì rollback)
+      tags:
+      - WordPress
+      description: 'Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
+      - $ref: ./common.yaml#/components/parameters/Id
+      - $ref: ./common.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./common.yaml#/components/schemas/WordPressUpdateRequest
+            example:
+              core: true
+              plugins:
+              - wp-mail-smtp
+              themes: []
+      responses:
+        '202':
+          description: Đã nhận, Job được tạo
+          content:
+            application/json:
+              schema:
+                $ref: ./common.yaml#/components/schemas/JobAccepted
+              example:
+                job:
+                  uuid: 01938a0f-014c-7000-8000-00000f00014c
+                  type: wordpress.update
+                  state: queued
+                  progress: 0
+                  resource:
+                    type: wordpress_site
+                    uuid: 01938a11-0001-7000-8000-000011000001
+                  steps:
+                  - seq: 1
+                    op: backup.run
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 2
+                    op: wp.maintenance
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 3
+                    op: wp.update
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  - seq: 4
+                    op: http.check
+                    state: pending
+                    started_at: null
+                    finished_at: null
+                  attempts: 0
+                  max_attempts: 3
+                  timeout_sec: 600
+                  error: null
+                  server:
+                    uuid: 01938a02-0003-7000-8000-000002000003
+                    name: srv-hcm-01
+                  requested_by:
+                    uuid: 01938a01-0001-7000-8000-000001000001
+                    name: Quản trị hệ thống
+                    email: superadmin@itso.local
+                  created_at: '2026-11-20T08:15:00+07:00'
+                  started_at: null
+                  finished_at: null
+                  links:
+                    self: /api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c
+                    events: /api/v1/portal/jobs/01938a0f-014c-7000-8000-00000f00014c/events
+                resource:
+                  type: wordpress_site
+                  uuid: 01938a11-0001-7000-8000-000011000001
+        '401':
+          $ref: ./common.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common.yaml#/components/responses/Forbidden
+        '429':
+          $ref: ./common.yaml#/components/responses/TooManyRequests
+        '404':
+          $ref: ./common.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common.yaml#/components/responses/ValidationFailed
+        '409':
+          $ref: ./common.yaml#/components/responses/Conflict
+  /api/v1/portal/wordpress/sites:scan:
+    post:
+      operationId: portalScanWordPressSites
+      summary: Quét phát hiện site WordPress
+      tags:
+      - WordPress
+      description: 'Quét docroot các website trong phạm vi (wp.detect, D-99); site mới xuất hiện trong danh sách.
+
+
+        Thao tác bất đồng bộ: trả `202` kèm Job; bắt buộc header `Idempotency-Key`.'
+      parameters:
       - $ref: ./common.yaml#/components/parameters/IdempotencyKey
       responses:
         '202':
@@ -6882,15 +7517,13 @@ paths:
               example:
                 job:
                   uuid: 01938a0f-014b-7000-8000-00000f00014b
-                  type: wordpress.update
+                  type: wordpress.scan
                   state: queued
                   progress: 0
-                  resource:
-                    type: wordpress_site
-                    uuid: 01938a11-0001-7000-8000-000011000001
+                  resource: null
                   steps:
                   - seq: 1
-                    op: wp.update
+                    op: wp.detect
                     state: pending
                     started_at: null
                     finished_at: null
@@ -6911,17 +7544,13 @@ paths:
                   links:
                     self: /api/v1/portal/jobs/01938a0f-014b-7000-8000-00000f00014b
                     events: /api/v1/portal/jobs/01938a0f-014b-7000-8000-00000f00014b/events
-                resource:
-                  type: wordpress_site
-                  uuid: 01938a11-0001-7000-8000-000011000001
+                resource: null
         '401':
           $ref: ./common.yaml#/components/responses/Unauthorized
         '403':
           $ref: ./common.yaml#/components/responses/Forbidden
         '429':
           $ref: ./common.yaml#/components/responses/TooManyRequests
-        '404':
-          $ref: ./common.yaml#/components/responses/NotFound
         '422':
           $ref: ./common.yaml#/components/responses/ValidationFailed
         '409':

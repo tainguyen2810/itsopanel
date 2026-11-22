@@ -11,7 +11,7 @@ sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_recor
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
 uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal malware_finding waf_event fim_change
-backup_repository backup_verification""".split())}
+backup_repository backup_verification wp_update""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -438,7 +438,11 @@ FIREWALL_RULES = [
      "ports": "80,443", "source": "0.0.0.0/0", "comment": "Web", "enabled": True, **ts()},
     {"uuid": u("firewall_rule", 3), "priority": 30, "action": "accept", "direction": "in", "protocol": "tcp",
      "ports": "8443", "source": "10.10.0.0/16", "comment": "Admin Panel", "enabled": True, **ts()},
+    {"uuid": u("firewall_rule", 4), "priority": 40, "action": "accept", "direction": "in", "protocol": "tcp",
+     "ports": "20001", "source": "10.10.0.0/16", "comment": "Uptime Kuma (container)", "enabled": True, "scope": "docker", **ts()},
 ]
+for _r in FIREWALL_RULES:
+    _r.setdefault("scope", "host")
 
 SECURITY_EVENTS = [
     {"uuid": u("security_event", 1), "type": "waf.block", "severity": "high", "server": server_ref(0),
@@ -543,38 +547,249 @@ SECURITY_SCORE = {
 IP_ALLOWLIST = {"entries": [{"cidr": "10.10.0.0/16", "note": "Mạng văn phòng HN"},
                             {"cidr": "10.20.0.0/16", "note": "Mạng văn phòng HCM"}], "updated_at": T0}
 
-# ---------------------------------------------------------------- docker
+# ---------------------------------------------------------------- docker (Phase 10, D-94…D-98)
+_DAEMON = {"default_bind_ip": "127.0.0.1", "userland_proxy": False, "live_restore": True, "log_max_size": "10m",
+           "log_max_file": 3}
+DOCKER_HOSTS = [
+    {"server": server_ref(0), "state": "enabled", "engine_version": "27.5.1", "compose_version": "2.29.7",
+     "api_version": "1.47", "daemon": _DAEMON,
+     "checks": [{"key": "daemon_json", "ok": True, "detail": "ip=127.0.0.1, userland-proxy=false, live-restore=true"},
+                {"key": "docker_group_empty", "ok": True, "detail": "Nhóm docker không có thành viên"},
+                {"key": "docker_user_chain", "ok": True, "detail": "DOCKER-USER: 1 cổng mở, còn lại DROP từ eth0"},
+                {"key": "socket_root_only", "ok": True, "detail": "/var/run/docker.sock root:root 0660"},
+                {"key": "compose_plugin", "ok": True, "detail": "docker compose v2.29.7"}],
+     "docker_group_members": [],
+     "firewall": {"synced_at": T2, "open_ports": [{"port": 20031, "protocol": "tcp", "source": "10.10.0.0/16",
+                                                   "note": "Uptime Kuma cho mạng văn phòng HN"}]},
+     "port_range": {"from": 20000, "to": 29999}, "ports_allocated": 3,
+     "counts": {"containers": 4, "running": 3, "images": 5, "volumes": 4, "projects": 3}, "observed_at": T2},
+    {"server": server_ref(1), "state": "not_installed", "engine_version": None, "compose_version": None,
+     "api_version": None, "daemon": _DAEMON, "checks": [], "docker_group_members": [],
+     "firewall": {"synced_at": None, "open_ports": []}, "port_range": {"from": 20000, "to": 29999},
+     "ports_allocated": 0, "counts": {"containers": 0, "running": 0, "images": 0, "volumes": 0, "projects": 0},
+     "observed_at": T2},
+]
+
 CONTAINERS = [
     {"id": "3f9a1c2b7d4e", "name": "itso-redis-cache", "image": "redis:7.4-alpine", "state": "running",
-     "status": "Up 3 days", "ports": ["127.0.0.1:6380->6379/tcp"], "compose_project": "cache",
-     "cpu_pct": 0.8, "mem_mb": 42.0, "created_at": T0},
-    {"id": "8b2e4d6f1a3c", "name": "metabase", "image": "metabase/metabase:v0.51.2", "state": "exited",
+     "status": "Up 3 days", "ports": ["127.0.0.1:20011->6379/tcp"], "compose_project": "cache",
+     "cpu_pct": 0.8, "mem_mb": 42.0, "mem_limit_mb": 256.0, "health": "healthy", "created_at": T0},
+    {"id": "8b2e4d6f1a3c", "name": "metabase", "image": "metabase/metabase:v0.50.0", "state": "exited",
      "status": "Exited (137) 2 hours ago", "ports": [], "compose_project": "bi", "cpu_pct": 0.0, "mem_mb": 0.0,
-     "created_at": T0},
+     "mem_limit_mb": 1024.0, "health": None, "created_at": T0},
+    {"id": "c4d5e6f7a8b9", "name": "bi-postgres", "image": "postgres:16-alpine", "state": "running",
+     "status": "Up 2 days", "ports": [], "compose_project": "bi", "cpu_pct": 0.3, "mem_mb": 61.5,
+     "mem_limit_mb": 512.0, "health": "healthy", "created_at": T0},
+    {"id": "d1e2f3a4b5c6", "name": "uptime-kuma", "image": "louislam/uptime-kuma:1.23.16", "state": "running",
+     "status": "Up 20 hours (healthy)", "ports": ["127.0.0.1:20031->3001/tcp"], "compose_project": "status",
+     "cpu_pct": 1.6, "mem_mb": 118.0, "mem_limit_mb": 512.0, "health": "healthy", "created_at": T1},
 ]
+
+def _finding(rule, msg, path, service="app", severity="error", overridable=True):
+    return {"rule": rule, "severity": severity, "service": service, "path": path, "message": msg,
+            "overridable": overridable}
+
 
 COMPOSE = [
     {"uuid": u("compose", 1), "server": server_ref(0), "name": "cache", "status": "running", "services": 1,
-     "revision": 3, "validation": {"ok": True, "warnings": []},
-     "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"127.0.0.1:6380:6379\"\n    restart: unless-stopped\n", **ts()},
-    {"uuid": u("compose", 2), "server": server_ref(0), "name": "bi", "status": "stopped", "services": 2,
-     "revision": 1, "validation": {"ok": True, "warnings": ["Service metabase không giới hạn memory"]},
-     "compose_yaml": "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"127.0.0.1:3000:3000\"\n    environment:\n      MB_DB_TYPE: postgres\n  postgres:\n    image: postgres:16-alpine\n    volumes:\n      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n", **ts()},
+     "revision": 3, "template": None,
+     "validation": {"ok": True, "findings": [],
+                    "rewrites": [{"service": "redis", "path": "services.redis.ports[0]", "before": "6380:6379",
+                                  "after": "127.0.0.1:20011:6379"},
+                                 {"service": "redis", "path": "services.redis.pids_limit", "before": None, "after": "256"}],
+                    "overrides": [], "validated_yaml": None},
+     "compose_yaml": "services:\n  redis:\n    image: redis:7.4-alpine\n    command: [\"redis-server\", \"--maxmemory\", \"256mb\"]\n    ports:\n      - \"6380:6379\"\n    mem_limit: 256m\n    cpus: 0.5\n    restart: unless-stopped\n    volumes:\n      - cache_data:/data\nvolumes:\n  cache_data: {}\n",
+     "ports": [{"service": "redis", "container_port": 6379, "host_port": 20011, "protocol": "tcp"}],
+     "images": [{"service": "redis", "image": "redis:7.4-alpine", "digest": "sha256:6a1f3b2c9d84",
+                 "latest_digest": "sha256:6a1f3b2c9d84", "update_available": False, "rollback_available": True}],
+     "websites": [], "last_image_update": {"state": "succeeded", "service": "redis", "from_digest": "sha256:52c0e8a1f7b3",
+                                           "to_digest": "sha256:6a1f3b2c9d84", "reason": None, "at": T1},
+     "volumes": ["cache_data"], **ts()},
+    {"uuid": u("compose", 2), "server": server_ref(0), "name": "bi", "status": "partial", "services": 2,
+     "revision": 1, "template": None,
+     "validation": {"ok": True,
+                    "findings": [_finding("missing_healthcheck", "Service metabase không khai báo healthcheck: cập nhật image chỉ kiểm trạng thái running",
+                                          "services.metabase", "metabase", "warning", False)],
+                    "rewrites": [{"service": "metabase", "path": "services.metabase.ports[0]", "before": "3000:3000",
+                                  "after": "127.0.0.1:20021:3000"},
+                                 {"service": "metabase", "path": "services.metabase.mem_limit", "before": None, "after": "1024m"}],
+                    "overrides": [], "validated_yaml": None},
+     "compose_yaml": "services:\n  metabase:\n    image: metabase/metabase:v0.50.0\n    ports:\n      - \"3000:3000\"\n    environment:\n      MB_DB_TYPE: postgres\n      MB_DB_HOST: postgres\n  postgres:\n    image: postgres:16-alpine\n    mem_limit: 512m\n    volumes:\n      - bi-data:/var/lib/postgresql/data\nvolumes:\n  bi-data: {}\n",
+     "ports": [{"service": "metabase", "container_port": 3000, "host_port": 20021, "protocol": "tcp"}],
+     "images": [{"service": "metabase", "image": "metabase/metabase:v0.50.0", "digest": "sha256:91d0c2e4b7a5",
+                 "latest_digest": "sha256:a7e3f9b1c2d6", "update_available": True, "rollback_available": True},
+                {"service": "postgres", "image": "postgres:16-alpine", "digest": "sha256:2b8c4e6f0a1d",
+                 "latest_digest": "sha256:2b8c4e6f0a1d", "update_available": False, "rollback_available": False}],
+     "websites": [],
+     "last_image_update": {"state": "rolled_back", "service": "metabase", "from_digest": "sha256:91d0c2e4b7a5",
+                           "to_digest": "sha256:a7e3f9b1c2d6",
+                           "reason": "Container metabase thoát mã 137 sau 41 giây (health kiểm 60 giây): đã quay về image cũ",
+                           "at": T2},
+     "volumes": ["bi-data"], **ts()},
+    {"uuid": u("compose", 3), "server": server_ref(0), "name": "status", "status": "running", "services": 1,
+     "revision": 2, "template": "uptime-kuma",
+     "validation": {"ok": True,
+                    "findings": [_finding("cap_add", "cap_add NET_RAW ngoài allowlist (NET_BIND_SERVICE, CHOWN, SETUID, SETGID)",
+                                          "services.app.cap_add[0]")],
+                    "rewrites": [{"service": "app", "path": "services.app.ports[0]", "before": "3001:3001",
+                                  "after": "127.0.0.1:20031:3001"}],
+                    "overrides": [{"rule": "cap_add", "reason": "Uptime Kuma cần NET_RAW để ping ICMP tới server nội bộ",
+                                   "by": user_ref(0), "at": T1}],
+                    "validated_yaml": None},
+     "compose_yaml": "services:\n  app:\n    image: louislam/uptime-kuma:1.23.16\n    ports:\n      - \"3001:3001\"\n    cap_add:\n      - NET_RAW\n    volumes:\n      - kuma-data:/app/data\n    mem_limit: 512m\n    cpus: 1\n    healthcheck:\n      test: [\"CMD\", \"extra/healthcheck\"]\n      interval: 30s\nvolumes:\n  kuma-data: {}\n",
+     "ports": [{"service": "app", "container_port": 3001, "host_port": 20031, "protocol": "tcp"}],
+     "images": [{"service": "app", "image": "louislam/uptime-kuma:1.23.16", "digest": "sha256:e4f5a6b7c8d9",
+                 "latest_digest": "sha256:e4f5a6b7c8d9", "update_available": False, "rollback_available": False}],
+     "websites": [],
+     "last_image_update": None, "volumes": ["kuma-data"], **ts(T1, T2)},
 ]
 
-DOCKER_IMAGES = [{"id": "sha256:1a2b3c4d5e6f", "tags": ["redis:7.4-alpine"], "size_mb": 41.2, "created_at": T0}]
-DOCKER_VOLUMES = [{"name": "cache_data", "driver": "local", "size_mb": 120.0, "in_use": True}]
-DOCKER_NETWORKS = [{"id": "f1e2d3c4b5a6", "name": "cache_default", "driver": "bridge", "containers": 1}]
+COMPOSE_PREVIEW = {
+    "ok": False,
+    "findings": [_finding("privileged", "privileged: true cho container toàn quyền trên host", "services.app.privileged"),
+                 _finding("bind_mount", "Bind mount /var/run/docker.sock cho container điều khiển Docker", "services.app.volumes[0]",
+                          overridable=False),
+                 _finding("missing_limits", "Thiếu mem_limit: sẽ tự thêm 512m theo mặc định server", "services.app",
+                          severity="warning", overridable=False)],
+    "rewrites": [{"service": "app", "path": "services.app.ports[0]", "before": "8080:80", "after": "127.0.0.1:20041:80"},
+                 {"service": "app", "path": "services.app.mem_limit", "before": None, "after": "512m"}],
+    "overrides": [], "validated_yaml": None,
+}
+
+# Cổng 20000–29999 đã cấp cho compose (D-97), suy từ ports của COMPOSE.
+PORT_ALLOCATIONS = [
+    {"port": pm["host_port"], "protocol": pm["protocol"], "server": c["server"],
+     "compose_project": {"uuid": c["uuid"], "name": c["name"]}, "service": pm["service"],
+     "container_port": pm["container_port"], "allocated_at": c["created_at"]}
+    for c in COMPOSE for pm in c["ports"]
+]
+
+COMPOSE_REVISIONS = [
+    {"number": 3, "compose_yaml": COMPOSE[0]["compose_yaml"], "validated_yaml": None, "ok": True, "findings": 0,
+     "overrides": 0, "created_by": user_ref(0), "created_at": T1, "current": True},
+    {"number": 2, "compose_yaml": COMPOSE[0]["compose_yaml"].replace("    mem_limit: 256m\n    cpus: 0.5\n", "    mem_limit: 128m\n"),
+     "validated_yaml": None, "ok": True, "findings": 0, "overrides": 0, "created_by": user_ref(1),
+     "created_at": "2026-11-19T09:40:00+07:00", "current": False},
+    {"number": 1, "compose_yaml": "services:\n  redis:\n    image: redis:7.2-alpine\n    ports:\n      - \"6380:6379\"\n    privileged: true\n",
+     "validated_yaml": None, "ok": False, "findings": 1, "overrides": 0, "created_by": user_ref(1),
+     "created_at": T0, "current": False},
+]
+
+COMPOSE_TEMPLATES = [
+    {"key": "uptime-kuma", "name": "Uptime Kuma", "description": "Theo dõi uptime website và dịch vụ nội bộ",
+     "category": "monitoring", "web_service": "app",
+     "compose_yaml": "services:\n  app:\n    image: louislam/uptime-kuma:1.23.16\n    ports:\n      - \"3001\"\n    volumes:\n      - kuma-data:/app/data\n    mem_limit: 512m\n    cpus: 1\nvolumes:\n  kuma-data: {}\n"},
+    {"key": "n8n", "name": "n8n", "description": "Tự động hóa quy trình (workflow automation)", "category": "automation",
+     "web_service": "app",
+     "compose_yaml": "services:\n  app:\n    image: n8nio/n8n:1.72.1\n    ports:\n      - \"5678\"\n    environment:\n      N8N_SECURE_COOKIE: \"true\"\n    volumes:\n      - n8n-data:/home/node/.n8n\n    mem_limit: 1024m\n    cpus: 1\nvolumes:\n  n8n-data: {}\n"},
+    {"key": "minio", "name": "MinIO", "description": "Lưu trữ đối tượng tương thích S3 cho nội bộ", "category": "storage",
+     "web_service": "app",
+     "compose_yaml": "services:\n  app:\n    image: minio/minio:RELEASE.2024-11-07T00-52-20Z\n    command: [\"server\", \"/data\", \"--console-address\", \":9001\"]\n    ports:\n      - \"9001\"\n    volumes:\n      - minio-data:/data\n    mem_limit: 1024m\nvolumes:\n  minio-data: {}\n"},
+    {"key": "wordpress", "name": "WordPress (container)", "description": "WordPress + MariaDB trong Docker, tách khỏi hosting account",
+     "category": "cms", "web_service": "wordpress",
+     "compose_yaml": "services:\n  wordpress:\n    image: wordpress:6.7-php8.3-apache\n    ports:\n      - \"80\"\n    environment:\n      WORDPRESS_DB_HOST: db\n      WORDPRESS_DB_NAME: wp\n    volumes:\n      - wp-html:/var/www/html\n    mem_limit: 512m\n  db:\n    image: mariadb:11.4\n    volumes:\n      - wp-db:/var/lib/mysql\n    mem_limit: 512m\nvolumes:\n  wp-html: {}\n  wp-db: {}\n"},
+]
+
+DOCKER_IMAGES = [
+    {"id": "sha256:6a1f3b2c9d84", "tags": ["redis:7.4-alpine"], "size_mb": 41.2, "created_at": T0, "in_use": True,
+     "dangling": False, "update_available": False, "rollback_of": None},
+    {"id": "sha256:52c0e8a1f7b3", "tags": ["itso-rollback/cache-redis:20261119140500"], "size_mb": 40.8, "created_at": T0,
+     "in_use": False, "dangling": False, "update_available": False, "rollback_of": "redis:7.4-alpine"},
+    {"id": "sha256:91d0c2e4b7a5", "tags": ["metabase/metabase:v0.50.0"], "size_mb": 812.4, "created_at": T0,
+     "in_use": True, "dangling": False, "update_available": True, "rollback_of": None},
+    {"id": "sha256:2b8c4e6f0a1d", "tags": ["postgres:16-alpine"], "size_mb": 263.7, "created_at": T0, "in_use": True,
+     "dangling": False, "update_available": False, "rollback_of": None},
+    {"id": "sha256:0f1e2d3c4b5a", "tags": [], "size_mb": 118.9, "created_at": T0, "in_use": False, "dangling": True,
+     "update_available": False, "rollback_of": None},
+]
+DOCKER_VOLUMES = [
+    {"name": "cache_data", "driver": "local", "size_mb": 120.0, "in_use": True, "used_by": ["itso-redis-cache"],
+     "compose_project": "cache", "last_backup_at": "2026-11-20T02:10:00+07:00"},
+    {"name": "bi-data", "driver": "local", "size_mb": 1840.5, "in_use": True, "used_by": ["bi-postgres"],
+     "compose_project": "bi", "last_backup_at": "2026-11-20T02:12:00+07:00"},
+    {"name": "kuma-data", "driver": "local", "size_mb": 64.3, "in_use": True, "used_by": ["uptime-kuma"],
+     "compose_project": "status", "last_backup_at": None},
+    {"name": "old-test-data", "driver": "local", "size_mb": 12.0, "in_use": False, "used_by": [],
+     "compose_project": None, "last_backup_at": None},
+]
+DOCKER_NETWORKS = [
+    {"id": "f1e2d3c4b5a6", "name": "cache_default", "driver": "bridge", "containers": 1, "internal": False},
+    {"id": "a9b8c7d6e5f4", "name": "bi_default", "driver": "bridge", "containers": 2, "internal": False},
+    {"id": "b1c2d3e4f5a6", "name": "status_default", "driver": "bridge", "containers": 1, "internal": False},
+]
 
 REGISTRIES = [{"uuid": u("registry", 1), "name": "GHCR nội bộ", "url": "https://ghcr.io", "username": "itso-bot",
-               **ts()}]
+               "last_test": {"ok": True, "message": "Đăng nhập thành công", "at": T1}, **ts()},
+              {"uuid": u("registry", 2), "name": "Harbor văn phòng", "url": "https://harbor.itso.local", "username": "ci",
+               "last_test": {"ok": False, "message": "401 Unauthorized: mật khẩu sai hoặc hết hạn", "at": T2}, **ts()}]
 
 # ---------------------------------------------------------------- WordPress
 WORDPRESS = [
     {"uuid": u("wordpress", 1), "website": site_ref(3), "hosting_account": acc_ref(2), "wp_version": "6.6.2",
      "latest_version": "6.7.1", "plugins_total": 14, "plugins_outdated": 3, "themes_outdated": 1,
-     "auto_update": "minor", "hardening": {"xmlrpc_disabled": True, "file_edit_disabled": True},
+     "auto_update": "minor", "update_window": "02:00-05:00",
+     "hardening": {"file_edit_disabled": True, "xmlrpc_blocked": True, "php_in_uploads_blocked": False,
+                   "wp_config_protected": True, "salts_rotated": False, "version_hidden": False},
+     "maintenance": False, "admin_username": "marketing_admin", "php_version": "8.3", "state": "ready",
+     "last_update": {"uuid": u("wp_update", 2), "state": "rolled_back", "at": T2},
      "staging_of": None, "updated_at": T1},
+    # Trang giới thiệu của An Phát (account mẫu của Portal) cũng chạy WordPress.
+    {"uuid": u("wordpress", 2), "website": site_ref(0), "hosting_account": acc_ref(0), "wp_version": "6.7.1",
+     "latest_version": "6.7.1", "plugins_total": 6, "plugins_outdated": 1, "themes_outdated": 0,
+     "auto_update": "all", "update_window": "01:00-04:00",
+     "hardening": {"file_edit_disabled": True, "xmlrpc_blocked": True, "php_in_uploads_blocked": True,
+                   "wp_config_protected": True, "salts_rotated": True, "version_hidden": False},
+     "maintenance": False, "admin_username": "anphat_web", "php_version": "8.3", "state": "ready",
+     "last_update": {"uuid": u("wp_update", 3), "state": "succeeded", "at": "2026-11-19T01:03:40+07:00"},
+     "staging_of": None, "updated_at": T1},
+]
+
+WORDPRESS_DETAIL = {
+    "site": None,  # điền sau khi WORDPRESS hoàn chỉnh
+    "core": {"version": "6.6.2", "latest_version": "6.7.1", "checksums_ok": True},
+    "components": [
+        {"type": "plugin", "slug": "wp-mail-smtp", "name": "WP Mail SMTP", "version": "4.2.0", "latest_version": "4.3.0",
+         "active": True, "auto_update": False},
+        {"type": "plugin", "slug": "wordpress-seo", "name": "Yoast SEO", "version": "23.8", "latest_version": "23.9",
+         "active": True, "auto_update": True},
+        {"type": "plugin", "slug": "contact-form-7", "name": "Contact Form 7", "version": "6.0.1", "latest_version": "6.0.1",
+         "active": True, "auto_update": True},
+        {"type": "plugin", "slug": "elementor", "name": "Elementor", "version": "3.25.4", "latest_version": "3.25.9",
+         "active": True, "auto_update": False},
+        {"type": "plugin", "slug": "hello-dolly", "name": "Hello Dolly", "version": "1.7.2", "latest_version": None,
+         "active": False, "auto_update": False},
+        {"type": "theme", "slug": "astra", "name": "Astra", "version": "4.8.3", "latest_version": "4.8.6",
+         "active": True, "auto_update": False},
+        {"type": "theme", "slug": "twentytwentyfour", "name": "Twenty Twenty-Four", "version": "1.3", "latest_version": "1.3",
+         "active": False, "auto_update": True},
+    ],
+    "staging": [],
+}
+
+WORDPRESS_UPDATES = [
+    {"uuid": u("wp_update", 2), "site_uuid": u("wordpress", 1), "trigger": "manual", "state": "rolled_back",
+     "items": [{"type": "plugin", "slug": "wp-mail-smtp", "from": "4.2.0", "to": "4.3.0"},
+               {"type": "core", "slug": "wordpress", "from": "6.6.2", "to": "6.7.1"}],
+     "steps": [{"key": "snapshot", "state": "done"}, {"key": "maintenance", "state": "done"},
+               {"key": "update", "state": "done"}, {"key": "verify", "state": "failed"},
+               {"key": "rollback", "state": "done"}],
+     "snapshot_uuid": u("snapshot", 1),
+     "error": "Kiểm tra sau cập nhật: trang chủ trả 500 (PHP Fatal error trong wp-mail-smtp/src/Core.php). Đã khôi phục file + DB từ snapshot.",
+     "requested_by": user_ref(3), "started_at": T2, "finished_at": "2026-11-20T08:19:30+07:00"},
+    {"uuid": u("wp_update", 1), "site_uuid": u("wordpress", 1), "trigger": "auto", "state": "succeeded",
+     "items": [{"type": "plugin", "slug": "wordpress-seo", "from": "23.7", "to": "23.8"}],
+     "steps": [{"key": "snapshot", "state": "done"}, {"key": "maintenance", "state": "done"},
+               {"key": "update", "state": "done"}, {"key": "verify", "state": "done"},
+               {"key": "rollback", "state": "skipped"}],
+     "snapshot_uuid": u("snapshot", 1), "error": None, "requested_by": None,
+     "started_at": "2026-11-19T03:00:00+07:00", "finished_at": "2026-11-19T03:02:10+07:00"},
+    {"uuid": u("wp_update", 3), "site_uuid": u("wordpress", 2), "trigger": "auto", "state": "succeeded",
+     "items": [{"type": "core", "slug": "wordpress", "from": "6.7", "to": "6.7.1"}],
+     "steps": [{"key": "snapshot", "state": "done"}, {"key": "maintenance", "state": "done"},
+               {"key": "update", "state": "done"}, {"key": "verify", "state": "done"},
+               {"key": "rollback", "state": "skipped"}],
+     "snapshot_uuid": None, "error": None, "requested_by": None,
+     "started_at": "2026-11-19T01:00:00+07:00", "finished_at": "2026-11-19T01:03:40+07:00"},
 ]
 
 # ---------------------------------------------------------------- Git deploy (module 22)
@@ -713,18 +928,51 @@ SERVICES = [
     {"name": "fail2ban", "active": True, "enabled": True, "version": "1.1.0", "since": T0},
 ]
 
+def _sw(key, name, cat, inst, latest, state=None, source="ubuntu", service=None, core=False, conflicts=(),
+        requires=(), in_use=(), blocked=None):
+    st = state or ("available" if inst is None else ("upgradable" if inst != latest else "installed"))
+    return {"key": key, "name": name, "category": cat, "installed_version": inst, "latest_version": latest,
+            "state": st, "source": source, "service": service, "core": core, "conflicts": list(conflicts),
+            "requires": list(requires), "in_use": [{"kind": k, "count": c} for k, c in in_use], "remove_blocked": blocked}
+
+
 SOFTWARE = [
-    {"key": "nginx", "name": "Nginx", "category": "web", "installed_version": "1.26.2", "latest_version": "1.26.2",
-     "state": "installed"},
-    {"key": "php8.4", "name": "PHP 8.4", "category": "php", "installed_version": None, "latest_version": "8.4.1",
-     "state": "available"},
-    {"key": "redis", "name": "Redis", "category": "cache", "installed_version": "7.2.6", "latest_version": "7.4.1",
-     "state": "upgradable"},
+    _sw("nginx", "Nginx", "web", "1.24.0", "1.24.0", service={"name": "nginx", "active": True}, core=True,
+        in_use=[("website", 22)], blocked="Thành phần lõi: mọi website đi qua Nginx"),
+    _sw("php8.3", "PHP 8.3 (FPM)", "php", "8.3.6", "8.3.6", core=True, in_use=[("website", 15), ("php_pool", 15)],
+        blocked="Phiên bản PHP mặc định, đang có 15 website dùng"),
+    _sw("php8.2", "PHP 8.2 (FPM)", "php", "8.2.26", "8.2.27", source="ppa-ondrej-php",
+        in_use=[("website", 2), ("php_pool", 2)], blocked="Đang có 2 website dùng PHP 8.2"),
+    _sw("php8.4", "PHP 8.4 (FPM)", "php", None, "8.4.2", source="ppa-ondrej-php"),
+    _sw("php8.1", "PHP 8.1 (FPM)", "php", None, "8.1.31", source="ppa-ondrej-php"),
+    _sw("mariadb", "MariaDB", "database", "10.11.8", "10.11.8", service={"name": "mariadb", "active": True}, core=True,
+        conflicts=["mysql"], in_use=[("website", 14)], blocked="Đang có 14 database"),
+    _sw("postgresql", "PostgreSQL 16", "database", "16.6", "16.6", service={"name": "postgresql", "active": True},
+        in_use=[("website", 1)], blocked="Đang có 1 database"),
+    _sw("redis", "Redis", "cache", "7.0.15", "7.0.15", service={"name": "redis-server", "active": True},
+        conflicts=["valkey"], in_use=[("wordpress_site", 2)], blocked="Đang có 2 site WordPress dùng object cache"),
+    _sw("valkey", "Valkey", "cache", None, "7.2.8", conflicts=["redis"]),
+    _sw("memcached", "Memcached", "cache", None, "1.6.24"),
+    _sw("nodejs", "Node.js 18 (runtime)", "runtime", None, "18.19.1"),
+    _sw("composer", "Composer", "tools", "2.7.1", "2.7.1", requires=["php8.3"]),
+    _sw("wp-cli", "WP-CLI", "tools", "2.11.0", "2.11.0", source="itso", requires=["php8.3"],
+        in_use=[("wordpress_site", 5)], blocked="WordPress Toolkit đang quản lý 5 site"),
+    _sw("docker", "Docker Engine + Compose", "docker", "27.5.1", "27.5.1", service={"name": "docker", "active": True},
+        in_use=[("compose_project", 3)], blocked="Đang có 3 compose project"),
+    _sw("fail2ban", "Fail2ban", "security", "1.0.2", "1.0.2", service={"name": "fail2ban", "active": True}, core=True,
+        blocked="Thành phần lõi của Security Center"),
+    _sw("clamav", "ClamAV", "security", "1.0.7", "1.0.8", service={"name": "clamav-daemon", "active": True}),
+    _sw("restic", "restic", "base", "0.16.4", "0.16.4", core=True, blocked="Thành phần lõi của Backup Center"),
 ]
+
+OS_UPDATES = {"enabled": True, "security_only": True, "auto_reboot": False, "pending_security": 2,
+              "last_run_at": "2026-11-20T06:25:00+07:00", "updated_at": T1}
 
 PHP_VERSIONS = [
     {"version": "8.3", "installed": True, "default": True, "sites_count": 1, "extensions": ["intl", "gd", "redis", "zip"]},
     {"version": "8.2", "installed": True, "default": False, "sites_count": 1, "extensions": ["intl", "gd", "zip"]},
+    {"version": "8.4", "installed": False, "default": False, "sites_count": 0, "extensions": []},
+    {"version": "8.1", "installed": False, "default": False, "sites_count": 0, "extensions": []},
 ]
 
 NGINX_GLOBAL = {"worker_processes": "auto", "worker_connections": 4096, "client_max_body_size": "64m",
@@ -868,7 +1116,7 @@ _EXTRA_SITES = {
     "hritso": [],
     "thientam": [("dat-lich", "php", "8.3"), ("cdn", "static", None)],
     "gionui": [("menu", "static", None)],
-    "intranet": [("wiki", "php", "8.3"), ("api", "proxy", None)],
+    "intranet": [("wiki", "php", "8.3"), ("uptime", "docker", None)],
     "mayxanh": [("portfolio", "static", None), ("blog", "php", "8.3")],
     "pending01": [],
 }
@@ -927,7 +1175,7 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
             WEBSITES.append({
                 "uuid": u("website", site_n), "hosting_account": acc_ref(acc_idx),
                 "server": ACCOUNTS[acc_idx]["server"], "primary_domain": d, "type": wtype,
-                "document_root": "public/dist" if wtype == "static" else "public",
+                "document_root": "public/dist" if wtype == "static" else ("." if wtype == "docker" else "public"),
                 "php_version": php if wtype == "php" else None, "ssl_mode": "acme", "waf_enabled": wtype == "php",
                 "domains_count": 1, "certificate_expires_at": EXP, **do(spec=1, obs=1),
                 **ts(_DAY[i], T1)})
@@ -936,9 +1184,12 @@ def _expand() -> None:  # noqa: C901 — một chỗ để đọc toàn bộ quy
                     "uuid": u("wordpress", len(WORDPRESS) + 1), "website": site_ref(len(WEBSITES) - 1),
                     "hosting_account": acc_ref(acc_idx), "wp_version": "6.7.1" if i % 2 else "6.6.2",
                     "latest_version": "6.7.1", "plugins_total": 8 + i, "plugins_outdated": i % 3,
-                    "themes_outdated": i % 2, "auto_update": "minor",
-                    "hardening": {"xmlrpc_disabled": True, "file_edit_disabled": i % 2 == 1},
-                    "staging_of": None, "updated_at": T1})
+                    "themes_outdated": i % 2, "auto_update": "minor" if i != 2 else "off", "update_window": "02:00-05:00",
+                    "hardening": {"file_edit_disabled": i % 2 == 1, "xmlrpc_blocked": True,
+                                  "php_in_uploads_blocked": i % 2 == 1, "wp_config_protected": True,
+                                  "salts_rotated": False, "version_hidden": i % 2 == 1},
+                    "maintenance": False, "admin_username": f"{username}_admin", "php_version": php,
+                    "state": "ready", "last_update": None, "staging_of": None, "updated_at": T1})
             site_n += 1
         db = f"{username}_web"
         DATABASES.append({"uuid": u("database", db_n), "hosting_account": acc_ref(acc_idx),
@@ -1345,6 +1596,22 @@ def _recompute() -> None:
 
 
 _expand()
+
+WORDPRESS_DETAIL["site"] = WORDPRESS[0]
+for _p in BACKUP_POLICIES:
+    _p.setdefault("volume_consistency", None)
+for _s in SNAPSHOTS:
+    _s.setdefault("volumes", [])
+BACKUP_POLICIES.append({**BACKUP_POLICIES[0], "uuid": u("backup_policy", 9), "name": "Docker volume hằng đêm",
+                        "scope_type": "compose_project", "scope_uuid": COMPOSE[1]["uuid"], "contents": ["docker_volumes"],
+                        "volume_consistency": "pause", "excludes": [], "schedule": "10 2 * * *",
+                        "last_status": "succeeded"})
+SNAPSHOTS.append({**SNAPSHOTS[0], "uuid": u("snapshot", 40), "hosting_account": None, "scope_type": "compose_project",
+                  "website": None, "databases": [], "volumes": ["bi-data"], "contents": ["docker_volumes"],
+                  "restic_snapshot_id": "7d3e9a1f", "size_mb": 1790.2, "taken_at": "2026-11-20T02:12:00+07:00",
+                  "tags": ["docker", "compose:bi"]})
+_UPTIME = next(w for w in WEBSITES if w["primary_domain"] == "uptime.intranet.itso.vn")
+COMPOSE[2]["websites"] = [{"uuid": _UPTIME["uuid"], "domain": _UPTIME["primary_domain"], "service": "app", "ssl": True}]
 
 NODE_ENROLL_REQUEST = {
     "token": "itso_enr_7Hk2pQ9xVb3mN6tRw4Yc8Lz1Ds5Fj0Ga",

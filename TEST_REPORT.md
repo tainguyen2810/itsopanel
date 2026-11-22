@@ -2,6 +2,135 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 10 / Prompt 10.8 (tích hợp: e2e stack thật, VM, review, make check) — nhánh `phase-10`
+
+Phạm vi: `apps/web/e2e-real/phase10.spec.ts` (mới, 4 luồng), file điều khiển sandbox (`/var/lib/itso-sandbox/docker-control.json`: publish image mới + unhealthy; `wp-control.json`: available/fail/checksum_fail) và `FakeEngine.BeforePull`, `scripts/dev.sh` bật `docker: true` trong policy agent sandbox, `tests/vm/phase10.sh` (V0–V6), `docs/security/docker-wordpress-review.md`, `docs/runbooks/phase-10-docker-wordpress.md`, báo cáo `docs/reports/phase-10.md`. Commit f1e0602.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E stack thật Phase 10 | `pnpm -s exec playwright test -c playwright.real.config.ts --trace off e2e-real/phase10.spec.ts` (`make dev`, Engine Docker giả, WP-CLI mô phỏng, restic thật) | **4/4 PASS** (1,7 phút). Các lần đầu lỗi do test/môi trường: danh sách software phân trang (`per_page=100`, trường `installed_version`), PHP 8.3 chưa cài, Docker `op_disabled` vì policy sandbox (→ `dev.sh`), trường compose là `status`, cache wp.info 5 phút (→ `itso:wordpress-auto-update --refresh`), thông báo lỗi có tiền tố (→ `toContain`) |
+| Toàn bộ e2e stack thật | `ITSO_ACME_EMAIL=ops@itso.local make dev` + `migrate:fresh --seed` + `DemoSeeder` + `make test-e2e-real` | **26/27 PASS** (19,4 phút). 1 lỗi môi trường: Phase 3 tạo account, server local bị loại "Đĩa còn dưới 15 % sau khi cấp" → xóa cache composer + go-build (8,5 GB), chạy `itso:server-local` để làm mới heartbeat, chạy lại luồng đó: PASS. Hai luồng Portal Phase 3 khi chạy lại riêng dừng ở màn MFA vì luồng Phase 8 đã bật MFA cho user portal (phụ thuộc thứ tự, xanh trong lượt toàn bộ). Lượt đầu tiên (trước đó) có 8 lỗi do DB/sandbox bẩn sau nhiều lần chạy (quota 10/10 website) và thiếu `agent/bin/itso` → build lại, xóa sandbox, chạy sạch |
+| Go | `go test ./...` · `go test ./internal/ops -run 'TestWPSandboxControlFile\|TestSandboxDockerControlFile'` | PASS (21 gói) · PASS |
+| Lint | `make lint-agent` · `pnpm -s lint` | sạch (i18n 3282 key, vi = en) |
+| `make check` | `make check` (1 304 s, trên f1e0602) | **22 PASS · 1 SKIP (staticcheck) · 0 FAIL** ngay lần đầu: db-verify 142, test-web 593, test-e2e 622, test-api 505, test-agent 21 gói, test-fuzz 56 990 lượt, git-clean sạch |
+| Script VM | `bash -n tests/vm/phase10.sh` | OK (không có shellcheck). **Chờ VM:** V0 Docker thật + Engine API, V1 cổng `0.0.0.0` không lộ (quét từ ngoài) rồi mở bằng rule `scope=docker`, V2 validator trên daemon thật, V3 image lỗi quay về, V4 backup/khôi phục volume, V5 WordPress thật (cài, update lỗi → khôi phục, hardening, không lộ mật khẩu), V6 PHP nhiều bản |
+
+**Test bị bỏ qua:** không. **Chờ VM:** `tests/vm/phase4.sh`–`phase10.sh`.
+
+## 2026-11-22 — Phase 10 / Prompt 10.7 (UI nối API thật) — nhánh `phase-10`
+
+Phạm vi: các màn Software, Docker (server, compose, registry, website Docker, backup volume) và WordPress đã dùng client sinh từ OpenAPI từ 10.0; prompt này rà hành vi MSW theo API thật (10.2–10.6) và sửa chỗ lệch. WordPress: dialog cài hiện mật khẩu quản trị **một lần** (`SecretDialog`, API không lưu), staging hiện basic auth **tắt + lý do** "chưa có ở bản này" và không gửi `basic_auth`; MSW: cài tạo job `wordpress_site` với op thật (`db.mysql.*` → `wp.install` → `wp.info`), trả `secret`, hardening mặc định tắt; cập nhật chưa có đích backup → 409 `precondition_failed`, op `wp.update/backup.stats/wp.info`; staging `basic_auth: true` → 422; đổi mật khẩu khi chưa biết user admin → 409 `precondition_failed`; quét khi không có website PHP → 409; tên quản trị `admin`/`administrator` → 422; registry chỉ SUPER_ADMIN (403, như `docker.manage`). API chỉnh theo UI: body `:update` rỗng = mọi thành phần có bản mới (theo cache), không còn gì → 409; core trong lịch sử có slug `wordpress` (như ví dụ OpenAPI); chặn tên quản trị `admin`/`administrator`. Chụp lại 4 ảnh `admin-wordpress-staging-*`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Vitest | `pnpm -s vitest run` | **593/593 PASS** (mới: WordPress như API — cài trả secret một lần, job không chứa secret, basic auth → 422, không có đích backup → 409) |
+| Playwright demo | `playwright test e2e/demo-sites.spec.ts e2e/demo-infra.spec.ts e2e/demo-portal.spec.ts e2e/demo-hosting.spec.ts` | PASS (mới: cài WordPress → hộp thoại mật khẩu một lần; staging basic auth bị khóa kèm lý do) |
+| axe + 390px + EN | `playwright test e2e/demo-audit.spec.ts` | PASS (tổng cộng 100/100 cùng các spec trên) |
+| Lint web | `pnpm -s lint` · `tsc -b` | sạch (i18n 3282 key, vi = en) |
+| API | `make test-api` · `make lint-api` | **505/505** · sạch |
+
+**Test bị bỏ qua:** không. **Giới hạn đã biết:** menu Registry vẫn hiện với ADMIN (trang trả 403 rõ ràng; shell chưa lọc menu theo quyền); dữ liệu demo Docker có `update_available` cho image còn API thật luôn trả false (chưa kiểm registry).
+
+## 2026-11-22 — Phase 10 / Prompt 10.6 (Panel WordPress) — nhánh `phase-10`
+
+Phạm vi: model + `WordPressService` + `WordPressJobHandler` + `WordPressController` (Admin `websites.read/write`, Portal theo account sở hữu; `:admin-password` step-up), presenter khớp OpenAPI `WordPressSite/Detail/Update`, lệnh `itso:wordpress-auto-update [--refresh]` (lịch: refresh 01:37 hằng ngày, auto-update phút 05 mỗi giờ), secret `wp_password` (Cache + Crypt, TTL 2 giờ, xóa khi job kết thúc), WebsiteSpec::vhost thêm `wp_hardening`, xóa website → soft-delete site WP. DBML: `wordpress_sites.database_id`, `last_auto_update_at` (migration Phase 10 chưa phát hành, sinh lại). wp.info thêm `db_name` (agent đọc DB_NAME từ wp-config).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest WordPress | `vendor/bin/pest tests/Feature/Phase10/WordPressTest.php` | **7/7 PASS (197 assertion)**: USER cài (DB + user theo gói, mật khẩu admin chỉ có trong response `secret` + params tới agent, không có ở job_steps/job_logs/audit/jobs/notifications, ref cache bị xóa khi job xong, cài lại → 409); **USER khác không thấy/không thao tác được** (list rỗng, 7 endpoint → 404, cài vào website người khác → 422), ADMIN ngoài phạm vi → 404; **update lỗi → rolled_back** (bước update failed/verify skipped/rollback done, 2 snapshot `pre-wp-update` file + DB, thông báo chủ account + SA), chưa có đích backup → 409, update thành công không thông báo, khôi phục cũng lỗi → failed + site error + thông báo mức high, site lỗi không cập nhật tiếp; **staging vượt giới hạn website gói → 422 quota_exceeded, không tạo website/job**, basic_auth → 422, trong giới hạn → website + DB `_stg`, wp.clone noindex, không staging từ staging; **tự cập nhật theo cửa sổ 22:00-02:00** (12:30 không chạy, 01:05 chạy minor + tag auto, 01:30 chưa đủ 20 giờ bỏ qua, 23:00 chạy, tắt thì thôi), PATCH sai mẫu → 422, If-Match cũ → 412; quét (wp.detect theo root), hardening cờ vhost → `nginx.vhost.apply.wp_hardening`, tắt salts → 422, bảo trì, đổi mật khẩu admin (chưa biết user → 409, mật khẩu yếu → 422, không lưu). Mọi params/result op kiểm theo contracts/agent-ops, response kiểm theo OpenAPI |
+| Pest toàn bộ | `make test-api` | **505/505 PASS** |
+| Agent Go | `cd agent && go test -race ./...` | PASS |
+| Lint | `make lint-api` (Pint + PHPStan) · `make lint-agent` · `make no-exec` | PASS |
+| DB · Contracts | `make db-verify` · `make contracts-check` · `make codegen-check` · `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không. Hạn chế đã biết: staging chưa có basic auth (422, UI phải ẩn); bản lỗi `sites/<domain>.restore-<ts>` sau rollback chưa dọn tự động; site phát hiện qua quét chưa biết user admin nên không đổi mật khẩu được.
+
+## 2026-11-22 — Phase 10 / Prompt 10.5 (Agent WordPress) — nhánh `phase-10`
+
+Phạm vi: `ops/wordpress.go` — wp.detect (quét root dưới `sites/`, đọc `wp-includes/version.php` + `wp-config.php` bằng fs helper dưới uid account, root có symlink bị bỏ qua), wp.info (core/plugin/theme + bản cập nhật, maintenance, hardening, verify-checksums), wp.install (thư mục đích chưa có hoặc rỗng, DB tạo trước bằng `db.*` và phải rỗng, `core download` → `config create --prompt=dbpass` → `core install --prompt=admin_password`, lỗi thì dọn đích), wp.update (snapshot restic `pre-wp-update` file site + DB → maintenance → core/plugin/theme update tuần tự, dừng ở lỗi đầu → tắt maintenance → `core verify-checksums` + plugin vừa cập nhật → http.check; bất kỳ bước nào lỗi → `restoreWebsite` overwrite (bản lỗi giữ ở `sites/<domain>.restore-<ts>`) + `restoreDatabase` overwrite, trả `rolled_back`; khôi phục lỗi → `wp_update_failed` kèm snapshot id), wp.clone (cùng account, đích rỗng + DB đích rỗng, chép file qua helper không ghi đè, dump → import dưới uid account, `config set DB_*` (mật khẩu qua stdin), search-replace, `blog_public=0`; lỗi thì dọn file + làm rỗng DB đích), wp.harden (DISALLOW_FILE_EDIT, salt mới, wp-config 0400 — mở tạm khi cần sửa, mu-plugin ẩn phiên bản, cờ vhost xmlrpc/PHP trong uploads lưu ở `/var/lib/itso/wp/<uid>/<domain>.json` + `needs_vhost_reload`), wp.admin_password (`user update --prompt=user_pass`), wp.maintenance (idempotent). Mọi lệnh: `systemd-run --uid --gid --slice=itso-acct-<uid>.slice … /usr/bin/php<ver> -d memory_limit=512M wp-cli-2.11.0.phar --path=… --skip-plugins --skip-themes <subcommand allowlist>`. Contract: wp.update thêm `snapshot{repo,db,tags}`, `check_scheme`, kết quả `http_status/snapshot_id/db_snapshot_id/rolled_back/rollback_error`; `nginx.vhost.apply.wp_hardening` (chỉ type php, location chặn đứng trước location PHP); BackupTag thêm `pre-wp-update`, `auto`. Sandbox: `sandbox_wp.go` mô phỏng WP-CLI trên file thật + DB của dbSim.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Agent WP | `go test ./internal/ops -run 'TestWP\|TestVhostWP'` | **6/6 PASS**: cài + info + detect (lệnh chạy dưới uid 20001 trong slice, không `sh -c`, mật khẩu admin/DB chỉ ở stdin, không có trong argv/audit; cài lại → already_exists); chặn đường dẫn ngoài `sites/<domain>/public`, domain khác, `..`, symlink ra `/etc`, symlink vòng trong home, wp-config.php là symlink, PHP 7.4, subcommand ngoài allowlist (eval, shell, package/plugin install, db query, --require/--exec/--path/--ssh); update OK (core trước plugin, snapshot file + DB gắn tag, maintenance tắt) và plugin chưa cài → khôi phục; **update lỗi giữa chừng → file plugin + DB về đúng snapshot (restic thật)**, checksum core sai → core về 6.6.2, http 500 → khôi phục, repo server bị từ chối; clone (`DB_*` mới, siteurl thay, noindex, DB nguồn không đổi, mật khẩu không lộ) và **không ghi đè**: đích có file hoặc DB đích có bảng → already_exists, không để lại file; URL đích khác domain → invalid_params; harden 6 mục, tắt file_edit khi wp-config đang 0400 vẫn khóa lại, salts không tắt được, đổi mật khẩu admin (user lạ → not_found), maintenance idempotent; vhost chặn xmlrpc/PHP uploads, static từ chối |
+| Agent Go toàn bộ | `cd agent && go test -race ./...` | PASS (ops 147 s) |
+| Pest | `vendor/bin/pest --parallel` | **498/498 PASS** (schema chỉ nới, không đổi panel) |
+| Contracts | `make contracts-check` · `make codegen-check` | PASS |
+| Lint | `make lint-agent` · `make no-exec` | PASS |
+
+**Test bị bỏ qua:** không. **Chưa kiểm:** WP-CLI/PHP/MariaDB thật (container không có php8.x + MariaDB chạy) → `tests/vm/phase10.sh` ở 10.8. Hạn chế đã biết: clone dùng `--skip-plugins --skip-themes` nên plugin lưu URL dạng serialize vẫn được search-replace xử lý, nhưng URL tương đối/khác scheme không thay; plugin không có trên wordpress.org không có checksum (bỏ qua, không tính lỗi); bản lỗi giữ ở `sites/<domain>.restore-<ts>` cần dọn tay hoặc ở 10.6.
+
+## 2026-11-22 — Phase 10 / Prompt 10.4 (Panel Docker) — nhánh `phase-10`
+
+Phạm vi: contracts `FirewallRule(Input).scope` (host|docker) + demo; ALTER `/* phase:10 */ firewall_rules.scope` + CHECK (docker chỉ accept/in/tcp|udp, có cổng); quyền `docker.read`, `docker.write` (ADMIN), `docker.manage` (SA); model DockerHost, Registry, ComposeProject, ComposeRevision, PortAllocation, ImageRollback, DockerContainer; `Domain/Docker`: DockerHostService (trạng thái qua docker.host.status làm mới ≤ 1 phút, `docker:enable` = software.install → docker.host.configure → docker.firewall.sync, `docker:sync-firewall` từ rule scope=docker), DockerInventory (cache container, image/volume/network đọc đồng bộ, control/prune/xóa volume qua job, container ngoài panel → 404), ComposeService (compose.validate đồng bộ với cổng ứng viên, revision lưu report kể cả khi bị chặn, cấp cổng trong transaction + savepoint, đụng unique → kiểm lại tối đa 3 lần, override chỉ SA + lý do 10–300, ADMIN sửa YAML không mang override cũ, job validate → registry login → apply, update/rollback image), RegistryService, DockerJobHandler; Secrets thêm `compose_env:<uuid>` (object) và `registry_password:<uuid>`; website `type=docker` (chỉ Admin, vhost proxy tới cổng TCP đã cấp, project có website không xóa được); firewall host/SSH/baseline bỏ qua rule docker; backup policy `compose_project` + `docker_volumes` + `volume_consistency`, snapshot `compose_project`, khôi phục `volume:<tên>` (new → `<tên>_r<ts>`, overwrite cần gõ tên project).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest mới | `vendor/bin/pest tests/Feature/Phase10/DockerTest.php` (PG + Redis) | **10/10 PASS** (275+ assertion): bật Docker (SA + step-up, ADMIN 403); validator chặn → 422, không tạo project, không apply; sửa YAML bị chặn → revision lỗi, revision hiện hành giữ; override ADMIN → 403, SA kèm lý do → chạy, audit ghi lý do; cổng không trùng khi 2 project tạo "song song" (giả lập project khác giữ cổng giữa lúc validate → đụng unique → kiểm lại → 20002); sửa compose giữ cổng; xóa project trả cổng + tên; registry không lộ mật khẩu ở API/job_steps/job_logs/audit (agent nhận giá trị thật), compose image registry → docker.registry.login bằng secret_ref; USER/Portal 401/403/404/419 cho 24 route docker ở cả /admin và /portal, ADMIN ngoài phạm vi 404; website docker → vhost `proxy` cổng 20000, Portal không tạo được; firewall scope=docker (drop/dải cổng → 422, không vào ruleset nftables, sync gửi open_ports); update/rollback image; backup volume → docker.volume.backup, khôi phục ra volume mới. Mọi params/result op được kiểm theo `contracts/agent-ops` |
+| Pest toàn bộ | `vendor/bin/pest --parallel` | **498/498 PASS** (lần đầu 1 đỏ: test Platform dùng `/compose-projects` làm ví dụ "chưa có route" → đổi sang `/wordpress/sites` của 10.6) |
+| DB | `make db-schema` · `make db-verify` | PASS: **142 test SQL** (mới 4 test scope firewall); migration Phase 10 sinh lại khớp đặc tả |
+| Contracts | `make contracts-check` · `make codegen-check` | PASS (lần đầu đỏ: ví dụ FirewallRule thiếu `scope` mới bắt buộc → thêm vào demo) |
+| Web | `npx vitest run` · `npm run lint` | **592/592 PASS** (lần đầu 1 đỏ: MSW tạo rule thiếu `scope` → thêm mặc định host); lint/tsc/i18n sạch |
+| PHPStan · Pint · no-exec | `make lint-api` · `make no-exec` | sạch |
+
+**Test bị bỏ qua:** không. **Chưa kiểm:** Docker Engine thật (container cloud không có daemon) → `tests/vm/phase10.sh` ở 10.8. Hạn chế đã biết: `latest_digest`/`update_available` của image chưa có nguồn (cần tra registry, để false); registry dùng chung toàn panel, `:test` chạy trên server bật Docker đầu tiên; xóa registry không gỡ credential đã lưu trên node.
+
+## 2026-11-22 — Phase 10 / Prompt 10.3 (Agent Docker) — nhánh `phase-10`
+
+Phạm vi: `internal/docker` (client Engine API v1.43 qua unix socket, timeout, giới hạn phản hồi 8 MiB/log 16 MiB, tách khung log multiplex, lỗi pull trong luồng JSON; `Fake` trong bộ nhớ cho sandbox/test), `internal/compose` (validator: chặn theo mã rule, không anchor/alias/merge/tag/khóa trùng/nhiều tài liệu, nội suy `$` chỉ ở environment/command/entrypoint/healthcheck, bind hệ thống + thư mục cha của chúng, docker.sock, bind tương đối chỉ trong `./data`, viết lại cổng về `127.0.0.1:<cấp phát>`, thêm mem/cpus/pids mặc định, nhãn `io.itso.*`, ghi đè chỉ cho privileged/cap_add/devices/bind_mount), `ops/docker.go` (host status/configure: daemon.json + gỡ nhóm docker; DOCKER-USER qua `iptables-restore --noflush` + unit nạp lại; container/image/volume/network/registry; volume backup/restore bằng restic có pause), `ops/compose.go` (validate ghi sha256 → apply chỉ nhận YAML có sha đã ghi; `.env` nháy đơn, chặn `COMPOSE_*`/`DOCKER_*`; kiểm cổng /proc/net + container khác; symlink trong bind tương đối; compose.yaml bị sửa ngoài agent → từ chối; image update tag rollback + chờ health + tự quay về; rollback). Bins thêm `docker` (chỉ compose argv cố định) và `iptables-restore`. Contract: BackupTag thêm `type:docker`, `compose:<uuid>`. Log realtime qua gateway chưa làm (op hiện có: tail tối đa 5000 dòng).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Agent Go | `cd agent && go test -race ./...` | PASS. Mới: `compose_test.go` (vector `compose_yaml` dùng chung, bảng chặn 60 trường hợp, viết lại + idempotent, ghi đè, latest tag, fuzz), `docker/client_test.go` (engine giả qua unix socket), `ops/docker_test.go` (vòng đời compose, YAML không qua validate → compose_rejected, env lộ argv, cổng trùng → port_unavailable, image update unhealthy/exited → rolled_back, keep_rollbacks, volume đang dùng → in_use, DOCKER-USER đúng thứ tự, policy tắt docker → op_disabled, container ngoài panel không điều khiển được, registry login không qua argv, host configure idempotent, volume backup/restore restic thật) |
+| Fuzz | `go test ./internal/compose -fuzz FuzzValidate -fuzztime 60s` | PASS (~296k exec, không panic; YAML nhận được validate lại ổn định, không chứa privileged/host/docker.sock/0.0.0.0) |
+| Lint | `make lint-agent` · `make no-exec` · `make docs-check` | PASS |
+| Contracts | `make contracts-check` · `make codegen-check` | PASS |
+
+Ghi chú: container cloud không có docker daemon; chạy Engine API thật để ở `tests/vm/phase10.sh` (10.8). restic cài trong container để chạy test backup/restore volume.
+
+## 2026-11-22 — Phase 10 / Prompt 10.2 (Software Manager) — nhánh `phase-10`
+
+Phạm vi: agent `ops/software.go` (catalog 22 recipe với nhóm/kho/dịch vụ/lõi/xung đột/phụ thuộc; software.catalog/status/upgrade; os.auto_updates ghi `20auto-upgrades` + `52itso-unattended-upgrades`, luôn `Automatic-Reboot "false"`; xung đột/thiếu phụ thuộc chặn trước apt; gỡ: lõi → precondition_failed, PHP còn pool/Docker còn project/recipe khác phụ thuộc → `in_use`; wp-cli = phar 2.11.0 tải HTTPS, ghim sha512), `ops/ppa.go` (khóa ondrej/php nhúng, ghim 2 fingerprint, tự tính fingerprint OpenPGP v4, file deb822 `Signed-By` riêng, chỉ thêm khi cài PHP 8.1/8.2/8.4; `php.version.install` dùng chung), allowlist recipe/PHP/runner (php-fpm8.1/8.2/8.4, apt-cache), mock PHP nhiều bản. Panel: `SoftwareService` (409 conflict, 422 thiếu phụ thuộc, 409 resource_locked kèm lý do: lõi, website dùng PHP, compose project, WordPress dùng wp-cli, recipe phụ thuộc; job + audit cài/gỡ/nâng cấp), `GET/PUT /servers/{id}/os-updates` (PUT chỉ SA, job `software.os_updates`), `itso:software-refresh` (catalog + phiên bản từ agent, lịch 05:23), recipe `php<ver>` phản chiếu sang PHP Manager, website chọn PHP theo bản đã cài và gói cho phép, seed catalog khớp agent.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Agent Go | `cd agent && go test -race ./...` | PASS. Mới: `software_test.go` (catalog phủ allowlist, xung đột redis↔valkey chặn trước apt, thiếu phụ thuộc, PPA chỉ thêm khi cài PHP PPA + không update lại, gỡ bị chặn lõi/pool/compose, wp-cli sai sha512 không ghi file + lỗi mạng retryable, upgrade/status, unattended không reboot + idempotent), `ppa_internal_test.go` (khóa đúng tập ghim; thừa/sai fingerprint, khóa bị sửa, dữ liệu rác bị từ chối; không `trusted=yes`), `catalog_internal_test.go` (seed panel khớp catalog agent; lần đầu bắt lệch gói php8.3 và regex dịch vụ có số → sửa). Golden software.install/remove ghi lại (stress-ng; restic nay là lõi). `TestWebsiteLifecycleSharedWithMock` đỏ lần đầu (8.1 nay hợp lệ) → vector đổi sang 7.4, mock hỗ trợ 8.1–8.4 |
+| Contracts | `make contracts-check` · `make codegen-check` | PASS (vector recipe: docker, wp-cli, php8.4, valkey accept; php7.4, docker-ce, chèn lệnh, `ppa:` reject) |
+| Pest | `php vendor/bin/pest --parallel` (PG 16 tạm + Redis) | **488/488 PASS**. Mới `Phase10/SoftwareTest.php` 5 test (xung đột 409, thiếu phụ thuộc 422, PHP PPA → PHP Manager, gỡ bị chặn khi đang dùng/lõi, ma trận quyền + os-updates chỉ SA, refresh → upgradable + pending_security, PHP website theo gói). Sửa test cũ theo hành vi mới: Phase 4 phần mềm (nâng cấp nay qua job; restic là lõi), Phase 5 PHP Manager (danh sách 8.1–8.4; bản ngoài catalog 7.4 → 409) |
+| PHPStan · Pint · docs-check | | sạch |
+
+**Test bị bỏ qua:** không. **Chưa kiểm:** cài thật PPA/wp-cli/valkey trên VM (tests/vm/phase10.sh ở 10.8); `valkey-server` không có trong kho noble nên cài sẽ lỗi `dependency_unavailable` cho tới khi có kho phù hợp (ghi ở báo cáo Phase 10).
+
+## 2026-11-22 — Phase 10 / Prompt 10.1 (ADR, contracts, DBML, migration) — nhánh `phase-10`
+
+Phạm vi: ADR 0039–0045 (D-94…D-100, Accepted); agent-ops viết đủ schema 41 op Phase 10 (software.catalog/status/upgrade, os.auto_updates; docker.host.*, docker.container.list/inspect/control/logs/stats, docker.image.list/pull/prune/update/rollback, docker.registry.login, docker.volume.list/create/remove/backup/restore, docker.network.list/create/remove, docker.firewall.sync; compose.validate/apply/up/down/pull/remove; wp.detect/info/install/update/clone/harden/admin_password/maintenance), defs mới (ComposeProjectName, DockerImageRef, ContainerId, DockerVolumeName, ComposeRule/Override/Finding, WpSlug, WpSite…), Recipe thêm 10 recipe, 5 mã lỗi mới (compose_rejected, port_unavailable, in_use, docker_unavailable, wp_update_failed); 69 vector độc mới; OpenAPI thêm `GET /servers/{id}/docker/port-allocations`; DBML: docker_hosts, registries, compose_projects/revisions (số revision, override, sha256), containers, port_allocations (server×port×protocol, 20000–29999), image_rollbacks, wordpress_sites/components/updates; ALTER `/* phase:10 */` cho software_catalog, server_software (state, latest_version, upgrade_available), websites (compose_project_id/service), backup_policies (compose_project, docker_volumes, volume_consistency), backup_snapshots; migration `2026_11_20_000010_phase_10_schema.php` (sinh tự động). Laravel: trình bày thêm trường bắt buộc mới (Software, chính sách/snapshot backup) và nhóm catalog khớp enum.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `check_demo.py` | PASS: OpenAPI 410 operation (admin 290, portal 120); agent-ops 157 op có schema, 2 op khai báo (git.*); evil 318 vector (276 tầng schema, 42 tầng nghiệp vụ) · OK |
+| Codegen | `make codegen` · `make codegen-check` | OK |
+| Agent Go | `cd agent && go test -race ./...` | PASS (lần đầu `TestEvilVectors` đỏ vì vector recipe `docker`/`wp-cli` accept trước khi agent có recipe → chuyển vector sang 10.2 cùng allowlist Go) |
+| DB | `make db-schema` · `make db-verify` | PASS: 93 bảng; **138 test SQL** (mới `90_docker_wordpress.sql` 40 test; lần đầu 1 lỗi: CHECK slug plugin để lọt NULL → thêm `slug IS NOT NULL`); migration Phase 3 → 10 khớp đặc tả, áp lần lượt = itso.sql + extras.sql. Lần đầu `db-schema` lỗi cột `status` trùng nhóm Desired/Observed → đổi thành `run_state`; đổi ghi chú `websites.type` làm lệch migration Phase 5 đã phát hành → hoàn tác |
+| Pest | `make test-api` (PostgreSQL 16 cluster tạm + Redis cục bộ) | **483/483 PASS** (5599 assertion). Lần đầu 4 lỗi: SchemaTest thiếu 12 bảng Phase 10; response Software thiếu `source/service/core/conflicts/requires/in_use/remove_blocked` và nhóm `system`/`backup` ngoài enum; chính sách backup thiếu `volume_consistency`, snapshot thiếu `volumes` (schema đổi từ 10.0) → sửa presenter/seeder |
+| Vitest | `pnpm -s vitest run` | 591/591 PASS (mới: cổng compose đã cấp) |
+| Lint | `pnpm -s lint` · PHPStan · Pint · `make docs-check` | sạch (docs-check lần đầu lỗi bảng lồng trong ADR 0041 và `<port>` trong DECISIONS → sửa) |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-22 — Phase 10 / Prompt 10.0 (mockup Docker, WordPress, Software trên demo) — nhánh `phase-10`
+
+Phạm vi: contracts (schema Docker/Compose/WordPress/Software/OS updates, endpoint mới, op khai báo), dataset demo, MSW `demo/handlers/docker.ts` (mới: Docker host, bật Docker, firewall, prune, volume, validator compose mô phỏng D-96, revision, image update/rollback, mẫu, registry test, OS updates) + `infra.ts` (compose tạo/sửa chạy validator, override chỉ SA, Software xung đột/phụ thuộc/gỡ bị chặn) + `sites.ts` (WordPress chi tiết/cài đặt/lịch sử/quét/cập nhật chọn lọc/hardening/bảo trì/mật khẩu/staging, website `docker`); UI: `ServerSoftwarePage`, `ServerDockerPage`, `ComposePage`, `ComposeDetailPage`, `docker/validation.tsx`, `RegistriesPage`, `WordPressPage` + `WordPressDetailPage` (mới, Admin + Portal), website loại docker, chính sách backup compose. Dữ liệu demo: thay plugin mẫu WooCommerce bằng WP Mail SMTP (ngoài phạm vi), thêm site WordPress cho An Phát (Portal).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `python3 contracts/tools/check_demo.py` · `make codegen` · `make codegen-check` | PASS (admin 289, portal 120 operation; 23 op khai báo) · PASS · OK · OK |
+| Vitest | `pnpm -s vitest run` | **590/590 PASS** (mới: `demo/__tests__/phase10.test.ts` 10 test, `admin/__tests__/phase10-helpers.test.ts` 6 test; lần đầu 5 lỗi do form có trường mới (`volume_consistency`, `compose_project_uuid`/`service`) → cập nhật fixture + thêm case compose/docker; 4 lỗi GET WordPress chi tiết do test thiếu id → thêm `sites`) |
+| Lint | `pnpm -s lint` (eslint, prettier, tsc, check-i18n) | sạch (i18n 3280 key, vi = en) |
+| Playwright demo | `playwright test e2e/demo-*.spec.ts` | **199/199 PASS** sau sửa; lần đầu 198/199: `demo-infra` compose cũ triển khai thẳng → nay phải Kiểm tra trước (D-96) và chọn server đã bật Docker → cập nhật test |
+| axe + 390px + EN (route mới) | `playwright test e2e/demo-smoke.spec.ts e2e/demo-audit.spec.ts -g "wordpress\|docker\|compose\|software\|registr\|websites\|backups"` | 32/32 PASS |
+| Ảnh Phase 10 | `SCREENSHOT_DIR_P10=docs/screenshots/phase-10 playwright test e2e/screenshots-phase10.spec.ts` | **68/68** (17 màn × 1440/390 × sáng/tối); `make screenshots` đã nối `SCREENSHOT_DIR_P10` |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 9 / Prompt 9.8 (tích hợp: e2e 2 agent qua relay, VM, review, make check) — nhánh `phase-9`
 
 Phạm vi: `apps/web/e2e-real/phase9.spec.ts` (mới), sửa lỗi tìm ra nhờ e2e (`MigrationService` preflight repo chưa khởi tạo → cảnh báo; contract `migrate.preflight` thêm `enforce`, agent trả `precondition_failed`, chặng đích gửi `enforce=true`; `JobController` lọc `waiting_agent`), sandbox (`migrate.go` ownership/HTTP, `scripts/dev.sh` CA + URL relay, `Placement` cho chọn server bị loại ở wizard chuyển), `tests/vm/phase9.sh` + `tests/vm/lib/panel_api.php`, `docs/security/multi-server-review.md`, runbook §5, báo cáo `docs/reports/phase-9.md`. Commit 45ebccd.

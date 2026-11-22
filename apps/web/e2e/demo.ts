@@ -13,6 +13,7 @@ const anphat = data.accounts.find((a) => a.username === 'anphat');
 const ADMIN_IDS: Record<string, string> = {
   servers: first('servers'),
   'compose-projects': first('compose'),
+  wordpress: first('wordpress'),
   'hosting-packages': first('packages'),
   'hosting-accounts': first('accounts'),
   websites: first('websites'),
@@ -23,6 +24,7 @@ const PORTAL_IDS: Record<string, string> = {
   accounts: anphat?.uuid ?? 'missing',
   websites: data.websites.find((w) => w.hosting_account.uuid === anphat?.uuid)?.uuid ?? 'missing',
   jobs: first('jobs'),
+  wordpress: data.wordpress.find((w) => w.hosting_account.uuid === anphat?.uuid)?.uuid ?? 'missing',
 };
 
 export function urlOf(realm: 'admin' | 'portal', def: RouteDef): string {

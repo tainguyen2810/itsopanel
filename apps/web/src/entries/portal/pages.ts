@@ -19,6 +19,7 @@ export const PORTAL_PAGES: PageLoaders = {
   cron: () => import('@/shared/hosting/pages/CronPage'),
   backups: () => import('./pages/BackupsPage'),
   wordpress: () => import('@/shared/hosting/pages/WordPressPage'),
+  wordpressDetail: () => import('@/shared/hosting/pages/WordPressDetailPage'),
   terminal: () => import('./pages/TerminalPage'),
   security: () => import('./pages/SecurityPage'),
   jobDetail: () => import('@/shared/pages/JobDetailPage'),

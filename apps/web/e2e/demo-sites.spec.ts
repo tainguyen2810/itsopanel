@@ -208,3 +208,31 @@ test('SFTP: tạo tài khoản không nhập mật khẩu → mật khẩu hiệ
   await expect(secret.getByRole('alert')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('WordPress: cài → mật khẩu quản trị hiện một lần; staging không bật được basic auth', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await page.goto('/admin/wordpress');
+  await page.getByRole('button', { name: 'Cài WordPress' }).click();
+  const dlg = page.getByRole('dialog', { name: 'Cài WordPress' });
+  await dlg.getByRole('combobox', { name: 'Website' }).click();
+  await page.getByRole('option', { name: /^shop\.anphat\.vn/ }).click();
+  await dlg.getByLabel('Tiêu đề site').fill('Cửa hàng An Phát');
+  await dlg.getByLabel('Tên quản trị').fill('anphat_shop');
+  await dlg.getByLabel('Email quản trị').fill('shop@anphat.vn');
+  await dlg.getByRole('button', { name: 'Cài WordPress' }).click();
+  const secret = page.getByRole('dialog', { name: 'Mật khẩu quản trị WordPress' });
+  await expect(secret).toBeVisible({ timeout: 15_000 });
+  await secret.getByRole('button', { name: 'Tôi đã lưu' }).click();
+  await expect(secret).toBeHidden();
+
+  await page.goto('/admin/wordpress/01938a11-0001-7000-8000-000011000001');
+  await page.getByRole('button', { name: 'Tạo bản staging' }).click();
+  const stg = page.getByRole('dialog', { name: /Tạo staging cho/ });
+  const auth = stg.getByRole('switch', { name: 'Bảo vệ bằng mật khẩu (basic auth)' });
+  await expect(auth).toBeDisabled();
+  await expect(auth).not.toBeChecked();
+  await expect(stg.getByText('Chưa có ở bản này.')).toBeVisible();
+  expect(errors).toEqual([]);
+});

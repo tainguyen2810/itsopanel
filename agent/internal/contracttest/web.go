@@ -22,7 +22,7 @@ func WebsiteLifecycle(t *testing.T, h *Harness) {
 	acct := Acct("lehoa", 20001)
 	h.OK(contracts.OpAccountEnsure, EnsureParams("lehoa", 20001))
 	h.OK(contracts.OpPHPVersionInstall, map[string]any{"version": "8.3", "extensions": []any{"intl"}})
-	h.Fail(contracts.OpPHPVersionInstall, map[string]any{"version": "8.1", "extensions": []any{}}, "precondition_failed")
+	h.Fail(contracts.OpPHPVersionInstall, map[string]any{"version": "7.4", "extensions": []any{}}, "precondition_failed")
 	if d := h.OK(contracts.OpFsSiteLayoutEnsure, map[string]any{"account": acct, "site_dir": "lehoa.vn"}); d["path"] != "/home/lehoa/sites/lehoa.vn" {
 		t.Fatal(d)
 	}

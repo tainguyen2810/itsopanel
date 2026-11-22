@@ -30,6 +30,7 @@ const ID_BY_SEGMENT: Record<string, string> = {
   'cron-jobs': first('cron'),
   'git-repositories': first('git_repositories'),
   'backup-snapshots': first('snapshots'),
+  sites: first('wordpress'),
 };
 const OTHER: Record<string, string> = {
   group: 'general',
@@ -51,6 +52,15 @@ const QUERY: Record<string, string> = {
 };
 // Portal dùng cùng tham số (người gọi mặc định là chủ account anphat).
 for (const [k, v] of Object.entries(QUERY)) QUERY[k.replace('/admin/', '/portal/')] = v;
+
+/** Portal: site WordPress đầu tiên thuộc account lehoa, đọc bằng chủ account đó. */
+const lehoaOwner = (dataset.accounts as { username: string; owner: { uuid: string } }[]).find(
+  (a) => a.username === 'lehoa',
+)?.owner.uuid;
+const HEADERS: Record<string, Record<string, string>> = {
+  '/api/v1/portal/wordpress/sites/{id}': { 'X-Demo-User': lehoaOwner ?? '' },
+  '/api/v1/portal/wordpress/sites/{id}/updates': { 'X-Demo-User': lehoaOwner ?? '' },
+};
 
 function urlFor(path: string): string {
   return path.replace(/\{(\w+)\}/g, (_, k: string, offset: number) => {
@@ -89,7 +99,9 @@ describe('API giả lập (MSW) đúng theo OpenAPI', () => {
         });
         url = `${base}/${((await up.json()) as { data: { uuid: string } }).data.uuid}`;
       }
-      const res = await fetch(`http://demo.local${url}${QUERY[r.path] ?? ''}`);
+      const res = await fetch(`http://demo.local${url}${QUERY[r.path] ?? ''}`, {
+        headers: HEADERS[r.path] ?? {},
+      });
       if (res.headers.get('Content-Type')?.startsWith('text/csv')) {
         // Xuất CSV (audit log): contract khai báo text/csv, kiểm dòng tiêu đề.
         expect(res.status).toBe(200);

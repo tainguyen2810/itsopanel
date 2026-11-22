@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/wp.clone.schema.json",
+  "title": "wp.clone",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "../defs.schema.json#/$defs/WpSite"
+        },
+        "target": {
+          "$ref": "../defs.schema.json#/$defs/WpSite"
+        },
+        "target_url": {
+          "$ref": "../defs.schema.json#/$defs/HttpsUrl"
+        },
+        "source_db": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "target_db": {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "string",
+              "enum": [
+                "mariadb",
+                "mysql"
+              ]
+            },
+            "name": {
+              "$ref": "../defs.schema.json#/$defs/DbName"
+            },
+            "user": {
+              "$ref": "../defs.schema.json#/$defs/DbName"
+            },
+            "password": {
+              "$ref": "../defs.schema.json#/$defs/SecretPassword",
+              "writeOnly": true
+            }
+          },
+          "required": [
+            "engine",
+            "name",
+            "user",
+            "password"
+          ],
+          "additionalProperties": false
+        },
+        "noindex": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "target_url",
+        "source_db",
+        "target_db",
+        "noindex"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "cloned": {
+          "type": "boolean"
+        },
+        "replaced": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "cloned",
+        "replaced"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.container.stats.schema.json",
+  "title": "docker.container.stats",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ContainerId"
+          },
+          "minItems": 1,
+          "maxItems": 500,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "ids"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "stats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "../defs.schema.json#/$defs/ContainerId"
+              },
+              "cpu_pct": {
+                "type": "number",
+                "minimum": 0
+              },
+              "mem_mb": {
+                "type": "number",
+                "minimum": 0
+              },
+              "mem_limit_mb": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "pids": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "cpu_pct",
+              "mem_mb",
+              "mem_limit_mb",
+              "pids"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 500
+        }
+      },
+      "required": [
+        "stats"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

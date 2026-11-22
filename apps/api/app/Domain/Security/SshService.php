@@ -68,7 +68,7 @@ final class SshService
             $spec = new JobSpec('sshd.update', $s, $s->id, 3, 300);
             if ($portChange) {
                 // Mở port mới (rule hệ thống) trước khi đổi sshd; port cũ vẫn mở tới khi xác nhận xong.
-                $rules = FirewallRuleset::params(FirewallRule::query()->where('server_id', $s->id)->orderBy('priority')->get());
+                $rules = FirewallRuleset::params(FirewallRule::query()->where('server_id', $s->id)->where('scope', 'host')->orderBy('priority')->get());
                 $rules[] = ['priority' => 1, 'action' => 'accept', 'direction' => 'in', 'protocol' => 'tcp',
                     'ports' => $cur['port'].','.$want['port'], 'source' => '0.0.0.0/0', 'comment' => 'itso: đổi cổng SSH'];
                 usort($rules, fn (array $a, array $b): int => $a['priority'] <=> $b['priority']);

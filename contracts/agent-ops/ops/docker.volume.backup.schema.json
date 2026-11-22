@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.volume.backup.schema.json",
+  "title": "docker.volume.backup",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/DockerVolumeName"
+          },
+          "minItems": 1,
+          "maxItems": 50,
+          "uniqueItems": true
+        },
+        "consistency": {
+          "type": "string",
+          "enum": [
+            "pause",
+            "none"
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/BackupTag"
+          },
+          "maxItems": 20,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "repo",
+        "volumes",
+        "consistency",
+        "tags"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "snapshot_id": {
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "size_bytes": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "paused": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ContainerId"
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "size_bytes",
+        "paused"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

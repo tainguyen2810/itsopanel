@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, PlugZap, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useFmt } from '@/shared/format/useFmt';
@@ -9,6 +9,7 @@ import { TextField } from '@/shared/page/fields';
 import { FormDialog } from '@/shared/page/FormDialog';
 import { ListPage } from '@/shared/page/ListPage';
 import { useSession } from '@/shared/session/SessionContext';
+import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import type { ColumnDef } from '@/ui/DataTable';
@@ -37,6 +38,10 @@ export default function RegistriesPage() {
     (r: Registry) => send('DELETE', '/api/v1/admin/registries/{id}', { path: { id: r.uuid } }),
     { success: t('registries.removed'), invalidate: [KEY], onSuccess: () => setRemoving(null) },
   );
+  const test = useAction(
+    (r: Registry) => send('POST', '/api/v1/admin/registries/{id}:test', { path: { id: r.uuid } }),
+    { invalidate: [KEY] },
+  );
   const columns: ColumnDef<Registry, unknown>[] = [
     {
       id: 'name',
@@ -51,6 +56,27 @@ export default function RegistriesPage() {
       cell: ({ row }) => <span className="font-mono text-sm">{row.original.url}</span>,
     },
     { id: 'username', header: t('registries.username'), accessorFn: (r) => r.username ?? '—' },
+    {
+      id: 'test',
+      header: t('registries.lastTest'),
+      accessorFn: (r) => r.last_test?.at ?? '',
+      cell: ({ row }) => {
+        const lt = row.original.last_test;
+        return lt ? (
+          <span className="flex flex-col gap-0.5">
+            <span className="flex items-center gap-1.5">
+              <Badge tone={lt.ok ? 'success' : 'danger'}>
+                {lt.ok ? t('registries.testOk') : t('registries.testFail')}
+              </Badge>
+              <span className="text-xs text-muted">{fmt.rel(lt.at)}</span>
+            </span>
+            {!lt.ok && <span className="text-sm text-danger-text">{lt.message}</span>}
+          </span>
+        ) : (
+          <span className="text-muted">{t('registries.notTested')}</span>
+        );
+      },
+    },
     { id: 'created', header: t('docker.created'), accessorFn: (r) => fmt.date(r.created_at) },
     ...(sa
       ? [
@@ -59,14 +85,25 @@ export default function RegistriesPage() {
             header: t('servers.actions'),
             enableSorting: false,
             cell: ({ row }) => (
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t('registries.remove', { name: row.original.name })}
-                onClick={() => setRemoving(row.original)}
-              >
-                <Trash2 aria-hidden />
-              </Button>
+              <span className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t('registries.test', { name: row.original.name })}
+                  disabled={test.isPending}
+                  onClick={() => test.mutate(row.original)}
+                >
+                  <PlugZap aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t('registries.remove', { name: row.original.name })}
+                  onClick={() => setRemoving(row.original)}
+                >
+                  <Trash2 aria-hidden />
+                </Button>
+              </span>
             ),
           } satisfies ColumnDef<Registry, unknown>,
         ]

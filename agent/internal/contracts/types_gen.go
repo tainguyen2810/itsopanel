@@ -32,6 +32,7 @@ const (
 	OpComposeApply           = "compose.apply"
 	OpComposeDown            = "compose.down"
 	OpComposePull            = "compose.pull"
+	OpComposeRemove          = "compose.remove"
 	OpComposeUp              = "compose.up"
 	OpComposeValidate        = "compose.validate"
 	OpCronApply              = "cron.apply"
@@ -58,6 +59,27 @@ const (
 	OpDBPGUserDrop           = "db.pg.user_drop"
 	OpDBPGUserEnsure         = "db.pg.user_ensure"
 	OpDockerContainerControl = "docker.container.control"
+	OpDockerContainerInspect = "docker.container.inspect"
+	OpDockerContainerList    = "docker.container.list"
+	OpDockerContainerLogs    = "docker.container.logs"
+	OpDockerContainerStats   = "docker.container.stats"
+	OpDockerFirewallSync     = "docker.firewall.sync"
+	OpDockerHostConfigure    = "docker.host.configure"
+	OpDockerHostStatus       = "docker.host.status"
+	OpDockerImageList        = "docker.image.list"
+	OpDockerImagePrune       = "docker.image.prune"
+	OpDockerImagePull        = "docker.image.pull"
+	OpDockerImageRollback    = "docker.image.rollback"
+	OpDockerImageUpdate      = "docker.image.update"
+	OpDockerNetworkCreate    = "docker.network.create"
+	OpDockerNetworkList      = "docker.network.list"
+	OpDockerNetworkRemove    = "docker.network.remove"
+	OpDockerRegistryLogin    = "docker.registry.login"
+	OpDockerVolumeBackup     = "docker.volume.backup"
+	OpDockerVolumeCreate     = "docker.volume.create"
+	OpDockerVolumeList       = "docker.volume.list"
+	OpDockerVolumeRemove     = "docker.volume.remove"
+	OpDockerVolumeRestore    = "docker.volume.restore"
 	OpFail2banApply          = "fail2ban.apply"
 	OpFail2banStatus         = "fail2ban.status"
 	OpFail2banUnban          = "fail2ban.unban"
@@ -101,6 +123,7 @@ const (
 	OpNginxVhostInspect      = "nginx.vhost.inspect"
 	OpNginxVhostRemove       = "nginx.vhost.remove"
 	OpOpCancel               = "op.cancel"
+	OpOSAutoUpdates          = "os.auto_updates"
 	OpPanelRestore           = "panel.restore"
 	OpPHPExtInstall          = "php.ext.install"
 	OpPHPPoolApply           = "php.pool.apply"
@@ -120,8 +143,11 @@ const (
 	OpServiceStatus          = "service.status"
 	OpSFTPUserEnsure         = "sftp.user.ensure"
 	OpSFTPUserRemove         = "sftp.user.remove"
+	OpSoftwareCatalog        = "software.catalog"
 	OpSoftwareInstall        = "software.install"
 	OpSoftwareRemove         = "software.remove"
+	OpSoftwareStatus         = "software.status"
+	OpSoftwareUpgrade        = "software.upgrade"
 	OpSSHKeysApply           = "ssh.keys.apply"
 	OpSshdConfigApply        = "sshd.config.apply"
 	OpSshdConfigConfirm      = "sshd.config.confirm"
@@ -132,9 +158,13 @@ const (
 	OpSystemReboot           = "system.reboot"
 	OpWAFApply               = "waf.apply"
 	OpWAFEvents              = "waf.events"
+	OpWpAdminPassword        = "wp.admin_password"
 	OpWpClone                = "wp.clone"
+	OpWpDetect               = "wp.detect"
 	OpWpHarden               = "wp.harden"
+	OpWpInfo                 = "wp.info"
 	OpWpInstall              = "wp.install"
+	OpWpMaintenance          = "wp.maintenance"
 	OpWpUpdate               = "wp.update"
 )
 
@@ -195,7 +225,7 @@ type SHA256 string
 // Hostname — Hostname máy chủ (RFC 1123, chữ thường).
 type Hostname string
 
-// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng", "nginx", "php8.3", "lego", "mariadb", "postgresql", "pure-ftpd", "fail2ban", "clamav", "yara", "modsecurity".
+// Recipe — kiểu Recipe trong contracts/agent-ops. Giá trị: "acl", "quota", "nftables", "restic", "stress-ng", "nginx", "php8.3", "lego", "mariadb", "postgresql", "pure-ftpd", "fail2ban", "clamav", "yara", "modsecurity", "php8.1", "php8.2", "php8.4", "redis", "valkey", "memcached", "nodejs", "composer", "wp-cli", "docker".
 type Recipe string
 
 // QuotaMode — kiểu QuotaMode trong contracts/agent-ops. Giá trị: "kernel", "soft".
@@ -364,7 +394,112 @@ type BackupDB struct {
 // BackupRestoreItem — kiểu BackupRestoreItem trong contracts/agent-ops.
 type BackupRestoreItem json.RawMessage
 
-// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "would_lock_out", "repo_locked", "repo_not_initialized", "repo_auth_failed", "host_key_mismatch", "agent_unreachable", "cert_expired", "enrollment_invalid", "internal".
+// ComposeProjectName — Tên compose project (chữ thường, số, `_`, `-`).
+type ComposeProjectName string
+
+// ComposeServiceName — kiểu ComposeServiceName trong contracts/agent-ops.
+type ComposeServiceName string
+
+// DockerImageRef — Tham chiếu image `[registry[:port]/]repo[:tag][@sha256:…]`; không khoảng trắng, không `..`, không ký tự shell.
+type DockerImageRef string
+
+// ImageDigest — kiểu ImageDigest trong contracts/agent-ops.
+type ImageDigest string
+
+// ContainerID — Id container (hex); không nhận tên tự do.
+type ContainerID string
+
+// DockerVolumeName — kiểu DockerVolumeName trong contracts/agent-ops.
+type DockerVolumeName string
+
+// DockerNetworkName — Tên network do panel tạo; không trùng network hệ thống host/none/bridge.
+type DockerNetworkName string
+
+// ComposeYaml — kiểu ComposeYaml trong contracts/agent-ops.
+type ComposeYaml string
+
+// ComposeRule — kiểu ComposeRule trong contracts/agent-ops. Giá trị: "privileged", "cap_add", "devices", "bind_mount", "host_network", "host_pid", "host_ipc", "host_userns", "security_opt", "docker_socket", "bind_mount_system", "build", "services", "yaml", "reserved_port", "missing_limits", "latest_tag".
+type ComposeRule string
+
+// ComposeOverride — kiểu ComposeOverride trong contracts/agent-ops.
+type ComposeOverride struct {
+	// Giá trị: "privileged", "cap_add", "devices", "bind_mount".
+	Rule       string `json:"rule"`
+	Reason     string `json:"reason"`
+	ByUserUUID UUID   `json:"by_user_uuid"`
+}
+
+// ComposeFinding — kiểu ComposeFinding trong contracts/agent-ops.
+type ComposeFinding struct {
+	Rule ComposeRule `json:"rule"`
+	// Giá trị: "error", "warning".
+	Severity    string          `json:"severity"`
+	Service     json.RawMessage `json:"service"`
+	Path        string          `json:"path"`
+	Message     string          `json:"message"`
+	Overridable bool            `json:"overridable"`
+}
+
+// ComposePortMap — kiểu ComposePortMap trong contracts/agent-ops.
+type ComposePortMap struct {
+	Service       ComposeServiceName `json:"service"`
+	ContainerPort Port               `json:"container_port"`
+	HostPort      int64              `json:"host_port"`
+	// Giá trị: "tcp", "udp".
+	Protocol string `json:"protocol"`
+}
+
+// ComposeLimits — kiểu ComposeLimits trong contracts/agent-ops.
+type ComposeLimits struct {
+	MemLimitMB int64   `json:"mem_limit_mb"`
+	Cpus       float64 `json:"cpus"`
+	PidsLimit  int64   `json:"pids_limit"`
+}
+
+// ComposeProjectRef — kiểu ComposeProjectRef trong contracts/agent-ops.
+type ComposeProjectRef struct {
+	ProjectUUID UUID               `json:"project_uuid"`
+	Name        ComposeProjectName `json:"name"`
+}
+
+// WpSlug — Slug plugin/theme WordPress (ADR 0044).
+type WpSlug string
+
+// WpComponent — kiểu WpComponent trong contracts/agent-ops.
+type WpComponent json.RawMessage
+
+// WpHardening — kiểu WpHardening trong contracts/agent-ops. Giá trị: "file_edit_disabled", "xmlrpc_blocked", "php_in_uploads_blocked", "wp_config_protected", "version_hidden", "salts_rotated".
+type WpHardening string
+
+// WpSite — kiểu WpSite trong contracts/agent-ops.
+type WpSite struct {
+	Account    Account    `json:"account"`
+	Domain     Domain     `json:"domain"`
+	Path       RelPath    `json:"path"`
+	PHPVersion PHPVersion `json:"php_version"`
+}
+
+// WpComponentInfo — kiểu WpComponentInfo trong contracts/agent-ops.
+type WpComponentInfo struct {
+	// Giá trị: "core", "plugin", "theme".
+	Type          string          `json:"type"`
+	Slug          json.RawMessage `json:"slug"`
+	Name          string          `json:"name"`
+	Version       string          `json:"version"`
+	UpdateVersion *string         `json:"update_version"`
+	Active        bool            `json:"active"`
+}
+
+// SoftwareInfo — kiểu SoftwareInfo trong contracts/agent-ops.
+type SoftwareInfo struct {
+	Recipe           Recipe  `json:"recipe"`
+	InstalledVersion *string `json:"installed_version"`
+	LatestVersion    *string `json:"latest_version"`
+	Service          *string `json:"service"`
+	Active           *bool   `json:"active"`
+}
+
+// ErrorCode — kiểu ErrorCode trong contracts/agent-ops. Giá trị: "invalid_envelope", "unknown_op", "op_disabled", "invalid_params", "path_outside_home", "reserved_name", "not_found", "already_exists", "precondition_failed", "quota_exceeded", "config_test_failed", "deadline_exceeded", "cancelled", "busy", "dependency_unavailable", "replay_rejected", "unauthorized_caller", "would_lock_out", "repo_locked", "repo_not_initialized", "repo_auth_failed", "host_key_mismatch", "agent_unreachable", "cert_expired", "enrollment_invalid", "compose_rejected", "port_unavailable", "in_use", "docker_unavailable", "wp_update_failed", "internal".
 type ErrorCode string
 
 // EnvelopeRequestedBy được sinh từ schema.
@@ -789,6 +924,110 @@ type CertRemoveResult struct {
 	Removed bool `json:"removed"`
 }
 
+// ComposeApplyParams — params của op compose.apply (ops/compose.apply.schema.json).
+type ComposeApplyParams struct {
+	Project         ComposeProjectRef `json:"project"`
+	Revision        int64             `json:"revision"`
+	ValidatedYaml   ComposeYaml       `json:"validated_yaml"`
+	ValidatedSHA256 SHA256            `json:"validated_sha256"`
+	Env             map[string]string `json:"env"`
+	Ports           []ComposePortMap  `json:"ports"`
+	RegistryUuids   []UUID            `json:"registry_uuids"`
+}
+
+// ComposeApplyResultServicesItem được sinh từ schema.
+type ComposeApplyResultServicesItem struct {
+	Service     ComposeServiceName `json:"service"`
+	State       string             `json:"state"`
+	ContainerID json.RawMessage    `json:"container_id"`
+}
+
+// ComposeApplyResult — result của op compose.apply (ops/compose.apply.schema.json).
+type ComposeApplyResult struct {
+	Services []ComposeApplyResultServicesItem `json:"services"`
+}
+
+// ComposeDownParams — params của op compose.down (ops/compose.down.schema.json).
+type ComposeDownParams struct {
+	Project ComposeProjectRef `json:"project"`
+}
+
+// ComposeDownResult — result của op compose.down (ops/compose.down.schema.json).
+type ComposeDownResult struct {
+	Stopped int64 `json:"stopped"`
+}
+
+// ComposePullParams — params của op compose.pull (ops/compose.pull.schema.json).
+type ComposePullParams struct {
+	Project       ComposeProjectRef `json:"project"`
+	RegistryUuids []UUID            `json:"registry_uuids"`
+}
+
+// ComposePullResultImagesItem được sinh từ schema.
+type ComposePullResultImagesItem struct {
+	Service ComposeServiceName `json:"service"`
+	Digest  ImageDigest        `json:"digest"`
+	Changed bool               `json:"changed"`
+}
+
+// ComposePullResult — result của op compose.pull (ops/compose.pull.schema.json).
+type ComposePullResult struct {
+	Images []ComposePullResultImagesItem `json:"images"`
+}
+
+// ComposeRemoveParams — params của op compose.remove (ops/compose.remove.schema.json).
+type ComposeRemoveParams struct {
+	Project       ComposeProjectRef `json:"project"`
+	RemoveVolumes bool              `json:"remove_volumes"`
+}
+
+// ComposeRemoveResult — result của op compose.remove (ops/compose.remove.schema.json).
+type ComposeRemoveResult struct {
+	Removed        bool               `json:"removed"`
+	VolumesRemoved []DockerVolumeName `json:"volumes_removed"`
+}
+
+// ComposeUpParams — params của op compose.up (ops/compose.up.schema.json).
+type ComposeUpParams struct {
+	Project ComposeProjectRef `json:"project"`
+}
+
+// ComposeUpResult — result của op compose.up (ops/compose.up.schema.json).
+type ComposeUpResult struct {
+	Running int64 `json:"running"`
+	Total   int64 `json:"total"`
+}
+
+// ComposeValidateParams — params của op compose.validate (ops/compose.validate.schema.json).
+type ComposeValidateParams struct {
+	Project        ComposeProjectRef `json:"project"`
+	ComposeYaml    ComposeYaml       `json:"compose_yaml"`
+	AllocatedPorts []int64           `json:"allocated_ports"`
+	Defaults       ComposeLimits     `json:"defaults"`
+	Overrides      []ComposeOverride `json:"overrides"`
+	AllowHomeBind  bool              `json:"allow_home_bind"`
+}
+
+// ComposeValidateResultRewritesItem được sinh từ schema.
+type ComposeValidateResultRewritesItem struct {
+	Service ComposeServiceName `json:"service"`
+	Path    string             `json:"path"`
+	Before  *string            `json:"before"`
+	After   string             `json:"after"`
+}
+
+// ComposeValidateResult — result của op compose.validate (ops/compose.validate.schema.json).
+type ComposeValidateResult struct {
+	OK              bool                                `json:"ok"`
+	Findings        []ComposeFinding                    `json:"findings"`
+	Rewrites        []ComposeValidateResultRewritesItem `json:"rewrites"`
+	Ports           []ComposePortMap                    `json:"ports"`
+	Images          []DockerImageRef                    `json:"images"`
+	Volumes         []DockerVolumeName                  `json:"volumes"`
+	ValidatedYaml   json.RawMessage                     `json:"validated_yaml"`
+	ValidatedSHA256 json.RawMessage                     `json:"validated_sha256"`
+}
+
 // CronApplyParamsEntriesItem được sinh từ schema.
 type CronApplyParamsEntriesItem struct {
 	UUID       UUID        `json:"uuid"`
@@ -1105,6 +1344,381 @@ type DBPGUserEnsureParams struct {
 type DBPGUserEnsureResult struct {
 	Created bool `json:"created"`
 	Changed bool `json:"changed"`
+}
+
+// DockerContainerControlParams — params của op docker.container.control (ops/docker.container.control.schema.json).
+type DockerContainerControlParams struct {
+	ID ContainerID `json:"id"`
+	// Giá trị: "start", "stop", "restart".
+	Action string `json:"action"`
+}
+
+// DockerContainerControlResult — result của op docker.container.control (ops/docker.container.control.schema.json).
+type DockerContainerControlResult struct {
+	State string `json:"state"`
+}
+
+// DockerContainerInspectParams — params của op docker.container.inspect (ops/docker.container.inspect.schema.json).
+type DockerContainerInspectParams struct {
+	ID ContainerID `json:"id"`
+}
+
+// DockerContainerInspectResultMountsItem được sinh từ schema.
+type DockerContainerInspectResultMountsItem struct {
+	// Giá trị: "volume", "bind", "tmpfs".
+	Type   string `json:"type"`
+	Source string `json:"source"`
+	Target string `json:"target"`
+}
+
+// DockerContainerInspectResultPortsItem được sinh từ schema.
+type DockerContainerInspectResultPortsItem struct {
+	HostIP        IPAddress `json:"host_ip"`
+	HostPort      Port      `json:"host_port"`
+	ContainerPort Port      `json:"container_port"`
+	// Giá trị: "tcp", "udp".
+	Protocol string `json:"protocol"`
+}
+
+// DockerContainerInspectResult — result của op docker.container.inspect (ops/docker.container.inspect.schema.json).
+type DockerContainerInspectResult struct {
+	ID           ContainerID                              `json:"id"`
+	ImageDigest  ImageDigest                              `json:"image_digest"`
+	State        string                                   `json:"state"`
+	RestartCount int64                                    `json:"restart_count"`
+	Mounts       []DockerContainerInspectResultMountsItem `json:"mounts"`
+	Ports        []DockerContainerInspectResultPortsItem  `json:"ports"`
+	Privileged   bool                                     `json:"privileged"`
+}
+
+// DockerContainerListParams — params của op docker.container.list (ops/docker.container.list.schema.json).
+type DockerContainerListParams struct {
+	ProjectUUID json.RawMessage `json:"project_uuid"`
+}
+
+// DockerContainerListResultContainersItem được sinh từ schema.
+type DockerContainerListResultContainersItem struct {
+	ID    ContainerID `json:"id"`
+	Name  string      `json:"name"`
+	Image string      `json:"image"`
+	// Giá trị: "running", "exited", "paused", "restarting", "created", "dead".
+	State       string          `json:"state"`
+	Status      string          `json:"status"`
+	ProjectUUID json.RawMessage `json:"project_uuid"`
+	Service     *string         `json:"service"`
+	// Giá trị: "healthy", "unhealthy", "starting", null.
+	Health *string `json:"health"`
+}
+
+// DockerContainerListResult — result của op docker.container.list (ops/docker.container.list.schema.json).
+type DockerContainerListResult struct {
+	Containers []DockerContainerListResultContainersItem `json:"containers"`
+}
+
+// DockerContainerLogsParams — params của op docker.container.logs (ops/docker.container.logs.schema.json).
+type DockerContainerLogsParams struct {
+	ID    ContainerID `json:"id"`
+	Lines int64       `json:"lines"`
+}
+
+// DockerContainerLogsResult — result của op docker.container.logs (ops/docker.container.logs.schema.json).
+type DockerContainerLogsResult struct {
+	Lines     []string `json:"lines"`
+	Truncated bool     `json:"truncated"`
+}
+
+// DockerContainerStatsParams — params của op docker.container.stats (ops/docker.container.stats.schema.json).
+type DockerContainerStatsParams struct {
+	Ids []ContainerID `json:"ids"`
+}
+
+// DockerContainerStatsResultStatsItem được sinh từ schema.
+type DockerContainerStatsResultStatsItem struct {
+	ID         ContainerID `json:"id"`
+	CPUPct     float64     `json:"cpu_pct"`
+	MemMB      float64     `json:"mem_mb"`
+	MemLimitMB *float64    `json:"mem_limit_mb"`
+	Pids       int64       `json:"pids"`
+}
+
+// DockerContainerStatsResult — result của op docker.container.stats (ops/docker.container.stats.schema.json).
+type DockerContainerStatsResult struct {
+	Stats []DockerContainerStatsResultStatsItem `json:"stats"`
+}
+
+// DockerFirewallSyncParamsOpenPortsItem được sinh từ schema.
+type DockerFirewallSyncParamsOpenPortsItem struct {
+	Port Port `json:"port"`
+	// Giá trị: "tcp", "udp".
+	Protocol string `json:"protocol"`
+	Source   CIDR   `json:"source"`
+}
+
+// DockerFirewallSyncParams — params của op docker.firewall.sync (ops/docker.firewall.sync.schema.json).
+type DockerFirewallSyncParams struct {
+	PublicInterface string                                  `json:"public_interface"`
+	OpenPorts       []DockerFirewallSyncParamsOpenPortsItem `json:"open_ports"`
+}
+
+// DockerFirewallSyncResult — result của op docker.firewall.sync (ops/docker.firewall.sync.schema.json).
+type DockerFirewallSyncResult struct {
+	Rules   int64 `json:"rules"`
+	Changed bool  `json:"changed"`
+}
+
+// DockerHostConfigureParams — params của op docker.host.configure (ops/docker.host.configure.schema.json).
+type DockerHostConfigureParams struct {
+	LogMaxSizeMB int64 `json:"log_max_size_mb"`
+	LogMaxFile   int64 `json:"log_max_file"`
+}
+
+// DockerHostConfigureResult — result của op docker.host.configure (ops/docker.host.configure.schema.json).
+type DockerHostConfigureResult struct {
+	Changed             bool       `json:"changed"`
+	Restarted           bool       `json:"restarted"`
+	RemovedGroupMembers []Username `json:"removed_group_members"`
+}
+
+// DockerHostStatusParams — params của op docker.host.status (ops/docker.host.status.schema.json).
+type DockerHostStatusParams struct {
+}
+
+// DockerHostStatusResultChecksItem được sinh từ schema.
+type DockerHostStatusResultChecksItem struct {
+	// Giá trị: "daemon_json", "docker_group_empty", "docker_user_chain", "socket_root_only", "compose_plugin".
+	Key    string `json:"key"`
+	OK     bool   `json:"ok"`
+	Detail string `json:"detail"`
+}
+
+// DockerHostStatusResultCounts được sinh từ schema.
+type DockerHostStatusResultCounts struct {
+	Containers int64 `json:"containers"`
+	Running    int64 `json:"running"`
+	Images     int64 `json:"images"`
+	Volumes    int64 `json:"volumes"`
+	Projects   int64 `json:"projects"`
+}
+
+// DockerHostStatusResult — result của op docker.host.status (ops/docker.host.status.schema.json).
+type DockerHostStatusResult struct {
+	Installed          bool                               `json:"installed"`
+	EngineVersion      *string                            `json:"engine_version"`
+	ComposeVersion     *string                            `json:"compose_version"`
+	APIVersion         *string                            `json:"api_version"`
+	Checks             []DockerHostStatusResultChecksItem `json:"checks"`
+	DockerGroupMembers []Username                         `json:"docker_group_members"`
+	Counts             DockerHostStatusResultCounts       `json:"counts"`
+}
+
+// DockerImageListParams — params của op docker.image.list (ops/docker.image.list.schema.json).
+type DockerImageListParams struct {
+}
+
+// DockerImageListResultImagesItem được sinh từ schema.
+type DockerImageListResultImagesItem struct {
+	ID        ImageDigest `json:"id"`
+	Tags      []string    `json:"tags"`
+	SizeBytes Bytes       `json:"size_bytes"`
+	CreatedAt string      `json:"created_at"`
+	InUse     bool        `json:"in_use"`
+	Dangling  bool        `json:"dangling"`
+	Rollback  bool        `json:"rollback"`
+}
+
+// DockerImageListResult — result của op docker.image.list (ops/docker.image.list.schema.json).
+type DockerImageListResult struct {
+	Images []DockerImageListResultImagesItem `json:"images"`
+}
+
+// DockerImagePruneParams — params của op docker.image.prune (ops/docker.image.prune.schema.json).
+type DockerImagePruneParams struct {
+	KeepRollback bool `json:"keep_rollback"`
+	DanglingOnly bool `json:"dangling_only"`
+}
+
+// DockerImagePruneResult — result của op docker.image.prune (ops/docker.image.prune.schema.json).
+type DockerImagePruneResult struct {
+	Removed        int64 `json:"removed"`
+	ReclaimedBytes Bytes `json:"reclaimed_bytes"`
+}
+
+// DockerImagePullParams — params của op docker.image.pull (ops/docker.image.pull.schema.json).
+type DockerImagePullParams struct {
+	Image        DockerImageRef  `json:"image"`
+	RegistryUUID json.RawMessage `json:"registry_uuid"`
+}
+
+// DockerImagePullResult — result của op docker.image.pull (ops/docker.image.pull.schema.json).
+type DockerImagePullResult struct {
+	Digest  ImageDigest `json:"digest"`
+	Changed bool        `json:"changed"`
+}
+
+// DockerImageRollbackParams — params của op docker.image.rollback (ops/docker.image.rollback.schema.json).
+type DockerImageRollbackParams struct {
+	Project  ComposeProjectRef    `json:"project"`
+	Services []ComposeServiceName `json:"services"`
+}
+
+// DockerImageRollbackResultServicesItem được sinh từ schema.
+type DockerImageRollbackResultServicesItem struct {
+	Service ComposeServiceName `json:"service"`
+	Digest  ImageDigest        `json:"digest"`
+}
+
+// DockerImageRollbackResult — result của op docker.image.rollback (ops/docker.image.rollback.schema.json).
+type DockerImageRollbackResult struct {
+	Services []DockerImageRollbackResultServicesItem `json:"services"`
+}
+
+// DockerImageUpdateParams — params của op docker.image.update (ops/docker.image.update.schema.json).
+type DockerImageUpdateParams struct {
+	Project          ComposeProjectRef    `json:"project"`
+	Services         []ComposeServiceName `json:"services"`
+	HealthTimeoutSec int64                `json:"health_timeout_sec"`
+	KeepRollbacks    int64                `json:"keep_rollbacks"`
+}
+
+// DockerImageUpdateResultServicesItem được sinh từ schema.
+type DockerImageUpdateResultServicesItem struct {
+	Service    ComposeServiceName `json:"service"`
+	FromDigest ImageDigest        `json:"from_digest"`
+	ToDigest   ImageDigest        `json:"to_digest"`
+	// Giá trị: "unchanged", "updated", "rolled_back".
+	State       string  `json:"state"`
+	RollbackTag *string `json:"rollback_tag"`
+	Reason      *string `json:"reason"`
+}
+
+// DockerImageUpdateResult — result của op docker.image.update (ops/docker.image.update.schema.json).
+type DockerImageUpdateResult struct {
+	Services []DockerImageUpdateResultServicesItem `json:"services"`
+}
+
+// DockerNetworkCreateParams — params của op docker.network.create (ops/docker.network.create.schema.json).
+type DockerNetworkCreateParams struct {
+	Name        DockerNetworkName `json:"name"`
+	Internal    bool              `json:"internal"`
+	ProjectUUID UUID              `json:"project_uuid"`
+}
+
+// DockerNetworkCreateResult — result của op docker.network.create (ops/docker.network.create.schema.json).
+type DockerNetworkCreateResult struct {
+	Created bool `json:"created"`
+}
+
+// DockerNetworkListParams — params của op docker.network.list (ops/docker.network.list.schema.json).
+type DockerNetworkListParams struct {
+}
+
+// DockerNetworkListResultNetworksItem được sinh từ schema.
+type DockerNetworkListResultNetworksItem struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Driver     string `json:"driver"`
+	Internal   bool   `json:"internal"`
+	Containers int64  `json:"containers"`
+}
+
+// DockerNetworkListResult — result của op docker.network.list (ops/docker.network.list.schema.json).
+type DockerNetworkListResult struct {
+	Networks []DockerNetworkListResultNetworksItem `json:"networks"`
+}
+
+// DockerNetworkRemoveParams — params của op docker.network.remove (ops/docker.network.remove.schema.json).
+type DockerNetworkRemoveParams struct {
+	Name DockerNetworkName `json:"name"`
+}
+
+// DockerNetworkRemoveResult — result của op docker.network.remove (ops/docker.network.remove.schema.json).
+type DockerNetworkRemoveResult struct {
+	Removed bool `json:"removed"`
+}
+
+// DockerRegistryLoginParams — params của op docker.registry.login (ops/docker.registry.login.schema.json).
+type DockerRegistryLoginParams struct {
+	RegistryUUID UUID     `json:"registry_uuid"`
+	URL          HTTPSURL `json:"url"`
+	Username     string   `json:"username"`
+	Password     string   `json:"password"`
+}
+
+// DockerRegistryLoginResult — result của op docker.registry.login (ops/docker.registry.login.schema.json).
+type DockerRegistryLoginResult struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
+// DockerVolumeBackupParams — params của op docker.volume.backup (ops/docker.volume.backup.schema.json).
+type DockerVolumeBackupParams struct {
+	Repo    BackupRepo         `json:"repo"`
+	Volumes []DockerVolumeName `json:"volumes"`
+	// Giá trị: "pause", "none".
+	Consistency string      `json:"consistency"`
+	Tags        []BackupTag `json:"tags"`
+}
+
+// DockerVolumeBackupResult — result của op docker.volume.backup (ops/docker.volume.backup.schema.json).
+type DockerVolumeBackupResult struct {
+	SnapshotID ResticSnapshotID `json:"snapshot_id"`
+	SizeBytes  Bytes            `json:"size_bytes"`
+	Paused     []ContainerID    `json:"paused"`
+}
+
+// DockerVolumeCreateParams — params của op docker.volume.create (ops/docker.volume.create.schema.json).
+type DockerVolumeCreateParams struct {
+	Name        DockerVolumeName `json:"name"`
+	ProjectUUID UUID             `json:"project_uuid"`
+}
+
+// DockerVolumeCreateResult — result của op docker.volume.create (ops/docker.volume.create.schema.json).
+type DockerVolumeCreateResult struct {
+	Created bool `json:"created"`
+}
+
+// DockerVolumeListParams — params của op docker.volume.list (ops/docker.volume.list.schema.json).
+type DockerVolumeListParams struct {
+}
+
+// DockerVolumeListResultVolumesItem được sinh từ schema.
+type DockerVolumeListResultVolumesItem struct {
+	Name        DockerVolumeName `json:"name"`
+	Driver      string           `json:"driver"`
+	SizeBytes   *int64           `json:"size_bytes"`
+	UsedBy      []ContainerID    `json:"used_by"`
+	ProjectUUID json.RawMessage  `json:"project_uuid"`
+}
+
+// DockerVolumeListResult — result của op docker.volume.list (ops/docker.volume.list.schema.json).
+type DockerVolumeListResult struct {
+	Volumes []DockerVolumeListResultVolumesItem `json:"volumes"`
+}
+
+// DockerVolumeRemoveParams — params của op docker.volume.remove (ops/docker.volume.remove.schema.json).
+type DockerVolumeRemoveParams struct {
+	Name DockerVolumeName `json:"name"`
+}
+
+// DockerVolumeRemoveResult — result của op docker.volume.remove (ops/docker.volume.remove.schema.json).
+type DockerVolumeRemoveResult struct {
+	Removed bool `json:"removed"`
+}
+
+// DockerVolumeRestoreParams — params của op docker.volume.restore (ops/docker.volume.restore.schema.json).
+type DockerVolumeRestoreParams struct {
+	Repo       BackupRepo       `json:"repo"`
+	SnapshotID ResticSnapshotID `json:"snapshot_id"`
+	Volume     DockerVolumeName `json:"volume"`
+	// Giá trị: "new", "overwrite".
+	Mode   string           `json:"mode"`
+	Target DockerVolumeName `json:"target"`
+}
+
+// DockerVolumeRestoreResult — result của op docker.volume.restore (ops/docker.volume.restore.schema.json).
+type DockerVolumeRestoreResult struct {
+	Restored bool             `json:"restored"`
+	Volume   DockerVolumeName `json:"volume"`
 }
 
 // Fail2banApplyParamsJailsItem được sinh từ schema.
@@ -1710,6 +2324,12 @@ type NginxVhostApplyParamsRedirectsItem struct {
 	Code string `json:"code"`
 }
 
+// NginxVhostApplyParamsWpHardening được sinh từ schema.
+type NginxVhostApplyParamsWpHardening struct {
+	XmlrpcBlocked       bool `json:"xmlrpc_blocked"`
+	PHPInUploadsBlocked bool `json:"php_in_uploads_blocked"`
+}
+
 // NginxVhostApplyParams — params của op nginx.vhost.apply (ops/nginx.vhost.apply.schema.json).
 type NginxVhostApplyParams struct {
 	Account           Account                              `json:"account"`
@@ -1727,6 +2347,7 @@ type NginxVhostApplyParams struct {
 	ExtraHeaders      map[string]HeaderValue               `json:"extra_headers,omitempty"`
 	Redirects         []NginxVhostApplyParamsRedirectsItem `json:"redirects,omitempty"`
 	Suspended         *bool                                `json:"suspended,omitempty"`
+	WpHardening       *NginxVhostApplyParamsWpHardening    `json:"wp_hardening,omitempty"`
 }
 
 // NginxVhostApplyResult — result của op nginx.vhost.apply (ops/nginx.vhost.apply.schema.json).
@@ -1769,6 +2390,20 @@ type OpCancelParams struct {
 // OpCancelResult — result của op op.cancel (ops/op.cancel.schema.json).
 type OpCancelResult struct {
 	Cancelled bool `json:"cancelled"`
+}
+
+// OSAutoUpdatesParams — params của op os.auto_updates (ops/os.auto_updates.schema.json).
+type OSAutoUpdatesParams struct {
+	Enabled      bool `json:"enabled"`
+	SecurityOnly bool `json:"security_only"`
+}
+
+// OSAutoUpdatesResult — result của op os.auto_updates (ops/os.auto_updates.schema.json).
+type OSAutoUpdatesResult struct {
+	Enabled      bool `json:"enabled"`
+	SecurityOnly bool `json:"security_only"`
+	AutoReboot   bool `json:"auto_reboot"`
+	Changed      bool `json:"changed"`
 }
 
 // PanelRestoreParams — params của op panel.restore (ops/panel.restore.schema.json).
@@ -2102,6 +2737,30 @@ type SFTPUserRemoveResult struct {
 	Removed bool `json:"removed"`
 }
 
+// SoftwareCatalogParams — params của op software.catalog (ops/software.catalog.schema.json).
+type SoftwareCatalogParams struct {
+}
+
+// SoftwareCatalogResultRecipesItem được sinh từ schema.
+type SoftwareCatalogResultRecipesItem struct {
+	Recipe Recipe `json:"recipe"`
+	Name   string `json:"name"`
+	// Giá trị: "base", "web", "php", "database", "cache", "runtime", "tools", "docker", "security".
+	Category string   `json:"category"`
+	Packages []string `json:"packages"`
+	// Giá trị: "ubuntu", "ppa-ondrej-php", "itso".
+	Source    string   `json:"source"`
+	Service   *string  `json:"service"`
+	Core      bool     `json:"core"`
+	Conflicts []Recipe `json:"conflicts"`
+	Requires  []Recipe `json:"requires"`
+}
+
+// SoftwareCatalogResult — result của op software.catalog (ops/software.catalog.schema.json).
+type SoftwareCatalogResult struct {
+	Recipes []SoftwareCatalogResultRecipesItem `json:"recipes"`
+}
+
 // SoftwareInstallParams — params của op software.install (ops/software.install.schema.json).
 type SoftwareInstallParams struct {
 	Recipe Recipe `json:"recipe"`
@@ -2123,6 +2782,29 @@ type SoftwareRemoveParams struct {
 type SoftwareRemoveResult struct {
 	Installed bool `json:"installed"`
 	Changed   bool `json:"changed"`
+}
+
+// SoftwareStatusParams — params của op software.status (ops/software.status.schema.json).
+type SoftwareStatusParams struct {
+	Recipes []Recipe `json:"recipes"`
+}
+
+// SoftwareStatusResult — result của op software.status (ops/software.status.schema.json).
+type SoftwareStatusResult struct {
+	Software        []SoftwareInfo `json:"software"`
+	PendingSecurity int64          `json:"pending_security"`
+}
+
+// SoftwareUpgradeParams — params của op software.upgrade (ops/software.upgrade.schema.json).
+type SoftwareUpgradeParams struct {
+	Recipe Recipe `json:"recipe"`
+}
+
+// SoftwareUpgradeResult — result của op software.upgrade (ops/software.upgrade.schema.json).
+type SoftwareUpgradeResult struct {
+	FromVersion *string `json:"from_version"`
+	Version     *string `json:"version"`
+	Changed     bool    `json:"changed"`
 }
 
 // SSHKeysApplyParams — params của op ssh.keys.apply (ops/ssh.keys.apply.schema.json).
@@ -2286,6 +2968,179 @@ type WAFEventsResult struct {
 	NextCursor string                      `json:"next_cursor"`
 }
 
+// WpAdminPasswordParams — params của op wp.admin_password (ops/wp.admin_password.schema.json).
+type WpAdminPasswordParams struct {
+	Site     WpSite         `json:"site"`
+	User     string         `json:"user"`
+	Password SecretPassword `json:"password"`
+}
+
+// WpAdminPasswordResult — result của op wp.admin_password (ops/wp.admin_password.schema.json).
+type WpAdminPasswordResult struct {
+	Changed bool `json:"changed"`
+}
+
+// WpCloneParamsTargetDB được sinh từ schema.
+type WpCloneParamsTargetDB struct {
+	// Giá trị: "mariadb", "mysql".
+	Engine   string         `json:"engine"`
+	Name     DBName         `json:"name"`
+	User     DBName         `json:"user"`
+	Password SecretPassword `json:"password"`
+}
+
+// WpCloneParams — params của op wp.clone (ops/wp.clone.schema.json).
+type WpCloneParams struct {
+	Source    WpSite                `json:"source"`
+	Target    WpSite                `json:"target"`
+	TargetURL HTTPSURL              `json:"target_url"`
+	SourceDB  DBName                `json:"source_db"`
+	TargetDB  WpCloneParamsTargetDB `json:"target_db"`
+	Noindex   bool                  `json:"noindex"`
+}
+
+// WpCloneResult — result của op wp.clone (ops/wp.clone.schema.json).
+type WpCloneResult struct {
+	Cloned   bool  `json:"cloned"`
+	Replaced int64 `json:"replaced"`
+}
+
+// WpDetectParams — params của op wp.detect (ops/wp.detect.schema.json).
+type WpDetectParams struct {
+	Account Account   `json:"account"`
+	Roots   []RelPath `json:"roots"`
+}
+
+// WpDetectResultSitesItem được sinh từ schema.
+type WpDetectResultSitesItem struct {
+	Path      RelPath `json:"path"`
+	Version   string  `json:"version"`
+	Multisite bool    `json:"multisite"`
+}
+
+// WpDetectResult — result của op wp.detect (ops/wp.detect.schema.json).
+type WpDetectResult struct {
+	Sites []WpDetectResultSitesItem `json:"sites"`
+}
+
+// WpHardenParams — params của op wp.harden (ops/wp.harden.schema.json).
+type WpHardenParams struct {
+	Site    WpSite        `json:"site"`
+	Enable  []WpHardening `json:"enable"`
+	Disable []WpHardening `json:"disable"`
+}
+
+// WpHardenResult — result của op wp.harden (ops/wp.harden.schema.json).
+type WpHardenResult struct {
+	Applied          []WpHardening `json:"applied"`
+	NeedsVhostReload bool          `json:"needs_vhost_reload"`
+}
+
+// WpInfoParams — params của op wp.info (ops/wp.info.schema.json).
+type WpInfoParams struct {
+	Site WpSite `json:"site"`
+}
+
+// WpInfoResultHardening được sinh từ schema.
+type WpInfoResultHardening struct {
+	FileEditDisabled    bool `json:"file_edit_disabled"`
+	XmlrpcBlocked       bool `json:"xmlrpc_blocked"`
+	PHPInUploadsBlocked bool `json:"php_in_uploads_blocked"`
+	WpConfigProtected   bool `json:"wp_config_protected"`
+	VersionHidden       bool `json:"version_hidden"`
+	SaltsRotated        bool `json:"salts_rotated"`
+}
+
+// WpInfoResult — result của op wp.info (ops/wp.info.schema.json).
+type WpInfoResult struct {
+	Version     string                `json:"version"`
+	SiteURL     string                `json:"site_url"`
+	Multisite   bool                  `json:"multisite"`
+	Maintenance bool                  `json:"maintenance"`
+	Components  []WpComponentInfo     `json:"components"`
+	Hardening   WpInfoResultHardening `json:"hardening"`
+	ChecksumsOK *bool                 `json:"checksums_ok"`
+	DBName      json.RawMessage       `json:"db_name"`
+}
+
+// WpInstallParamsDB được sinh từ schema.
+type WpInstallParamsDB struct {
+	// Giá trị: "mariadb", "mysql".
+	Engine   string         `json:"engine"`
+	Name     DBName         `json:"name"`
+	User     DBName         `json:"user"`
+	Password SecretPassword `json:"password"`
+}
+
+// WpInstallParams — params của op wp.install (ops/wp.install.schema.json).
+type WpInstallParams struct {
+	Site          WpSite         `json:"site"`
+	URL           HTTPSURL       `json:"url"`
+	Title         string         `json:"title"`
+	AdminUser     string         `json:"admin_user"`
+	AdminEmail    Email          `json:"admin_email"`
+	AdminPassword SecretPassword `json:"admin_password"`
+	// Giá trị: "vi", "en_US".
+	Locale string            `json:"locale"`
+	DB     WpInstallParamsDB `json:"db"`
+}
+
+// WpInstallResult — result của op wp.install (ops/wp.install.schema.json).
+type WpInstallResult struct {
+	Version   string `json:"version"`
+	Installed bool   `json:"installed"`
+}
+
+// WpMaintenanceParams — params của op wp.maintenance (ops/wp.maintenance.schema.json).
+type WpMaintenanceParams struct {
+	Site    WpSite `json:"site"`
+	Enabled bool   `json:"enabled"`
+}
+
+// WpMaintenanceResult — result của op wp.maintenance (ops/wp.maintenance.schema.json).
+type WpMaintenanceResult struct {
+	Enabled bool `json:"enabled"`
+}
+
+// WpUpdateParamsSnapshot được sinh từ schema.
+type WpUpdateParamsSnapshot struct {
+	Repo BackupRepo      `json:"repo"`
+	DB   json.RawMessage `json:"db"`
+	Tags []BackupTag     `json:"tags"`
+}
+
+// WpUpdateParams — params của op wp.update (ops/wp.update.schema.json).
+type WpUpdateParams struct {
+	Site       WpSite                 `json:"site"`
+	Components []WpComponent          `json:"components"`
+	MinorOnly  bool                   `json:"minor_only"`
+	Snapshot   WpUpdateParamsSnapshot `json:"snapshot"`
+	// Giá trị: "http", "https".
+	CheckScheme string `json:"check_scheme"`
+}
+
+// WpUpdateResultResultsItem được sinh từ schema.
+type WpUpdateResultResultsItem struct {
+	// Giá trị: "core", "plugin", "theme".
+	Type        string          `json:"type"`
+	Slug        json.RawMessage `json:"slug"`
+	FromVersion string          `json:"from_version"`
+	ToVersion   string          `json:"to_version"`
+	OK          bool            `json:"ok"`
+	Error       *string         `json:"error"`
+}
+
+// WpUpdateResult — result của op wp.update (ops/wp.update.schema.json).
+type WpUpdateResult struct {
+	Results       []WpUpdateResultResultsItem `json:"results"`
+	ChecksumsOK   bool                        `json:"checksums_ok"`
+	HTTPStatus    int64                       `json:"http_status"`
+	SnapshotID    ResticSnapshotID            `json:"snapshot_id"`
+	DBSnapshotID  json.RawMessage             `json:"db_snapshot_id"`
+	RolledBack    bool                        `json:"rolled_back"`
+	RollbackError *string                     `json:"rollback_error"`
+}
+
 // NewParams trả về con trỏ tới struct Params của op, nil nếu op chưa có schema.
 func NewParams(op string) any {
 	switch op {
@@ -2333,6 +3188,18 @@ func NewParams(op string) any {
 		return new(CertIssueParams)
 	case OpCertRemove:
 		return new(CertRemoveParams)
+	case OpComposeApply:
+		return new(ComposeApplyParams)
+	case OpComposeDown:
+		return new(ComposeDownParams)
+	case OpComposePull:
+		return new(ComposePullParams)
+	case OpComposeRemove:
+		return new(ComposeRemoveParams)
+	case OpComposeUp:
+		return new(ComposeUpParams)
+	case OpComposeValidate:
+		return new(ComposeValidateParams)
 	case OpCronApply:
 		return new(CronApplyParams)
 	case OpCronInspect:
@@ -2379,6 +3246,50 @@ func NewParams(op string) any {
 		return new(DBPGUserDropParams)
 	case OpDBPGUserEnsure:
 		return new(DBPGUserEnsureParams)
+	case OpDockerContainerControl:
+		return new(DockerContainerControlParams)
+	case OpDockerContainerInspect:
+		return new(DockerContainerInspectParams)
+	case OpDockerContainerList:
+		return new(DockerContainerListParams)
+	case OpDockerContainerLogs:
+		return new(DockerContainerLogsParams)
+	case OpDockerContainerStats:
+		return new(DockerContainerStatsParams)
+	case OpDockerFirewallSync:
+		return new(DockerFirewallSyncParams)
+	case OpDockerHostConfigure:
+		return new(DockerHostConfigureParams)
+	case OpDockerHostStatus:
+		return new(DockerHostStatusParams)
+	case OpDockerImageList:
+		return new(DockerImageListParams)
+	case OpDockerImagePrune:
+		return new(DockerImagePruneParams)
+	case OpDockerImagePull:
+		return new(DockerImagePullParams)
+	case OpDockerImageRollback:
+		return new(DockerImageRollbackParams)
+	case OpDockerImageUpdate:
+		return new(DockerImageUpdateParams)
+	case OpDockerNetworkCreate:
+		return new(DockerNetworkCreateParams)
+	case OpDockerNetworkList:
+		return new(DockerNetworkListParams)
+	case OpDockerNetworkRemove:
+		return new(DockerNetworkRemoveParams)
+	case OpDockerRegistryLogin:
+		return new(DockerRegistryLoginParams)
+	case OpDockerVolumeBackup:
+		return new(DockerVolumeBackupParams)
+	case OpDockerVolumeCreate:
+		return new(DockerVolumeCreateParams)
+	case OpDockerVolumeList:
+		return new(DockerVolumeListParams)
+	case OpDockerVolumeRemove:
+		return new(DockerVolumeRemoveParams)
+	case OpDockerVolumeRestore:
+		return new(DockerVolumeRestoreParams)
 	case OpFail2banApply:
 		return new(Fail2banApplyParams)
 	case OpFail2banStatus:
@@ -2461,6 +3372,8 @@ func NewParams(op string) any {
 		return new(NginxVhostRemoveParams)
 	case OpOpCancel:
 		return new(OpCancelParams)
+	case OpOSAutoUpdates:
+		return new(OSAutoUpdatesParams)
 	case OpPanelRestore:
 		return new(PanelRestoreParams)
 	case OpPHPExtInstall:
@@ -2499,10 +3412,16 @@ func NewParams(op string) any {
 		return new(SFTPUserEnsureParams)
 	case OpSFTPUserRemove:
 		return new(SFTPUserRemoveParams)
+	case OpSoftwareCatalog:
+		return new(SoftwareCatalogParams)
 	case OpSoftwareInstall:
 		return new(SoftwareInstallParams)
 	case OpSoftwareRemove:
 		return new(SoftwareRemoveParams)
+	case OpSoftwareStatus:
+		return new(SoftwareStatusParams)
+	case OpSoftwareUpgrade:
+		return new(SoftwareUpgradeParams)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyParams)
 	case OpSshdConfigApply:
@@ -2523,6 +3442,22 @@ func NewParams(op string) any {
 		return new(WAFApplyParams)
 	case OpWAFEvents:
 		return new(WAFEventsParams)
+	case OpWpAdminPassword:
+		return new(WpAdminPasswordParams)
+	case OpWpClone:
+		return new(WpCloneParams)
+	case OpWpDetect:
+		return new(WpDetectParams)
+	case OpWpHarden:
+		return new(WpHardenParams)
+	case OpWpInfo:
+		return new(WpInfoParams)
+	case OpWpInstall:
+		return new(WpInstallParams)
+	case OpWpMaintenance:
+		return new(WpMaintenanceParams)
+	case OpWpUpdate:
+		return new(WpUpdateParams)
 	}
 	return nil
 }
@@ -2574,6 +3509,18 @@ func NewResult(op string) any {
 		return new(CertIssueResult)
 	case OpCertRemove:
 		return new(CertRemoveResult)
+	case OpComposeApply:
+		return new(ComposeApplyResult)
+	case OpComposeDown:
+		return new(ComposeDownResult)
+	case OpComposePull:
+		return new(ComposePullResult)
+	case OpComposeRemove:
+		return new(ComposeRemoveResult)
+	case OpComposeUp:
+		return new(ComposeUpResult)
+	case OpComposeValidate:
+		return new(ComposeValidateResult)
 	case OpCronApply:
 		return new(CronApplyResult)
 	case OpCronInspect:
@@ -2620,6 +3567,50 @@ func NewResult(op string) any {
 		return new(DBPGUserDropResult)
 	case OpDBPGUserEnsure:
 		return new(DBPGUserEnsureResult)
+	case OpDockerContainerControl:
+		return new(DockerContainerControlResult)
+	case OpDockerContainerInspect:
+		return new(DockerContainerInspectResult)
+	case OpDockerContainerList:
+		return new(DockerContainerListResult)
+	case OpDockerContainerLogs:
+		return new(DockerContainerLogsResult)
+	case OpDockerContainerStats:
+		return new(DockerContainerStatsResult)
+	case OpDockerFirewallSync:
+		return new(DockerFirewallSyncResult)
+	case OpDockerHostConfigure:
+		return new(DockerHostConfigureResult)
+	case OpDockerHostStatus:
+		return new(DockerHostStatusResult)
+	case OpDockerImageList:
+		return new(DockerImageListResult)
+	case OpDockerImagePrune:
+		return new(DockerImagePruneResult)
+	case OpDockerImagePull:
+		return new(DockerImagePullResult)
+	case OpDockerImageRollback:
+		return new(DockerImageRollbackResult)
+	case OpDockerImageUpdate:
+		return new(DockerImageUpdateResult)
+	case OpDockerNetworkCreate:
+		return new(DockerNetworkCreateResult)
+	case OpDockerNetworkList:
+		return new(DockerNetworkListResult)
+	case OpDockerNetworkRemove:
+		return new(DockerNetworkRemoveResult)
+	case OpDockerRegistryLogin:
+		return new(DockerRegistryLoginResult)
+	case OpDockerVolumeBackup:
+		return new(DockerVolumeBackupResult)
+	case OpDockerVolumeCreate:
+		return new(DockerVolumeCreateResult)
+	case OpDockerVolumeList:
+		return new(DockerVolumeListResult)
+	case OpDockerVolumeRemove:
+		return new(DockerVolumeRemoveResult)
+	case OpDockerVolumeRestore:
+		return new(DockerVolumeRestoreResult)
 	case OpFail2banApply:
 		return new(Fail2banApplyResult)
 	case OpFail2banStatus:
@@ -2702,6 +3693,8 @@ func NewResult(op string) any {
 		return new(NginxVhostRemoveResult)
 	case OpOpCancel:
 		return new(OpCancelResult)
+	case OpOSAutoUpdates:
+		return new(OSAutoUpdatesResult)
 	case OpPanelRestore:
 		return new(PanelRestoreResult)
 	case OpPHPExtInstall:
@@ -2740,10 +3733,16 @@ func NewResult(op string) any {
 		return new(SFTPUserEnsureResult)
 	case OpSFTPUserRemove:
 		return new(SFTPUserRemoveResult)
+	case OpSoftwareCatalog:
+		return new(SoftwareCatalogResult)
 	case OpSoftwareInstall:
 		return new(SoftwareInstallResult)
 	case OpSoftwareRemove:
 		return new(SoftwareRemoveResult)
+	case OpSoftwareStatus:
+		return new(SoftwareStatusResult)
+	case OpSoftwareUpgrade:
+		return new(SoftwareUpgradeResult)
 	case OpSSHKeysApply:
 		return new(SSHKeysApplyResult)
 	case OpSshdConfigApply:
@@ -2764,6 +3763,22 @@ func NewResult(op string) any {
 		return new(WAFApplyResult)
 	case OpWAFEvents:
 		return new(WAFEventsResult)
+	case OpWpAdminPassword:
+		return new(WpAdminPasswordResult)
+	case OpWpClone:
+		return new(WpCloneResult)
+	case OpWpDetect:
+		return new(WpDetectResult)
+	case OpWpHarden:
+		return new(WpHardenResult)
+	case OpWpInfo:
+		return new(WpInfoResult)
+	case OpWpInstall:
+		return new(WpInstallResult)
+	case OpWpMaintenance:
+		return new(WpMaintenanceResult)
+	case OpWpUpdate:
+		return new(WpUpdateResult)
 	}
 	return nil
 }

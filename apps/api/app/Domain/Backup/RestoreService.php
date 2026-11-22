@@ -16,6 +16,7 @@ use App\Exceptions\ApiProblem;
 use App\Http\Presenters\ServerPresenter;
 use App\Models\Agent;
 use App\Models\BackupSnapshot;
+use App\Models\ComposeProject;
 use App\Models\Database;
 use App\Models\HostingAccount;
 use App\Models\Job;
@@ -40,6 +41,9 @@ final class RestoreService
     /** @param  list<string>  $items */
     public function create(User $actor, BackupSnapshot $s, string $mode, array $items, ?string $confirm, ?Server $target): RestoreJob
     {
+        if ($s->scope_type === 'compose_project') {
+            return $this->volume($actor, $s, $mode, $items, $confirm, $target);
+        }
         $a = $s->hosting_account_id !== null ? HostingAccount::query()->find($s->hosting_account_id) : null;
         if (! $a instanceof HostingAccount) {
             throw ApiProblem::field('snapshot_uuid', 'Snapshot cấu hình máy chủ/panel không khôi phục qua đây: dùng "itso backup panel-restore" (DR).');
@@ -150,6 +154,46 @@ final class RestoreService
             $rj->forceFill(['job_id' => $job->id])->save();
             $this->audit->record('backup.restore', $acc, ['snapshot' => $s->uuid, 'mode' => $mode, 'items' => $items,
                 'target_server' => $cross ? Server::query()->find($serverId)?->name : null], 'success', $serverId, $job->id, $actor);
+
+            return $rj->refresh();
+        });
+    }
+
+    /**
+     * Khôi phục volume Docker (D-98): chỉ Admin; mỗi lần một `volume:<tên>` có trong snapshot; new → volume mới
+     * `<tên>_r<ts>`, overwrite → ghi đè volume (gõ đúng tên project để xác nhận; agent từ chối nếu volume đang dùng).
+     *
+     * @param  list<string>  $items
+     */
+    private function volume(User $actor, BackupSnapshot $s, string $mode, array $items, ?string $confirm, ?Server $target): RestoreJob
+    {
+        $p = ComposeProject::withTrashed()->find($s->scope_id);
+        if ($actor->realm !== Realm::ADMIN || ! $p instanceof ComposeProject || ! $this->access->servers($actor)->whereKey($p->server_id)->exists()) {
+            throw ApiProblem::field('snapshot_uuid', 'Không có quyền khôi phục snapshot Docker này.');
+        }
+        if ($target !== null && $target->id !== $p->server_id) {
+            throw ApiProblem::field('target_server_uuid', 'Volume Docker chỉ khôi phục trên máy chủ gốc.');
+        }
+        $vols = array_values(array_map('strval', (array) ($s->meta['volumes'] ?? [])));
+        if (count($items) !== 1 || preg_match('/^volume:([a-z0-9][a-z0-9_.-]{0,127})$/', $items[0], $m) !== 1 || ! in_array($m[1], $vols, true)) {
+            throw ApiProblem::field('items', 'Chọn đúng một volume:<tên> có trong snapshot ('.implode(', ', $vols).').');
+        }
+        $vol = $m[1];
+        if ($mode === 'overwrite' && $confirm !== $p->name) {
+            throw ApiProblem::field('confirm', 'Gõ đúng tên compose project để xác nhận ghi đè volume.');
+        }
+        $targetVol = $mode === 'overwrite' ? $vol : substr($vol, 0, 110).'_r'.Carbon::now()->format('mdHi');
+
+        return DB::transaction(function () use ($actor, $s, $p, $mode, $items, $vol, $targetVol): RestoreJob {
+            $rj = RestoreJob::query()->create(['snapshot_id' => $s->id, 'hosting_account_id' => null, 'target_type' => 'compose_project',
+                'target_id' => $p->id, 'target_server_id' => $p->server_id, 'mode' => $mode, 'items' => $items, 'status' => 'queued',
+                'requested_by_user_id' => $actor->id]);
+            $job = $this->jobs->dispatch((new JobSpec('backup.restore', $p, $p->server_id, 1, 4 * 3600))
+                ->step('docker.volume.restore', ['repo' => BackupSpec::repo($s->repository), 'snapshot_id' => $s->restic_snapshot_id,
+                    'volume' => $vol, 'mode' => $mode, 'target' => $targetVol]), $actor);
+            $rj->forceFill(['job_id' => $job->id])->save();
+            $this->audit->record('backup.restore_volume', $p, ['snapshot' => $s->uuid, 'mode' => $mode, 'volume' => $vol, 'target' => $targetVol],
+                'success', $p->server_id, $job->id, $actor);
 
             return $rj->refresh();
         });

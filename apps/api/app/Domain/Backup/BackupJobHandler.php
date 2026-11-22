@@ -11,6 +11,7 @@ use App\Models\BackupPolicy;
 use App\Models\BackupRepository;
 use App\Models\BackupSnapshot;
 use App\Models\BackupVerification;
+use App\Models\ComposeProject;
 use App\Models\Database;
 use App\Models\HostingAccount;
 use App\Models\Job;
@@ -63,6 +64,14 @@ final class BackupJobHandler implements JobHandler
                         $repo->forceFill(['initialized_at' => $now])->save();
                     }
                     break;
+                case 'docker.volume.backup':
+                    if ($repo instanceof BackupRepository) {
+                        $runRepos[$repo->id] = $repo;
+                        if ($done && is_string($res['snapshot_id'] ?? null)) {
+                            $snaps[] = [$repo, $this->snapshot($job, $repo, ['kind' => 'docker'] + $p, $res, $st->finished_at ?? $now)];
+                        }
+                    }
+                    break;
                 case 'backup.run':
                     if ($repo instanceof BackupRepository) {
                         $runRepos[$repo->id] = $repo;
@@ -97,6 +106,11 @@ final class BackupJobHandler implements JobHandler
                     break;
                 case 'backup.restore':
                     $restores[] = [$p, $done ? $res : null, $err];
+                    break;
+                case 'docker.volume.restore':
+                    RestoreJob::query()->where('job_id', $job->id)->update(['status' => $done ? 'succeeded' : 'failed', 'finished_at' => $now,
+                        'result' => $done ? json_encode(['restored_paths' => ['volume:'.($res['volume'] ?? $p['target'] ?? '')], 'databases' => []]) : null,
+                        'error' => $done ? null : mb_substr((string) ($err ?? $job->error_message ?? 'Khôi phục volume thất bại.'), 0, 500)]);
                     break;
                 case 'account.remove':
                     if ($done) {
@@ -138,6 +152,8 @@ final class BackupJobHandler implements JobHandler
                 ? Database::withTrashed()->where('hosting_account_id', $acc)->where('name', $dbs[0])->value('id') : null, ['databases']],
             'config' => ['server_config', $repo->server_id, ['config']],
             'panel' => ['panel', null, ['config']],
+            'docker' => ['compose_project', ComposeProject::withTrashed()->where('uuid', self::composeTag((array) ($p['tags'] ?? [])))->value('id'),
+                ['docker_volumes']],
             default => $website instanceof Website ? ['website', $website->id, ['files']] : ['hosting_account', $acc, ['files']],
         };
         $d = BackupDestination::withTrashed()->findOrFail($repo->destination_id);
@@ -148,9 +164,22 @@ final class BackupJobHandler implements JobHandler
             'hosting_account_id' => $acc, 'website_id' => $website?->id, 'databases' => $dbs, 'contents' => $contents, 'tags' => $tags,
             'size_bytes' => (int) ($res['size_bytes'] ?? 0), 'panel_version' => is_string($p['meta']['panel_version'] ?? null) ? $p['meta']['panel_version'] : null,
             'meta' => ['bytes_added' => (int) ($res['bytes_added'] ?? 0), 'files_new' => (int) ($res['files_new'] ?? 0),
-                'duration_ms' => (int) ($res['duration_ms'] ?? 0), 'manifest_sha256' => $res['manifest_sha256'] ?? null],
+                'duration_ms' => (int) ($res['duration_ms'] ?? 0), 'manifest_sha256' => $res['manifest_sha256'] ?? null]
+                + ($kind === 'docker' ? ['volumes' => array_values(array_map('strval', (array) ($p['volumes'] ?? [])))] : []),
             'locked_until' => $d->immutable_days !== null ? $at->copy()->addDays($d->immutable_days) : null,
             'job_id' => $job->id, 'taken_at' => $at]);
+    }
+
+    /** @param array<array-key, mixed> $tags */
+    private static function composeTag(array $tags): string
+    {
+        foreach ($tags as $t) {
+            if (is_string($t) && preg_match('/^compose:([0-9a-f-]{36})$/', $t, $m) === 1) {
+                return $m[1];
+            }
+        }
+
+        return '00000000-0000-0000-0000-000000000000';
     }
 
     /**

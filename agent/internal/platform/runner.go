@@ -64,6 +64,15 @@ var Bins = map[string]string{
 	"yara":      "/usr/bin/yara",
 	// Phase 8 (D-82…D-87): restic từ kho Ubuntu; ở máy thật luôn chạy qua systemd-run trong itso-maint.slice.
 	"restic": "/usr/bin/restic",
+	// Phase 10 (D-94, D-100): PHP từ PPA, apt-cache đọc bản ứng viên, docker compose (argv, không shell).
+	"php-fpm8.1": "/usr/sbin/php-fpm8.1",
+	"php-fpm8.2": "/usr/sbin/php-fpm8.2",
+	"php-fpm8.4": "/usr/sbin/php-fpm8.4",
+	"apt-cache":  "/usr/bin/apt-cache",
+	// docker: CHỈ để chạy `docker --config … compose -p itso_<uuid> …` (argv cố định, ops/compose.go); mọi thao tác
+	// khác đi qua Engine API. iptables-restore: nạp chuỗi DOCKER-USER (stdin).
+	"docker":           "/usr/bin/docker",
+	"iptables-restore": "/usr/sbin/iptables-restore",
 }
 
 // allowedEnv là biến môi trường được phép đặt thêm cho một lệnh (ngoài env tối giản cố định).

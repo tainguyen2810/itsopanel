@@ -16,6 +16,7 @@ export const PORTAL_ROUTES: RouteDef[] = [
   { id: 'cron', path: '/cron', nav: 'cron' },
   { id: 'backups', path: '/backups', nav: 'backups' },
   { id: 'wordpress', path: '/wordpress', nav: 'wordpress' },
+  { id: 'wordpressDetail', path: '/wordpress/$id', nav: 'wordpress' },
   { id: 'terminal', path: '/terminal', nav: 'terminal' },
   { id: 'security', path: '/security', nav: 'security' },
   { id: 'jobDetail', path: '/jobs/$id' },

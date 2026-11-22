@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.network.remove.schema.json",
+  "title": "docker.network.remove",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "../defs.schema.json#/$defs/DockerNetworkName"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "removed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -9,7 +9,13 @@ const num = (min: number, max: number) =>
     .max(max, `admin:packages.errors.max|${max}`);
 
 /** Phạm vi cần chọn đối tượng cụ thể. */
-export const SCOPE_TARGET: readonly string[] = ['hosting_account', 'website', 'database', 'server'];
+export const SCOPE_TARGET: readonly string[] = [
+  'hosting_account',
+  'website',
+  'database',
+  'server',
+  'compose_project',
+];
 /** Phạm vi chọn được nội dung (file/DB/cấu hình); server và panel luôn là cấu hình. */
 export const CONTENT_SCOPES: readonly string[] = ['all_accounts', 'hosting_account'];
 
@@ -30,9 +36,11 @@ export const policySchema = z
       'database',
       'server',
       'panel',
+      'compose_project',
     ]),
     scope_uuid: z.string(),
-    contents: z.array(z.enum(['files', 'databases', 'config'])),
+    contents: z.array(z.enum(['files', 'databases', 'config', 'docker_volumes'])),
+    volume_consistency: z.enum(['pause', 'none']),
     excludes: z.string().max(5000, 'form.maxLength|5000'),
     schedule: z
       .string()

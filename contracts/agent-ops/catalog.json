@@ -1289,15 +1289,290 @@
       "status": "specified"
     },
     {
+      "op": "software.catalog",
+      "domain": "software",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/software.catalog.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "software.status",
+      "domain": "software",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/software.status.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "software.upgrade",
+      "domain": "software",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 900,
+      "schema": "ops/software.upgrade.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "os.auto_updates",
+      "domain": "software",
+      "risk": "medium",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/os.auto_updates.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.host.status",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/docker.host.status.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.host.configure",
+      "domain": "docker",
+      "risk": "critical",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 300,
+      "schema": "ops/docker.host.configure.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.firewall.sync",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/docker.firewall.sync.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.container.list",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/docker.container.list.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.container.inspect",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/docker.container.inspect.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "docker.container.control",
       "domain": "docker",
       "risk": "critical",
       "default_enabled": false,
       "phase": 10,
       "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "timeout_sec": 120,
+      "schema": "ops/docker.container.control.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.container.logs",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/docker.container.logs.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.container.stats",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/docker.container.stats.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.image.list",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/docker.image.list.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.image.pull",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 1800,
+      "schema": "ops/docker.image.pull.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.image.prune",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 600,
+      "schema": "ops/docker.image.prune.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.image.update",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 1800,
+      "schema": "ops/docker.image.update.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.image.rollback",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 900,
+      "schema": "ops/docker.image.rollback.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.registry.login",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/docker.registry.login.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.volume.list",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/docker.volume.list.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.volume.create",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/docker.volume.create.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.volume.remove",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 120,
+      "schema": "ops/docker.volume.remove.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.volume.backup",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 7200,
+      "schema": "ops/docker.volume.backup.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.volume.restore",
+      "domain": "docker",
+      "risk": "high",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 7200,
+      "schema": "ops/docker.volume.restore.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.network.list",
+      "domain": "docker",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 30,
+      "schema": "ops/docker.network.list.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.network.create",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/docker.network.create.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "docker.network.remove",
+      "domain": "docker",
+      "risk": "medium",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/docker.network.remove.schema.json",
+      "status": "specified"
     },
     {
       "op": "compose.validate",
@@ -1306,9 +1581,9 @@
       "default_enabled": false,
       "phase": 10,
       "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "timeout_sec": 30,
+      "schema": "ops/compose.validate.schema.json",
+      "status": "specified"
     },
     {
       "op": "compose.apply",
@@ -1317,9 +1592,9 @@
       "default_enabled": false,
       "phase": 10,
       "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "timeout_sec": 1800,
+      "schema": "ops/compose.apply.schema.json",
+      "status": "specified"
     },
     {
       "op": "compose.up",
@@ -1328,9 +1603,9 @@
       "default_enabled": false,
       "phase": 10,
       "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "timeout_sec": 900,
+      "schema": "ops/compose.up.schema.json",
+      "status": "specified"
     },
     {
       "op": "compose.down",
@@ -1339,9 +1614,9 @@
       "default_enabled": false,
       "phase": 10,
       "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "timeout_sec": 600,
+      "schema": "ops/compose.down.schema.json",
+      "status": "specified"
     },
     {
       "op": "compose.pull",
@@ -1350,9 +1625,42 @@
       "default_enabled": false,
       "phase": 10,
       "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "timeout_sec": 1800,
+      "schema": "ops/compose.pull.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "compose.remove",
+      "domain": "docker",
+      "risk": "critical",
+      "default_enabled": false,
+      "phase": 10,
+      "runs_as": "root",
+      "timeout_sec": 900,
+      "schema": "ops/compose.remove.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "wp.detect",
+      "domain": "wordpress",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "account",
+      "timeout_sec": 120,
+      "schema": "ops/wp.detect.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "wp.info",
+      "domain": "wordpress",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "account",
+      "timeout_sec": 120,
+      "schema": "ops/wp.info.schema.json",
+      "status": "specified"
     },
     {
       "op": "wp.install",
@@ -1360,10 +1668,10 @@
       "risk": "high",
       "default_enabled": true,
       "phase": 10,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "runs_as": "account",
+      "timeout_sec": 900,
+      "schema": "ops/wp.install.schema.json",
+      "status": "specified"
     },
     {
       "op": "wp.update",
@@ -1371,10 +1679,10 @@
       "risk": "high",
       "default_enabled": true,
       "phase": 10,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "runs_as": "account",
+      "timeout_sec": 1800,
+      "schema": "ops/wp.update.schema.json",
+      "status": "specified"
     },
     {
       "op": "wp.clone",
@@ -1382,10 +1690,10 @@
       "risk": "high",
       "default_enabled": true,
       "phase": 10,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "runs_as": "account",
+      "timeout_sec": 3600,
+      "schema": "ops/wp.clone.schema.json",
+      "status": "specified"
     },
     {
       "op": "wp.harden",
@@ -1393,10 +1701,32 @@
       "risk": "medium",
       "default_enabled": true,
       "phase": 10,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
+      "runs_as": "account",
+      "timeout_sec": 300,
+      "schema": "ops/wp.harden.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "wp.admin_password",
+      "domain": "wordpress",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "account",
+      "timeout_sec": 120,
+      "schema": "ops/wp.admin_password.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "wp.maintenance",
+      "domain": "wordpress",
+      "risk": "medium",
+      "default_enabled": true,
+      "phase": 10,
+      "runs_as": "account",
+      "timeout_sec": 60,
+      "schema": "ops/wp.maintenance.schema.json",
+      "status": "specified"
     },
     {
       "op": "git.deploy",

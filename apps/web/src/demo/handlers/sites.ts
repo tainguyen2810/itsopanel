@@ -371,8 +371,23 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     ) {
       return problem(409, 'conflict', 'Domain đã được dùng trên hệ thống');
     }
-    if (!b.type || !['php', 'static', 'proxy'].includes(b.type))
+    if (!b.type || !['php', 'static', 'proxy', 'docker'].includes(b.type))
       return invalid('Chọn loại website.');
+    // Loại docker (D-97): chỉ Admin, proxy tới cổng 127.0.0.1 đã cấp cho service trên cùng server.
+    let dockerPort: { project: S['ComposeProject']; port: number; service: string } | null = null;
+    if (b.type === 'docker') {
+      if (ctx.actor.realm !== 'admin') return invalid('Loại docker chỉ dành cho quản trị.');
+      const t = b.docker_target;
+      const proj = (ctx.db.data.compose as S['ComposeProject'][]).find(
+        (x) => x.uuid === t?.compose_project_uuid,
+      );
+      if (!t || !proj) return invalid('Chọn compose project.');
+      if (proj.server.uuid !== a.server.uuid)
+        return invalid('Compose project phải cùng máy chủ với account.');
+      const port = proj.ports.find((x) => x.service === t.service);
+      if (!port) return invalid(`Service ${t.service} chưa có cổng được cấp.`);
+      dockerPort = { project: proj, port: port.host_port, service: t.service };
+    }
     const used = ctx.db.data.websites.filter((w) => w.hosting_account.uuid === a.uuid).length;
     if (L && used >= L.website_limit)
       return quota('websites', `Đã dùng ${L.website_limit}/${L.website_limit} websites theo gói.`);
@@ -411,6 +426,14 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       updated_at: ctx.db.now(),
     });
     a.usage.websites.used += 1;
+    if (dockerPort) {
+      dockerPort.project.websites.push({
+        uuid: w.uuid,
+        domain,
+        service: dockerPort.service,
+        ssl: (b.ssl_mode ?? 'acme') === 'acme',
+      });
+    }
     const ops = ['fs.mkdir', 'nginx.vhost.apply'];
     if (b.type === 'php') ops.splice(1, 0, 'php.pool.apply');
     if (ssl === 'acme') ops.push('cert.issue');
@@ -419,7 +442,12 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
       resource: { type: 'website', uuid: w.uuid },
       ops,
       server: a.server,
-      changes: { domain, type: b.type, php },
+      changes: {
+        domain,
+        type: b.type,
+        php,
+        ...(dockerPort ? { upstream: `127.0.0.1:${dockerPort.port}` } : {}),
+      },
       onDone: (db) => {
         applied(w, db);
         const d = db.data.domains.find((x) => x.website.uuid === w.uuid && x.type === 'primary');
@@ -1852,7 +1880,7 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     if (
       !b.admin_username ||
       !/^[a-z][a-z0-9_]{2,30}$/.test(b.admin_username) ||
-      b.admin_username === 'admin'
+      ['admin', 'administrator'].includes(b.admin_username)
     )
       return invalid('Tên quản trị 3–31 ký tự, không dùng "admin".');
     if (!b.admin_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.admin_email))
@@ -1862,123 +1890,414 @@ export function registerSites(realm: 'admin' | 'portal' = 'admin') {
     const dbs = ctx.db.data.databases.filter((d) => d.hosting_account.uuid === a.uuid).length;
     if (L && dbs >= L.database_limit)
       return quota('databases', 'Cài WordPress cần thêm 1 database nhưng gói đã hết hạn mức.');
+    // Như API: site tạo ngay (state updating), job tạo DB + DB user rồi wp.install → wp.info; mật khẩu admin do
+    // panel sinh, trả MỘT lần trong `secret`, không lưu.
+    const uuid = ctx.db.newUuid();
+    return withSecret(
+      startJob(ctx, {
+        type: 'wordpress.install',
+        resource: { type: 'wordpress_site', uuid },
+        ops: [
+          'db.mysql.owner_ensure',
+          'db.mysql.create',
+          'db.mysql.user_ensure',
+          'db.mysql.grant',
+          'wp.install',
+          'wp.info',
+        ],
+        server: w.server,
+        changes: { title: b.title, admin: b.admin_username, locale: b.locale },
+        onDone: (db) => {
+          wps(db).push({
+            uuid,
+            website: siteRef(w),
+            hosting_account: accRef(a),
+            wp_version: '6.7.1',
+            latest_version: '6.7.1',
+            plugins_total: 2,
+            plugins_outdated: 0,
+            themes_outdated: 0,
+            auto_update: 'minor',
+            update_window: '02:00-05:00',
+            hardening: {
+              file_edit_disabled: false,
+              xmlrpc_blocked: false,
+              php_in_uploads_blocked: false,
+              wp_config_protected: false,
+              salts_rotated: false,
+              version_hidden: false,
+            },
+            maintenance: false,
+            admin_username: b.admin_username ?? 'admin',
+            php_version: '8.3',
+            state: 'ready',
+            last_update: null,
+            staging_of: null,
+            updated_at: db.now(),
+          });
+          const name = `${a.username}_wp${String(db.data.databases.length).slice(-2)}`;
+          db.data.databases.push({
+            uuid: db.newUuid(),
+            hosting_account: accRef(a),
+            server: a.server,
+            engine: 'mariadb',
+            name,
+            size_mb: 4.2,
+            charset: 'utf8mb4',
+            users: [name],
+            ...fresh(db),
+            status: 'ready',
+            observed_version: 1,
+            observed_at: db.now(),
+          });
+          a.usage.databases.used += 1;
+        },
+      }),
+      secret(24),
+    );
+  });
+  const wpOf = (ctx: Ctx) => owned(ctx, wps(ctx.db), 'site WordPress');
+  const HARDEN_KEYS = [
+    'file_edit_disabled',
+    'xmlrpc_blocked',
+    'php_in_uploads_blocked',
+    'wp_config_protected',
+    'salts_rotated',
+    'version_hidden',
+  ] as const;
+  const SLUG = /^[a-z0-9][a-z0-9_-]{0,99}$/;
+  const WINDOW = /^([01][0-9]|2[0-3]):00-([01][0-9]|2[0-3]):00$/;
+  /** Chi tiết site (core, plugin/theme, staging): dataset có cho site đầu, site khác sinh từ số liệu. */
+  const detailOf = (db: DemoDb, wp: S['WordPressSite']): S['WordPressSiteDetail'] => {
+    const k = `wp_detail@${wp.uuid}`;
+    if (!db.data[k]) {
+      const base = db.data.wordpress_detail as S['WordPressSiteDetail'];
+      const comps: S['WordPressComponent'][] =
+        base.site.uuid === wp.uuid
+          ? structuredClone(base.components)
+          : [
+              ...Array.from({ length: wp.plugins_total }, (_, i) => {
+                const c = base.components.filter((x) => x.type === 'plugin')[
+                  i % base.components.filter((x) => x.type === 'plugin').length
+                ] as S['WordPressComponent'];
+                const out = i < wp.plugins_outdated;
+                return {
+                  ...c,
+                  slug: i < 5 ? c.slug : `${c.slug}-${i}`,
+                  name: i < 5 ? c.name : `${c.name} ${i}`,
+                  latest_version: out ? `${c.version}.1` : c.version,
+                };
+              }).slice(0, Math.max(wp.plugins_total, 0)),
+              ...base.components
+                .filter((x) => x.type === 'theme')
+                .map((c, i) => ({
+                  ...c,
+                  latest_version: i < wp.themes_outdated ? `${c.version}.1` : c.version,
+                })),
+            ];
+      db.data[k] = {
+        core: { version: wp.wp_version, latest_version: wp.latest_version, checksums_ok: true },
+        components: comps,
+        staging: [],
+      };
+    }
+    const d = db.data[k] as Omit<S['WordPressSiteDetail'], 'site'>;
+    // Đồng bộ số liệu tóm tắt của site theo danh sách thành phần.
+    d.core.version = wp.wp_version;
+    d.core.latest_version = wp.latest_version;
+    d.staging = wps(db)
+      .filter((x) => x.staging_of === wp.uuid)
+      .map((x) => ({ uuid: x.uuid, domain: x.website.primary_domain, created_at: x.updated_at }));
+    return { ...d, site: wp } as S['WordPressSiteDetail'];
+  };
+  const updatesOf = (db: DemoDb, wp: S['WordPressSite']) => {
+    const k = `wp_updates@${wp.uuid}`;
+    db.data[k] ??= (db.data.wordpress_updates as S['WordPressUpdate'][]).filter(
+      (u) => u.site_uuid === wp.uuid,
+    );
+    return db.data[k] as S['WordPressUpdate'][];
+  };
+  on('get', P('/wordpress/sites/{id}'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    return ok(detailOf(ctx.db, wp));
+  });
+  on('get', P('/wordpress/sites/{id}/updates'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    return page(ctx, updatesOf(ctx.db, wp), { sort: '-started_at' });
+  });
+  on('patch', P('/wordpress/sites/{id}'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    const b = (ctx.body ?? {}) as Partial<S['WordPressSettings']>;
+    if (b.auto_update !== undefined && !['off', 'minor', 'all'].includes(b.auto_update))
+      return invalid('auto_update: off, minor hoặc all.');
+    if (b.update_window !== undefined && !WINDOW.test(b.update_window))
+      return invalid('Cửa sổ cập nhật dạng HH:00-HH:00.');
+    if (b.auto_update !== undefined) wp.auto_update = b.auto_update;
+    if (b.update_window !== undefined) wp.update_window = b.update_window;
+    wp.updated_at = ctx.db.now();
+    ctx.db.audit({
+      actor: actorRef(ctx),
+      action: 'wordpress.settings',
+      resource: { type: 'wordpress_site', uuid: wp.uuid },
+      changes: { ...b },
+    });
+    return ok(wp);
+  });
+  on('post', P('/wordpress/sites:scan'), (ctx) => {
+    const v = visibility(ctx.db, ctx.actor);
+    if (
+      !ctx.db.data.websites.some(
+        (w) => w.type === 'php' && canSeeAccount(v, w.hosting_account.uuid),
+      )
+    )
+      return problem(
+        409,
+        'precondition_failed',
+        'Không có website PHP',
+        'Chưa có website PHP nào để quét.',
+      );
     return startJob(ctx, {
-      type: 'wordpress.install',
-      resource: { type: 'website', uuid: w.uuid },
-      ops: ['db.mysql.create', 'wp.install', 'wp.harden'],
+      type: 'wordpress.scan',
+      resource: { type: 'hosting_account', uuid: ctx.db.data.accounts[0]?.uuid ?? '' },
+      ops: ['wp.detect'],
+      server: ctx.db.data.servers[0]
+        ? { uuid: ctx.db.data.servers[0].uuid, name: ctx.db.data.servers[0].name }
+        : null,
+    });
+  });
+  const busy = (wp: S['WordPressSite']) =>
+    wp.state === 'updating' || wp.state === 'cloning'
+      ? problem(409, 'invalid_state_transition', 'Site đang có thao tác khác chạy')
+      : null;
+  on('post', P('/wordpress/sites/{id}:update'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    const lock = busy(wp);
+    if (lock) return lock;
+    const b = (ctx.body ?? {}) as Partial<S['WordPressUpdateRequest']>;
+    const d = detailOf(ctx.db, wp);
+    // Body rỗng = cập nhật mọi thành phần có bản mới (như lịch tự cập nhật "all").
+    const all = b.core === undefined && b.plugins === undefined && b.themes === undefined;
+    const stale = (t: 'plugin' | 'theme') =>
+      d.components
+        .filter((c) => c.type === t && c.latest_version && c.latest_version !== c.version)
+        .map((c) => c.slug);
+    const plugins = all ? stale('plugin') : (b.plugins ?? []);
+    const themes = all ? stale('theme') : (b.themes ?? []);
+    if (all) b.core = true;
+    if ([...plugins, ...themes].some((x) => !SLUG.test(x))) return invalid('Slug không hợp lệ.');
+    const outdated = (type: 'plugin' | 'theme', slug: string) =>
+      d.components.find(
+        (c) =>
+          c.type === type && c.slug === slug && c.latest_version && c.latest_version !== c.version,
+      );
+    const items: S['WordPressUpdate']['items'] = [];
+    if (b.core && wp.wp_version !== wp.latest_version)
+      items.push({ type: 'core', slug: 'wordpress', from: wp.wp_version, to: wp.latest_version });
+    for (const [type, list] of [
+      ['plugin', plugins],
+      ['theme', themes],
+    ] as const)
+      for (const slug of list) {
+        const c = outdated(type, slug);
+        if (!c) return invalid(`${slug} không có bản mới.`);
+        items.push({ type, slug, from: c.version, to: c.latest_version as string });
+      }
+    if (items.length === 0) return problem(409, 'conflict', 'Không có thành phần nào cần cập nhật');
+    // Như API: cập nhật luôn chụp snapshot pre-wp-update trước → cần một đích backup đang bật.
+    if (ctx.db.data.backup_dests.length === 0)
+      return problem(
+        409,
+        'precondition_failed',
+        'Chưa có đích backup',
+        'Cập nhật WordPress luôn chụp snapshot trước: SUPER_ADMIN cần thêm đích backup.',
+      );
+    const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
+    const snap = ctx.db.data.snapshots.find(
+      (x) => x.hosting_account?.uuid === wp.hosting_account.uuid,
+    );
+    const upd: S['WordPressUpdate'] = {
+      uuid: ctx.db.newUuid(),
+      site_uuid: wp.uuid,
+      trigger: 'manual',
+      state: 'running',
+      items,
+      steps: (['snapshot', 'maintenance', 'update', 'verify', 'rollback'] as const).map((key) => ({
+        key,
+        state: 'pending' as const,
+      })),
+      snapshot_uuid: snap?.uuid ?? null,
+      error: null,
+      requested_by: actorRef(ctx),
+      started_at: ctx.db.now(),
+      finished_at: null,
+    };
+    updatesOf(ctx.db, wp).unshift(upd);
+    wp.state = 'updating';
+    wp.last_update = { uuid: upd.uuid, state: 'running', at: upd.started_at };
+    return startJob(ctx, {
+      type: 'wordpress.update',
+      resource: { type: 'wordpress_site', uuid: wp.uuid },
+      ops: ['wp.update', 'backup.stats', 'wp.info'],
       server: w.server,
-      changes: { title: b.title, admin: b.admin_username, locale: b.locale },
+      changes: { items: items.map((i) => `${i.type}:${i.slug}`) },
       onDone: (db) => {
-        wps(db).push({
-          uuid: db.newUuid(),
-          website: siteRef(w),
-          hosting_account: accRef(a),
-          wp_version: '6.7.1',
-          latest_version: '6.7.1',
-          plugins_total: 2,
-          plugins_outdated: 0,
-          themes_outdated: 0,
-          auto_update: 'minor',
-          hardening: { xmlrpc_disabled: true, file_edit_disabled: true, login_rate_limit: true },
-          staging_of: null,
-          updated_at: db.now(),
-        });
-        const name = `${a.username}_wp${String(db.data.databases.length).slice(-2)}`;
-        db.data.databases.push({
-          uuid: db.newUuid(),
-          hosting_account: accRef(a),
-          server: a.server,
-          engine: 'mariadb',
-          name,
-          size_mb: 4.2,
-          charset: 'utf8mb4',
-          users: [name],
-          ...fresh(db),
-          status: 'ready',
-          observed_version: 1,
-          observed_at: db.now(),
-        });
-        a.usage.databases.used += 1;
+        for (const st of upd.steps) st.state = st.key === 'rollback' ? 'skipped' : 'done';
+        upd.state = 'succeeded';
+        upd.finished_at = db.now();
+        for (const i of items) {
+          if (i.type === 'core') wp.wp_version = i.to;
+          else {
+            const c = d.components.find((x) => x.type === i.type && x.slug === i.slug);
+            if (c) c.version = i.to;
+          }
+        }
+        const cur = detailOf(db, wp);
+        const stale = (t: string) =>
+          cur.components.filter(
+            (c) => c.type === t && c.latest_version && c.latest_version !== c.version,
+          ).length;
+        wp.plugins_outdated = stale('plugin');
+        wp.themes_outdated = stale('theme');
+        wp.state = 'ready';
+        wp.last_update = { uuid: upd.uuid, state: 'succeeded', at: db.now() };
+        wp.updated_at = db.now();
       },
     });
   });
-  const wpOf = (ctx: Ctx) => owned(ctx, wps(ctx.db), 'site WordPress');
-  for (const [action, ops] of [
-    ['update', ['backup.run', 'wp.update']],
-    ['clone-staging', ['wp.clone']],
-    ['harden', ['wp.harden']],
-  ] as const) {
-    on('post', P(`/wordpress/sites/{id}:${action}`), (ctx) => {
-      const wp = wpOf(ctx);
-      if (isReply(wp)) return wp;
-      const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
-      const a = accountOfSite(ctx.db, w);
-      if (
-        action === 'update' &&
-        wp.wp_version === wp.latest_version &&
-        wp.plugins_outdated === 0 &&
-        wp.themes_outdated === 0
-      ) {
-        return problem(409, 'conflict', 'WordPress, plugin và theme đều đã mới nhất');
-      }
-      if (action === 'clone-staging') {
-        if (wp.staging_of) return problem(409, 'conflict', 'Đây đã là bản staging');
-        const staging = `staging.${w.primary_domain}`;
-        if (ctx.db.data.websites.some((x) => x.primary_domain === staging))
-          return problem(409, 'conflict', 'Bản staging đã tồn tại');
-        const L = limitsOf(ctx.db, a);
-        if (
-          L &&
-          ctx.db.data.websites.filter((x) => x.hosting_account.uuid === a.uuid).length >=
-            L.website_limit
-        )
-          return quota('websites', 'Tạo staging cần thêm 1 website nhưng gói đã hết hạn mức.');
-      }
-      return startJob(ctx, {
-        type: `wordpress.${action.replace('-', '_')}`,
-        resource: { type: 'wordpress_site', uuid: wp.uuid },
-        ops: [...ops],
-        server: w.server,
-        onDone: (db) => {
-          wp.updated_at = db.now();
-          if (action === 'update') {
-            wp.wp_version = wp.latest_version;
-            wp.plugins_outdated = 0;
-            wp.themes_outdated = 0;
-          } else if (action === 'harden') {
-            wp.hardening = {
-              ...wp.hardening,
-              xmlrpc_disabled: true,
-              file_edit_disabled: true,
-              login_rate_limit: true,
-              uploads_no_php: true,
-            };
-          } else {
-            const site: Website = {
-              ...structuredClone(w),
-              uuid: db.newUuid(),
-              primary_domain: `staging.${w.primary_domain}`,
-              domains_count: 1,
-              waf_enabled: false,
-              ssl_mode: 'acme',
-              created_at: db.now(),
-              updated_at: db.now(),
-            };
-            db.data.websites.push(site);
-            a.usage.websites.used += 1;
-            wps(db).push({
-              ...structuredClone(wp),
-              uuid: db.newUuid(),
-              website: siteRef(site),
-              staging_of: wp.uuid,
-              auto_update: 'off',
-              updated_at: db.now(),
-            });
-          }
-        },
-      });
+  on('post', P('/wordpress/sites/{id}:harden'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    const b = (ctx.body ?? {}) as Partial<S['WordPressHardenRequest']>;
+    if (
+      !Array.isArray(b.items) ||
+      b.items.length === 0 ||
+      b.items.some((k) => !HARDEN_KEYS.includes(k))
+    )
+      return invalid(`items: một hoặc nhiều trong ${HARDEN_KEYS.join(', ')}.`);
+    if (typeof b.enabled !== 'boolean') return invalid('enabled bắt buộc.');
+    if (!b.enabled && b.items.includes('salts_rotated'))
+      return invalid('salts_rotated chỉ bật (xoay khóa), không tắt được.');
+    const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
+    return startJob(ctx, {
+      type: 'wordpress.harden',
+      resource: { type: 'wordpress_site', uuid: wp.uuid },
+      ops: ['wp.harden', 'nginx.vhost.apply'],
+      server: w.server,
+      changes: { items: b.items, enabled: b.enabled },
+      onDone: (db) => {
+        for (const k of b.items ?? []) wp.hardening[k] = b.enabled as boolean;
+        wp.updated_at = db.now();
+      },
     });
-  }
+  });
+  on('post', P('/wordpress/sites/{id}:admin-password'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    const pw = ((ctx.body ?? {}) as { password?: string }).password ?? '';
+    if (pw.length < 12 || pw.length > 128 || !/^[A-Za-z0-9._~!@#%^*+=:,-]+$/.test(pw))
+      return invalid('Mật khẩu 12–128 ký tự, không khoảng trắng.');
+    if (!wp.admin_username)
+      return problem(
+        409,
+        'precondition_failed',
+        'Chưa biết user admin',
+        'Site được phát hiện qua quét: panel chưa biết user admin của site này.',
+      );
+    const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
+    // Mật khẩu không vào audit/changes của job (D-69).
+    return startJob(ctx, {
+      type: 'wordpress.admin_password',
+      resource: { type: 'wordpress_site', uuid: wp.uuid },
+      ops: ['wp.admin_password'],
+      server: w.server,
+      changes: { user: wp.admin_username },
+    });
+  });
+  on('post', P('/wordpress/sites/{id}:maintenance'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    const en = ((ctx.body ?? {}) as { enabled?: unknown }).enabled;
+    if (typeof en !== 'boolean') return invalid('enabled bắt buộc.');
+    const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
+    return startJob(ctx, {
+      type: 'wordpress.maintenance',
+      resource: { type: 'wordpress_site', uuid: wp.uuid },
+      ops: ['wp.maintenance'],
+      server: w.server,
+      changes: { enabled: en },
+      onDone: (db) => {
+        wp.maintenance = en;
+        wp.updated_at = db.now();
+      },
+    });
+  });
+  on('post', P('/wordpress/sites/{id}:clone-staging'), (ctx) => {
+    const wp = wpOf(ctx);
+    if (isReply(wp)) return wp;
+    const lock = busy(wp);
+    if (lock) return lock;
+    const b = (ctx.body ?? {}) as Partial<S['WordPressCloneRequest']>;
+    if (!b.subdomain || !/^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/.test(b.subdomain))
+      return invalid('Subdomain chỉ gồm chữ thường, số và dấu gạch ngang.');
+    if (b.basic_auth === true)
+      return invalid('Bảo vệ staging bằng mật khẩu (basic auth) chưa có ở bản này.');
+    const w = ctx.db.data.websites.find((x) => x.uuid === wp.website.uuid) as Website;
+    const a = accountOfSite(ctx.db, w);
+    if (wp.staging_of) return problem(409, 'conflict', 'Đây đã là bản staging');
+    const domain = `${b.subdomain}.${w.primary_domain}`;
+    if (ctx.db.data.websites.some((x) => x.primary_domain === domain))
+      return problem(409, 'conflict', `${domain} đã tồn tại`);
+    const L = limitsOf(ctx.db, a);
+    if (
+      L &&
+      ctx.db.data.websites.filter((x) => x.hosting_account.uuid === a.uuid).length >=
+        L.website_limit
+    )
+      return quota('websites', 'Tạo staging cần thêm 1 website nhưng gói đã hết hạn mức.');
+    wp.state = 'cloning';
+    return startJob(ctx, {
+      type: 'wordpress.clone_staging',
+      resource: { type: 'wordpress_site', uuid: wp.uuid },
+      ops: [
+        'fs.site_layout.ensure',
+        'nginx.vhost.apply',
+        'db.mysql.create',
+        'db.mysql.user_ensure',
+        'wp.clone',
+        'wp.info',
+      ],
+      server: w.server,
+      changes: { domain, noindex: b.noindex ?? true },
+      onDone: (db) => {
+        wp.state = 'ready';
+        const site: Website = {
+          ...structuredClone(w),
+          uuid: db.newUuid(),
+          primary_domain: domain,
+          domains_count: 1,
+          waf_enabled: false,
+          ssl_mode: 'none',
+          created_at: db.now(),
+          updated_at: db.now(),
+        };
+        db.data.websites.push(site);
+        a.usage.websites.used += 1;
+        wps(db).push({
+          ...structuredClone(wp),
+          uuid: db.newUuid(),
+          website: siteRef(site),
+          staging_of: wp.uuid,
+          auto_update: 'off',
+          last_update: null,
+          updated_at: db.now(),
+        });
+      },
+    });
+  });
 
   // ============================================================ Git deploy
   const repos = (db: DemoDb) => db.data.git_repositories as GitRepo[];

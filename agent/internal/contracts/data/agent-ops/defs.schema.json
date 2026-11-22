@@ -185,7 +185,17 @@
         "fail2ban",
         "clamav",
         "yara",
-        "modsecurity"
+        "modsecurity",
+        "php8.1",
+        "php8.2",
+        "php8.4",
+        "redis",
+        "valkey",
+        "memcached",
+        "nodejs",
+        "composer",
+        "wp-cli",
+        "docker"
       ]
     },
     "QuotaMode": {
@@ -515,7 +525,7 @@
     },
     "BackupTag": {
       "type": "string",
-      "pattern": "^(itso|type:(files|db|config|panel)|account:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|final)$",
+      "pattern": "^(itso|type:(files|db|config|panel|docker)|account:[0-9a-f-]{36}|compose:[0-9a-f-]{36}|website:[0-9a-f-]{36}|db:[a-z][a-z0-9_]{0,63}|policy:[0-9a-f-]{36}|manual|pre-restore|pre-wp-update|auto|final)$",
       "description": "Tag snapshot theo danh sách cố định (D-82)."
     },
     "RepoPassword": {
@@ -856,6 +866,390 @@
           "additionalProperties": false
         }
       ]
+    },
+    "ComposeProjectName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,62}$",
+      "description": "Tên compose project (chữ thường, số, `_`, `-`)."
+    },
+    "ComposeServiceName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,62}$"
+    },
+    "DockerImageRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^([a-z0-9]([a-z0-9.-]{0,252}[a-z0-9])?(:[0-9]{1,5})?/)?[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*(:[A-Za-z0-9_][A-Za-z0-9._-]{0,127})?(@sha256:[0-9a-f]{64})?$",
+      "description": "Tham chiếu image `[registry[:port]/]repo[:tag][@sha256:…]`; không khoảng trắng, không `..`, không ký tự shell."
+    },
+    "ImageDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "ContainerId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{12,64}$",
+      "description": "Id container (hex); không nhận tên tự do."
+    },
+    "DockerVolumeName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,127}$",
+      "not": {
+        "pattern": "\\.\\."
+      }
+    },
+    "DockerNetworkName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,62}$",
+      "not": {
+        "pattern": "^(host|none|bridge)$"
+      },
+      "description": "Tên network do panel tạo; không trùng network hệ thống host/none/bridge."
+    },
+    "ComposeYaml": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 262144,
+      "not": {
+        "pattern": "\\x00"
+      }
+    },
+    "ComposeRule": {
+      "type": "string",
+      "enum": [
+        "privileged",
+        "cap_add",
+        "devices",
+        "bind_mount",
+        "host_network",
+        "host_pid",
+        "host_ipc",
+        "host_userns",
+        "security_opt",
+        "docker_socket",
+        "bind_mount_system",
+        "build",
+        "services",
+        "yaml",
+        "reserved_port",
+        "missing_limits",
+        "latest_tag"
+      ]
+    },
+    "ComposeOverride": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "type": "string",
+          "enum": [
+            "privileged",
+            "cap_add",
+            "devices",
+            "bind_mount"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 300
+        },
+        "by_user_uuid": {
+          "$ref": "defs.schema.json#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "rule",
+        "reason",
+        "by_user_uuid"
+      ],
+      "additionalProperties": false
+    },
+    "ComposeFinding": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "$ref": "defs.schema.json#/$defs/ComposeRule"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning"
+          ]
+        },
+        "service": {
+          "oneOf": [
+            {
+              "$ref": "defs.schema.json#/$defs/ComposeServiceName"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "overridable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "rule",
+        "severity",
+        "service",
+        "path",
+        "message",
+        "overridable"
+      ],
+      "additionalProperties": false
+    },
+    "ComposePortMap": {
+      "type": "object",
+      "properties": {
+        "service": {
+          "$ref": "defs.schema.json#/$defs/ComposeServiceName"
+        },
+        "container_port": {
+          "$ref": "defs.schema.json#/$defs/Port"
+        },
+        "host_port": {
+          "type": "integer",
+          "minimum": 20000,
+          "maximum": 29999
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        }
+      },
+      "required": [
+        "service",
+        "container_port",
+        "host_port",
+        "protocol"
+      ],
+      "additionalProperties": false
+    },
+    "ComposeLimits": {
+      "type": "object",
+      "properties": {
+        "mem_limit_mb": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 1048576
+        },
+        "cpus": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 256
+        },
+        "pids_limit": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 65536
+        }
+      },
+      "required": [
+        "mem_limit_mb",
+        "cpus",
+        "pids_limit"
+      ],
+      "additionalProperties": false
+    },
+    "ComposeProjectRef": {
+      "type": "object",
+      "properties": {
+        "project_uuid": {
+          "$ref": "defs.schema.json#/$defs/Uuid"
+        },
+        "name": {
+          "$ref": "defs.schema.json#/$defs/ComposeProjectName"
+        }
+      },
+      "required": [
+        "project_uuid",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "WpSlug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,99}$",
+      "description": "Slug plugin/theme WordPress (ADR 0044)."
+    },
+    "WpComponent": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "core"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "plugin",
+                "theme"
+              ]
+            },
+            "slug": {
+              "$ref": "defs.schema.json#/$defs/WpSlug"
+            }
+          },
+          "required": [
+            "type",
+            "slug"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "WpHardening": {
+      "type": "string",
+      "enum": [
+        "file_edit_disabled",
+        "xmlrpc_blocked",
+        "php_in_uploads_blocked",
+        "wp_config_protected",
+        "version_hidden",
+        "salts_rotated"
+      ]
+    },
+    "WpSite": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "defs.schema.json#/$defs/Account"
+        },
+        "domain": {
+          "$ref": "defs.schema.json#/$defs/Domain"
+        },
+        "path": {
+          "$ref": "defs.schema.json#/$defs/RelPath"
+        },
+        "php_version": {
+          "$ref": "defs.schema.json#/$defs/PhpVersion"
+        }
+      },
+      "required": [
+        "account",
+        "domain",
+        "path",
+        "php_version"
+      ],
+      "additionalProperties": false
+    },
+    "WpComponentInfo": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "core",
+            "plugin",
+            "theme"
+          ]
+        },
+        "slug": {
+          "oneOf": [
+            {
+              "$ref": "defs.schema.json#/$defs/WpSlug"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "update_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 50
+        },
+        "active": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "slug",
+        "name",
+        "version",
+        "update_version",
+        "active"
+      ],
+      "additionalProperties": false
+    },
+    "SoftwareInfo": {
+      "type": "object",
+      "properties": {
+        "recipe": {
+          "$ref": "defs.schema.json#/$defs/Recipe"
+        },
+        "installed_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "latest_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "service": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "active": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "recipe",
+        "installed_version",
+        "latest_version",
+        "service",
+        "active"
+      ],
+      "additionalProperties": false
     }
   }
 }

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/software.catalog.schema.json",
+  "title": "software.catalog",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "recipes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "recipe": {
+                "$ref": "../defs.schema.json#/$defs/Recipe"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "base",
+                  "web",
+                  "php",
+                  "database",
+                  "cache",
+                  "runtime",
+                  "tools",
+                  "docker",
+                  "security"
+                ]
+              },
+              "packages": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9.+-]{0,99}$"
+                },
+                "maxItems": 20
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "ubuntu",
+                  "ppa-ondrej-php",
+                  "itso"
+                ]
+              },
+              "service": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 100
+              },
+              "core": {
+                "type": "boolean"
+              },
+              "conflicts": {
+                "type": "array",
+                "items": {
+                  "$ref": "../defs.schema.json#/$defs/Recipe"
+                },
+                "maxItems": 10
+              },
+              "requires": {
+                "type": "array",
+                "items": {
+                  "$ref": "../defs.schema.json#/$defs/Recipe"
+                },
+                "maxItems": 10
+              }
+            },
+            "required": [
+              "recipe",
+              "name",
+              "category",
+              "packages",
+              "source",
+              "service",
+              "core",
+              "conflicts",
+              "requires"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "recipes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

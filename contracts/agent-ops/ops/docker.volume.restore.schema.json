@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.volume.restore.schema.json",
+  "title": "docker.volume.restore",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "$ref": "../defs.schema.json#/$defs/BackupRepo"
+        },
+        "snapshot_id": {
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "volume": {
+          "$ref": "../defs.schema.json#/$defs/DockerVolumeName"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "new",
+            "overwrite"
+          ]
+        },
+        "target": {
+          "$ref": "../defs.schema.json#/$defs/DockerVolumeName"
+        }
+      },
+      "required": [
+        "repo",
+        "snapshot_id",
+        "volume",
+        "mode",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "restored": {
+          "type": "boolean"
+        },
+        "volume": {
+          "$ref": "../defs.schema.json#/$defs/DockerVolumeName"
+        }
+      },
+      "required": [
+        "restored",
+        "volume"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

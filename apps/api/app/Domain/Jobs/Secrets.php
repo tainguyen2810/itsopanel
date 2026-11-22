@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Domain\Jobs;
 
 use App\Domain\Backup\DisasterRecovery;
+use App\Domain\WordPress\WordPressSecrets;
 use App\Models\BackupDestination;
 use App\Models\BackupRepository;
 use App\Models\Certificate;
+use App\Models\ComposeProject;
 use App\Models\DatabaseUser;
+use App\Models\Registry;
 use App\Models\SftpAccount;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
@@ -49,9 +52,21 @@ final class Secrets
         return $params;
     }
 
-    private function value(string $ref): string
+    /** @return string|array<string, string>|\stdClass */
+    private function value(string $ref): string|array|\stdClass
     {
         [$kind, $uuid] = array_pad(explode(':', $ref, 2), 2, '');
+        // Docker (D-98): mật khẩu registry; biến môi trường compose (JSON Crypt) → object `env` của compose.apply.
+        if ($kind === 'compose_env' && Str::isUuid($uuid)) {
+            $p = ComposeProject::withTrashed()->where('uuid', $uuid)->first();
+            if ($p instanceof ComposeProject) {
+                $env = is_string($p->env_encrypted) && $p->env_encrypted !== ''
+                    ? json_decode(Crypt::decryptString($p->env_encrypted), true) : [];
+                $env = is_array($env) ? array_map('strval', $env) : [];
+
+                return $env === [] ? new \stdClass : $env;
+            }
+        }
         if ($kind === 'certificate_key' && Str::isUuid($uuid)) {
             $c = Certificate::query()->where('uuid', $uuid)->first();
             if ($c instanceof Certificate && is_string($c->private_key_encrypted) && $c->private_key_encrypted !== '') {
@@ -78,10 +93,15 @@ final class Secrets
         if ($kind === DisasterRecovery::SECRET_KIND && ($v = DisasterRecovery::secret($uuid)) !== null) {
             return $v;
         }
+        // WordPress (D-99): mật khẩu admin một lần (cài, đổi mật khẩu) giữ tạm trong Cache.
+        if ($kind === WordPressSecrets::KIND && ($v = WordPressSecrets::get($uuid)) !== null) {
+            return $v;
+        }
         // Mật khẩu DB user / FTP-SFTP (D-71, D-73): lưu mã hóa trong panel, chỉ giải ngay trước khi gửi agent.
         $model = match ($kind) {
             'db_user_password' => DatabaseUser::class,
             'sftp_password' => SftpAccount::class,
+            'registry_password' => Registry::class,
             default => null,
         };
         if ($model !== null && Str::isUuid($uuid)) {

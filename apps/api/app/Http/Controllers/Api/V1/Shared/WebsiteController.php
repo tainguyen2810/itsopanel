@@ -61,12 +61,15 @@ final class WebsiteController
     public function store(Request $request): JsonResponse
     {
         HostingPackageController::rejectUnknown($request, ['hosting_account_uuid', 'primary_domain', 'type', 'document_root',
-            'php_version', 'ssl_mode', 'proxy_target']);
+            'php_version', 'ssl_mode', 'proxy_target', 'docker_target']);
         $in = $request->validate([
             'hosting_account_uuid' => ['required', 'uuid'], 'primary_domain' => ['required', 'string', 'max:253'],
-            'type' => ['required', 'in:php,static,proxy'], 'document_root' => ['sometimes', 'string', 'max:255'],
+            'type' => ['required', 'in:php,static,proxy,docker'], 'document_root' => ['sometimes', 'string', 'max:255'],
             'php_version' => ['sometimes', 'nullable', 'string', 'regex:/^[5-9]\.[0-9]$/'], 'ssl_mode' => ['sometimes', 'in:none,acme'],
             'proxy_target' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'docker_target' => ['sometimes', 'nullable', 'array:compose_project_uuid,service'],
+            'docker_target.compose_project_uuid' => ['required_with:docker_target', 'uuid'],
+            'docker_target.service' => ['required_with:docker_target', 'string', 'regex:/^[a-z0-9][a-z0-9_.-]{0,62}$/'],
         ]);
         $a = $this->access->accounts($this->actor($request))->where('hosting_accounts.uuid', $in['hosting_account_uuid'])->first();
         if (! $a instanceof HostingAccount) {

@@ -87,9 +87,15 @@ test('compose: tạo project → trang chi tiết → chạy', async ({ page }) 
   await page.getByRole('button', { name: 'Tạo project' }).click();
   const dlg = page.getByRole('dialog', { name: 'Tạo compose project' });
   await dlg.getByRole('combobox', { name: 'Máy chủ' }).click();
-  await page.getByRole('option').first().click();
+  // Server đã bật Docker (server chưa bật → validator trả 409).
+  await page.getByRole('option', { name: 'srv-hn-01' }).click();
   await dlg.getByLabel('Tên project').fill('web-demo');
-  await dlg.getByRole('button', { name: 'Kiểm tra và triển khai' }).click();
+  // Phase 10 (D-96): phải Kiểm tra (validator) trước, nút triển khai mới bật.
+  const deploy = dlg.getByRole('button', { name: 'Kiểm tra và triển khai' });
+  await expect(deploy).toBeDisabled();
+  await dlg.getByRole('button', { name: 'Kiểm tra', exact: true }).click();
+  await expect(dlg.getByText(/compose.yaml hợp lệ|Hợp lệ, có ghi chú/)).toBeVisible();
+  await deploy.click();
   // Drawer theo dõi job mở (modal); đóng để xem trang chi tiết.
   const drawer = page.getByRole('dialog', { name: 'Theo dõi tác vụ' });
   await expect(drawer).toBeVisible();

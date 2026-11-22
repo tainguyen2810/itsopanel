@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/docker.image.rollback.schema.json",
+  "title": "docker.image.rollback",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "../defs.schema.json#/$defs/ComposeProjectRef"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ComposeServiceName"
+          },
+          "minItems": 1,
+          "maxItems": 50,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "project",
+        "services"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "$ref": "../defs.schema.json#/$defs/ComposeServiceName"
+              },
+              "digest": {
+                "$ref": "../defs.schema.json#/$defs/ImageDigest"
+              }
+            },
+            "required": [
+              "service",
+              "digest"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 50
+        }
+      },
+      "required": [
+        "services"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

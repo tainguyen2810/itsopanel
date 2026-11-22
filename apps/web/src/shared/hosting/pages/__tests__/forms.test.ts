@@ -32,6 +32,8 @@ describe('websiteSchema', () => {
     document_root: 'public',
     ssl_mode: 'acme' as const,
     proxy_target: '',
+    compose_project_uuid: '',
+    service: '',
   };
   it('chuẩn hóa domain về chữ thường', () => {
     const r = websiteSchema.safeParse(base);
@@ -47,8 +49,20 @@ describe('websiteSchema', () => {
       'proxy_target',
       'admin:sites.errors.proxy',
     ],
+    [{ type: 'docker' }, 'compose_project_uuid', 'form.required'],
+    [{ type: 'docker', compose_project_uuid: 'p' }, 'service', 'form.required'],
   ])('%o → lỗi %s', (patch, path, msg) => {
     expect(errors(websiteSchema.safeParse({ ...base, ...patch }))[path]).toBe(msg);
+  });
+  it('docker (Admin) cần project và service', () => {
+    expect(
+      websiteSchema.safeParse({
+        ...base,
+        type: 'docker',
+        compose_project_uuid: 'p',
+        service: 'app',
+      }).success,
+    ).toBe(true);
   });
   it('proxy chỉ tới 127.0.0.1 hợp lệ', () => {
     expect(

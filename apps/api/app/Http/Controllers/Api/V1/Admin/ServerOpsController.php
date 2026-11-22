@@ -6,10 +6,13 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Auth\Access;
 use App\Auth\Realm;
+use App\Domain\Audit\AuditLogger;
 use App\Domain\Jobs\JobDispatcher;
 use App\Domain\Jobs\JobSpec;
 use App\Domain\Servers\MetricsCollector;
 use App\Domain\Servers\MetricsQuery;
+use App\Domain\Servers\OsUpdates;
+use App\Domain\Servers\SoftwareService;
 use App\Exceptions\ApiProblem;
 use App\Http\Presenters\JobPresenter;
 use App\Http\Support\Listing;
@@ -18,31 +21,28 @@ use App\Models\HostingAccount;
 use App\Models\Job;
 use App\Models\Server;
 use App\Models\ServerService;
-use App\Models\ServerSoftware;
 use App\Models\SoftwareCatalog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Prompt 4.5: dịch vụ, phần mềm (recipe), reboot, dung lượng và số liệu của server. Mọi thao tác chạm Linux đi
- * qua Job → typed op của agent (service.control trong job service.<action>, software.install/remove, system.reboot).
+ * qua Job → typed op của agent (service.control trong job service.<action>, software.install/remove/upgrade, os.auto_updates, system.reboot).
  */
 final class ServerOpsController
 {
-    /** Recipe không gỡ được (agent cũng từ chối): nền tảng của quota/ACL/tường lửa. */
-    public const CORE_RECIPES = ['acl', 'quota', 'nftables'];
-
     public function __construct(
         private readonly Access $access,
         private readonly JobDispatcher $dispatcher,
         private readonly JobPresenter $jobs,
         private readonly MetricsCollector $collector,
         private readonly MetricsQuery $metrics,
+        private readonly SoftwareService $software,
+        private readonly AuditLogger $audit,
     ) {}
 
     public function services(Request $request, string $id): JsonResponse
@@ -97,12 +97,12 @@ final class ServerOpsController
     public function software(Request $request, string $id): JsonResponse
     {
         $s = $this->find($request, $id);
-        $rows = ServerSoftware::query()->where('server_id', $s->id)->get()->keyBy('software_key');
+        $rows = $this->software->rows($s);
         $q = SoftwareCatalog::query();
         Listing::search($request, $q, ['software_catalog.key', 'software_catalog.name']);
 
         return response()->json(Listing::page($request, $q, ['name' => 'software_catalog.name', 'key' => 'software_catalog.key'],
-            'key', fn (SoftwareCatalog $c): array => self::presentSoftware($c, $rows->get($c->key))));
+            'key', fn (SoftwareCatalog $c): array => $this->software->present($s, $c, $rows[$c->key] ?? null, $rows)));
     }
 
     public function manageSoftware(Request $request, string $id, string $key, string $action): JsonResponse
@@ -112,33 +112,32 @@ final class ServerOpsController
         if (! $c instanceof SoftwareCatalog) {
             throw new NotFoundHttpException;
         }
-        if ($action === 'upgrade') {
-            throw new ApiProblem(409, 'invalid_state_transition', 'Chưa hỗ trợ nâng cấp',
-                'Recipe cài bản theo kho apt của Ubuntu; nâng cấp đi theo cập nhật hệ điều hành.');
-        }
-        if (! in_array($action, ['install', 'remove'], true)) {
-            throw ApiProblem::field('action', 'Hành động không hợp lệ.');
-        }
-        if ($action === 'remove' && in_array($key, self::CORE_RECIPES, true)) {
-            throw new ApiProblem(409, 'invalid_state_transition', 'Không gỡ được phần mềm nền tảng',
-                "Gói {$key} cần cho quota/ACL/tường lửa của panel.");
-        }
-        $job = DB::transaction(function () use ($request, $s, $key, $action): Job {
-            $row = ServerSoftware::query()->where('server_id', $s->id)->where('software_key', $key)->lockForUpdate()->first()
-                ?? new ServerSoftware(['server_id' => $s->id, 'software_key' => $key]);
-            if (in_array($row->status, ['provisioning', 'deleting'], true)) {
-                throw new ApiProblem(409, 'resource_locked', 'Đang có job khác', "Phần mềm {$key} đang được cài/gỡ.");
-            }
-            $spec = (new JobSpec('software.'.$action, $s, $s->id, maxAttempts: 2, timeoutSec: 900))
-                ->step('software.'.$action, ['recipe' => $key]);
-            $job = $this->dispatcher->dispatch($spec, $this->actor($request));
-            $row->status = $action === 'install' ? 'provisioning' : 'deleting';
-            $row->spec_version = $row->exists ? $row->spec_version + 1 : 1;
-            $row->last_job_id = $job->id;
-            $row->save();
 
-            return $job;
-        });
+        return $this->accepted($this->software->manage($this->actor($request), $s, $c, $action));
+    }
+
+    public function osUpdates(Request $request, string $id): JsonResponse
+    {
+        return response()->json(['data' => OsUpdates::get($this->find($request, $id))]);
+    }
+
+    /** Bật/tắt unattended-upgrades (chỉ SUPER_ADMIN); không bao giờ tự reboot (D-100). */
+    public function putOsUpdates(Request $request, string $id): JsonResponse
+    {
+        $actor = $this->actor($request);
+        if ($actor->roleKey() !== 'SUPER_ADMIN') {
+            throw ApiProblem::forbidden('Chỉ Super Admin đổi cập nhật tự động của hệ điều hành.');
+        }
+        $s = $this->find($request, $id);
+        $in = $request->validate(['enabled' => ['required', 'boolean'], 'security_only' => ['sometimes', 'boolean']]);
+        $cur = OsUpdates::get($s);
+        $next = ['enabled' => (bool) $in['enabled'], 'security_only' => (bool) ($in['security_only'] ?? $cur['security_only'])];
+        $this->ensureNoActiveJob($s, ['software.os_updates']);
+        $spec = (new JobSpec('software.os_updates', $s, $s->id, maxAttempts: 2, timeoutSec: 300))
+            ->step('os.auto_updates', $next);
+        $job = $this->dispatcher->dispatch($spec, $actor);
+        $this->audit->record('software.os_updates', $s, ['from' => ['enabled' => $cur['enabled'], 'security_only' => $cur['security_only']],
+            'to' => $next], 'success', $s->id, $job->id, $actor);
 
         return $this->accepted($job);
     }
@@ -176,22 +175,6 @@ final class ServerOpsController
         [$metric, $range] = MetricsQuery::validate($request, ['cpu_pct', 'ram_pct', 'disk_pct']);
 
         return response()->json(['data' => $this->metrics->series('hosting_account', $a->uuid, $a->server_id, $a->id, $metric, $range)]);
-    }
-
-    /** @return array<string, mixed> */
-    public static function presentSoftware(SoftwareCatalog $c, ?ServerSoftware $row): array
-    {
-        $latest = is_string($c->versions[0] ?? null) ? $c->versions[0] : 'apt';
-        $installed = $row !== null && is_string($row->version) && $row->version !== '' ? $row->version : null;
-        $state = match ($row?->status) {
-            'provisioning', 'deleting' => 'installing',
-            'failed' => 'failed',
-            'ready' => $installed !== null ? 'installed' : 'available',
-            default => 'available',
-        };
-
-        return ['key' => $c->key, 'name' => $c->name, 'category' => $c->category, 'installed_version' => $installed,
-            'latest_version' => $latest, 'state' => $state];
     }
 
     /** @param list<string> $types */

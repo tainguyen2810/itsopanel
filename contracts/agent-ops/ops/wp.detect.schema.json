@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/wp.detect.schema.json",
+  "title": "wp.detect",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "roots": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/RelPath"
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "account",
+        "roots"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "sites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "$ref": "../defs.schema.json#/$defs/RelPath"
+              },
+              "version": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "multisite": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "path",
+              "version",
+              "multisite"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "sites"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

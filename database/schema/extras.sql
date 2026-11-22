@@ -91,7 +91,6 @@ ALTER TABLE jobs ADD CONSTRAINT jobs_progress_chk CHECK (progress BETWEEN 0 AND 
 ALTER TABLE security_events ADD CONSTRAINT security_events_severity_chk
   CHECK (severity IN ('info', 'low', 'medium', 'high', 'critical'));
 ALTER TABLE firewall_rules ADD CONSTRAINT firewall_action_chk CHECK (action IN ('accept', 'drop', 'reject'));
-ALTER TABLE port_allocations ADD CONSTRAINT port_range_chk CHECK (port BETWEEN 1024 AND 65535);
 
 -- ============================================================ Partial unique (soft-delete)
 -- Domain là duy nhất toàn hệ thống trong số bản ghi chưa xóa (cả domain chính và domain phụ).
@@ -274,3 +273,63 @@ END $$;
 ALTER TABLE agent_certificates ADD CONSTRAINT agent_certificates_reason_chk CHECK (issued_reason IN ('enroll', 'rotate', 'rejoin'));
 ALTER TABLE agent_certificates ADD CONSTRAINT agent_certificates_fp_chk CHECK (fingerprint_sha256 ~ '^[0-9a-f]{64}$');
 ALTER TABLE agent_enrollment_tokens ADD CONSTRAINT agent_enrollment_tokens_hash_chk CHECK (token_hash ~ '^[0-9a-f]{64}$');
+
+-- ============================================================ Phase 10: Docker, WordPress Toolkit, Software Manager (D-94…D-100)
+-- Bảng của Phase trước: ALTER đánh dấu /* phase:10 */ (migration Phase 4/5/8 đã phát hành giữ nguyên).
+/* phase:10 */ ALTER TABLE software_catalog ADD COLUMN packages text[] NOT NULL DEFAULT '{}';
+/* phase:10 */ ALTER TABLE software_catalog ADD COLUMN source text NOT NULL DEFAULT 'ubuntu';
+/* phase:10 */ ALTER TABLE software_catalog ADD CONSTRAINT software_catalog_source_chk CHECK (source IN ('ubuntu', 'ppa-ondrej-php', 'itso'));
+/* phase:10 */ ALTER TABLE software_catalog ADD COLUMN service text;
+/* phase:10 */ ALTER TABLE software_catalog ADD COLUMN core boolean NOT NULL DEFAULT false;
+/* phase:10 */ ALTER TABLE software_catalog ADD COLUMN requires text[] NOT NULL DEFAULT '{}';
+/* phase:10 */ ALTER TABLE server_software ADD COLUMN state text NOT NULL DEFAULT 'installed';
+/* phase:10 */ ALTER TABLE server_software ADD CONSTRAINT server_software_state_chk
+  CHECK (state IN ('available', 'installing', 'installed', 'upgradable', 'upgrading', 'removing', 'failed'));
+/* phase:10 */ ALTER TABLE server_software ADD COLUMN latest_version text;
+/* phase:10 */ ALTER TABLE server_software ADD COLUMN upgrade_available boolean NOT NULL DEFAULT false;
+/* phase:10 */ ALTER TABLE websites ADD COLUMN compose_project_id bigint REFERENCES compose_projects (id);
+/* phase:10 */ ALTER TABLE websites ADD COLUMN compose_service text;
+/* phase:10 */ ALTER TABLE websites ADD CONSTRAINT websites_docker_target_chk CHECK (
+  (type = 'docker') = (compose_project_id IS NOT NULL AND compose_service IS NOT NULL)
+);
+/* phase:10 */ ALTER TABLE backup_policies DROP CONSTRAINT backup_policy_scope_chk;
+/* phase:10 */ ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_scope_chk
+  CHECK (scope_type IN ('all_accounts', 'hosting_account', 'website', 'database', 'server', 'panel', 'compose_project'));
+/* phase:10 */ ALTER TABLE backup_policies DROP CONSTRAINT backup_policy_contents_chk;
+/* phase:10 */ ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_contents_chk
+  CHECK (contents <@ ARRAY['files', 'databases', 'config', 'docker_volumes']::text[]);
+/* phase:10 */ ALTER TABLE backup_policies ADD COLUMN volume_consistency text NOT NULL DEFAULT 'pause';
+/* phase:10 */ ALTER TABLE backup_policies ADD CONSTRAINT backup_policy_volume_consistency_chk CHECK (volume_consistency IN ('pause', 'none'));
+/* phase:10 */ ALTER TABLE firewall_rules ADD COLUMN scope text NOT NULL DEFAULT 'host';
+/* phase:10 */ ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_scope_chk CHECK (scope IN ('host', 'docker'));
+-- Rule DOCKER-USER chỉ mở cổng vào (D-95): accept/in/tcp|udp, phải có cổng.
+/* phase:10 */ ALTER TABLE firewall_rules ADD CONSTRAINT firewall_rules_docker_chk CHECK (
+  scope = 'host' OR (action = 'accept' AND direction = 'in' AND protocol IN ('tcp', 'udp') AND port_range IS NOT NULL)
+);
+/* phase:10 */ ALTER TABLE backup_snapshots DROP CONSTRAINT backup_snapshot_scope_chk;
+/* phase:10 */ ALTER TABLE backup_snapshots ADD CONSTRAINT backup_snapshot_scope_chk
+  CHECK (scope_type IN ('hosting_account', 'website', 'database', 'server_config', 'panel', 'compose_project'));
+ALTER TABLE docker_hosts ADD CONSTRAINT docker_hosts_state_chk CHECK (state IN ('not_installed', 'installing', 'enabled', 'degraded'));
+ALTER TABLE docker_hosts ADD CONSTRAINT docker_hosts_range_chk CHECK (port_range_from >= 1024 AND port_range_from <= port_range_to AND port_range_to <= 65535);
+ALTER TABLE compose_projects ADD CONSTRAINT compose_projects_name_chk CHECK (name ~ '^[a-z0-9][a-z0-9_-]{0,62}$');
+ALTER TABLE compose_projects ADD CONSTRAINT compose_projects_run_state_chk CHECK (run_state IN ('running', 'stopped', 'partial', 'error', 'deploying'));
+ALTER TABLE compose_revisions ADD CONSTRAINT compose_revisions_number_chk CHECK (number >= 1);
+ALTER TABLE compose_revisions ADD CONSTRAINT compose_revisions_sha_chk CHECK (validated_sha256 IS NULL OR validated_sha256 ~ '^[0-9a-f]{64}$');
+-- Revision không có YAML đã validate thì không thể ok (không có đường chạy YAML chưa qua validator, D-96).
+ALTER TABLE compose_revisions ADD CONSTRAINT compose_revisions_ok_chk CHECK (NOT ok OR (validated_yaml IS NOT NULL AND validated_sha256 IS NOT NULL));
+ALTER TABLE port_allocations ADD CONSTRAINT port_range_chk CHECK (port BETWEEN 20000 AND 29999);
+ALTER TABLE port_allocations ADD CONSTRAINT port_protocol_chk CHECK (protocol IN ('tcp', 'udp'));
+ALTER TABLE port_allocations ADD CONSTRAINT port_container_chk CHECK (container_port BETWEEN 1 AND 65535);
+ALTER TABLE image_rollbacks ADD CONSTRAINT image_rollbacks_state_chk CHECK (state IN ('running', 'succeeded', 'rolled_back', 'failed'));
+ALTER TABLE image_rollbacks ADD CONSTRAINT image_rollbacks_digest_chk
+  CHECK (from_digest ~ '^sha256:[0-9a-f]{64}$' AND to_digest ~ '^sha256:[0-9a-f]{64}$');
+ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_auto_update_chk CHECK (auto_update IN ('off', 'minor', 'all'));
+ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_state_chk CHECK (state IN ('ok', 'updating', 'cloning', 'maintenance', 'error'));
+ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_window_chk CHECK (update_window ~ '^([01][0-9]|2[0-3]):00-([01][0-9]|2[0-3]):00$');
+ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_path_chk CHECK (path !~ '(^/|(^|/)\.\.(/|$))');
+ALTER TABLE wordpress_components ADD CONSTRAINT wordpress_components_type_chk CHECK (
+  (type = 'core' AND slug IS NULL) OR (type IN ('plugin', 'theme') AND slug IS NOT NULL AND slug ~ '^[a-z0-9][a-z0-9_-]{0,99}$')
+);
+CREATE UNIQUE INDEX wordpress_components_core_uq ON wordpress_components (wordpress_site_id) WHERE type = 'core';
+ALTER TABLE wordpress_updates ADD CONSTRAINT wordpress_updates_state_chk CHECK (state IN ('running', 'succeeded', 'rolled_back', 'failed'));
+ALTER TABLE wordpress_updates ADD CONSTRAINT wordpress_updates_trigger_chk CHECK (trigger IN ('manual', 'auto'));

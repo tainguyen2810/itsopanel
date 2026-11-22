@@ -159,6 +159,7 @@ type vhostData struct {
 	ServerNames, RedirectNames                                                         []string
 	ProxyPort                                                                          int64
 	HTTP2, HSTS, ForceHTTPS, Suspended, IPv6                                           bool
+	WPBlockXMLRPC, WPBlockUploadsPHP                                                   bool
 	Headers                                                                            []header
 	Redirects                                                                          []redirect
 }
@@ -212,6 +213,9 @@ func checkVhost(p contracts.NginxVhostApplyParams) (*vhostData, error) {
 		if p.ProxyPort != nil {
 			return nil, &validate.Error{Code: "invalid_params", Field: "proxy_port", Msg: "proxy_port chỉ dùng cho type=proxy"}
 		}
+		if p.WpHardening != nil {
+			v.WPBlockXMLRPC, v.WPBlockUploadsPHP = p.WpHardening.XmlrpcBlocked, p.WpHardening.PHPInUploadsBlocked
+		}
 	case "proxy":
 		if p.ProxyPort == nil || *p.ProxyPort < 1024 || *p.ProxyPort > 65535 {
 			return nil, &validate.Error{Code: "invalid_params", Field: "proxy_port", Msg: "type=proxy cần proxy_port 1024–65535 (127.0.0.1)"}
@@ -223,6 +227,9 @@ func checkVhost(p contracts.NginxVhostApplyParams) (*vhostData, error) {
 		}
 	default:
 		return nil, &validate.Error{Code: "invalid_params", Field: "type", Msg: "type không hợp lệ"}
+	}
+	if p.WpHardening != nil && p.Type != "php" && (p.WpHardening.XmlrpcBlocked || p.WpHardening.PHPInUploadsBlocked) {
+		return nil, &validate.Error{Code: "invalid_params", Field: "wp_hardening", Msg: "wp_hardening chỉ dùng cho type=php"}
 	}
 	if p.TLS != nil {
 		if err := validate.UUID(string(p.TLS.CertUUID)); err != nil {

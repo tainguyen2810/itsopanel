@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 9 — Multi-server & chuyển tài khoản (kế hoạch ✓ duyệt 2026-11-21 cùng D-88 → D-93; 9.0 → 9.8 ✓, merge `main`, **chờ duyệt**, dừng trước Phase 10). Phase 8 ✓ APPROVED 2026-11-21 cùng D-82 → D-87 và mốc `v0.1.0-alpha` (kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 9.8 ✓ (Phase 9 xong, báo cáo `docs/reports/phase-9.md`). Prompt chi tiết `docs/planning/seed/PHASE_9_PROMPTS.md`
-- **Task đang làm:** không
-- **Commit cuối:** xem `git log -1` trên nhánh `phase-9`
-- **Bước tiếp theo:** chờ người dùng duyệt Phase 9 (không tự sang Phase 10); chạy `tests/vm/phase4–9.sh` (gồm DR 2 VM, Phase 9 cần 3 VM) khi có VM
+- **Phase:** 10 — Docker Manager, WordPress Toolkit, Software (bắt đầu 2026-11-22; kế hoạch `docs/planning/seed/PHASE_10_PROMPTS.md`, D-94 → D-100 đề xuất). Phase 9 ✓ APPROVED 2026-11-22 (merge `8d2a613`; kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 10.8 ✓ — Phase 10 hoàn tất phần không cần VM, **chờ duyệt** (báo cáo `docs/reports/phase-10.md`)
+- **Task đang làm:** không (dừng trước Phase 11)
+- **Commit cuối:** xem `git log -1` trên nhánh `phase-10`
+- **Bước tiếp theo:** chờ người dùng duyệt Phase 10 (đã merge `--no-ff` vào `main` ở Git local, không push); chạy `tests/vm/phase4–10.sh` khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -24,14 +24,26 @@
 | 6 | Database / File / FTP-SFTP / Cron / Terminal | ✓ APPROVED (báo cáo `docs/reports/phase-6.md`; tiêu chí cần VM: chờ VM) |
 | 7 | Security Center | ✓ APPROVED (báo cáo `docs/reports/phase-7.md`; tiêu chí cần VM: chờ VM) |
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
-| 9 | Multi-server & chuyển tài khoản | ✓ chờ duyệt (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
-| 10 | Docker Manager, WordPress Toolkit, Software | ○ |
+| 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
+| 10 | Docker Manager, WordPress Toolkit, Software | ✓ chờ duyệt (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ○ |
 | 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
 
 ## Checklist Phase hiện tại
 
-Phase 9 (kế hoạch ✓ duyệt 2026-11-21, đang làm) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
+Phase 10 (bắt đầu 2026-11-22, hoàn tất 2026-11-22, chờ duyệt) — prompt chi tiết: `docs/planning/seed/PHASE_10_PROMPTS.md`
+
+- ✓ 10.0 Mockup Docker, WordPress, Software trên bản demo (`docs/screenshots/phase-10/`)
+- ✓ 10.1 ADR 0039–0045 (D-94…D-100), contracts, migration Phase 10
+- ✓ 10.2 Software Manager: catalog, PHP nhiều bản, upgrade
+- ✓ 10.3 Agent Docker: Engine client, validator compose, DOCKER-USER, image/volume (log realtime qua gateway: hoãn, dùng tail)
+- ✓ 10.4 Panel Docker: hosts, compose, cổng, registry, website Docker, firewall scope=docker, backup/khôi phục volume
+- ✓ 10.5 Agent WordPress: wp.* dưới UID account, update có snapshot restic + tự khôi phục
+- ✓ 10.6 Panel WordPress: Admin + Portal (cài, quét, cập nhật an toàn, staging, hardening, tự cập nhật theo cửa sổ)
+- ✓ 10.7 UI nối API thật (WordPress: mật khẩu quản trị một lần, basic auth staging tắt kèm lý do; MSW theo hành vi API)
+- ✓ 10.8 e2e stack thật Phase 10 (4 luồng), `tests/vm/phase10.sh` (V0–V6 chờ VM), review bảo mật, runbook, `make check` 22 PASS · 1 SKIP, báo cáo, merge
+
+Phase 9: ✓ APPROVED 2026-11-22 (merge `8d2a613`) — prompt chi tiết: `docs/planning/seed/PHASE_9_PROMPTS.md`
 
 - ✓ 9.0 Mockup Multi-server & chuyển tài khoản trên bản demo (`docs/screenshots/phase-9/`, 48 ảnh) — 7d94e0e
 - ✓ 9.1 ADR 0034–0038 (D-88…D-93), contracts, migration Phase 9 — 611cfa4
@@ -179,3 +191,13 @@ Phase 1: ✓ APPROVED 2026-11-20 (báo cáo `docs/reports/phase-1.md`).
 | 2026-11-21 | 9.0 | Mockup Phase 9 trên demo: server theo vai trò/kênh/kết nối + chứng chỉ, thêm node (token một lần + ghim CA), node mất kết nối (banner, job `waiting_agent`, job lỗi `agent_unreachable`), thu hồi node (trạng thái `revoked`), gợi ý server có lý do loại + % cam kết, chuyển account 6 bước (kiểm tra trước → đồng bộ → kiểm tra dữ liệu → cutover có DNS/ước tính → giữ nguồn → dọn nguồn), khôi phục sang server khác; contracts: `:migrate-preflight`, `:cleanup`, `servers/{id}:revoke`, `MigrationPreflight`, `AccountMigration` mới | 7d94e0e |
 | 2026-11-21 | 9 / kế hoạch | Kế hoạch Phase 9 Multi-server & chuyển tài khoản theo yêu cầu người dùng: `PHASE_9_PROMPTS.md` (9.0 mockup → 9.8 tích hợp), đề xuất D-88 (vai trò cài đặt), D-89 (`itso-relay` mTLS, node chỉ kết nối ra), D-90 (CA nội bộ, chứng chỉ 30 ngày), D-91 (job khi node offline), D-92 (gợi ý server), D-93 (chuyển account qua repo restic, cutover + rollback); nhánh `phase-9` từ `main` | 628a6a6 |
 | 2026-11-21 | 8 / duyệt | Người dùng duyệt những gì đã làm: Phase 8 + D-82 → D-87 (ADR 0029–0033 Accepted) + mốc `v0.1.0-alpha`; kế hoạch Phase 9 + D-88 → D-93; ROADMAP Phase 1 ghi APPROVED | 02adc94 |
+| 2026-11-22 | 9 / duyệt · 10 / kế hoạch | Người dùng duyệt Phase 9 (merge `8d2a613`) và chọn bắt đầu Phase 10; kế hoạch `PHASE_10_PROMPTS.md` (10.0 mockup → 10.8 tích hợp), đề xuất D-94 → D-100 | — |
+| 2026-11-22 | 10.0 | Mockup Phase 10 trên demo (MSW): Software Manager dạng catalog theo nhóm (xung đột Redis↔Valkey, phụ thuộc, gỡ bị chặn kèm lý do, PPA ondrej/php) + tự cập nhật OS không reboot; Docker host (kiểm tra an toàn, daemon, firewall DOCKER-USER, bật Docker cho SA), image (prune, tag rollback), volume (dùng bởi, backup, xóa khi rời); compose: validator mô phỏng D-96 (privileged, docker.sock, host network/pid, cap_add, bind mount, viết lại cổng 20000–29999, thêm mem_limit), override chỉ SA kèm lý do, revision + diff, cập nhật/quay lại image, mẫu; website loại `docker`; registry kiểm đăng nhập; backup phạm vi compose project + volume; WordPress: trang chi tiết dùng chung Admin/Portal (cập nhật chọn lọc có snapshot/rollback + lịch sử bước, hardening 6 mục, bảo trì, tự cập nhật theo cửa sổ giờ, staging, đổi mật khẩu admin); 68 ảnh `docs/screenshots/phase-10/` | — |
+| 2026-11-22 | 10.1 | ADR 0039–0045 Accepted; agent-ops 41 op Phase 10 có schema + 5 mã lỗi + 69 vector độc; OpenAPI port-allocations; DBML 12 bảng Phase 10 + ALTER bảng Phase 4/5/8; migration Phase 10; db-verify 138, Pest 483, Vitest 591 xanh | — |
+| 2026-11-22 | 10.2 | Software Manager: catalog agent 22 recipe, PPA ondrej/php khóa ghim, wp-cli sha512, upgrade, unattended-upgrades không reboot; panel chặn xung đột/phụ thuộc/đang dùng, os-updates, refresh; Go + Pest 488 xanh | — |
+| 2026-11-22 | 10.3 | Agent Docker: client Engine API qua unix socket, validator compose (chặn theo rule, viết lại cổng 127.0.0.1:20000–29999, thêm limit, override 4 rule), DOCKER-USER qua iptables-restore, compose validate→apply theo sha256, image update có rollback tự động, volume backup/restore restic; log realtime qua gateway hoãn (dùng tail) | 536d6d4 |
+| 2026-11-22 | 10.4 | Panel Docker: quyền `docker.read/write/manage` (ADMIN read+write trên server được giao, SA bật Docker/registry/DOCKER-USER/override); `docker:enable` (step-up, recipe + daemon.json + DOCKER-USER), container (cache `containers`)/image/volume/network, compose-projects CRUD + revision + `:validate/:up/:down/:pull`, xem trước validator, cấp cổng trong transaction (đụng unique → kiểm lại), override chỉ SA kèm lý do, `:update-images/:rollback-images`, registry (Crypt, `registry_password:<uuid>`), env compose qua `compose_env:<uuid>`, website loại docker (vhost proxy tới cổng đã cấp), firewall `scope=docker` (ALTER phase:10) → docker.firewall.sync, policy backup `compose_project` → docker.volume.backup + khôi phục `volume:`; Pest 498, db-verify 142 | bad264f |
+| 2026-11-22 | 10.5 | Agent WordPress: 8 op wp.* (detect đọc file qua fs helper; info/install/update/clone/harden/admin_password/maintenance chạy `php<ver> wp-cli.phar` qua systemd-run dưới uid + slice account, allowlist subcommand, cấm cờ --require/--exec/--ssh/--http/--path; mật khẩu qua stdin `--prompt`); đường dẫn chỉ `sites/<domain>/public[/…]`, chặn mọi thành phần symlink; wp.update: snapshot restic `pre-wp-update` (file site + DB) → maintenance → update → verify-checksums + http.check → lỗi thì khôi phục file (hoán đổi, giữ bản lỗi) + DB; clone vào đích rỗng + DB rỗng, search-replace, noindex; harden 6 mục (cờ vhost xmlrpc/uploads qua `nginx.vhost.apply.wp_hardening`); contract wp.update thêm snapshot/check_scheme/rolled_back, BackupTag thêm `pre-wp-update`, `auto`; sandbox mô phỏng WP-CLI | fdd210f |
+| 2026-11-22 | 10.6 | Panel WordPress: model WordPressSite/Component/Update (+ cột `database_id`, `last_auto_update_at` vào migration Phase 10 chưa phát hành), `WordPressService` (cài: DB + DB user theo gói, mật khẩu admin sinh một lần qua ref `wp_password:<uuid>` giữ tạm trong Cache + Crypt, trả `secret` một lần; quét theo server; chi tiết làm mới wp.info ≤ 5 phút; cập nhật cần đích backup + quota backup chưa tạm dừng → repo.init? → wp.update (snapshot tag `account:`, manual/auto) → backup.stats → wp.info; staging tính giới hạn website + DB của gói, basic auth → 422; hardening lưu cờ vhost rồi áp `nginx.vhost.apply`; đổi mật khẩu admin step-up; bảo trì), `WordPressJobHandler` (lịch sử bước, snapshot `pre-wp-update` vào backup_snapshots, thông báo khi rolled_back/failed, xóa secret khi job xong), lệnh `itso:wordpress-auto-update` mỗi giờ (cửa sổ qua nửa đêm, ≥ 20 giờ/lần, minor → `--minor`), API `/admin` + `/portal/wordpress/*`; wp.info trả `db_name`; Pest 505 | 6a7e374 |
+| 2026-11-22 | 10.7 | UI nối API thật: cài WordPress hiện mật khẩu quản trị một lần (`secret`), staging hiện basic auth tắt + lý do (API 422), MSW WordPress theo API (job `wordpress_site`, op thật, cần đích backup → 409, basic auth → 422, user admin chưa biết → `precondition_failed`, quét không có website PHP → 409, tên quản trị admin/administrator → 422), registry chỉ SA (403 như `docker.manage`); API: body cập nhật rỗng = mọi thành phần có bản mới, core trong lịch sử có slug `wordpress`, chặn tên quản trị admin/administrator; Vitest 593, Playwright demo + axe 100, Pest 505 | 18ea187 |
+| 2026-11-22 | 10.8 | Tích hợp: e2e stack thật `phase10.spec.ts` 4 luồng (Software PHP 8.3 + 8.2, gỡ đang dùng 409; Docker bật + step-up, privileged 422, apply, website docker, image unhealthy → `rolled_back`, registry, backup volume; WordPress secret một lần, update lỗi → `rolled_back` với restic thật, staging, harden; USER không chạm Docker); file điều khiển sandbox `docker-control.json`/`wp-control.json`; `make dev` bật docker trong policy sandbox; `tests/vm/phase10.sh` V0–V6; review bảo mật `docs/security/docker-wordpress-review.md`; runbook; e2e stack thật toàn bộ 26/27 lượt đầu (đĩa < 15 %, dọn cache, chạy lại xanh); `make check` 22 PASS · 1 SKIP · 0 FAIL; báo cáo `docs/reports/phase-10.md` | f1e0602 |

@@ -75,6 +75,11 @@ final class Permissions
             'settings.read' => 'Xem cài đặt hệ thống',
             'settings.write' => 'Sửa cài đặt hệ thống',
         ],
+        'docker' => [
+            'docker.read' => 'Xem Docker trên server được giao: container, image, volume, network, compose project, cổng (Phase 10)',
+            'docker.write' => 'Compose project (tạo/sửa/chạy/xóa, cập nhật/rollback image), điều khiển container, prune image, xóa volume (step-up; không override)',
+            'docker.manage' => 'Bật Docker, registry, DOCKER-USER, override validator (SUPER_ADMIN)',
+        ],
         'backups' => [
             'backups.read' => 'Xem bản backup, repo, kiểm chứng, lịch sử khôi phục (theo phạm vi)',
             'backups.write' => 'Backup ngay, kiểm chứng snapshot, tải file từ snapshot (theo phạm vi)',
@@ -88,7 +93,8 @@ final class Permissions
         'SUPER_ADMIN' => ['*'],
         'ADMIN' => ['users.read', 'users.write', 'roles.read', 'servers.read', 'packages.read', 'accounts.read',
             'accounts.write', 'jobs.read', 'jobs.write', 'audit.read', 'websites.*', 'dns.read', 'dns.write', 'databases.*', 'files.*', 'ftp.*',
-            'cron.*', 'terminal.account', 'backups.read', 'backups.write', 'backups.restore', 'security.read', 'security.write'],
+            'cron.*', 'terminal.account', 'backups.read', 'backups.write', 'backups.restore', 'security.read', 'security.write',
+            'docker.read', 'docker.write'],
         'USER' => ['own.*'],
     ];
 

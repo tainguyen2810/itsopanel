@@ -526,7 +526,13 @@
       "web": "Web server",
       "php": "PHP",
       "cache": "Bộ nhớ đệm",
-      "db": "Cơ sở dữ liệu"
+      "db": "Cơ sở dữ liệu",
+      "database": "Cơ sở dữ liệu",
+      "runtime": "Runtime",
+      "tools": "Công cụ",
+      "docker": "Docker",
+      "security": "Bảo mật",
+      "base": "Hệ thống"
     },
     "installed": "Đang cài",
     "latest": "Mới nhất",
@@ -534,6 +540,52 @@
       "install": "Cài đặt",
       "upgrade": "Nâng cấp",
       "remove": "Gỡ"
+    },
+    "confirm": {
+      "install": "Cài {{name}}?",
+      "upgrade": "Nâng cấp {{name}}?",
+      "remove": "Gỡ {{name}}?"
+    },
+    "confirmHint": {
+      "install": "Agent cài bằng recipe có sẵn và khởi động dịch vụ nếu có.",
+      "upgrade": "Nâng lên bản mới nhất trong kho; dịch vụ được khởi động lại.",
+      "remove": "Gỡ gói, giữ file cấu hình và dữ liệu."
+    },
+    "conflict": "Xung đột với {{name}} đang cài",
+    "os": {
+      "allUpdates": "Mọi bản cập nhật",
+      "description": "unattended-upgrades cho Ubuntu. Panel không bao giờ tự khởi động lại máy.",
+      "lastRun": "Lần chạy gần nhất",
+      "noReboot": "Không tự reboot",
+      "off": "Tắt",
+      "on": "Bật",
+      "pending_one": "{{count}} bản vá bảo mật chờ cài",
+      "pending_other": "{{count}} bản vá bảo mật chờ cài",
+      "securityOnly": "Chỉ bản vá bảo mật",
+      "title": "Tự cập nhật hệ điều hành",
+      "toggle": "Bật tự cập nhật hệ điều hành"
+    },
+    "ppaHint": "Bản PHP này lấy từ PPA ondrej/php (khóa ký đã ghim). Agent chỉ bật PPA khi cần.",
+    "requires": "Cần cài trước: {{keys}}",
+    "running": "Đang chạy",
+    "service": "Dịch vụ",
+    "source": "Nguồn",
+    "sources": {
+      "ubuntu": "Ubuntu",
+      "ppa-ondrej-php": "PPA ondrej/php",
+      "itso": "ITSO"
+    },
+    "stopped": "Đã dừng",
+    "usedBy": "Đang dùng bởi:",
+    "use": {
+      "website_one": "{{count}} website",
+      "website_other": "{{count}} website",
+      "compose_project_one": "{{count}} compose project",
+      "compose_project_other": "{{count}} compose project",
+      "php_pool_one": "{{count}} PHP pool",
+      "php_pool_other": "{{count}} PHP pool",
+      "wordpress_site_one": "{{count}} site WordPress",
+      "wordpress_site_other": "{{count}} site WordPress"
     }
   },
   "firewall": {
@@ -618,7 +670,77 @@
     "driver": "Driver",
     "inUse": "Đang dùng",
     "unused": "Không dùng",
-    "composeHint": "Triển khai nhiều container cùng lúc bằng"
+    "composeHint": "Triển khai nhiều container cùng lúc bằng",
+    "apiVersion": "API",
+    "bindIp": "Bind mặc định",
+    "checks": "Kiểm tra an toàn",
+    "checksFailing_one": "{{count}} kiểm tra chưa đạt",
+    "checksFailing_other": "{{count}} kiểm tra chưa đạt",
+    "checksHint": "Agent đọc lại cấu hình mỗi lần đồng bộ.",
+    "check": {
+      "daemon_json": "daemon.json đúng chuẩn (bind 127.0.0.1, xoay log)",
+      "docker_group_empty": "Nhóm docker không có thành viên",
+      "docker_user_chain": "Chain DOCKER-USER chặn cổng chưa khai báo",
+      "socket_root_only": "docker.sock chỉ root đọc được",
+      "compose_plugin": "Có plugin docker compose"
+    },
+    "containersCount_one": "{{count}} container",
+    "containersCount_other": "{{count}} container",
+    "daemon": "Daemon",
+    "daemonHint": "Cấu hình do panel quản lý trong /etc/docker/daemon.json.",
+    "dangling": "Không tag",
+    "delete": "Xóa",
+    "deleteVolume": "Xóa volume {{name}}",
+    "deleteVolumeHint": "Dữ liệu trong volume mất vĩnh viễn nếu chưa có backup. Gõ tên volume để xác nhận.",
+    "deleteVolumeTitle": "Xóa volume {{name}}?",
+    "enable": {
+      "action": "Bật Docker",
+      "confirm": "Bật Docker trên máy chủ này?",
+      "confirmHint": "Agent cài gói docker.io từ Ubuntu, ghi daemon.json và thêm chain DOCKER-USER. Cần xác thực lại.",
+      "description": "Docker chưa được cài trên máy chủ này.",
+      "installing": "Đang cài Docker…",
+      "saOnly": "Chỉ Super Admin bật được Docker.",
+      "title": "Bật Docker",
+      "userNote": "Docker chỉ dành cho quản trị. Người dùng hosting không truy cập được Docker.",
+      "steps": {
+        "package": "Cài docker.io và docker-compose-v2 từ kho Ubuntu",
+        "bind": "Mặc định bind cổng vào 127.0.0.1",
+        "chain": "Chain DOCKER-USER chặn mọi cổng chưa khai báo",
+        "group": "Nhóm docker để trống, chỉ agent dùng socket",
+        "limits": "Xoay log và bật live-restore"
+      }
+    },
+    "firewall": "Firewall",
+    "firewallHint": "Cổng container chỉ ra ngoài khi khai báo ở đây; đồng bộ ghi lại chain DOCKER-USER.",
+    "groupMembers": "Nhóm docker có thành viên: {{names}}",
+    "internal": "Nội bộ",
+    "lastBackup": "Backup gần nhất",
+    "liveRestore": "Live restore",
+    "logRotate": "Xoay log",
+    "logsHint": "200 dòng cuối, đã che thông tin nhạy cảm.",
+    "noBackup": "Chưa backup",
+    "noOpenPorts": "Không có cổng container nào mở ra ngoài.",
+    "notOk": "Chưa đạt",
+    "off": "Tắt",
+    "ok": "Đạt",
+    "on": "Bật",
+    "openInFirewall": "Mở trong firewall",
+    "portRange": "Dải cổng",
+    "portRangeValue": "{{from}}–{{to}} ({{used}} đã cấp)",
+    "prune": "Dọn image không dùng",
+    "pruneHint": "Xóa image không tag và không container nào dùng. Tag rollback được giữ lại.",
+    "pruneTitle": "Dọn image không dùng?",
+    "rollbackOf": "Rollback của {{image}}",
+    "sync": "Đồng bộ firewall",
+    "syncedAt": "Đồng bộ lúc",
+    "updateAvailable": "Có bản mới",
+    "usedBy": "Dùng bởi",
+    "userlandProxy": "Userland proxy",
+    "versionLine": "Docker Engine {{engine}} · Compose {{compose}}",
+    "volumeBackupHint": "Backup volume cấu hình trong Backup → Chính sách, phạm vi compose project.",
+    "volumeInUse": "Volume đang được container dùng, không xóa được.",
+    "health": "Sức khỏe",
+    "memLimit": "Giới hạn RAM"
   },
   "compose": {
     "title": "Compose projects",
@@ -654,7 +776,67 @@
     "errors": {
       "name": "Chữ thường, số, _ và -, tối đa 63 ký tự",
       "services": "Thiếu khóa services: ở cấp gốc"
-    }
+    },
+    "added": "thêm mới",
+    "adminNoOverride": "Có lỗi chặn. Chỉ Super Admin mới ghi đè được; hãy sửa compose.yaml hoặc nhờ Super Admin.",
+    "attachDomain": "Gắn domain qua Nginx",
+    "blocked_one": "{{count}} lỗi chặn triển khai",
+    "blocked_other": "{{count}} lỗi chặn triển khai",
+    "blockedHint": "Sửa compose.yaml rồi kiểm tra lại. Lỗi có thể ghi đè chỉ dành cho Super Admin, kèm lý do và được ghi audit.",
+    "check": "Kiểm tra",
+    "checkFirst": "Bấm Kiểm tra trước khi triển khai.",
+    "current": "Đang chạy",
+    "diffHint": "Chọn một phiên bản cũ để so với phiên bản đang chạy.",
+    "diffTitle": "Khác biệt r{{from}} → r{{to}}",
+    "error": "Lỗi",
+    "fromTemplate": "Mẫu: {{name}}",
+    "imageCurrent": "Mới nhất",
+    "images": "Image",
+    "imagesCurrent": "Mới nhất",
+    "imagesHint": "Cập nhật kéo image mới, giữ image cũ làm tag rollback; nếu healthcheck lỗi sẽ tự quay lại.",
+    "localOnly": "Chỉ 127.0.0.1",
+    "noPorts": "Project không mở cổng nào.",
+    "noTemplate": "Tự viết",
+    "noWebsites": "Chưa gắn domain nào.",
+    "notOverridable": "Lỗi này không thể ghi đè.",
+    "onlyOneRevision": "Mới có một phiên bản.",
+    "overridden": "Đã ghi đè",
+    "overrideHint": "Chỉ Super Admin. Mỗi rule cần lý do tối thiểu 10 ký tự, được lưu cùng phiên bản và ghi audit.",
+    "overrideReason": "Lý do ghi đè {{rule}}",
+    "overrideReasonPh": "Vd: Uptime Kuma cần NET_RAW để ping",
+    "overrideTitle": "Ghi đè lỗi (Super Admin)",
+    "overrides": "Ghi đè",
+    "overridesCount_one": "{{count}} ghi đè",
+    "overridesCount_other": "{{count}} ghi đè",
+    "passWithNotes": "Hợp lệ, có ghi chú bên dưới",
+    "pickServerFirst": "Chọn máy chủ trước khi kiểm tra.",
+    "ports": "Cổng",
+    "portsHint": "Cổng được cấp trong dải 20000–29999 và bind 127.0.0.1; chỉ mở ra ngoài khi khai báo trong firewall.",
+    "published": "Mở ra ngoài",
+    "rejected": "Bị từ chối",
+    "revN": "r{{n}}",
+    "revisions": "Phiên bản",
+    "rewrites": "Panel tự viết lại",
+    "rollbackImage": "Quay lại image cũ",
+    "rolledBack": "Cập nhật image của {{service}} đã tự quay lại vì healthcheck lỗi.",
+    "stale": "compose.yaml đã đổi sau lần kiểm tra. Kiểm tra lại.",
+    "template": "Mẫu",
+    "updateImage": "Cập nhật image",
+    "updates_one": "{{count}} image có bản mới",
+    "updates_other": "{{count}} image có bản mới",
+    "volumes": "Volume",
+    "warning": "Cảnh báo",
+    "websites": "Domain",
+    "yamlHintRevision": "Lưu tạo phiên bản mới; phiên bản cũ giữ lại để so sánh.",
+    "confirm": {
+      "update": "Cập nhật image của {{service}}?",
+      "rollback": "Quay lại image cũ của {{service}}?"
+    },
+    "confirmHint": {
+      "update": "Kéo image mới, tạo lại container và chờ healthcheck. Lỗi thì tự quay lại tag cũ.",
+      "rollback": "Tạo lại container từ tag rollback đã lưu."
+    },
+    "templateHint": "Chọn mẫu để điền sẵn compose.yaml."
   },
   "registries": {
     "title": "Docker registry",
@@ -673,7 +855,12 @@
     "removed": "Đã xóa registry",
     "errors": {
       "url": "URL phải bắt đầu bằng https://"
-    }
+    },
+    "lastTest": "Kiểm tra gần nhất",
+    "testOk": "Đăng nhập được",
+    "testFail": "Lỗi",
+    "notTested": "Chưa kiểm tra",
+    "test": "Kiểm tra đăng nhập {{name}}"
   },
   "terminal": {
     "title": "Terminal",
@@ -1270,7 +1457,13 @@
     "certPem": "Chứng chỉ (PEM)",
     "certPemHint": "Bắt đầu bằng -----BEGIN CERTIFICATE-----; dán cả chuỗi trung gian nếu có.",
     "keyPem": "Khóa riêng (PEM)",
-    "keyPemHint": "Bắt đầu bằng -----BEGIN PRIVATE KEY-----, không đặt mật khẩu."
+    "keyPemHint": "Bắt đầu bằng -----BEGIN PRIVATE KEY-----, không đặt mật khẩu.",
+    "composeProject": "Compose project",
+    "dockerHint": "Nginx proxy tới cổng 127.0.0.1 đã cấp cho service; SSL do panel cấp.",
+    "pickProject": "Chọn project",
+    "pickProjectFirst": "Chọn project trước",
+    "pickService": "Chọn service",
+    "service": "Service"
   },
   "dbs": {
     "title": "Cơ sở dữ liệu",
@@ -1625,7 +1818,7 @@
   },
   "wp": {
     "title": "WordPress",
-    "description": "Site WordPress trên các website PHP: cập nhật lõi/plugin/theme (có sao lưu trước), hardening và tạo bản staging.",
+    "description": "Site WordPress trên các website PHP: cập nhật chọn lọc có snapshot và tự quay lại khi lỗi, hardening, staging, bảo trì.",
     "site": "Website",
     "version": "Phiên bản",
     "newVersion": "Có bản {{v}}",
@@ -1648,7 +1841,7 @@
     "staging": "Tạo bản staging",
     "install": "Cài WordPress",
     "installTitle": "Cài WordPress",
-    "installHint": "Panel tạo database, cài WordPress và bật hardening cơ bản. Mật khẩu quản trị hiện trong job.",
+    "installHint": "Panel tạo database + user theo gói rồi cài WordPress. Mật khẩu quản trị chỉ hiện một lần ngay sau khi gửi.",
     "pickSite": "Chọn website",
     "phpOnly": "Chỉ website loại PHP chưa cài WordPress.",
     "siteTitle": "Tiêu đề site",
@@ -1670,6 +1863,121 @@
       "update": "Cập nhật",
       "harden": "Áp dụng",
       "clone-staging": "Tạo staging"
+    },
+    "adminPassword": "Đổi mật khẩu admin",
+    "adminPasswordHint": "Mật khẩu đi qua vault của agent, không lưu trong job hay audit. Cần xác thực lại.",
+    "adminPasswordSubmit": "Đổi mật khẩu",
+    "adminPasswordTitle": "Đổi mật khẩu cho {{user}}",
+    "autoOn": "tự cập nhật",
+    "autoPolicy": "Chính sách",
+    "autoSafety": "Mỗi lần tự cập nhật đều chụp snapshot trước và tự quay lại nếu trang chủ lỗi sau cập nhật.",
+    "autoUpdateHint": "Áp dụng trong cửa sổ giờ của máy chủ.",
+    "autoLong": {
+      "off": "Tắt",
+      "minor": "Chỉ bản vá (6.7.1 → 6.7.2)",
+      "all": "Mọi bản cập nhật, kể cả plugin/theme"
+    },
+    "basicAuthLater": "Chưa có ở bản này. Staging mặc định bật noindex để không bị công cụ tìm kiếm lập chỉ mục.",
+    "adminPasswordOnce": "Mật khẩu quản trị WordPress",
+    "basicAuth": "Bảo vệ bằng mật khẩu (basic auth)",
+    "checksumsBad": "Checksum lõi không khớp",
+    "components": "Lõi, plugin và theme",
+    "componentsHint": "Chọn thành phần có bản mới để cập nhật.",
+    "confirmSelected_one": "Cập nhật {{count}} thành phần cho {{name}}?",
+    "confirmSelected_other": "Cập nhật {{count}} thành phần cho {{name}}?",
+    "confirmSelectedHint": "Các bước: chụp snapshot → bật bảo trì → cập nhật → kiểm tra trang chủ. Nếu kiểm tra lỗi, panel tự khôi phục file và database từ snapshot.",
+    "core": "Lõi WordPress",
+    "detail": "Chi tiết WordPress",
+    "hardenAll": "Bật tất cả",
+    "hardeningHint": "Áp dụng qua WP-CLI dưới UID của account và rule Nginx.",
+    "history": "Lịch sử cập nhật",
+    "historyHint": "Mỗi lần cập nhật giữ snapshot để khôi phục.",
+    "inactive": "chưa kích hoạt",
+    "info": "Thông tin",
+    "lastRolledBack": "Lần cập nhật gần nhất đã tự quay lại",
+    "lastRolledBackHint": "Lúc {{at}}. Xem tab Cập nhật để biết lỗi và thành phần gây lỗi.",
+    "lastUpdate": "Cập nhật gần nhất",
+    "maintenance": "Chế độ bảo trì",
+    "maintenanceHint": "Khách truy cập thấy trang bảo trì; quản trị viên đã đăng nhập vẫn vào được.",
+    "maintenanceOn": "Đang bảo trì",
+    "newPassword": "Mật khẩu mới",
+    "noHistory": "Chưa có lần cập nhật nào.",
+    "noStaging": "Chưa có bản staging.",
+    "noindex": "Chặn công cụ tìm kiếm (noindex)",
+    "notInRepo": "(không có trên wordpress.org)",
+    "open": "Mở chi tiết",
+    "passwordRule": "12–128 ký tự, không khoảng trắng.",
+    "php": "PHP",
+    "rotateSalts": "Xoay khóa",
+    "saveSettings": "Lưu",
+    "scan": "Quét site WordPress",
+    "selectComponent": "Chọn {{name}}",
+    "selectOutdated": "Chọn mọi bản mới",
+    "settingsSaved": "Đã lưu chính sách tự cập nhật",
+    "stagingHint": "Sao chép file và database sang subdomain mới, thay URL trong database.",
+    "stagingQuota": "Bản staging tính vào hạn mức website của gói.",
+    "stagingSites": "Bản staging",
+    "stagingTitle": "Tạo staging cho {{name}}",
+    "state": "Trạng thái",
+    "steps": "Các bước",
+    "subdomain": "Subdomain",
+    "tabs": {
+      "overview": "Tổng quan",
+      "security": "Bảo mật",
+      "updates": "Cập nhật"
+    },
+    "updateSelected_one": "Cập nhật {{count}} mục",
+    "updateSelected_other": "Cập nhật {{count}} mục",
+    "updating": "Đang cập nhật, site ở chế độ bảo trì.",
+    "website": "Website",
+    "window": "Cửa sổ giờ",
+    "hd": {
+      "file_edit_disabled": {
+        "title": "Tắt sửa file trong wp-admin",
+        "hint": "DISALLOW_FILE_EDIT trong wp-config.php."
+      },
+      "xmlrpc_blocked": {
+        "title": "Chặn XML-RPC",
+        "hint": "Nginx trả 403 cho xmlrpc.php (giảm brute-force và pingback)."
+      },
+      "php_in_uploads_blocked": {
+        "title": "Chặn chạy PHP trong uploads",
+        "hint": "Nginx không chuyển file .php trong wp-content/uploads cho PHP-FPM."
+      },
+      "wp_config_protected": {
+        "title": "Bảo vệ wp-config.php",
+        "hint": "Quyền 0400 và chặn truy cập qua web."
+      },
+      "version_hidden": {
+        "title": "Ẩn phiên bản WordPress",
+        "hint": "Bỏ thẻ generator và readme.html."
+      },
+      "salts_rotated": {
+        "title": "Xoay khóa bảo mật (salts)",
+        "hint": "Tạo khóa mới; mọi phiên đăng nhập hiện tại bị đăng xuất."
+      }
+    },
+    "step": {
+      "snapshot": "Snapshot",
+      "maintenance": "Bảo trì",
+      "update": "Cập nhật",
+      "verify": "Kiểm tra",
+      "rollback": "Quay lại"
+    },
+    "stepState": {
+      "pending": "chờ",
+      "running": "đang chạy",
+      "done": "xong",
+      "failed": "lỗi",
+      "skipped": "bỏ qua"
+    },
+    "trigger": {
+      "manual": "Thủ công",
+      "auto": "Tự động"
+    },
+    "type": {
+      "plugin": "Plugin",
+      "theme": "Theme"
     }
   },
   "git": {
@@ -1981,7 +2289,8 @@
     "content": {
       "files": "File",
       "databases": "Database",
-      "config": "Cấu hình"
+      "config": "Cấu hình",
+      "docker_volumes": "Volume Docker"
     },
     "note": "Ghi chú",
     "verified": "Kiểm chứng",
@@ -2015,7 +2324,8 @@
       "server": "Cấu hình một máy chủ",
       "panel": "Cấu hình panel",
       "website": "Một website",
-      "database": "Một database"
+      "database": "Một database",
+      "compose_project": "Một compose project"
     },
     "scopeLabel": "Phạm vi",
     "schedule": "Lịch chạy",
@@ -2112,7 +2422,8 @@
       "website": "Website",
       "database": "Database",
       "server_config": "Cấu hình máy chủ",
-      "panel": "Panel"
+      "panel": "Panel",
+      "compose_project": "Compose project"
     },
     "scopeType": "Loại backup",
     "database": "Database",
@@ -2215,7 +2526,15 @@
       "mismatches_other": "{{count}} file sai lệch",
       "at": "Lúc chạy"
     },
-    "localHint": "Repo lưu ở {{path}} trên máy chủ (chỉ root đọc được). Ổ local không phải off-site: thêm một đích S3/SFTP/rest-server khác."
+    "localHint": "Repo lưu ở {{path}} trên máy chủ (chỉ root đọc được). Ổ local không phải off-site: thêm một đích S3/SFTP/rest-server khác.",
+    "pickProject": "Chọn compose project",
+    "volumeConsistency": "Nhất quán volume",
+    "volumeConsistencyHint": "Tạm dừng container trong lúc chụp để dữ liệu (vd database) không bị ghi dở.",
+    "consistency": {
+      "pause": "Tạm dừng container khi chụp (khuyên dùng)",
+      "none": "Không tạm dừng (dữ liệu có thể không nhất quán)"
+    },
+    "volumes": "Volume"
   },
   "rs": {
     "title": "Khôi phục",

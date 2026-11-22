@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/wp.update.schema.json",
+  "title": "wp.update",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "site": {
+          "$ref": "../defs.schema.json#/$defs/WpSite"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/WpComponent"
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "minor_only": {
+          "type": "boolean"
+        },
+        "snapshot": {
+          "type": "object",
+          "properties": {
+            "repo": {
+              "$ref": "../defs.schema.json#/$defs/BackupRepo"
+            },
+            "db": {
+              "oneOf": [
+                {
+                  "$ref": "../defs.schema.json#/$defs/BackupDb"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "$ref": "../defs.schema.json#/$defs/BackupTag"
+              },
+              "maxItems": 10,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "repo",
+            "db",
+            "tags"
+          ],
+          "additionalProperties": false
+        },
+        "check_scheme": {
+          "type": "string",
+          "enum": [
+            "http",
+            "https"
+          ]
+        }
+      },
+      "required": [
+        "site",
+        "components",
+        "minor_only",
+        "snapshot",
+        "check_scheme"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "core",
+                  "plugin",
+                  "theme"
+                ]
+              },
+              "slug": {
+                "oneOf": [
+                  {
+                    "$ref": "../defs.schema.json#/$defs/WpSlug"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "from_version": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "to_version": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "error": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "type",
+              "slug",
+              "from_version",
+              "to_version",
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 200
+        },
+        "checksums_ok": {
+          "type": "boolean"
+        },
+        "http_status": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 599
+        },
+        "snapshot_id": {
+          "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+        },
+        "db_snapshot_id": {
+          "oneOf": [
+            {
+              "$ref": "../defs.schema.json#/$defs/ResticSnapshotId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rolled_back": {
+          "type": "boolean"
+        },
+        "rollback_error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "results",
+        "checksums_ok",
+        "http_status",
+        "snapshot_id",
+        "db_snapshot_id",
+        "rolled_back",
+        "rollback_error"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

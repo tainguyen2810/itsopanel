@@ -10,8 +10,13 @@ export default function WebsitesPage() {
     queryKey: ['admin', 'servers', { q: '' }],
     queryFn: () => list('/api/v1/admin/servers'),
   });
+  const compose = useQuery({
+    queryKey: ['admin', 'compose', 'targets'],
+    queryFn: () => list('/api/v1/admin/compose-projects'),
+  });
   return (
     <SharedWebsitesPage
+      dockerTargets={compose.data ?? []}
       extraFilters={[
         {
           key: 'server',

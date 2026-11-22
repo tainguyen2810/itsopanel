@@ -58,7 +58,8 @@
     "monitoringAlerts": "Cảnh báo",
     "audit": "Nhật ký kiểm toán",
     "notifications": "Thông báo",
-    "settings": "Cài đặt hệ thống"
+    "settings": "Cài đặt hệ thống",
+    "wordpressDetail": "Chi tiết WordPress"
   },
   "portal": {
     "login": "Đăng nhập",
@@ -78,7 +79,8 @@
     "terminal": "Terminal",
     "jobDetail": "Tiến độ thao tác",
     "notifications": "Thông báo",
-    "profile": "Hồ sơ"
+    "profile": "Hồ sơ",
+    "wordpressDetail": "Chi tiết WordPress"
   },
   "placeholder": {
     "title": "Trang đang được hoàn thiện",

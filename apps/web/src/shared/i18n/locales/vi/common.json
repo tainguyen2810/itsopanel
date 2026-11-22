@@ -85,7 +85,17 @@
     "unreachable": "Mất kết nối",
     "waiting_agent": "Chờ node kết nối",
     "holding": "Đang giữ nguồn",
-    "revoked": "Đã thu hồi"
+    "revoked": "Đã thu hồi",
+    "partial": "Một phần",
+    "deploying": "Đang triển khai",
+    "enabled": "Đã bật",
+    "not_installed": "Chưa cài",
+    "installing": "Đang cài",
+    "healthy": "Khỏe",
+    "unhealthy": "Không khỏe",
+    "starting": "Đang khởi động",
+    "updating": "Đang cập nhật",
+    "cloning": "Đang nhân bản"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",

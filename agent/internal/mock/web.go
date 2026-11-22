@@ -15,6 +15,7 @@ import (
 	"itso.local/agent/internal/contracts"
 	"itso.local/agent/internal/envelope"
 	"itso.local/agent/internal/registry"
+	"itso.local/agent/internal/validate"
 )
 
 // Op website giả (Prompt 5.2): vhost, pool PHP, chứng chỉ, log giữ trong bộ nhớ. Hành vi (idempotent,
@@ -82,12 +83,13 @@ func (s *webStore) phpInstall(_ context.Context, env *envelope.Envelope) (map[st
 	if err != nil {
 		return nil, err
 	}
-	if p.Version != "8.3" {
-		return nil, errf("precondition_failed", "chỉ hỗ trợ PHP 8.3 (D-68)")
+	ver := string(p.Version)
+	if !validate.PHPSupported[ver] {
+		return nil, errf("precondition_failed", "chỉ hỗ trợ PHP 8.1–8.4 (D-68, D-100)")
 	}
 	defer s.lock()()
-	changed := !s.php["8.3"]
-	s.php["8.3"] = true
+	changed := !s.php[ver]
+	s.php[ver] = true
 	for _, e := range p.Extensions {
 		changed = changed || !s.exts[string(e)]
 		s.exts[string(e)] = true
@@ -100,15 +102,18 @@ func (s *webStore) phpRemove(_ context.Context, env *envelope.Envelope) (map[str
 	if err != nil {
 		return nil, err
 	}
-	if p.Version != "8.3" {
-		return nil, errf("precondition_failed", "chỉ quản lý PHP 8.3")
+	ver := string(p.Version)
+	if !validate.PHPSupported[ver] {
+		return nil, errf("precondition_failed", "chỉ quản lý PHP 8.1–8.4")
 	}
 	defer s.lock()()
-	if len(s.pools) > 0 {
-		return nil, errf("precondition_failed", "PHP 8.3 còn pool")
+	for _, conf := range s.pools {
+		if strings.Contains(conf, `"version":"`+ver+`"`) {
+			return nil, errf("precondition_failed", "PHP %s còn pool", ver)
+		}
 	}
-	removed := s.php["8.3"]
-	delete(s.php, "8.3")
+	removed := s.php[ver]
+	delete(s.php, ver)
 	return toData(contracts.PHPVersionRemoveResult{Removed: removed})
 }
 
@@ -118,7 +123,7 @@ func (s *webStore) extInstall(_ context.Context, env *envelope.Envelope) (map[st
 		return nil, err
 	}
 	defer s.lock()()
-	if p.Version != "8.3" || !s.php["8.3"] {
+	if !s.php[string(p.Version)] {
 		return nil, errf("precondition_failed", "PHP %s chưa cài", p.Version)
 	}
 	changed := false
@@ -136,15 +141,12 @@ func (s *webStore) poolApply(_ context.Context, env *envelope.Envelope) (map[str
 	if err != nil {
 		return nil, err
 	}
-	if p.Version != "8.3" {
-		return nil, errf("precondition_failed", "chỉ hỗ trợ PHP 8.3 (D-68)")
-	}
 	defer s.lock()()
 	if _, err := s.acc.get(p.Account); err != nil {
 		return nil, err
 	}
-	if !s.php["8.3"] {
-		return nil, errf("precondition_failed", "PHP 8.3 chưa cài")
+	if !s.php[string(p.Version)] {
+		return nil, errf("precondition_failed", "PHP %s chưa cài", p.Version)
 	}
 	if !s.sites[string(p.Account.Username)+"/"+string(p.SiteDir)] {
 		return nil, errf("precondition_failed", "chưa có bố cục site")

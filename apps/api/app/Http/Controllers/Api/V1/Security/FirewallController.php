@@ -38,8 +38,9 @@ final class FirewallController extends SecurityBase
             'source' => ['required', 'string', 'max:64'],
             'comment' => ['sometimes', 'string', 'max:200'],
             'enabled' => ['sometimes', 'boolean'],
+            'scope' => ['sometimes', 'in:host,docker'],
         ]);
-        self::only($request, ['priority', 'action', 'direction', 'protocol', 'ports', 'source', 'comment', 'enabled']);
+        self::only($request, ['priority', 'action', 'direction', 'protocol', 'ports', 'source', 'comment', 'enabled', 'scope']);
         $rule = $fw->create($s, $this->actor($request), $this->clientIp($request), $in);
 
         return response()->json(['data' => self::present($rule->refresh())], 201);
@@ -85,7 +86,7 @@ final class FirewallController extends SecurityBase
     {
         return ['uuid' => $r->uuid, 'priority' => $r->priority, 'action' => $r->action, 'direction' => $r->direction,
             'protocol' => $r->protocol, 'ports' => $r->port_range, 'source' => (string) ($r->source_cidr ?? '0.0.0.0/0'),
-            'comment' => (string) ($r->comment ?? ''), 'enabled' => $r->enabled, 'created_at' => $r->created_at->toIso8601String(),
+            'comment' => (string) ($r->comment ?? ''), 'enabled' => $r->enabled, 'scope' => $r->scope, 'created_at' => $r->created_at->toIso8601String(),
             'updated_at' => $r->updated_at->toIso8601String()];
     }
 }

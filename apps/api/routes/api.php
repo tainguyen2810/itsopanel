@@ -4,11 +4,14 @@ use App\Http\Controllers\Api\V1\Admin\AccountMigrationController;
 use App\Http\Controllers\Api\V1\Admin\ApiTokenController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\BackupAdminController;
+use App\Http\Controllers\Api\V1\Admin\ComposeController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DnsController;
+use App\Http\Controllers\Api\V1\Admin\DockerController;
 use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
 use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
+use App\Http\Controllers\Api\V1\Admin\RegistryController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
 use App\Http\Controllers\Api\V1\Admin\ServerOpsController;
@@ -36,6 +39,7 @@ use App\Http\Controllers\Api\V1\Shared\DatabaseController;
 use App\Http\Controllers\Api\V1\Shared\FileController;
 use App\Http\Controllers\Api\V1\Shared\TerminalController;
 use App\Http\Controllers\Api\V1\Shared\WebsiteController;
+use App\Http\Controllers\Api\V1\Shared\WordPressController;
 use App\Http\Controllers\Api\V1\SystemController;
 use Illuminate\Support\Facades\Route;
 
@@ -161,6 +165,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers/{id}/software', [ServerOpsController::class, 'software'])->middleware('itso.perm:servers.read');
             Route::post('servers/{id}/software/{key}:{action}', [ServerOpsController::class, 'manageSoftware'])
                 ->middleware(['itso.perm:software.write', 'itso.idempotent']);
+            Route::get('servers/{id}/os-updates', [ServerOpsController::class, 'osUpdates'])->middleware('itso.perm:servers.read');
+            Route::put('servers/{id}/os-updates', [ServerOpsController::class, 'putOsUpdates'])
+                ->middleware(['itso.perm:software.write', 'itso.idempotent']);
             Route::get('servers/{id}/php-versions', [ServerWebController::class, 'phpVersions'])->middleware('itso.perm:servers.read');
             Route::post('servers/{id}/php-versions/{version}/extensions', [ServerWebController::class, 'installExtensions'])
                 ->middleware(['itso.perm:software.write', 'itso.idempotent']);
@@ -169,6 +176,42 @@ Route::prefix('v1')->group(function (): void {
             Route::get('servers/{id}/nginx', [ServerWebController::class, 'nginx'])->middleware('itso.perm:servers.read');
             Route::patch('servers/{id}/nginx', [ServerWebController::class, 'updateNginx'])
                 ->middleware(['itso.perm:servers.write', 'itso.idempotent']);
+            // Docker (10.4, D-94…D-98): chỉ realm Admin; USER/Portal không có route nào.
+            Route::get('servers/{id}/docker', [DockerController::class, 'show'])->middleware('itso.perm:docker.read');
+            Route::post('servers/{id}/docker:enable', [DockerController::class, 'enable'])
+                ->middleware(['itso.perm:docker.manage', 'itso.step-up', 'itso.idempotent']);
+            Route::post('servers/{id}/docker:sync-firewall', [DockerController::class, 'syncFirewall'])
+                ->middleware(['itso.perm:docker.manage', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/containers', [DockerController::class, 'containers'])->middleware('itso.perm:docker.read');
+            Route::get('servers/{id}/docker/containers/{container}/logs', [DockerController::class, 'logs'])->middleware('itso.perm:docker.read');
+            Route::post('servers/{id}/docker/containers/{container}:{action}', [DockerController::class, 'controlContainer'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/images', [DockerController::class, 'images'])->middleware('itso.perm:docker.read');
+            Route::post('servers/{id}/docker/images:prune', [DockerController::class, 'prune'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/volumes', [DockerController::class, 'volumes'])->middleware('itso.perm:docker.read');
+            Route::delete('servers/{id}/docker/volumes/{volume}', [DockerController::class, 'deleteVolume'])
+                ->middleware(['itso.perm:docker.write', 'itso.step-up', 'itso.idempotent']);
+            Route::get('servers/{id}/docker/networks', [DockerController::class, 'networks'])->middleware('itso.perm:docker.read');
+            Route::get('servers/{id}/docker/port-allocations', [DockerController::class, 'portAllocations'])->middleware('itso.perm:docker.read');
+            Route::get('compose-templates', [ComposeController::class, 'templates'])->middleware('itso.perm:docker.read');
+            Route::post('compose-projects:validate', [ComposeController::class, 'preview'])->middleware('itso.perm:docker.write');
+            Route::get('compose-projects', [ComposeController::class, 'index'])->middleware('itso.perm:docker.read');
+            Route::post('compose-projects', [ComposeController::class, 'store'])->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('compose-projects/{id}', [ComposeController::class, 'show'])->middleware('itso.perm:docker.read');
+            Route::patch('compose-projects/{id}', [ComposeController::class, 'update'])->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::delete('compose-projects/{id}', [ComposeController::class, 'destroy'])->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('compose-projects/{id}/revisions', [ComposeController::class, 'revisions'])->middleware('itso.perm:docker.read');
+            Route::post('compose-projects/{id}:update-images', [ComposeController::class, 'updateImages'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::post('compose-projects/{id}:rollback-images', [ComposeController::class, 'rollbackImages'])
+                ->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::post('compose-projects/{id}:{action}', [ComposeController::class, 'action'])
+                ->where('action', 'validate|up|down|pull')->middleware(['itso.perm:docker.write', 'itso.idempotent']);
+            Route::get('registries', [RegistryController::class, 'index'])->middleware('itso.perm:docker.manage');
+            Route::post('registries', [RegistryController::class, 'store'])->middleware('itso.perm:docker.manage');
+            Route::delete('registries/{id}', [RegistryController::class, 'destroy'])->middleware('itso.perm:docker.manage');
+            Route::post('registries/{id}:test', [RegistryController::class, 'test'])->middleware(['itso.perm:docker.manage', 'itso.idempotent']);
             Route::get('metrics/servers/{id}', [ServerOpsController::class, 'serverMetrics'])->middleware('itso.perm:servers.read');
             Route::get('metrics/hosting-accounts/{id}', [ServerOpsController::class, 'accountMetrics'])->middleware('itso.perm:accounts.read');
 
@@ -267,6 +310,18 @@ Route::prefix('v1')->group(function (): void {
             Route::post('certificates/{id}:renew', [CertificateController::class, 'renew'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
             Route::delete('certificates/{id}', [CertificateController::class, 'destroy'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
             Route::post('websites/{id}/certificates', [CertificateController::class, 'store'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            // ---- WordPress (Prompt 10.6, D-99).
+            Route::get('wordpress/sites', [WordPressController::class, 'index'])->middleware('itso.perm:websites.read');
+            Route::post('wordpress/sites', [WordPressController::class, 'store'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites:scan', [WordPressController::class, 'scan'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('wordpress/sites/{id}', [WordPressController::class, 'show'])->middleware('itso.perm:websites.read');
+            Route::patch('wordpress/sites/{id}', [WordPressController::class, 'update'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::get('wordpress/sites/{id}/updates', [WordPressController::class, 'updates'])->middleware('itso.perm:websites.read');
+            Route::post('wordpress/sites/{id}:update', [WordPressController::class, 'runUpdate'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:clone-staging', [WordPressController::class, 'cloneStaging'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:harden', [WordPressController::class, 'harden'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:maintenance', [WordPressController::class, 'maintenance'])->middleware(['itso.perm:websites.write', 'itso.idempotent']);
+            Route::post('wordpress/sites/{id}:admin-password', [WordPressController::class, 'adminPassword'])->middleware(['itso.perm:websites.write', 'itso.step-up', 'itso.idempotent']);
             // ---- DNS Cloudflare (Prompt 5.4, D-70)
             Route::get('dns/providers', [DnsController::class, 'providers'])->middleware('itso.perm:dns.read');
             Route::post('dns/providers', [DnsController::class, 'storeProvider'])->middleware('itso.perm:dns.providers');
@@ -397,6 +452,18 @@ Route::prefix('v1')->group(function (): void {
             Route::post('certificates/{id}:renew', [CertificateController::class, 'renew'])->middleware(['itso.idempotent']);
             Route::delete('certificates/{id}', [CertificateController::class, 'destroy'])->middleware(['itso.idempotent']);
             Route::post('websites/{id}/certificates', [CertificateController::class, 'store'])->middleware(['itso.idempotent']);
+            // ---- WordPress (Prompt 10.6, D-99).
+            Route::get('wordpress/sites', [WordPressController::class, 'index']);
+            Route::post('wordpress/sites', [WordPressController::class, 'store'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites:scan', [WordPressController::class, 'scan'])->middleware(['itso.idempotent']);
+            Route::get('wordpress/sites/{id}', [WordPressController::class, 'show']);
+            Route::patch('wordpress/sites/{id}', [WordPressController::class, 'update'])->middleware(['itso.idempotent']);
+            Route::get('wordpress/sites/{id}/updates', [WordPressController::class, 'updates']);
+            Route::post('wordpress/sites/{id}:update', [WordPressController::class, 'runUpdate'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:clone-staging', [WordPressController::class, 'cloneStaging'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:harden', [WordPressController::class, 'harden'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:maintenance', [WordPressController::class, 'maintenance'])->middleware(['itso.idempotent']);
+            Route::post('wordpress/sites/{id}:admin-password', [WordPressController::class, 'adminPassword'])->middleware(['itso.step-up', 'itso.idempotent']);
             // ---- Dữ liệu hosting (Prompt 6.3): database, SFTP/FTPS, khóa SSH, cron, File Manager
             Route::get('databases', [DatabaseController::class, 'index']);
             Route::post('databases', [DatabaseController::class, 'store'])->middleware('itso.idempotent');

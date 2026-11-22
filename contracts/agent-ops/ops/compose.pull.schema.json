@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/compose.pull.schema.json",
+  "title": "compose.pull",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "../defs.schema.json#/$defs/ComposeProjectRef"
+        },
+        "registry_uuids": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/Uuid"
+          },
+          "maxItems": 10,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "project",
+        "registry_uuids"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "$ref": "../defs.schema.json#/$defs/ComposeServiceName"
+              },
+              "digest": {
+                "$ref": "../defs.schema.json#/$defs/ImageDigest"
+              },
+              "changed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "service",
+              "digest",
+              "changed"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "images"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

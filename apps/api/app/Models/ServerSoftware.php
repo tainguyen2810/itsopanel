@@ -17,6 +17,9 @@ use Illuminate\Support\Carbon;
  * @property int $spec_version
  * @property int $observed_version
  * @property string $status
+ * @property string $state available|installing|installed|upgradable|upgrading|removing|failed (Phase 10)
+ * @property string|null $latest_version
+ * @property bool $upgrade_available
  * @property array<array-key, mixed> $observed_facts
  * @property array<array-key, mixed>|null $drift
  * @property Carbon|null $observed_at
@@ -32,6 +35,6 @@ class ServerSoftware extends Model
 
     protected function casts(): array
     {
-        return ['observed_facts' => 'array', 'drift' => 'array', 'observed_at' => 'datetime'];
+        return ['observed_facts' => 'array', 'drift' => 'array', 'observed_at' => 'datetime', 'upgrade_available' => 'boolean'];
     }
 }
