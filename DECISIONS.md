@@ -57,7 +57,7 @@
 | D-48 | Chuyển Hosting Account giữa các server (Phase 9): **website, database, SSL, cron, cấu hình (nginx/php/sftp), ownership/UID**, **kiểm tra dữ liệu** (checksum file, row count + checksum bảng, HTTP check) và **rollback** | **APPROVED** (2026-11-20) |
 | D-49 | Hosting Provisioning Service dùng chung cho Admin Panel và CLI; **chưa mở API công khai** | **APPROVED** (2026-11-20) |
 | D-50 | Pentest độc lập **không bắt buộc** cho Alpha nội bộ. **Bắt buộc** pentest độc lập và khắc phục mọi lỗ hổng nghiêm trọng (High/Critical) **trước khi mở bán hosting cho khách hàng bên ngoài** | **APPROVED** (2026-11-20) |
-| D-51 | **Mới:** Không bắt buộc GitHub trước khi bắt đầu. Phase 1 khởi tạo **Git local**, sau đó kết nối GitHub | **APPROVED** (2026-11-20) |
+| D-51 | **Mới:** Không bắt buộc GitHub trước khi bắt đầu. Phase 1 khởi tạo **Git local**, sau đó kết nối GitHub. 2026-11-22: đã kết nối `github.com/tainguyen2810/itsopanel` (remote `github`) theo yêu cầu người dùng | **APPROVED** (2026-11-20) |
 | D-52 | **Mới:** Phase 1 = Foundation + Architecture + Database (schema spec) + API Contracts + **Design System**; Phase 2 = demo UI hoàn chỉnh Admin Panel + User Hosting Portal | **APPROVED** (2026-11-20) |
 | D-53 | Giữ installer giống aaPanel (một lệnh, native Ubuntu, Web Wizard, systemd, CLI `itso`, không bắt buộc Docker) và toàn bộ yêu cầu bảo mật, cách ly, backup immutable, quota thực, multi-server | **APPROVED** (2026-11-20) |
 | D-54 | Design token lấy `design/tokens/tokens.json` làm nguồn; "preset" Tailwind v4 là khối `@theme inline` sinh ra (Tailwind 4 bỏ preset JS); Light mặc định ở `:root`, Dark bằng class `.dark`; mọi cặp màu khai báo phải đạt WCAG AA | **APPROVED** (2026-11-20, duyệt cùng Phase 1) |

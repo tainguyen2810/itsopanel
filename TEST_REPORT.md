@@ -2,6 +2,18 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.2 (Agent: metrics mở rộng, cgroup theo lô, uptime.probe) — nhánh `phase-11`
+
+Phạm vi: `internal/ops/metrics.go` (swap/inode/load/tasks, IO bps từ `/proc/diskstats` chỉ đĩa vật lý, net theo interface từ `/proc/net/dev`, mounts ext4/xfs/btrfs; tốc độ tính từ mốc đọc trước, bộ đếm quay về → 0), `metrics.cgroup` lô (accounts rỗng = mọi slice `itso-acct-<uid>` có user trong passwd, bỏ slice thiếu/tên lạ/ngoài dải UID; cpu_pct, IO bytes/bps), `internal/ops/uptime.go` (`uptime.probe`: kiểm lại domain/path/keyword/≤ 50 mục/timeout; dial cố định 127.0.0.1 với Host/SNI = domain, không proxy, redirect chỉ cùng host và cổng 80/443, tối đa 3; đọc ≤ 64 KB tìm từ khóa; hạn chứng chỉ; song song 8), sandbox: `metrics-control.json` (disk_pct, offline → `agent_unreachable`, uptime_down, cert_days) + cây cgroup giả trong gốc sandbox. Registry: `agent_unreachable` trả `retryable: true` đúng `errors.json`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Go | `go vet ./...` · `gofmt -l .` · `go test -race ./...` | PASS (ops 153,8 s). Test mới: `TestMetricsSnapshotExtended`, `TestMetricsCgroupBatch` (40 slice giả), `TestSandboxMetricsControl`, `TestUptimeProbe` (httptest HTTP + TLS: từ khóa, 500, timeout, redirect tới 169.254.169.254 / cổng 2222 / vòng lặp bị chặn, redirect cùng host được theo, hạn chứng chỉ), `TestUptimeProbeRejectsEvil` (17 tham số độc), `TestUptimeProbeSandbox`. Lần đầu `TestSandboxMetricsControl` lỗi: registry không đánh dấu `agent_unreachable` retryable → bổ sung theo contract |
+| Fuzz | `go test -fuzz=FuzzUptimePath -fuzztime=15s ./internal/ops` | PASS (217 nghìn lượt); thêm vào `make test-fuzz` |
+| Khác | `make no-exec` · `make codegen-check` · `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.1 (ADR, contracts, migration) — nhánh `phase-11`
 
 Phạm vi: ADR 0046–0052, DECISIONS D-101…D-107 (APPROVED), agent-ops: `metrics.snapshot` mở rộng (RAM/swap tổng, disk/inode, load 5/15, tasks, IO bps, net theo interface, mounts), `metrics.cgroup` theo lô (accounts không bắt buộc = mọi slice; thêm cpu_pct, IO bytes/bps, `sampled_at`), op mới `uptime.probe` (≤ 50 mục, domain + đường dẫn + scheme, từ khóa ≤ 100); def `UptimePath`/`UptimeKeyword`/`UptimeTarget`; OpenAPI dùng chung mẫu đường dẫn uptime; DBML Phase 11 (metric_rollups unique NULLS NOT DISTINCT, alert_rules + default_key/severity/repeat, alerts + fingerprint unique khi chưa resolved, uptime_checks + keyword/state, `uptime_results` partition ngày, `notification_channels` secret Crypt, `notification_deliveries`, chỉ mục `metric_samples` theo account đánh dấu phase:11); migration `2026_11_20_000011_phase_11_schema.php` (8 bảng, 70 câu lệnh). Agent tạm trả `net`/`mounts` rỗng và `sampled_at` để khớp contract (11.2 điền số liệu thật).

@@ -25,7 +25,7 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 
 - Nhánh làm việc: `phase-<N>`; `main` chỉ nhận merge khi Phase được duyệt.
 - Commit nhỏ sau mỗi task, Conventional Commits có scope Phase: `feat(p1): …`, `chore(p1): …`, `docs(p1): …`, `test(p1): …`.
-- Repo đang là **Git local** (D-51). Kết nối GitHub theo `docs/runbooks/connect-github.md` khi người dùng yêu cầu. Không tự tạo remote hay push.
+- Từ 2026-11-22 repo có remote `github` = `https://github.com/tainguyen2810/itsopanel` (D-51, người dùng yêu cầu). Sau mỗi commit cuối prompt: đẩy nhánh `phase-<N>`; sau khi merge: đẩy `main`. Không force push, không tạo remote khác. Tag bị proxy môi trường cloud chặn (HTTP 403) nên giữ local.
 
 ## 4. Lệnh
 

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -222,12 +223,13 @@ func keyed(s string) map[string]int64 {
 func (d *Deps) cgroupStats(a contracts.Account) contracts.MetricsCgroupResultAccountsItem {
 	dir := CgroupDir(a.UID)
 	num := func(name string) (int64, bool) {
-		v, err := strconv.ParseInt(d.hostFile(dir+"/"+name), 10, 64)
+		v, err := strconv.ParseInt(d.cgroupRead(dir+"/"+name), 10, 64)
 		return v, err == nil
 	}
-	cpu := keyed(d.hostFile(dir + "/cpu.stat"))
+	cpu := keyed(d.cgroupRead(dir + "/cpu.stat"))
 	item := contracts.MetricsCgroupResultAccountsItem{Username: a.Username, CPUUsageUsec: cpu["usage_usec"],
-		CPUThrottledUsec: cpu["throttled_usec"], OomKills: keyed(d.hostFile(dir + "/memory.events"))["oom_kill"]}
+		CPUThrottledUsec: cpu["throttled_usec"], OomKills: keyed(d.cgroupRead(dir + "/memory.events"))["oom_kill"]}
+	item.IOReadBytes, item.IOWriteBytes = ioStat(d.cgroupRead(dir + "/io.stat"))
 	if v, ok := num("memory.current"); ok {
 		item.MemoryCurrentMB = v >> 20
 	}
@@ -241,17 +243,52 @@ func (d *Deps) cgroupStats(a contracts.Account) contracts.MetricsCgroupResultAcc
 	return item
 }
 
+// metricsCgroup (Phase 11, D-101): accounts rỗng = mọi slice account đang có (lô cho collector mỗi phút).
+// Slice không tồn tại thì bỏ qua (không lỗi). cpu_pct và *_bps tính từ lần đọc trước trong agent.
 func (d *Deps) metricsCgroup(_ context.Context, env *envelope.Envelope) (map[string]any, error) {
 	var p contracts.MetricsCgroupParams
 	if err := decode(env, &p); err != nil {
 		return nil, err
 	}
-	out := contracts.MetricsCgroupResult{Accounts: []contracts.MetricsCgroupResultAccountsItem{}, SampledAt: d.now().UTC().Format(time.RFC3339)}
-	for _, a := range p.Accounts {
+	now := d.now()
+	accts, batch := p.Accounts, len(p.Accounts) == 0
+	for _, a := range accts {
 		if err := checkAccount(a); err != nil {
 			return nil, opErr(err)
 		}
-		out.Accounts = append(out.Accounts, d.cgroupStats(a))
+	}
+	if batch {
+		names := d.passwdByUID()
+		uids := d.sliceUIDs()
+		if d.Sandbox {
+			uids = uids[:0]
+			for uid := range names {
+				uids = append(uids, uid)
+			}
+			sort.Slice(uids, func(i, j int) bool { return uids[i] < uids[j] })
+		}
+		for _, uid := range uids {
+			a := contracts.Account{Username: contracts.Username(names[uid]), UID: contracts.UID(uid)}
+			if names[uid] == "" || checkAccount(a) != nil {
+				continue
+			}
+			accts = append(accts, a)
+		}
+	}
+	out := contracts.MetricsCgroupResult{Accounts: []contracts.MetricsCgroupResultAccountsItem{}, SampledAt: now.UTC().Format(time.RFC3339)}
+	for _, a := range accts {
+		if d.Sandbox {
+			d.simCgroupTick(int64(a.UID), now)
+		}
+		if batch && d.cgroupRead(CgroupDir(a.UID)+"/cpu.stat") == "" {
+			continue // chế độ lô: slice chưa có (account chưa chạy tiến trình nào) thì bỏ qua
+		}
+		it := d.cgroupStats(a)
+		k := "cg:" + strconv.FormatInt(int64(a.UID), 10)
+		it.CPUPct = round1(d.rate(k+":cpu", float64(it.CPUUsageUsec), now) / 1e4)
+		it.IOReadBps = d.rate(k+":r", float64(it.IOReadBytes), now)
+		it.IOWriteBps = d.rate(k+":w", float64(it.IOWriteBytes), now)
+		out.Accounts = append(out.Accounts, it)
 	}
 	return toData(out)
 }
