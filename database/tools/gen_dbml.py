@@ -694,14 +694,27 @@ t("ops", "notifications", IDN + [
     "body text", "data jsonb", "read_at timestamptz",
     "created_at timestamptz [not null, default: `now()`]",
 ], ["(user_id, read_at)"])
-t("ops", "notification_channels", IDN + [
-    "type text [not null, note: 'email|telegram|webhook']", "name text [not null]",
-    "config_encrypted bytea [not null]", "enabled boolean [not null, default: true]",
+t("ops", "notification_channels", ID + [
+    "type text [not null, note: 'email|telegram|webhook (D-103)']", "name text [not null, unique]",
+    "config jsonb [not null, default: `'{}'`, note: 'recipients | chat_id | url, allow_private_network — không chứa bí mật']",
+    "secret_encrypted text [note: 'Crypt: bot token / HMAC secret; API chỉ trả secret_set']",
+    "enabled boolean [not null, default: true]",
+    "created_by_user_id bigint [ref: > users.id]",
 ] + TS)
 t("ops", "notification_preferences", [
     "user_id bigint [not null, ref: > users.id]", "event_type text [not null]",
     "channels text[] [not null, default: `'{in_app}'`]",
-], ["(user_id, event_type) [pk]"])
+    "updated_at timestamptz [not null, default: `now()`]",
+], ["(user_id, event_type) [pk]"], "D-104: người × sự kiện × kênh; mức critical luôn in-app (kiểm ở ứng dụng).")
+t("ops", "notification_deliveries", ID + [
+    "channel_id bigint [not null, ref: > notification_channels.id]",
+    "alert_id bigint [ref: > alerts.id]",
+    "event_type text [not null]", "severity text [not null]", "title text [not null]",
+    "payload jsonb [not null, default: `'{}'`, note: 'Nội dung đã dựng, không chứa bí mật']",
+    "state text [not null, default: 'queued', note: 'queued|sending|sent|retrying|failed|blocked']",
+    "attempts int [not null, default: 0]", "error text", "next_retry_at timestamptz", "sent_at timestamptz",
+    "resend_of_id bigint [ref: > notification_deliveries.id]",
+] + TS, ["(channel_id, created_at)", "(state, next_retry_at)"])
 t("ops", "settings", IDN + [
     "group_key text [not null]", "key text [not null]", "value jsonb",
     "is_encrypted boolean [not null, default: false]", "updated_by_user_id bigint [ref: > users.id]",
@@ -712,25 +725,44 @@ t("ops", "metric_samples", [
 ], ["(server_id, metric, at)"], "Partition theo ngày, giữ 7 ngày (extras.sql). Không FK để ghi nhanh.")
 t("ops", "metric_rollups", IDN + [
     "server_id bigint [not null, ref: > servers.id]", "hosting_account_id bigint [ref: > hosting_accounts.id]",
-    "metric text [not null]", "bucket timestamptz [not null]",
-    "min_value float8", "avg_value float8", "max_value float8",
-], ["(server_id, metric, bucket)"])
-t("ops", "alert_rules", IDN + [
+    "metric text [not null]", "bucket timestamptz [not null, note: 'Đầu giờ (UTC)']",
+    "min_value float8 [not null]", "avg_value float8 [not null]", "max_value float8 [not null]",
+    "samples int [not null]",
+], ["(server_id, metric, bucket)", "(hosting_account_id, metric, bucket)"],
+  "D-101: rollup 1 giờ, giữ 90 ngày; unique (server, account, metric, bucket) NULLS NOT DISTINCT ở extras.sql.")
+t("ops", "alert_rules", ID + [
     "name text [not null]", "metric text [not null]", "operator text [not null]",
     "threshold float8 [not null]", "duration_sec int [not null, default: 300]",
-    "scope_type text", "scope_id bigint", "channels text[] [not null, default: `'{in_app}'`]",
+    "repeat_sec int [not null, default: 14400]",
+    "severity text [not null, default: 'medium']",
+    "scope_type text [not null, default: 'server', note: 'server|hosting_account|website']", "scope_id bigint",
+    "channels text[] [not null, default: `'{in_app}'`]",
+    "channel_ids bigint[] [not null, default: `'{}'`, note: 'notification_channels dùng khi channels có telegram/webhook/email']",
+    "is_default boolean [not null, default: false]", "default_key text [unique, note: 'Khóa rule mặc định (seed)']",
     "enabled boolean [not null, default: true]",
 ] + TS)
-t("ops", "alerts", IDN + [
+t("ops", "alerts", ID + [
     "rule_id bigint [not null, ref: > alert_rules.id]", "server_id bigint [ref: > servers.id]",
-    "state text [not null, note: 'firing|resolved']", "value float8",
-    "started_at timestamptz [not null]", "resolved_at timestamptz",
-], ["(rule_id, started_at)"])
-t("ops", "uptime_checks", IDN + [
-    "website_id bigint [not null, ref: > websites.id]", "url text [not null]",
-    "interval_sec int [not null, default: 60]", "last_status int", "last_checked_at timestamptz",
+    "hosting_account_id bigint [ref: > hosting_accounts.id]", "website_id bigint [ref: > websites.id]",
+    "fingerprint text [not null, note: 'rule + đối tượng; unique khi chưa resolved (extras.sql)']",
+    "state text [not null, note: 'pending|firing|resolved']", "severity text [not null]",
+    "value float8", "message text",
+    "started_at timestamptz [not null]", "firing_at timestamptz", "resolved_at timestamptz",
+    "below_count int [not null, default: 0, note: 'Số lượt liên tiếp dưới ngưỡng (resolve sau 2)']",
+    "acked_by_user_id bigint [ref: > users.id]", "acked_at timestamptz",
+    "silenced_until timestamptz", "silence_reason text", "last_notified_at timestamptz",
+] + TS, ["(rule_id, started_at)", "(state, started_at)"])
+t("ops", "uptime_checks", ID + [
+    "website_id bigint [not null, unique, ref: > websites.id]", "path text [not null, default: '/']",
+    "keyword text", "interval_sec int [not null, default: 60]", "enabled boolean [not null, default: true]",
+    "state text [not null, default: 'unknown', note: 'up|down|unknown']",
+    "consecutive_failures int [not null, default: 0]", "last_status int", "last_latency_ms int", "last_error text",
+    "last_checked_at timestamptz", "down_since timestamptz", "cert_expires_at timestamptz",
 ] + TS)
-
+t("ops", "uptime_results", [
+    "check_id bigint [not null]", "ok boolean [not null]", "status int", "latency_ms int", "error text",
+    "at timestamptz [not null]",
+], ["(check_id, at)"], "D-105: partition theo ngày, giữ 7 ngày (extras.sql). Không FK để ghi nhanh.")
 
 GROUP_NAMES = {
     "identity": "Danh tính và phân quyền", "infra": "Hạ tầng", "hosting": "Hosting",

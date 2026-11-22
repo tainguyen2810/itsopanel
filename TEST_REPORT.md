@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-22 — Phase 11 / Prompt 11.1 (ADR, contracts, migration) — nhánh `phase-11`
+
+Phạm vi: ADR 0046–0052, DECISIONS D-101…D-107 (APPROVED), agent-ops: `metrics.snapshot` mở rộng (RAM/swap tổng, disk/inode, load 5/15, tasks, IO bps, net theo interface, mounts), `metrics.cgroup` theo lô (accounts không bắt buộc = mọi slice; thêm cpu_pct, IO bytes/bps, `sampled_at`), op mới `uptime.probe` (≤ 50 mục, domain + đường dẫn + scheme, từ khóa ≤ 100); def `UptimePath`/`UptimeKeyword`/`UptimeTarget`; OpenAPI dùng chung mẫu đường dẫn uptime; DBML Phase 11 (metric_rollups unique NULLS NOT DISTINCT, alert_rules + default_key/severity/repeat, alerts + fingerprint unique khi chưa resolved, uptime_checks + keyword/state, `uptime_results` partition ngày, `notification_channels` secret Crypt, `notification_deliveries`, chỉ mục `metric_samples` theo account đánh dấu phase:11); migration `2026_11_20_000011_phase_11_schema.php` (8 bảng, 70 câu lệnh). Agent tạm trả `net`/`mounts` rỗng và `sampled_at` để khớp contract (11.2 điền số liệu thật).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen` · `make codegen-check` | PASS · 158 op có schema, **344 vector độc** (mới 20: URL tuyệt đối, //, traversal, CRLF, scheme ftp, host là IP, host:port, trường `url` tự do, từ khóa dài/điều khiển) |
+| DB | `make db-schema` · `make db-verify` · `gen_migrations.py 3…11 --check` | 95 bảng · **172 test SQL PASS** (mới `95_monitoring.sql` 30) · migration Phase 3–10 không đổi, Phase 11 khớp |
+| Go | `go build ./...` · `go test ./internal/contracts/... ./internal/ops` | PASS. Lần đầu lỗi golden `metrics.snapshot`/`metrics.cgroup` (thiếu mảng/`sampled_at` theo contract mới) → trả mảng rỗng + thời điểm |
+| Pest | `make test-api` | **505/505 PASS**. Lần đầu: PostgreSQL cluster mới sau khi container khởi động lại (tạo role `itso` mật khẩu dev công khai + DB `itso`/`itso_test`); SchemaTest thiếu 8 bảng Phase 11 → cập nhật |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.0 (mockup Monitoring, Alerts, Notifications) — nhánh `phase-11`
 
 Phạm vi: contracts (OpenAPI: metrics theo khoảng + usage account, alert-rules mặc định + preview, alerts ack/silence/unsilence, uptime-checks admin + portal, notification-channels/deliveries, event catalog, Portal usage-history/uptime), dữ liệu demo Phase 11, MSW `monitoring.ts` (SSRF giả lập `webhookBlock`), màn hình: Giám sát tổng quan (nhóm biểu đồ, server offline, dịch vụ, khoảng 1h–90d), tài nguyên theo account, uptime (kết quả, chứng chỉ), cảnh báo (đang mở/lịch sử, ack, tắt tiếng, luật mặc định, xem trước), kênh thông báo (secret chỉ ghi, cảnh báo mạng riêng, gửi thử), nhật ký gửi, thẻ cảnh báo Dashboard, Portal Giám sát, ma trận tùy chọn thông báo theo danh mục sự kiện. Ảnh `docs/screenshots/phase-11/` (19 cảnh × 1440/390 × sáng/tối = 76).

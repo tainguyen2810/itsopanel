@@ -730,6 +730,61 @@
       },
       "description": "Đường dẫn tương đối gửi tới 127.0.0.1 của node (http.check); cấm traversal, mã hóa %2e/%2f, //."
     },
+    "UptimePath": {
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*$",
+      "not": {
+        "pattern": "(^|/)\\.{1,2}(/|\\?|$)|%2[eEfF]|//|%0[aAdD]"
+      },
+      "description": "Đường dẫn (kèm query) trên domain của website (uptime.probe); cấm traversal, //, %2e/%2f, CRLF mã hóa."
+    },
+    "UptimeKeyword": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+      "description": "Từ khóa phải có trong 64 KB đầu của body; không ký tự điều khiển."
+    },
+    "UptimeTarget": {
+      "type": "object",
+      "properties": {
+        "check_uuid": {
+          "$ref": "defs.schema.json#/$defs/Uuid"
+        },
+        "host": {
+          "$ref": "defs.schema.json#/$defs/Domain"
+        },
+        "path": {
+          "$ref": "defs.schema.json#/$defs/UptimePath"
+        },
+        "scheme": {
+          "type": "string",
+          "enum": [
+            "http",
+            "https"
+          ]
+        },
+        "keyword": {
+          "oneOf": [
+            {
+              "$ref": "defs.schema.json#/$defs/UptimeKeyword"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "check_uuid",
+        "host",
+        "path",
+        "scheme",
+        "keyword"
+      ],
+      "additionalProperties": false
+    },
     "MigrationRole": {
       "type": "string",
       "enum": [

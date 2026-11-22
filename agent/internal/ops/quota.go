@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"itso.local/agent/internal/contracts"
 	"itso.local/agent/internal/envelope"
@@ -245,7 +246,7 @@ func (d *Deps) metricsCgroup(_ context.Context, env *envelope.Envelope) (map[str
 	if err := decode(env, &p); err != nil {
 		return nil, err
 	}
-	out := contracts.MetricsCgroupResult{Accounts: []contracts.MetricsCgroupResultAccountsItem{}}
+	out := contracts.MetricsCgroupResult{Accounts: []contracts.MetricsCgroupResultAccountsItem{}, SampledAt: d.now().UTC().Format(time.RFC3339)}
 	for _, a := range p.Accounts {
 		if err := checkAccount(a); err != nil {
 			return nil, opErr(err)

@@ -156,6 +156,7 @@ const (
 	OpSystemInfo             = "system.info"
 	OpSystemPing             = "system.ping"
 	OpSystemReboot           = "system.reboot"
+	OpUptimeProbe            = "uptime.probe"
 	OpWAFApply               = "waf.apply"
 	OpWAFEvents              = "waf.events"
 	OpWpAdminPassword        = "wp.admin_password"
@@ -364,6 +365,22 @@ type CertPem string
 
 // HTTPCheckPath — Đường dẫn tương đối gửi tới 127.0.0.1 của node (http.check); cấm traversal, mã hóa %2e/%2f, //.
 type HTTPCheckPath string
+
+// UptimePath — Đường dẫn (kèm query) trên domain của website (uptime.probe); cấm traversal, //, %2e/%2f, CRLF mã hóa.
+type UptimePath string
+
+// UptimeKeyword — Từ khóa phải có trong 64 KB đầu của body; không ký tự điều khiển.
+type UptimeKeyword string
+
+// UptimeTarget — kiểu UptimeTarget trong contracts/agent-ops.
+type UptimeTarget struct {
+	CheckUUID UUID       `json:"check_uuid"`
+	Host      Domain     `json:"host"`
+	Path      UptimePath `json:"path"`
+	// Giá trị: "http", "https".
+	Scheme  string          `json:"scheme"`
+	Keyword json.RawMessage `json:"keyword"`
+}
 
 // MigrationRole — kiểu MigrationRole trong contracts/agent-ops. Giá trị: "source", "target".
 type MigrationRole string
@@ -2193,7 +2210,7 @@ type MalwareScanResult struct {
 
 // MetricsCgroupParams — params của op metrics.cgroup (ops/metrics.cgroup.schema.json).
 type MetricsCgroupParams struct {
-	Accounts []Account `json:"accounts"`
+	Accounts []Account `json:"accounts,omitempty"`
 }
 
 // MetricsCgroupResultAccountsItem được sinh từ schema.
@@ -2205,23 +2222,58 @@ type MetricsCgroupResultAccountsItem struct {
 	MemoryMaxMB      *int64   `json:"memory_max_mb"`
 	PidsCurrent      int64    `json:"pids_current"`
 	OomKills         int64    `json:"oom_kills"`
+	CPUPct           float64  `json:"cpu_pct"`
+	IOReadBytes      int64    `json:"io_read_bytes"`
+	IOWriteBytes     int64    `json:"io_write_bytes"`
+	IOReadBps        float64  `json:"io_read_bps"`
+	IOWriteBps       float64  `json:"io_write_bps"`
 }
 
 // MetricsCgroupResult — result của op metrics.cgroup (ops/metrics.cgroup.schema.json).
 type MetricsCgroupResult struct {
-	Accounts []MetricsCgroupResultAccountsItem `json:"accounts"`
+	Accounts  []MetricsCgroupResultAccountsItem `json:"accounts"`
+	SampledAt string                            `json:"sampled_at"`
 }
 
 // MetricsSnapshotParams — params của op metrics.snapshot (ops/metrics.snapshot.schema.json).
 type MetricsSnapshotParams struct {
 }
 
+// MetricsSnapshotResultNetItem được sinh từ schema.
+type MetricsSnapshotResultNetItem struct {
+	Iface string  `json:"iface"`
+	RxBps float64 `json:"rx_bps"`
+	TxBps float64 `json:"tx_bps"`
+}
+
+// MetricsSnapshotResultMountsItem được sinh từ schema.
+type MetricsSnapshotResultMountsItem struct {
+	Path        string `json:"path"`
+	DiskUsedMB  int64  `json:"disk_used_mb"`
+	DiskTotalMB int64  `json:"disk_total_mb"`
+	InodeUsed   int64  `json:"inode_used"`
+	InodeTotal  int64  `json:"inode_total"`
+}
+
 // MetricsSnapshotResult — result của op metrics.snapshot (ops/metrics.snapshot.schema.json).
 type MetricsSnapshotResult struct {
-	CPUPct     float64 `json:"cpu_pct"`
-	RAMUsedMB  int64   `json:"ram_used_mb"`
-	DiskUsedMB int64   `json:"disk_used_mb"`
-	Load1m     float64 `json:"load_1m"`
+	CPUPct      float64                           `json:"cpu_pct"`
+	RAMUsedMB   int64                             `json:"ram_used_mb"`
+	DiskUsedMB  int64                             `json:"disk_used_mb"`
+	Load1m      float64                           `json:"load_1m"`
+	RAMTotalMB  int64                             `json:"ram_total_mb"`
+	SwapUsedMB  int64                             `json:"swap_used_mb"`
+	SwapTotalMB int64                             `json:"swap_total_mb"`
+	DiskTotalMB int64                             `json:"disk_total_mb"`
+	InodeUsed   int64                             `json:"inode_used"`
+	InodeTotal  int64                             `json:"inode_total"`
+	Load5m      float64                           `json:"load_5m"`
+	Load15m     float64                           `json:"load_15m"`
+	Tasks       int64                             `json:"tasks"`
+	IOReadBps   float64                           `json:"io_read_bps"`
+	IOWriteBps  float64                           `json:"io_write_bps"`
+	Net         []MetricsSnapshotResultNetItem    `json:"net"`
+	Mounts      []MetricsSnapshotResultMountsItem `json:"mounts"`
 }
 
 // MigrateCutoverParams — params của op migrate.cutover (ops/migrate.cutover.schema.json).
@@ -2924,6 +2976,28 @@ type SystemRebootResult struct {
 	ScheduledAt string `json:"scheduled_at"`
 }
 
+// UptimeProbeParams — params của op uptime.probe (ops/uptime.probe.schema.json).
+type UptimeProbeParams struct {
+	Targets    []UptimeTarget `json:"targets"`
+	TimeoutSec int64          `json:"timeout_sec"`
+}
+
+// UptimeProbeResultResultsItem được sinh từ schema.
+type UptimeProbeResultResultsItem struct {
+	CheckUUID     UUID    `json:"check_uuid"`
+	OK            bool    `json:"ok"`
+	Status        *int64  `json:"status"`
+	DurationMs    *int64  `json:"duration_ms"`
+	CertExpiresAt *string `json:"cert_expires_at"`
+	KeywordFound  *bool   `json:"keyword_found"`
+	Error         *string `json:"error"`
+}
+
+// UptimeProbeResult — result của op uptime.probe (ops/uptime.probe.schema.json).
+type UptimeProbeResult struct {
+	Results []UptimeProbeResultResultsItem `json:"results"`
+}
+
 // WAFApplyParams — params của op waf.apply (ops/waf.apply.schema.json).
 type WAFApplyParams struct {
 	WebsiteUUID    UUID        `json:"website_uuid"`
@@ -3438,6 +3512,8 @@ func NewParams(op string) any {
 		return new(SystemPingParams)
 	case OpSystemReboot:
 		return new(SystemRebootParams)
+	case OpUptimeProbe:
+		return new(UptimeProbeParams)
 	case OpWAFApply:
 		return new(WAFApplyParams)
 	case OpWAFEvents:
@@ -3759,6 +3835,8 @@ func NewResult(op string) any {
 		return new(SystemPingResult)
 	case OpSystemReboot:
 		return new(SystemRebootResult)
+	case OpUptimeProbe:
+		return new(UptimeProbeResult)
 	case OpWAFApply:
 		return new(WAFApplyResult)
 	case OpWAFEvents:

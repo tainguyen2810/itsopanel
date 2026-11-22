@@ -1234,6 +1234,17 @@
       "status": "specified"
     },
     {
+      "op": "uptime.probe",
+      "domain": "web",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 11,
+      "runs_as": "root",
+      "timeout_sec": 60,
+      "schema": "ops/uptime.probe.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "http.check",
       "domain": "web",
       "risk": "low",

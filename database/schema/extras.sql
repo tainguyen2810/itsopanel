@@ -333,3 +333,45 @@ ALTER TABLE wordpress_components ADD CONSTRAINT wordpress_components_type_chk CH
 CREATE UNIQUE INDEX wordpress_components_core_uq ON wordpress_components (wordpress_site_id) WHERE type = 'core';
 ALTER TABLE wordpress_updates ADD CONSTRAINT wordpress_updates_state_chk CHECK (state IN ('running', 'succeeded', 'rolled_back', 'failed'));
 ALTER TABLE wordpress_updates ADD CONSTRAINT wordpress_updates_trigger_chk CHECK (trigger IN ('manual', 'auto'));
+
+-- ============================================================ Phase 11: Monitoring, Alerts, Notifications (D-101…D-105)
+-- Chỉ mục đọc chuỗi theo account (metric_samples là bảng Phase 4 đã phát hành → đánh dấu phase:11).
+/* phase:11 */ CREATE INDEX metric_samples_account_idx ON metric_samples (hosting_account_id, metric, at) WHERE hosting_account_id IS NOT NULL;
+CREATE UNIQUE INDEX metric_rollups_uq ON metric_rollups (server_id, hosting_account_id, metric, bucket) NULLS NOT DISTINCT;
+ALTER TABLE metric_rollups ADD CONSTRAINT metric_rollups_bucket_chk CHECK (bucket = date_trunc('hour', bucket AT TIME ZONE 'UTC') AT TIME ZONE 'UTC');
+ALTER TABLE metric_rollups ADD CONSTRAINT metric_rollups_order_chk CHECK (min_value <= avg_value AND avg_value <= max_value AND samples >= 1);
+ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_operator_chk CHECK (operator IN ('gt', 'gte', 'lt', 'lte'));
+ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_scope_chk CHECK (scope_type IN ('server', 'hosting_account', 'website'));
+ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_severity_chk CHECK (severity IN ('low', 'medium', 'high', 'critical'));
+ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_duration_chk CHECK (duration_sec BETWEEN 0 AND 86400 AND repeat_sec BETWEEN 0 AND 604800);
+ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_channels_chk
+  CHECK (cardinality(channels) >= 1 AND channels <@ ARRAY['in_app', 'email', 'telegram', 'webhook']::text[]);
+ALTER TABLE alert_rules ADD CONSTRAINT alert_rules_default_chk CHECK (NOT is_default OR default_key IS NOT NULL);
+ALTER TABLE alerts ADD CONSTRAINT alerts_state_chk CHECK (state IN ('pending', 'firing', 'resolved'));
+ALTER TABLE alerts ADD CONSTRAINT alerts_severity_chk CHECK (severity IN ('low', 'medium', 'high', 'critical'));
+ALTER TABLE alerts ADD CONSTRAINT alerts_resolved_chk CHECK ((state = 'resolved') = (resolved_at IS NOT NULL));
+-- Một cảnh báo mở cho mỗi (rule, đối tượng) (D-102).
+CREATE UNIQUE INDEX alerts_open_fingerprint_uq ON alerts (fingerprint) WHERE state <> 'resolved';
+ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_interval_chk CHECK (interval_sec BETWEEN 60 AND 3600);
+ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_state_chk CHECK (state IN ('up', 'down', 'unknown'));
+-- Chỉ đường dẫn trên domain của website (D-105): bắt đầu bằng /, không // và không traversal.
+ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_path_chk
+  CHECK (path ~ '^/' AND path !~ '//' AND path !~ '(^|/)\.\.?(/|\?|$)' AND length(path) <= 200);
+ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_keyword_chk CHECK (keyword IS NULL OR length(keyword) BETWEEN 1 AND 100);
+CREATE TABLE uptime_results_default PARTITION OF uptime_results DEFAULT;
+CREATE OR REPLACE FUNCTION itso_ensure_uptime_partition(p_day date) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE part text := format('uptime_results_%s', to_char(p_day, 'YYYYMMDD'));
+BEGIN
+  EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF uptime_results FOR VALUES FROM (%L) TO (%L)',
+                 part, p_day, p_day + 1);
+  RETURN part;
+END $$;
+ALTER TABLE notification_channels ADD CONSTRAINT notification_channels_type_chk CHECK (type IN ('email', 'telegram', 'webhook'));
+ALTER TABLE notification_channels ADD CONSTRAINT notification_channels_secret_chk CHECK (type = 'email' OR secret_encrypted IS NOT NULL);
+ALTER TABLE notification_preferences ADD CONSTRAINT notification_preferences_channels_chk
+  CHECK (channels <@ ARRAY['in_app', 'email', 'telegram']::text[]);
+ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_state_chk
+  CHECK (state IN ('queued', 'sending', 'sent', 'retrying', 'failed', 'blocked'));
+ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_severity_chk
+  CHECK (severity IN ('info', 'low', 'medium', 'high', 'critical'));
+ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_attempts_chk CHECK (attempts BETWEEN 0 AND 10);

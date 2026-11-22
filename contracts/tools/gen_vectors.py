@@ -436,6 +436,28 @@ V = {
         ("sites/anphat.vn/public/../../../../etc", R, "schema", "Traversal giữa chuỗi"),
         ("sites/link-ra-ngoai", R, "semantic", "Symlink trỏ ra ngoài home: agent kiểm sau khi resolve (path_outside_home)"),
     ]),
+    # Phase 11 (D-105): uptime.probe chỉ nhận domain + đường dẫn, agent luôn kết nối 127.0.0.1 với Host/SNI = domain.
+    "uptime_path": ("UptimePath", [
+        ("/", A, "schema", "Trang chủ"), ("/health?full=1&x=a+b", A, "schema", "Có query"),
+        ("https://evil.example/", R, "schema", "URL tuyệt đối (không phải đường dẫn)"),
+        ("//169.254.169.254/latest", R, "schema", "Hai gạch đầu (host khác)"),
+        ("/../etc/passwd", R, "schema", "Traversal"), ("/%2e%2e/x", R, "schema", "Traversal mã hóa"),
+        ("/x%0d%0aHost:%20evil", R, "schema", "CRLF mã hóa"), ("/x\r\nHost: evil", R, "schema", "CRLF thô"),
+        ("/" + "a" * 200, R, "schema", "Quá 200 ký tự"),
+    ]),
+    "uptime_keyword": ("UptimeKeyword", [
+        ("Đặt hàng", A, "schema", "Từ khóa Unicode"), ("a" * 101, R, "schema", "Quá 100 ký tự"),
+        ("ok\nfoo", R, "schema", "Ký tự điều khiển"), ("", R, "schema", "Rỗng"),
+    ]),
+    "uptime_target": ("UptimeTarget", [
+        ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "lehoa.vn", "path": "/", "scheme": "https", "keyword": None}, A, "schema", "Mục hợp lệ"),
+        ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "lehoa.vn", "path": "/", "scheme": "ftp", "keyword": None}, R, "schema", "Scheme không phải http(s)"),
+        ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "10.0.0.5", "path": "/", "scheme": "http", "keyword": None}, R, "schema", "Host là IP"),
+        ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "lehoa.vn:8080", "path": "/", "scheme": "https", "keyword": None}, R, "schema", "Cổng lạ trong host"),
+        ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "lehoa.vn", "path": "/", "scheme": "https", "keyword": None, "url": "https://evil/"}, R, "schema", "Trường url tự do"),
+        ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "lehoa.vn", "path": "/", "scheme": "https", "keyword": "k" * 101}, R, "schema", "Từ khóa quá dài"),
+        ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "admin.itso.local", "path": "/", "scheme": "https", "keyword": None}, A, "semantic", "Domain không thuộc website của check: panel chỉ gửi domain chính của website"),
+    ]),
 }
 
 

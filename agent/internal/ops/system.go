@@ -298,5 +298,7 @@ func (d *Deps) metricsSnapshot(ctx context.Context, env *envelope.Envelope) (map
 	if used < 0 {
 		used = 0
 	}
-	return toData(contracts.MetricsSnapshotResult{CPUPct: cpu, RAMUsedMB: used / 1024, DiskUsedMB: total - free, Load1m: load})
+	return toData(contracts.MetricsSnapshotResult{CPUPct: cpu, RAMUsedMB: used / 1024, DiskUsedMB: total - free, Load1m: load,
+		// Phase 11.2 điền swap/inode/IO/network; tạm trả mảng rỗng để đúng contract.
+		Net: []contracts.MetricsSnapshotResultNetItem{}, Mounts: []contracts.MetricsSnapshotResultMountsItem{}})
 }

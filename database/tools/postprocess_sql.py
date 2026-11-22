@@ -9,7 +9,8 @@ import re
 import sys
 from pathlib import Path
 
-PARTITIONED = {"audit_logs": "RANGE (\"at\")", "metric_samples": "RANGE (\"at\")", "waf_events": "RANGE (\"at\")"}
+PARTITIONED = {"audit_logs": "RANGE (\"at\")", "metric_samples": "RANGE (\"at\")", "waf_events": "RANGE (\"at\")",
+               "uptime_results": "RANGE (\"at\")"}
 
 path = Path(sys.argv[1])
 sql = path.read_text(encoding="utf-8")

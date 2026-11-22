@@ -89,6 +89,7 @@ const PAGES: readonly Shot[] = [
       await expect(dlg.getByText(/Luật mặc định/)).toBeVisible();
       await dlg.getByRole('button', { name: 'Xem trước' }).click();
       await expect(dlg.getByText(/sẽ cảnh báo ngay/)).toBeVisible();
+      await dlg.getByText(/sẽ cảnh báo ngay/).scrollIntoViewIfNeeded();
     },
   ],
   ['admin-channels', '/admin/monitoring/channels'],
