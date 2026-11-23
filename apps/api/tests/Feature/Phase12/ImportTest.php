@@ -282,6 +282,26 @@ it('chạy: mỗi username một job đủ bước (account → copy uid account
     expect($errors)->toBe([]);
 });
 
+it('chạy: gói không cho phép phiên bản PHP nào đã cài trên server → 422 theo mục, chưa tạo account/job (tìm ra nhờ e2e 12.8)', function () {
+    $errors = [];
+    p12agent($errors);
+    $a = new Actors($this);
+    [$sa, $biz] = p12setup($a);
+    $imp = p12scanned($a, $sa);
+    $ids = p12items($imp);
+    $sa->call('PUT', "/api/v1/admin/imports/{$imp->uuid}/plan", ['items' => [
+        ['uuid' => $ids['shop.anphat.vn'], 'selected' => true, 'username' => 'shopap', 'package' => $biz->uuid, 'user' => $a->owner->uuid],
+        ['uuid' => $ids['blog.anphat.vn'], 'selected' => false],
+    ]])->assertOk();
+    PhpVersion::query()->where('server_id', $a->server->id)->update(['status' => 'failed']);
+    p12touch($a);
+    $r = p8($sa, 'POST', "/api/v1/admin/imports/{$imp->uuid}:run");
+    expect($r->status())->toBe(422)->and($r->json('errors')['items.0.package'][0] ?? '')->toContain('không cho phép phiên bản PHP nào đã cài')
+        ->and(Job::query()->where('type', 'import.run')->count())->toBe(0)
+        ->and(HostingAccount::query()->where('username', 'shopap')->exists())->toBeFalse()
+        ->and($imp->refresh()->state)->toBe('planned');
+});
+
 it('một account lỗi (copy) → partially_failed, mục lỗi có thông báo; cutover chỉ mục đã xong', function () {
     $errors = [];
     $agent = p12agent($errors, ['import.copy' => fn (array $e) => str_contains($e['params']['src'], 'blog')

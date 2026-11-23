@@ -25,7 +25,7 @@ import (
 
 // Ghi đè khi build release: -ldflags "-X main.version=… -X main.releasePubKey=<base64 32 byte>".
 var (
-	version       = "0.5.0-beta"
+	version       = "1.0.0-rc.1"
 	releasePubKey = ""
 )
 

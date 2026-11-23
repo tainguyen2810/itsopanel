@@ -2,6 +2,23 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.8 (Tích hợp: e2e stack thật, Gate G1–G8, make check, v1.0.0-rc.1) — nhánh `phase-12`
+
+Phạm vi: `apps/web/e2e-real/phase12.spec.ts` (import aaPanel/HestiaCP/nginx → chạy → cutover → rollback trên agent sandbox; CIS; Sẵn sàng production). `tests/vm/gate.sh` điều phối G1–G8 trên VM (`--only`, báo cáo con của node/G4/G6/G7, `--allow-uninstall`, `--record` gọi `itso:gate-record`); G3 thử webshell, RCE giả định (op `fs.read` traversal, uid 0 → `invalid_params`). `docs/gate/G1–G8.md` + README: tiêu chí đo được, phần đã kiểm trong container, lệnh VM; cả 8 `pending_vm`. Nâng phiên bản `1.0.0-rc.1` (agent, config, release script, `.env.example`), `docs/releases/v1.0.0-rc.1.md`, `docs/reports/phase-12.md`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E Phase 12 | `playwright test -c playwright.real.config.ts e2e-real/phase12.spec.ts` | **3/3 PASS**. Lượt đầu bắt lỗi thật: gói chỉ cho phép PHP chưa cài → `import.run` thất bại giữa chừng; sửa bằng kiểm trước khi chạy (422 `items.N.package`), spec cài PHP 8.3 trước |
+| E2E stack thật toàn bộ | `make test-e2e-real` (DB sạch: `migrate:fresh --seed` + `DemoSeeder`, xóa sandbox) | 30 PASS · 1 FAIL · 4 không chạy (21,8 phút). Lỗi duy nhất: `beforeAll` của `phase11.spec.ts` không bind được `10.99.0.1` (máy chưa có IP, điều kiện ghi ở runbook Phase 11) |
+| E2E Phase 11 chạy lại | thêm `10.99.0.1/32` vào `lo`; DB + sandbox sạch; `e2e-real/phase11.spec.ts` | Lượt trên DB bẩn (ngay sau lượt toàn bộ): 3 PASS · 1 FAIL (đăng nhập Portal bị đòi MFA do spec trước đã bật) · 1 không chạy. Trên DB sạch: **5/5 PASS** (3,9 phút). Tổng hợp: **35/35** |
+| Import | `pest tests/Feature/Phase12/ImportTest.php` | **8/8 PASS** (mới: gói không cho phép PHP nào đã cài → 422 theo mục) |
+| Toàn bộ | `make check` | **19 PASS · 1 SKIP · 3 FAIL** (1 631 s): `docs-check` (`check-links.mjs` theo symlink hỏng trong `.dev/agent-sandbox` do e2e import tạo → bỏ `.dev`/`.cache`/`build`, dùng `lstat`), `test-api` 554/555 (`SystemTest`: `ITSO_VERSION` trong `.env.example`/`.env` còn `0.5.0-beta` → nâng), `git-clean` (chỉ do tôi sửa 3 file trong lúc chạy). staticcheck SKIP (chưa cài). Các bước khác: Playwright demo 758/758, Vitest 638/638, Go + fuzz, db-verify 178, contracts/codegen, installer, unit systemd PASS |
+| Chạy lại phần lỗi | `make docs-check` · `vendor/bin/pest` (PostgreSQL + Redis thật) | PASS (159 link) · **555/555 PASS** (134 s) |
+| Release | `VERSION=1.0.0-rc.1 make release` · `make release-offline` | PASS: bản ký Ed25519 (khóa DEV tạm) + SBOM, thiếu `frankenphp` (CẢNH BÁO như trước); bundle offline 53 MB, 0 `.deb` (lock rỗng, CẢNH BÁO) |
+| Script VM | `bash -n tests/vm/gate.sh tests/vm/upgrade-loop.sh` | OK; G1–G8 **chờ VM** |
+
+**Chưa chạy (chờ VM):** `tests/vm/phase4–11.sh`, `tests/vm/upgrade-loop.sh`, `tests/vm/gate.sh` G1–G8 (≥ 2 server, 3 bản phát hành). **Test bị bỏ qua:** không.
+
 ## 2026-11-23 — Phase 12 / Prompt 12.7 (UI nối API thật, sổ tay vận hành) — nhánh `phase-12`
 
 Phạm vi: rà 4 trang mockup 12.0 so với API thật. Import (12.3), CIS (12.4), Cập nhật (`/system/updates` có journal + lịch sử, 12.3) đã gọi đúng endpoint thật; còn thiếu `GET /admin/system/readiness` → hiện thực `Domain/System/ProductionReadiness` (11 kiểm chỉ đọc: MFA quản trị, allowlist Admin, đích backup bất biến, snapshot 24 giờ, restore test 7 ngày, CIS ≥ 80, bản vá bảo mật chờ, journal dở, chứng chỉ < 14 ngày, kênh thông báo, agent kết nối; điểm = pass 2/warn 1/fail 0) + Gate G1–G8 đọc từ bằng chứng đã ghi bằng lệnh mới `php artisan itso:gate-record G<n> <pass|fail|partial|pending_vm>` (chưa ghi = `pending_vm`); `ready` chỉ true khi mọi kiểm và mọi Gate `pass`. Chỉ SUPER_ADMIN (`settings.read`). MSW của 12.0 đã theo contract nên giao diện không đổi. `docs/runbooks/operations-handbook.md`: cài (online/offline), nâng cấp/quay lại/repair, backup/DR, 9 sự cố thường gặp, xoay khóa (7 loại bí mật), thêm/bớt server, import, gỡ cài đặt, lịch kiểm định kỳ, vai trò; trỏ tới runbook Phase 4–11.

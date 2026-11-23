@@ -344,6 +344,13 @@ final class ImportService
                 if (WebsiteDomain::query()->whereIn('name', array_merge([$it->domain], $it->aliases))->exists()) {
                     $errors["items.$n.selected"][] = "Domain {$it->domain} đã gắn với website ITSO.";
                 }
+                if ($it->php_version !== null && $it->target_package_id !== null) {
+                    $pkg = HostingPackage::query()->findOrFail($it->target_package_id);
+                    if (self::phpFor($server->id, $this->provisioning->currentVersion($pkg)->php_versions ?? [], (string) $it->php_version) === null) {
+                        $errors["items.$n.package"][] = "Mục {$it->domain} cần PHP nhưng gói {$pkg->name} không cho phép phiên bản PHP nào đã cài trên "
+                            .'server: cài PHP ở Phần mềm của server hoặc chọn gói khác.';
+                    }
+                }
             }
             if ($errors !== []) {
                 throw new ApiProblem(422, 'validation_failed', 'Kế hoạch import chưa đủ', 'Hoàn tất kế hoạch rồi chạy lại.', $errors);
@@ -685,18 +692,26 @@ final class ImportService
     /** PHP đích: giữ phiên bản nguồn nếu hỗ trợ, gói cho phép và đã cài trên server; không thì PHP mặc định (D-108). */
     private function importPhp(HostingAccount $a, string $src): string
     {
-        $allowed = $a->packageVersion->php_versions ?? [];
-        $ok = fn (string $v): bool => PhpCatalog::supported($v) && ($allowed === [] || in_array($v, $allowed, true))
-            && PhpVersion::query()->where('server_id', $a->server_id)->where('version', $v)->where('status', 'ready')->exists();
-        if ($ok($src)) {
-            return $src;
-        }
-        foreach (array_merge([PhpCatalog::DEFAULT], array_reverse(PhpCatalog::SUPPORTED)) as $v) {
+        return self::phpFor($a->server_id, $a->packageVersion->php_versions ?? [], $src)
+            ?? throw ApiProblem::conflict('Không có phiên bản PHP nào vừa được gói cho phép vừa đã cài trên server.');
+    }
+
+    /**
+     * PHP cho site import: giữ bản nguồn nếu hỗ trợ + gói cho phép + đã cài; không thì bản mặc định hoặc bản mới nhất
+     * thỏa điều kiện; không có bản nào → null (chặn ở bước chạy, trước khi tạo account).
+     *
+     * @param  list<string>  $allowed
+     */
+    private static function phpFor(int $serverId, array $allowed, string $src): ?string
+    {
+        $ready = PhpVersion::query()->where('server_id', $serverId)->where('status', 'ready')->pluck('version')->all();
+        $ok = fn (string $v): bool => PhpCatalog::supported($v) && ($allowed === [] || in_array($v, $allowed, true)) && in_array($v, $ready, true);
+        foreach (array_merge([$src, PhpCatalog::DEFAULT], array_reverse(PhpCatalog::SUPPORTED)) as $v) {
             if ($ok($v)) {
                 return $v;
             }
         }
 
-        return PhpCatalog::DEFAULT;
+        return null;
     }
 }

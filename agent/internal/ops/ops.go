@@ -22,7 +22,7 @@ import (
 )
 
 // Version là phiên bản agent thật (ghi đè bằng -ldflags khi build release).
-var Version = "0.5.0-beta"
+var Version = "1.0.0-rc.1"
 
 // Deps là phụ thuộc của handler.
 type Deps struct {

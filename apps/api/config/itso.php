@@ -24,7 +24,7 @@ use App\Domain\WordPress\WordPressService;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
-    'version' => env('ITSO_VERSION', '0.5.0-beta'),
+    'version' => env('ITSO_VERSION', '1.0.0-rc.1'),
     'commit' => env('ITSO_COMMIT', 'dev'),
     'agent_min_version' => '0.1.0',
     // Kênh cập nhật hiển thị ở /system/updates (panel không tự cập nhật; root chạy `itso update`).
