@@ -1,0 +1,4 @@
+# Danh sách .deb khóa phiên bản cho bundle offline (D-113). Mỗi dòng: <gói>=<phiên bản> <sha256> <tên file .deb>
+# Sinh bằng `scripts/release-offline.sh --update-lock` trên Ubuntu 24.04 amd64 có mạng (không sửa tay); commit kèm bản phát hành.
+# Đang rỗng: container CI không tải được .deb Ubuntu, bundle tạo ra chỉ cài được trên máy đã có sẵn các gói gốc
+# (release-offline in CẢNH BÁO). Sinh lock thật: chờ máy build Ubuntu 24.04 (ghi trong TEST_REPORT 12.6).

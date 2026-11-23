@@ -495,7 +495,7 @@ ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_state_chk CHECK (stat
 
 ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_window_chk CHECK (update_window ~ '^([01][0-9]|2[0-3]):00-([01][0-9]|2[0-3]):00$');
 
-ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_path_chk CHECK (path !~ '(^/|(^|/)\\.\\.(/|$))');
+ALTER TABLE wordpress_sites ADD CONSTRAINT wordpress_sites_path_chk CHECK (path !~ '(^/|(^|/)\.\.(/|$))');
 
 ALTER TABLE wordpress_components ADD CONSTRAINT wordpress_components_type_chk CHECK (
   (type = 'core' AND slug IS NULL) OR (type IN ('plugin', 'theme') AND slug IS NOT NULL AND slug ~ '^[a-z0-9][a-z0-9_-]{0,99}$')

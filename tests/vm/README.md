@@ -125,3 +125,22 @@ sudo bash tests/vm/phase11.sh --cleanup
 | M3 | Uptime nginx thật: up → dừng nginx → down sau 3 lần kiểm → bật → up; hạn chứng chỉ khi `ITSO_VM_ACME=1` |
 | M4 | Email qua SMTP thật (`ITSO_VM_SMTP_*`), "Gửi thử" → `sent`; không cấu hình → SKIP |
 | M5 | Webhook: URL IP riêng không bật cờ → 422; tên miền trỏ IP riêng (qua `/etc/hosts`) → delivery `blocked`, bộ đếm nft 0 gói tin ra IP đó |
+
+## Cập nhật/quay lại + chaos, cài offline (Phase 12, Prompt 12.6)
+
+Trong VM đã cài bản A (`run-all.sh --release A --no-uninstall`), bằng root, với bản B mới hơn:
+
+```bash
+bash tests/vm/upgrade-loop.sh --release A --release2 B              # 20 vòng, kill -9 lần lượt ở 6 bước journal → /root/itso-vm-upgrade-loop.md
+bash tests/vm/upgrade-loop.sh --release A --release2 B --reboot migrated   # sysrq b giữa cập nhật; VM lên lại thì chạy đúng lệnh này lần nữa
+```
+
+| Mã | Kiểm |
+|---|---|
+| U1–U20 | Mỗi vòng: update → (kill -9 ở bước `downloaded`/`verified`/`extracted`/`migrated`/`switched`/`restarted` → `itso repair --fix`) → version B, doctor + health OK → rollback → version A |
+| S1 | Site account (nginx, gọi 5 lần/giây suốt các vòng): **0 lỗi HTTP** |
+| P1 | Thời gian panel gián đoạn (tham khảo) |
+| R1 | `--reboot <bước>`: sau mất điện, `itso repair --fix` đưa về A hoặc B nhất quán, không còn journal, panel khỏe |
+
+Cài offline: VM **không có mạng** (Multipass `--network` tắt hoặc chặn bằng nftables), chép `itso-<ver>-offline.tar` vào rồi
+`sudo bash install.sh --offline itso-<ver>-offline.tar --yes`. Cần lock thật (`scripts/release-offline.sh --update-lock` trên Ubuntu 24.04 có mạng).

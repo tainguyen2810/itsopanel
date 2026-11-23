@@ -59,7 +59,13 @@
     "audit": "Nhật ký kiểm toán",
     "notifications": "Thông báo",
     "settings": "Cài đặt hệ thống",
-    "wordpressDetail": "Chi tiết WordPress"
+    "wordpressDetail": "Chi tiết WordPress",
+    "securityCis": "Kiểm CIS",
+    "imports": "Import từ panel khác",
+    "importDetail": "Chi tiết import",
+    "system": "Hệ thống",
+    "systemReadiness": "Sẵn sàng production",
+    "systemUpdates": "Cập nhật hệ thống"
   },
   "portal": {
     "login": "Đăng nhập",

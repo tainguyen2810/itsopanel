@@ -458,6 +458,26 @@ V = {
         ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "lehoa.vn", "path": "/", "scheme": "https", "keyword": "k" * 101}, R, "schema", "Từ khóa quá dài"),
         ({"check_uuid": "0193aa20-0001-7000-8000-000000000001", "host": "admin.itso.local", "path": "/", "scheme": "https", "keyword": None}, A, "semantic", "Domain không thuộc website của check: panel chỉ gửi domain chính của website"),
     ]),
+    # Phase 12 (D-108): import chỉ đọc gốc web của nguồn, cutover chỉ đổi tên file vhost của nguồn.
+    "import_src": ("ImportSrcPath", [
+        ("/www/wwwroot/shop.anphatgroup.vn", A, "schema", "Docroot aaPanel"),
+        ("/home/hr/web/hr.itso.vn/public_html", A, "schema", "Docroot HestiaCP"),
+        ("/etc/shadow", R, "schema", "Ngoài gốc web"), ("/www/wwwroot/../../etc", R, "schema", "Traversal"),
+        ("/home//root", R, "schema", "Hai gạch"), ("/www/wwwroot/a\nb", R, "schema", "Xuống dòng"),
+        ("/home/anphat", R, "semantic", "Home của account ITSO: agent từ chối nguồn nằm trong home account ITSO"),
+        ("/www/wwwroot/link", R, "semantic", "Symlink trỏ ra ngoài gốc web: agent kiểm sau khi resolve"),
+    ]),
+    "import_vhost": ("ImportVhostPath", [
+        ("/www/server/panel/vhost/nginx/shop.anphatgroup.vn.conf", A, "schema", "vhost aaPanel"),
+        ("/etc/nginx/sites-enabled/wiki.conf", A, "schema", "vhost nginx"),
+        ("/etc/nginx/nginx.conf", R, "schema", "File nginx chính"), ("/etc/passwd", R, "schema", "Ngoài thư mục vhost"),
+        ("/etc/nginx/sites-enabled/../nginx.conf", R, "schema", "Traversal"),
+        ("/etc/nginx/sites-enabled/wiki", A, "schema", "sites-enabled không đuôi .conf"),
+        ("/etc/nginx/conf.d/domains/hr.itso.vn.conf", A, "schema", "vhost HestiaCP"),
+        ("/etc/nginx/sites-enabled/..", R, "schema", "Tên bắt đầu bằng dấu chấm"),
+        ("/etc/nginx/conf.d/domains/x/y.conf", R, "schema", "Thư mục con sâu hơn"),
+        ("/etc/nginx/sites-enabled/itso-anphat.conf", R, "semantic", "vhost do ITSO quản lý: agent từ chối"),
+    ]),
 }
 
 

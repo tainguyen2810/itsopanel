@@ -30,6 +30,14 @@ LockPersonality=yes
 MemoryDenyWriteExecute=yes
 SystemCallArchitectures=native
 SystemCallFilter=@system-service @privileged @mount @chown
+# Phase 12 (ADR 0056): bỏ nhóm syscall agent không bao giờ cần (khởi động lại máy, swap, nạp module, I/O cổng thô, chỉnh giờ, syscall cũ).
+SystemCallFilter=~@reboot @swap @module @raw-io @clock @obsolete
+SystemCallErrorNumber=EPERM
+# Bỏ capability không op nào cần; giữ CAP_SYS_ADMIN (quota, mount), CAP_SYS_CHROOT (terminal jail), CAP_LINUX_IMMUTABLE
+# (repo backup chattr +a), CAP_SYS_PTRACE (đọc /proc của tiến trình account), CAP_NET_ADMIN (nftables).
+CapabilityBoundingSet=~CAP_SYS_MODULE CAP_SYS_BOOT CAP_SYS_TIME CAP_SYS_RAWIO CAP_SYS_PACCT CAP_SYS_TTY_CONFIG CAP_MAC_ADMIN CAP_MAC_OVERRIDE CAP_SYSLOG CAP_WAKE_ALARM CAP_BLOCK_SUSPEND CAP_BPF CAP_PERFMON CAP_LEASE CAP_MKNOD CAP_IPC_LOCK
+ProtectHostname=yes
+KeyringMode=private
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 
 [Install]

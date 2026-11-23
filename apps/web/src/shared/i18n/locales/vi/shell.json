@@ -40,7 +40,9 @@
     "terminal": "Terminal",
     "profile": "Hồ sơ",
     "registries": "Registry",
-    "gitDeployments": "Git deploy"
+    "gitDeployments": "Git deploy",
+    "imports": "Import từ panel khác",
+    "system": "Hệ thống"
   },
   "topbar": {
     "search": "Tìm server, tài khoản, website…",

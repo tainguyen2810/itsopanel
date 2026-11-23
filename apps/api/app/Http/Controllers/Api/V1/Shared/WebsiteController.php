@@ -53,7 +53,7 @@ final class WebsiteController
         }
         Listing::search($request, $q, ['websites.primary_domain']);
 
-        return response()->json(Listing::page($request, $q->with(['account', 'server', 'settings']),
+        return response()->json(Listing::page($request, $q->with(['account', 'server', 'settings'])->withCount('domains'),
             ['created_at' => 'websites.created_at', 'primary_domain' => 'websites.primary_domain', 'status' => 'websites.status'],
             '-created_at', fn (Website $w): array => $this->present->website($w)));
     }

@@ -41,6 +41,7 @@ func NewSim(fs *platform.FS) *Sim {
 func SandboxRunner(d *Deps) *platform.FakeRunner {
 	sim := NewSim(d.FS)
 	sim.SeedBase()
+	SeedAaPanel(d.FS, d.now()) // nguồn import giả cho trang Import (Phase 12)
 	if d.Docker == nil {
 		fk := docker.NewFake()
 		fk.MkdirMount = func(p string) { _ = d.FS.MkdirAll(p) }

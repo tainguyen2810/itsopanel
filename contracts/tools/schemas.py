@@ -89,7 +89,7 @@ COMMON = {
         "invalid_state_transition", "server_not_accepting", "agent_unavailable", "agent_unreachable", "enrollment_invalid", "job_failed",
         "legal_hold_active", "retention_not_elapsed", "backup_not_verified", "confirmation_mismatch",
         "purge_not_available", "migration_not_available", "setup_code_used", "setup_code_expired", "setup_not_verified", "setup_completed",
-        "captcha_required", "would_lock_out", "internal_error"),
+        "captcha_required", "would_lock_out", "payload_too_large", "internal_error"),
     "CursorMeta": obj({"next_cursor": NS, "limit": i(minimum=1, maximum=200)}, required=["next_cursor"]),
     "CursorPage": obj({"meta": cref("CursorMeta")}, required=["meta"], extra=True),
     "ResourceRef": obj({"type": s(), "uuid": UUID}),
@@ -867,9 +867,66 @@ ADMIN = {
         "checked_at": DT}, desc="Tình trạng các thành phần. Chỉ Admin API; không lộ chi tiết qua portal."),
     "SystemUpdates": obj({
         "current_version": s(), "commit": s(), "channel": enum("stable", "beta"), "latest_version": NS,
-        "update_available": b(), "checked_at": NDT, "update_command": s(),
-        "releases": arr(obj({"version": s(), "active": b()}))},
-        desc="Panel không tự cập nhật: chạy `update_command` bằng root trên server (CLI `itso update`, có rollback)."),
+        "update_available": b(), "checked_at": NDT, "update_command": s(), "repair_command": s(),
+        "releases": arr(obj({"version": s(), "active": b()})),
+        "journal": nullable(obj({
+            "version_to": s(), "step": enum("downloaded", "verified", "extracted", "migrated", "switched", "restarted"),
+            "started_at": DT, "interrupted": b(), "hint": s()})),
+        "history": arr(obj({
+            "action": enum("update", "rollback", "repair"), "version_from": s(), "version_to": s(),
+            "result": enum("succeeded", "rolled_back", "failed", "interrupted"), "started_at": DT,
+            "finished_at": NDT, "duration_sec": nullable(i(minimum=0)), "by": s(), "note": NS}))},
+        desc="Panel không tự cập nhật: chạy `update_command` bằng root trên server (CLI `itso update`, có rollback). "
+             "`journal` khác null khi update bị ngắt giữa chừng (mất điện, kill): chạy `repair_command` để hoàn tất "
+             "hoặc quay lại đúng bước (D-114)."),
+    # -- Phase 12 (D-108…D-115)
+    "ImportWarning": obj({"code": enum("php_missing", "ssl_expired", "domain_exists", "username_exists", "db_large",
+                                       "quota_exceeded", "symlink_outside", "unsupported"), "message": s()}),
+    "Import": obj(with_({
+        "uuid": UUID, "source": enum("aapanel", "hestia", "nginx"), "server": cref("ServerRef"),
+        "state": enum("scanning", "scan_failed", "planned", "running", "completed", "partially_failed", "cut_over",
+                      "rolled_back"),
+        "source_version": NS, "scanned_at": NDT, "error": NS,
+        "summary": obj({"sites": i(minimum=0), "databases": i(minimum=0), "crons": i(minimum=0),
+                        "warnings": i(minimum=0), "selected": i(minimum=0)}),
+        "cutover_at": NDT, "created_by": cref("UserRef")}, TS),
+        desc="Một lượt import từ panel khác trên cùng máy (D-108). Quét chỉ đọc; máy nguồn không bị sửa."),
+    "ImportItem": obj({
+        "uuid": UUID, "import_uuid": UUID, "domain": cref("Domain"), "aliases": arr(cref("Domain")),
+        "docroot": s(maxLength=4096), "php_version": NS, "ssl": enum("none", "valid", "expired"), "ssl_expires_at": NDT,
+        "size_mb": i(minimum=0), "databases": arr(obj({"name": s(), "size_mb": i(minimum=0)})), "crons": i(minimum=0),
+        "system_user": s(), "warnings": arr(ref("ImportWarning")), "selected": b(),
+        "target": obj({"username": cref("Username"), "package": nullable(cref("PackageRef")),
+                       "user": nullable(cref("UserRef")),
+                       "new_user": nullable(obj({"name": s(), "email": s("email")}))}),
+        "state": enum("pending", "skipped", "running", "done", "failed"), "progress": i(minimum=0, maximum=100),
+        "result": nullable(obj({
+            "hosting_account": nullable(cref("AccountRef")), "files": i(minimum=0), "bytes": i(minimum=0),
+            "skipped": i(minimum=0), "skipped_reasons": arr(s()), "db_tables": i(minimum=0), "db_rows_match": b(),
+            "certificate": nullable(enum("reused", "acme", "none")), "error": NS}))},
+        desc="Một website tìm thấy ở nguồn. Nhiều mục có thể gộp vào cùng một account (cùng `target.username`)."),
+    "ImportScanInput": obj({"source": enum("aapanel", "hestia", "nginx"), "server": UUID}),
+    "ImportPlanInput": obj({"items": arr(obj({
+        "uuid": UUID, "selected": b(), "username": cref("Username"), "package": UUID, "user": nullable(UUID),
+        "new_user": nullable(obj({"name": s(minLength=2, maxLength=120), "email": s("email", maxLength=190)}))},
+        required=["uuid", "selected"]), minItems=1, maxItems=500)}),
+    "CisReport": obj({
+        "server": cref("ServerRef"), "profile": s(), "audited_at": NDT, "score": i(minimum=0, maximum=100),
+        "passed": i(minimum=0), "failed": i(minimum=0), "not_applicable": i(minimum=0),
+        "items": arr(obj({"id": s(), "group": enum("filesystem", "services", "network", "logging", "access",
+                                                    "accounts", "updates"),
+                          "title": s(), "status": enum("pass", "fail", "na"), "evidence": s(maxLength=500),
+                          "remediation": NS, "fix_href": NS}))},
+        desc="Kiểm CIS chỉ đọc (op `cis.audit`); panel không tự sửa, mục sửa được trỏ tới recipe có sẵn (D-109)."),
+    "Readiness": obj({
+        "score": i(minimum=0, maximum=100), "ready": b(), "checked_at": DT,
+        "checks": arr(obj({"key": s(), "group": enum("access", "backup", "security", "updates", "monitoring"),
+                           "title": s(), "status": enum("pass", "warn", "fail"), "detail": s(), "href": NS})),
+        "gate": arr(obj({"id": enum("G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"), "title": s(),
+                         "status": enum("pass", "fail", "partial", "pending_vm"), "automated": s(),
+                         "evidence_doc": s(), "verified_at": NDT}))},
+        desc="Tổng hợp kiểm tự động từ dữ liệu panel + trạng thái Production Gate G1–G8 (D-115). `ready` chỉ true "
+             "khi mọi kiểm đạt và mọi bài Gate có bằng chứng VM."),
     "SetupStatus": obj({
         "installed": b(), "code_verified": b(), "admin_created": b(), "admin_mfa_enabled": b(),
         "locale": enum("vi", "en"), "timezone": s(), "access": nullable(ref("SetupAccess")),

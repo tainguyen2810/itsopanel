@@ -103,7 +103,15 @@
     "sent": "Đã gửi",
     "sending": "Đang gửi",
     "retrying": "Đang thử lại",
-    "blocked": "Bị chặn"
+    "blocked": "Bị chặn",
+    "scanning": "Đang quét",
+    "scan_failed": "Quét lỗi",
+    "planned": "Đã lập kế hoạch",
+    "partially_failed": "Lỗi một phần",
+    "cut_over": "Đã chuyển",
+    "interrupted": "Bị ngắt",
+    "na": "Không áp dụng",
+    "pending_vm": "Chờ VM"
   },
   "table": {
     "selected_one": "Đã chọn {{count}} dòng",
@@ -423,6 +431,17 @@
       "rollback": "Hoàn tác chuyển máy chủ",
       "rollback_source": "Mở lại account ở máy chủ nguồn",
       "cleanup": "Dọn máy nguồn sau khi chuyển"
+    },
+    "import": {
+      "scan": "Quét panel nguồn",
+      "run": "Chạy import",
+      "cutover": "Cutover import",
+      "rollback": "Quay lại sau cutover",
+      "delete": "Xóa lượt import",
+      "plan": "Cập nhật kế hoạch import"
+    },
+    "cis": {
+      "audit": "Kiểm CIS"
     }
   },
   "ops": {
@@ -571,6 +590,15 @@
     },
     "fail2ban": {
       "apply": "Áp dụng cấu hình Fail2ban"
+    },
+    "import": {
+      "scan": "Quét cấu hình panel nguồn (chỉ đọc)",
+      "copy": "Copy file vào account",
+      "cutover": "Tắt vhost nguồn, bật site ITSO",
+      "rollback": "Bật lại vhost nguồn"
+    },
+    "cis": {
+      "audit": "Kiểm CIS (chỉ đọc)"
     }
   },
   "wizard": {

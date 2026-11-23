@@ -26,6 +26,8 @@ import {
   GitBranch,
   Library,
   Blocks,
+  BadgeCheck,
+  Import,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -73,6 +75,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { key: 'cron', href: '/admin/cron', icon: CalendarClock },
       { key: 'wordpress', href: '/admin/wordpress', icon: Blocks },
       { key: 'gitDeployments', href: '/admin/git-deployments', icon: GitBranch },
+      { key: 'imports', href: '/admin/imports', icon: Import },
     ],
   },
   {
@@ -92,6 +95,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { key: 'audit', href: '/admin/audit-logs', icon: FileClock },
       { key: 'notifications', href: '/admin/notifications', icon: Bell },
       { key: 'settings', href: '/admin/settings', icon: Settings },
+      { key: 'system', href: '/admin/system/readiness', icon: BadgeCheck },
     ],
   },
 ];

@@ -27,4 +27,15 @@ if [ -n "$bad" ]; then
   echo "verify-units: THẤT BẠI"
   exit 1
 fi
+# ADR 0056: điểm phơi nhiễm của agent root ≤ 5.0 (systemd-analyze security --offline, systemd ≥ 252).
+if systemd-analyze security --help 2>/dev/null | grep -q -- '--offline'; then
+  for u in itso-agent.service itso-agent-node.service; do
+    score=$(cd "$tmp" && systemd-analyze security --offline=yes --no-pager "$u" 2>/dev/null | sed -n 's/.*Overall exposure level for [^:]*: \([0-9.]*\).*/\1/p')
+    if [ -z "$score" ] || awk -v s="$score" 'BEGIN { exit !(s > 5.0) }'; then
+      echo "verify-units: $u exposure ${score:-?} > 5.0 (ADR 0056)"
+      exit 1
+    fi
+    echo "verify-units: $u exposure $score (≤ 5.0)"
+  done
+fi
 echo "verify-units: OK (${#units[@]} unit)"

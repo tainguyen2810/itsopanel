@@ -31,7 +31,7 @@ final class WebPresenter
             'server' => ['uuid' => $s->uuid, 'name' => $s->name], 'primary_domain' => $w->primary_domain, 'type' => $w->type,
             'document_root' => $w->document_root, 'php_version' => $w->php_version, 'ssl_mode' => $w->ssl_mode,
             'waf_enabled' => (bool) ($w->settings?->waf['enabled'] ?? false),
-            'domains_count' => WebsiteDomain::query()->where('website_id', $w->id)->count(),
+            'domains_count' => $w->domains_count ?? WebsiteDomain::query()->where('website_id', $w->id)->count(),
             'certificate_expires_at' => $cert instanceof Certificate ? $cert->not_after?->toIso8601String() : null,
             'status' => $w->status, 'spec_version' => $w->spec_version, 'observed_version' => $w->observed_version,
             'drift' => $drift === [] ? null : $drift, 'observed_at' => $w->observed_at?->toIso8601String(),

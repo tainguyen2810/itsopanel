@@ -40,7 +40,9 @@
     "terminal": "Terminal",
     "profile": "Profile",
     "registries": "Registries",
-    "gitDeployments": "Git deploy"
+    "gitDeployments": "Git deploy",
+    "imports": "Import from other panels",
+    "system": "System"
   },
   "topbar": {
     "search": "Search servers, accounts, websites…",

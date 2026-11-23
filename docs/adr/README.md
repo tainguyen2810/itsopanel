@@ -56,5 +56,13 @@ Mẫu: MADR. Mỗi ADR liên kết mã quyết định trong [DECISIONS.md](../.
 | [0050](0050-uptime-checks.md) | Uptime check theo website qua `uptime.probe` | Accepted | D-105 |
 | [0051](0051-realtime-sse.md) | Sự kiện job realtime qua SSE + Redis pub/sub | Accepted | D-106 |
 | [0052](0052-release-v0.5.0-beta.md) | Phát hành v0.5.0-beta | Accepted | D-107 |
+| [0053](0053-import-other-panels.md) | Import từ aaPanel, HestiaCP, Nginx thuần | Accepted | D-108 |
+| [0054](0054-cis-audit.md) | Kiểm CIS Ubuntu 24.04 chỉ đọc | Accepted | D-109 |
+| [0055](0055-rls-evaluation.md) | Đánh giá RLS PostgreSQL (chưa bật ở v1.0) | Accepted | D-110 |
+| [0056](0056-privileged-helper.md) | Tách helper đặc quyền: giữ agent root + sandboxing | Accepted | D-111 |
+| [0057](0057-performance-200-accounts.md) | Hiệu năng 200 account/server | Accepted | D-112 |
+| [0058](0058-offline-installer.md) | Offline installer | Accepted | D-113 |
+| [0059](0059-update-journal-chaos.md) | Journal cập nhật và chaos test | Accepted | D-114 |
+| [0060](0060-release-v1.0.0.md) | Phát hành v1.0.0-rc.1, điều kiện v1.0.0 | Accepted | D-115 |
 
 Các quyết định kỹ thuật còn Proposed (D-01, D-02, D-03, D-06–D-13, …) sẽ có ADR khi được duyệt hoặc khi Phase tương ứng bắt đầu.

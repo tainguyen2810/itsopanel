@@ -1340,6 +1340,7 @@ Table audit_logs {
   hash text
   indexes {
     (id, at) [pk]
+    (at, id)
     (actor_user_id, at)
     (resource_type, resource_id)
   }
@@ -1748,6 +1749,76 @@ Table uptime_rollups {
   Note: 'D-105: % uptime theo giờ (từ uptime_results), giữ 90 ngày cho % 30 ngày; itso:metrics-rollup.'
 }
 
+Table imports {
+  id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
+  source text [not null, note: 'aapanel|hestia|nginx (D-108)']
+  server_id bigint [not null, ref: > servers.id]
+  state text [not null, default: 'scanning', note: 'scanning|scan_failed|planned|running|completed|partially_failed|cut_over|rolled_back']
+  source_version text
+  scanned_at timestamptz
+  error text
+  cutover_at timestamptz
+  scan_job_id bigint [ref: > jobs.id]
+  run_job_id bigint [ref: > jobs.id]
+  created_by_user_id bigint [ref: > users.id]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  indexes {
+    (server_id, state)
+  }
+  Note: 'Một lượt import từ panel khác trên cùng máy; máy nguồn không bị sửa trước cutover (ADR 0053).'
+}
+
+Table import_items {
+  id bigint [pk, increment]
+  uuid uuid [not null, unique, default: `gen_random_uuid()`]
+  import_id bigint [not null, ref: > imports.id]
+  domain text [not null]
+  aliases text[] [not null, default: `'{}'`]
+  docroot text [not null]
+  vhost_path text [not null, note: 'File vhost của nguồn, cutover đổi tên → .itso-disabled']
+  php_version text
+  ssl jsonb [not null, default: `'{}'`, note: 'cert_path, not_after, state none|valid|expired']
+  size_bytes bigint [not null, default: 0]
+  databases jsonb [not null, default: `'[]'`]
+  crons jsonb [not null, default: `'[]'`]
+  system_user text [not null]
+  warnings jsonb [not null, default: `'[]'`]
+  selected boolean [not null, default: true]
+  target_username text
+  target_package_id bigint [ref: > hosting_packages.id]
+  target_user_id bigint [ref: > users.id]
+  target_new_user jsonb [note: 'name, email khi tạo USER mới; không chứa mật khẩu']
+  hosting_account_id bigint [ref: > hosting_accounts.id, note: 'Account ITSO đã tạo']
+  state text [not null, default: 'pending', note: 'pending|skipped|running|done|failed']
+  progress int [not null, default: 0]
+  result jsonb [note: 'files, bytes, skipped, db_tables, certificate, error']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  indexes {
+    (import_id)
+    (import_id, domain) [unique]
+  }
+}
+
+Table cis_results {
+  id bigint [pk, increment]
+  server_id bigint [not null, ref: > servers.id]
+  profile text [not null]
+  score int [not null]
+  passed int [not null]
+  failed int [not null]
+  not_applicable int [not null]
+  items jsonb [not null, note: 'id, group, title, status pass|fail|na, evidence (≤ 500 ký tự)']
+  job_id bigint [ref: > jobs.id]
+  audited_at timestamptz [not null]
+  indexes {
+    (server_id, audited_at)
+  }
+  Note: 'D-109: kết quả cis.audit (chỉ đọc); giữ 30 lượt gần nhất mỗi server.'
+}
+
 TableGroup identity [note: 'Danh tính và phân quyền'] {
   users
   roles
@@ -1808,6 +1879,8 @@ TableGroup hosting [note: 'Hosting'] {
   wordpress_updates
   git_repositories
   git_deployments
+  imports
+  import_items
 }
 
 TableGroup docker [note: 'Docker (chỉ admin)'] {
@@ -1851,6 +1924,7 @@ TableGroup security [note: 'Bảo mật và Audit'] {
   waf_events
   fim_changes
   terminal_recordings
+  cis_results
 }
 
 TableGroup ops [note: 'Thông báo, Cài đặt, Giám sát'] {

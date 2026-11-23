@@ -2,6 +2,144 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.8 (Tích hợp: e2e stack thật, Gate G1–G8, make check, v1.0.0-rc.1) — nhánh `phase-12`
+
+Phạm vi: `apps/web/e2e-real/phase12.spec.ts` (import aaPanel/HestiaCP/nginx → chạy → cutover → rollback trên agent sandbox; CIS; Sẵn sàng production). `tests/vm/gate.sh` điều phối G1–G8 trên VM (`--only`, báo cáo con của node/G4/G6/G7, `--allow-uninstall`, `--record` gọi `itso:gate-record`); G3 thử webshell, RCE giả định (op `fs.read` traversal, uid 0 → `invalid_params`). `docs/gate/G1–G8.md` + README: tiêu chí đo được, phần đã kiểm trong container, lệnh VM; cả 8 `pending_vm`. Nâng phiên bản `1.0.0-rc.1` (agent, config, release script, `.env.example`), `docs/releases/v1.0.0-rc.1.md`, `docs/reports/phase-12.md`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| E2E Phase 12 | `playwright test -c playwright.real.config.ts e2e-real/phase12.spec.ts` | **3/3 PASS**. Lượt đầu bắt lỗi thật: gói chỉ cho phép PHP chưa cài → `import.run` thất bại giữa chừng; sửa bằng kiểm trước khi chạy (422 `items.N.package`), spec cài PHP 8.3 trước |
+| E2E stack thật toàn bộ | `make test-e2e-real` (DB sạch: `migrate:fresh --seed` + `DemoSeeder`, xóa sandbox) | 30 PASS · 1 FAIL · 4 không chạy (21,8 phút). Lỗi duy nhất: `beforeAll` của `phase11.spec.ts` không bind được `10.99.0.1` (máy chưa có IP, điều kiện ghi ở runbook Phase 11) |
+| E2E Phase 11 chạy lại | thêm `10.99.0.1/32` vào `lo`; DB + sandbox sạch; `e2e-real/phase11.spec.ts` | Lượt trên DB bẩn (ngay sau lượt toàn bộ): 3 PASS · 1 FAIL (đăng nhập Portal bị đòi MFA do spec trước đã bật) · 1 không chạy. Trên DB sạch: **5/5 PASS** (3,9 phút). Tổng hợp: **35/35** |
+| Import | `pest tests/Feature/Phase12/ImportTest.php` | **8/8 PASS** (mới: gói không cho phép PHP nào đã cài → 422 theo mục) |
+| Toàn bộ | `make check` | **19 PASS · 1 SKIP · 3 FAIL** (1 631 s): `docs-check` (`check-links.mjs` theo symlink hỏng trong `.dev/agent-sandbox` do e2e import tạo → bỏ `.dev`/`.cache`/`build`, dùng `lstat`), `test-api` 554/555 (`SystemTest`: `ITSO_VERSION` trong `.env.example`/`.env` còn `0.5.0-beta` → nâng), `git-clean` (chỉ do tôi sửa 3 file trong lúc chạy). staticcheck SKIP (chưa cài). Các bước khác: Playwright demo 758/758, Vitest 638/638, Go + fuzz, db-verify 178, contracts/codegen, installer, unit systemd PASS |
+| Chạy lại phần lỗi | `make docs-check` · `vendor/bin/pest` (PostgreSQL + Redis thật) | PASS (159 link) · **555/555 PASS** (134 s) |
+| Release | `VERSION=1.0.0-rc.1 make release` · `make release-offline` | PASS: bản ký Ed25519 (khóa DEV tạm) + SBOM, thiếu `frankenphp` (CẢNH BÁO như trước); bundle offline 53 MB, 0 `.deb` (lock rỗng, CẢNH BÁO) |
+| Script VM | `bash -n tests/vm/gate.sh tests/vm/upgrade-loop.sh` | OK; G1–G8 **chờ VM** |
+
+**Chưa chạy (chờ VM):** `tests/vm/phase4–11.sh`, `tests/vm/upgrade-loop.sh`, `tests/vm/gate.sh` G1–G8 (≥ 2 server, 3 bản phát hành). **Test bị bỏ qua:** không.
+
+## 2026-11-23 — Phase 12 / Prompt 12.7 (UI nối API thật, sổ tay vận hành) — nhánh `phase-12`
+
+Phạm vi: rà 4 trang mockup 12.0 so với API thật. Import (12.3), CIS (12.4), Cập nhật (`/system/updates` có journal + lịch sử, 12.3) đã gọi đúng endpoint thật; còn thiếu `GET /admin/system/readiness` → hiện thực `Domain/System/ProductionReadiness` (11 kiểm chỉ đọc: MFA quản trị, allowlist Admin, đích backup bất biến, snapshot 24 giờ, restore test 7 ngày, CIS ≥ 80, bản vá bảo mật chờ, journal dở, chứng chỉ < 14 ngày, kênh thông báo, agent kết nối; điểm = pass 2/warn 1/fail 0) + Gate G1–G8 đọc từ bằng chứng đã ghi bằng lệnh mới `php artisan itso:gate-record G<n> <pass|fail|partial|pending_vm>` (chưa ghi = `pending_vm`); `ready` chỉ true khi mọi kiểm và mọi Gate `pass`. Chỉ SUPER_ADMIN (`settings.read`). MSW của 12.0 đã theo contract nên giao diện không đổi. `docs/runbooks/operations-handbook.md`: cài (online/offline), nâng cấp/quay lại/repair, backup/DR, 9 sự cố thường gặp, xoay khóa (7 loại bí mật), thêm/bớt server, import, gỡ cài đặt, lịch kiểm định kỳ, vai trò; trỏ tới runbook Phase 4–11.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Readiness | `pest tests/Feature/Phase12/ReadinessTest.php` | **1/1 PASS**: contract 200; dữ liệu trống → allowlist/backup/kênh/agent fail, CIS warn, Gate `pending_vm`; thêm allowlist + kênh + agent + journal dở + ghi Gate G5 → kiểm đổi theo, G5 `pass` có `verified_at`, điểm tăng; G9 bị từ chối; ADMIN 403, USER 401 |
+| Pest toàn bộ | `vendor/bin/pest` (PostgreSQL + Redis thật) | **554/554 PASS** (145 s) |
+| Web | `vitest run src/demo/__tests__/phase12.test.ts` | 10/10 PASS (MSW theo hành vi API) |
+| Lint | `pint --test` · `phpstan` · `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không. Giao diện chạy với stack thật: e2e `phase12.spec.ts` ở 12.8.
+
+## 2026-11-23 — Phase 12 / Prompt 12.6 (Offline installer, vòng cập nhật + chaos, chính sách cập nhật) — nhánh `phase-12`
+
+Phạm vi: `scripts/release-offline.sh` + `make release-offline` (bundle `itso-<ver>-offline.tar`: bản phát hành + `.deb` theo `packaging/offline-packages.lock` kiểm sha256 + `Packages` + `offline-manifest.json` ký Ed25519 cùng khóa release; `--update-lock` tính bao đóng phụ thuộc trên Ubuntu 24.04). `install.sh --offline <bundle>` (từ chối mục tar không phải file/thư mục, kiểm chữ ký + sha256 từng file + không có `.deb` ngoài danh sách → repo apt tạm qua `/etc/apt/itso-offline.list` → `itso install --offline` → xóa repo; `--keep-offline-repo` cho Wizard). `itso install --offline`: apt chỉ đọc repo cục bộ (`Dir::Etc::SourceList`, `SourceParts=-`), thiếu repo → dừng trước khi gọi apt; `itso.env` có `ITSO_ACME_DIRECTORY=disabled` → panel trả 409 kèm hướng dẫn tải chứng chỉ lên. `tests/vm/upgrade-loop.sh` (20 vòng update → kiểm → rollback, kill -9 lần lượt ở 6 bước journal, `--reboot <bước>` sysrq b, site account 5 lần/giây phải 0 lỗi HTTP). `docs/security/update-policy.md` (kênh, thời hạn vá, ký, xoay khóa, SBOM, báo lỗi nội bộ).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Installer | `make test-installer` | **20/20 PASS** (mới 9): release-offline với `.deb` thật tối giản (dpkg-deb) → Packages + manifest ký; sha `.deb` khác lock → dừng; `--offline` → repo tạm cho `itso install --offline` rồi xóa; `--keep-offline-repo`; `.deb` bị thay / `.deb` ngoài danh sách / `manifest.json` bị đổi / ký khóa khác / symlink trong bundle → từ chối |
+| Bundle thật | `VERSION=1.0.0-rc.1 make release-offline` rồi `install.sh --offline itso-1.0.0-rc.1-offline.tar --dry-run` (repo/apt trong thư mục tạm) | PASS: bundle 53 MB (lock rỗng → 0 `.deb`, có CẢNH BÁO); chữ ký offline + release đúng, `itso install --offline --dry-run` chạy preflight (FAIL đúng vì container không có systemd), repo tạm đã xóa |
+| Go agent | `go test ./...` (mới `TestInstallOfflineUsesLocalRepoOnly`) · `gofmt -l` · `go vet` | PASS |
+| Pest | `pest tests/Feature/Phase5 tests/Feature/Phase12` (mới `OfflineAcmeTest`) | 36/36 PASS |
+| Lint | `pint --test` · `phpstan` · `check-no-exec` · `make structure` · `make docs-check` | PASS |
+
+**Chưa chạy (chờ VM/máy build):** sinh lock thật bằng `--update-lock` trên Ubuntu 24.04 có mạng; cài offline trên VM không mạng; `tests/vm/upgrade-loop.sh` 20 vòng + `--reboot`. **Test bị bỏ qua:** không.
+
+## 2026-11-23 — Phase 12 / Prompt 12.5 (Hiệu năng 200 account/server) — nhánh `phase-12`
+
+Phạm vi: `PerfSeeder` (chỉ local/testing: 200 account × 3 website × 2 DB, 7 ngày metrics ≈ 2,5 triệu dòng, 10 000 job, 100 000 audit qua trigger hash thật), lệnh `itso:bench` (HTTP kernel nội bộ với token SUPER_ADMIN tạm, 9 danh sách + 8 chi tiết, `alerts-evaluate`, insert metrics; p50/p95/max + số truy vấn; mã thoát ≠ 0 nếu trượt), `docs/perf/phase-12.md` (trước/sau). Điểm nóng đã sửa: chỉ mục `audit_logs (at, id)` cho trigger chuỗi hash (đặc tả + migration cho DB cũ; 200 audit ở 100 000 dòng 3 657 → 5,7 ms); N+1 ở `hosting-accounts`, `jobs`, `databases`, `websites`, `audit-logs`, `users`, `metrics/servers/{id}/accounts` (`Listing::page` thêm `prefetch`); `audit-logs` không còn 500 khi `resource_type` số ít.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Đếm truy vấn | `pest tests/Feature/Phase12/QueryCountTest.php` | **1/1 PASS** (10 trang, limit 5 vs 40, chênh ≤ 3). Đối chứng với mã 12.4 (`git stash`): trượt 6 trang, ví dụ `hosting-accounts` 77 → 528 truy vấn |
+| Bench | `php artisan db:seed --class=PerfSeeder` (31 s) · `php artisan itso:bench --n=30` (DB `itso_perf`) | **Mọi mục tiêu đạt**: danh sách p95 ≤ 61 ms (trước: `hosting-accounts` 703 ms ✗), chi tiết p95 ≤ 36 ms, `alerts-evaluate` 42 ms, insert metrics 200 account × 7 86 ms |
+| DB | `bash scripts/db-verify.sh` | PASS (Phase 3 → 12 = đặc tả, có chỉ mục mới) |
+| Pest toàn bộ | `vendor/bin/pest` (PostgreSQL + Redis thật) | **552/552 PASS** (135 s) |
+| Lint | `pint --test` · `phpstan analyse` | PASS |
+
+**Test bị bỏ qua:** không. Đo qua Caddy + PHP-FPM và tải song song: chờ VM (bài Gate 12.8).
+
+## 2026-11-23 — Phase 12 / Prompt 12.4 (Hardening: ASVS L2, ma trận quyền, CIS, RLS/helper, systemd) — nhánh `phase-12`
+
+Phạm vi: `docs/security/asvs-l2.md` (V1–V14, bằng chứng từng mục; không còn High/Critical mở). Bốn mục thiếu đã sửa: cookie phiên `Secure` mặc định ở production; middleware `SecurityHeaders` (nosniff, `X-Frame-Options`, `Referrer-Policy`, CSP cho JSON, `Cache-Control: no-store`) + Caddy thêm `X-Frame-Options`, `Permissions-Policy`, COOP; middleware `LimitRequestBody` (JSON ≤ 2 MB, chunk upload ≤ 9 MB → 413 `payload_too_large`, mã lỗi mới trong contracts) + Caddy `request_body max_size`; test ma trận quyền sinh từ route. CIS: `GET /security/cis`, `POST /security/cis:audit` (job `cis.audit` chỉ đọc, `cis_results` giữ 30 lượt, hướng dẫn sửa + `fix_href`), mục `cis_l1` (5 điểm) trong điểm bảo mật — lấy từ `ssh_password_disabled` (15 → 10) vì CIS 5.1.21 tính lại cùng tiêu chí; điểm sau cài vẫn ≥ 80. ADR 0055 có số liệu RLS đo thật; ADR 0056 + unit `itso-agent`/`itso-agent-node`: `systemd-analyze security --offline` 6.1 → **4.9**, kiểm trong `make units-check`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Ma trận quyền | `pest tests/Feature/Phase12/RouteMatrixTest.php` | **3/3 PASS**: route ghi Admin thiếu `itso.perm` = 0 (11 ngoại lệ có lý do: wizard, dữ liệu của chính mình); GET Admin thiếu quyền = 0 (8 ngoại lệ); > 250 route có `{id}` gọi bằng ADMIN ngoài phạm vi / USER khác với id thật → chỉ 403/404 (đối chứng: actor trong phạm vi → 200) |
+| Hardening + CIS | `pest tests/Feature/Phase12/HardeningTest.php` | **3/3 PASS**: CIS rỗng → kiểm → điểm 78 (7 pass/2 fail/1 na), hướng dẫn + `fix_href`, `cis_l1` warn, giữ 30 lượt, quyền (ADMIN trong phạm vi xem, không chạy; ngoài phạm vi 404); header bảo mật; 413; cookie Secure |
+| Điểm bảo mật | `pest tests/Feature/Phase7/SecurityCenterTest.php` | 6/6 PASS (trọng số mới, tổng 100, sau cài ≥ 80) |
+| Pest toàn bộ | `vendor/bin/pest` (PostgreSQL + Redis thật) | **551/551 PASS** (127 s) |
+| RLS (số liệu ADR 0055) | PL/pgSQL 20 000 truy vấn trên 60 600 dòng | không RLS 0,0057 ms · RLS đơn giản 0,0079 ms · RLS theo bảng phạm vi 0,0306 ms |
+| Unit systemd | `make units-check` | PASS (18 unit; exposure agent 4.9, agent-node 4.9 ≤ 5.0) |
+| Lint / contracts | `pint --test` · `phpstan` · `make contracts-check` · `make codegen-check` · `check-no-exec` | PASS |
+
+**Test bị bỏ qua:** không. `systemd-analyze security` trên máy thật + chạy mọi op với unit siết: chờ VM.
+
+## 2026-11-23 — Phase 12 / Prompt 12.3 (Panel import: API, job `import.run`, cutover + rollback) — nhánh `phase-12`
+
+Phạm vi: `Admin/ImportController` (quyền mới `imports.manage`, chỉ SUPER_ADMIN; chạy/cutover/quay lại cần step-up; idempotent) + `Domain/Imports/ImportService` + `ImportJobHandler`. Quét = job `import.scan` (chỉ đọc) → `import_items` (cảnh báo phía panel `domain_exists`, `db_large`; gợi ý username không trùng; mục có domain đã ở ITSO bị bỏ chọn). `PUT /plan`: map username/gói/USER có sẵn hoặc USER mới, lỗi 422 theo `items.N.field` (username trùng/không hợp lệ, cùng username khác gói/chủ, vượt website/database/disk của gói, domain đã có, email trùng). `:run`: mỗi username một job `import.run` = `account.ensure` → `quota.apply` → mỗi site `fs.site_layout.ensure` → `import.copy` (uid account) → `php.pool.apply` → `nginx.vhost.apply` → DB `owner_ensure/create/user_ensure` (mật khẩu sinh ở panel, chỉ đi qua `Secrets::ref`) → op mới `import.db_dump` (dump DB nguồn vào home account, `max_bytes`) → `db.mysql.import` → `fs.delete`; cron tạo ở trạng thái tắt; PHP giữ bản nguồn nếu hỗ trợ + gói cho phép + đã cài, không thì bản mặc định. Báo cáo khác biệt theo mục (file, byte, bỏ qua + lý do, số bảng, chứng chỉ). `:cutover` = `import.cutover` + ACME cho site có SSL ở nguồn (nếu đã cấu hình); `:rollback` = `import.rollback`, account ITSO giữ nguyên. `ProvisioningService::create` tách `assertCreatable`/`newRecord`/`createSteps` để import dùng lại.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest import | `pest tests/Feature/Phase12/ImportTest.php` (PostgreSQL + Redis thật) | **7/7 PASS**: quét → kế hoạch + contract; scan_failed; 422 theo mục (trùng, khác gói, quota, domain đã có, email trùng, mục lạ, chủ không phải Portal); chạy đủ bước + mật khẩu DB không lộ (`p8leak`) + cutover ACME + rollback; một account lỗi → `partially_failed`, cutover chỉ mục xong; cutover lỗi → giữ `completed`, xóa lượt không đụng account; quyền ADMIN 403 / USER 401-403 / portal 404 / chưa step-up 403 |
+| Pest toàn bộ | `vendor/bin/pest` | 544/545 lượt đầu: lỗi duy nhất `ServerOpsTest` `/system/updates` thiếu `repair_command`/`journal`/`history` (contract đổi ở 12.0, chưa hiện thực) → đã hiện thực (panel chỉ đọc `update.journal` + `update-history.jsonl`, đặt `ITSO_UPDATE_STATE_DIR`), thêm test journal/lịch sử; chạy lại `ServerOpsTest` **9/9 PASS** |
+| Go agent | `go test ./...` (mới `TestImportDBDump`) · `gofmt -l` · `go vet` | PASS |
+| Lint API | `pint --test` · `phpstan analyse` | PASS |
+| Contracts | `make contracts-check` · `make codegen-check` · `check-no-exec` | PASS |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-23 — Phase 12 / Prompt 12.2 (Agent: import, CIS, journal cập nhật) — nhánh `phase-12`
+
+Phạm vi: op `import.scan` (aaPanel, HestiaCP, nginx thuần; parser nginx tối thiểu ≤ 256 KB, không theo include, gộp khối 80/443, cảnh báo `php_missing`/`ssl_expired`/`symlink_outside`/`unsupported`, bỏ vhost `itso-*` và docroot trong home account ITSO), `import.copy` (`fsx.SourceTar`: openat O_NOFOLLOW từng thành phần; bỏ symlink, hardlink, socket, FIFO, thiết bị; helper uid account giải bằng `restore_tar`; `max_bytes` → `quota_exceeded`, không để lại đích dở), `import.cutover`/`import.rollback` (đổi tên `.itso-disabled` hoặc chuyển `sites-enabled/*` sang `/etc/nginx/itso-disabled/<import>/`, idempotent, `nginx -t`/reload lỗi → hoàn tác; HestiaCP kéo theo `.ssl.conf`), `cis.audit` (36 mục CIS Ubuntu 24.04 L1, chỉ đọc /proc, /sys, cấu hình, quyền/chủ; lệnh chỉ `dpkg-query`, `apt-get -s`; không đọc `/etc/shadow`). Cây aaPanel giả được seed trong `--sandbox`. Journal cập nhật `/var/lib/itso/update.journal` + lịch sử `update-history.jsonl`; `itso update` ghi 6 bước, migrate bằng artisan của bản mới trước khi đổi symlink; `itso repair --fix` dọn (trước `migrated`) hoặc hoàn tất/quay lại (từ `migrated`); `itso doctor` báo journal dở.
+
+Contracts: `ImportVhostPath` nới cho đúng thực tế (HestiaCP `conf.d/domains/`, `sites-enabled/*` không bắt buộc `.conf`, tên không bắt đầu bằng dấu chấm); CHECK `import_items_vhost_chk` và migration Phase 12 sinh lại theo; +4 vector độc.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen-check` | PASS (362 vector) |
+| DB | `bash scripts/db-verify.sh` | PASS (Phase 3 → 12 = đặc tả) |
+| Go agent | `go test ./...` | PASS toàn bộ (mới: `TestImportScanAaPanel`, `TestImportScanHestiaAndNginx`, `TestImportScanRejectsUnsafeVhosts`, `TestImportCopyUnderAccountUID`, `TestImportCutoverRollback`, `TestCisAudit`, vector độc `import_src`/`import_vhost`) |
+| Crash từng bước | `go test ./internal/install -run 'Crash\|Unhealthy\|HistoryAndOrder'` | PASS: crash sau 6 bước × repair --fix; hoàn tất lỗi sức khỏe → quay về; journal hỏng chặn update |
+| Fuzz | `FuzzNginxImportParser` 30 s · `FuzzImportPaths` 15 s | PASS (corpus giữ ca `..000` để hồi quy); thêm vào `make test-fuzz` |
+| Lint agent | `make lint-agent` | PASS |
+| Playwright demo (chạy lại 2 ca lỗi của 12.0) | `playwright test e2e/demo-audit.spec.ts e2e/demo-smoke.spec.ts -g imports` | **4/4 PASS**; lượt toàn bộ 12.0: 756/758, 2 lỗi đó đã sửa |
+
+**Test bị bỏ qua:** không. Chạy thật trên VM (aaPanel/HestiaCP cài thật, kill -9 thật): chờ Gate 12.8.
+
+## 2026-11-23 — Phase 12 / Prompt 12.1 (ADR, contracts agent-ops, migration) — nhánh `phase-12`
+
+Phạm vi: ADR 0053–0060 (D-108…D-115 Accepted; D-115 theo lựa chọn `v1.0.0-rc.1` của người dùng). Agent-ops có schema: `import.scan` (nguồn, `max_sites` ≤ 500; trả site/alias/docroot/vhost/PHP/SSL/DB/cron/cảnh báo, không nhận gốc tự do), `import.copy` (src phải dưới gốc web của nguồn, dst `RelPath` trong home, `max_bytes`), `import.cutover`/`import.rollback` (chỉ file vhost của nguồn `.conf`), `cis.audit` (profile cố định); defs `ImportSource`, `ImportSrcPath`, `ImportVhostPath`; 14 vector độc mới (ngoài gốc web, traversal, file nginx chính, vhost của ITSO). DBML + migration Phase 12: `imports` (một lượt đang quét/chạy mỗi server bằng unique index một phần), `import_items` (vhost nguồn theo regex, username hợp lệ, unique domain trong lượt), `cis_results`.
+
+**Lỗi có từ trước tìm ra:** `gen_migrations.py` nhân đôi dấu `\` trong khi migration dùng nowdoc (`<<<'SQL'`) → hai CHECK chặn traversal của Phase 10/11 (`wordpress_sites_path_chk`, `uptime_checks_path_chk`) thành regex sai, không chặn gì ở tầng DB (ứng dụng và agent vẫn kiểm). `db-verify` không thấy vì so SQL do script in ra, không phải file PHP. Sửa generator, sinh lại migration 10/11/12, thêm migration `2026_11_23_000001_fix_regex_check_constraints.php` tạo lại hai CHECK cho DB đã migrate; test hồi quy trong `SchemaTest`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `check-contracts.sh` · `make codegen` | PASS (163 op có schema, 2 op khai báo, 358 vector) |
+| DB | `bash scripts/db-verify.sh` | PASS (178 test SQL; migration Phase 3 → 12 áp lần lượt = đặc tả) |
+| Pest Schema | `pest tests/Feature/Schema` (PostgreSQL thật) | **14/14 PASS** (mới: Phase 12 ràng buộc, CHECK traversal 12.1) |
+| Go | `go build ./...` · `go test ./internal/contracts/ ./internal/server/...` | PASS |
+| Playwright demo toàn bộ (12.0) | `playwright test` | đang chạy (417/758 khi commit); 2 lỗi cùng nguyên nhân `/admin/imports/$id` thiếu id mẫu (audit + smoke), đã sửa ở `e2e/demo.ts` trong 12.0, chạy lại ở 12.2 |
+
+**Test bị bỏ qua:** không.
+
+## 2026-11-23 — Phase 12 / Prompt 12.0 (mockup Import, CIS, Cập nhật, Sẵn sàng production) — nhánh `phase-12`
+
+Phạm vi: chỉ bản demo + contracts. OpenAPI admin thêm `/imports` (quét = job `import.scan`, chi tiết, xóa, mục, `PUT /plan`, `:run`, `:cutover`, `:rollback`), `/security/cis` + `:audit`, `/system/readiness`; `SystemUpdates` thêm `journal`, `history`, `repair_command`. Schema `Import`, `ImportItem`, `ImportWarning`, `ImportScanInput`, `ImportPlanInput`, `CisReport`, `Readiness`. Op `import.scan/copy/cutover/rollback`, `cis.audit` khai báo tên (schema chi tiết ở 12.1). Dữ liệu demo: 3 lượt import (aaPanel đã lập kế hoạch có cảnh báo trùng domain/DB lớn/thiếu PHP, HestiaCP lỗi một phần chờ cutover, Nginx quét lỗi), CIS 36 mục (điểm 79), lịch sử update + journal dở ở bước migrate, readiness 11 kiểm + Gate G1–G8 chờ VM. MSW `handlers/production.ts` mô phỏng hành vi API (chỉ SA, 409 khi máy mất kết nối hoặc đang chạy, 422 theo từng mục kế hoạch, job đổi trạng thái). Trang: Import (danh sách + hộp quét), chi tiết import (bước, kế hoạch, sửa mục, báo cáo khác biệt, cutover/rollback), Bảo mật › CIS, Hệ thống › Sẵn sàng production / Cập nhật; i18n vi/en.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `bash scripts/check-contracts.sh` · `make codegen` · `codegen-check` | PASS (admin 319 operation, 557 example hợp lệ, 100 % operation có example) |
+| Dữ liệu demo | `python3 contracts/tools/check_demo.py` | OK |
+| Vitest | `npx vitest run` | **638/638 PASS** (mới `phase12.test.ts` 10 test: quyền SA, quét → kế hoạch, scan_failed, 409 máy mất kết nối, 422 trùng domain/username theo mục, chạy → báo cáo → cutover → rollback, CIS trước/sau kiểm, updates journal, readiness; `handlers.test.ts` mọi GET mới theo schema) |
+| Go | `go test ./internal/contracts/... ./internal/ops/` | PASS (catalog có 5 op khai báo mới) |
+| Ảnh mockup | `playwright test e2e/screenshots-phase12.spec.ts` (`make screenshots` → `docs/screenshots/phase-12`) | **40/40 PASS**, 10 cảnh × 1440/390 × sáng/tối |
+| Lint | `tsc --noEmit` · ESLint · Prettier | PASS |
+| Playwright demo (toàn bộ, gồm axe) | `playwright test` | đang chạy khi commit; kết quả ghi ở mục 12.1. Lần chạy này bắt được 1 lỗi: `demo-audit /admin/imports/$id` thiếu id mẫu → đã thêm `imports` vào `e2e/demo.ts` |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.8 (Tích hợp: e2e stack thật, VM, review bảo mật, make check, v0.5.0-beta) — nhánh `phase-11`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue `default,notifications` + Vite + itso-agent `--sandbox` + node sandbox), DB `migrate:fresh --seed` + `DemoSeeder`. Webhook giả nghe trên IP dải riêng `10.99.0.1` thêm vào `lo` (SsrfGuard chặn loopback và `192.0.2.0/24` của container); SMTP giả Node trên `127.0.0.1:2525`. Container không có cgroup v2/systemd/nftables thật: `tests/vm/phase11.sh` **chờ VM**.

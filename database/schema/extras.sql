@@ -379,3 +379,18 @@ ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_sever
 ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_attempts_chk CHECK (attempts BETWEEN 0 AND 10);
 ALTER TABLE notification_deliveries ADD CONSTRAINT notification_deliveries_target_chk
   CHECK (channel_id IS NOT NULL OR recipient_user_id IS NOT NULL);
+
+-- ---------------------------------------------------------------- Phase 12 (D-108, D-109)
+ALTER TABLE imports ADD CONSTRAINT imports_source_chk CHECK (source IN ('aapanel', 'hestia', 'nginx'));
+ALTER TABLE imports ADD CONSTRAINT imports_state_chk
+  CHECK (state IN ('scanning', 'scan_failed', 'planned', 'running', 'completed', 'partially_failed', 'cut_over', 'rolled_back'));
+-- Một lượt đang quét/chạy mỗi server (khóa ở DB, ứng dụng trả 409).
+CREATE UNIQUE INDEX imports_busy_uq ON imports (server_id) WHERE state IN ('scanning', 'running');
+ALTER TABLE import_items ADD CONSTRAINT import_items_state_chk CHECK (state IN ('pending', 'skipped', 'running', 'done', 'failed'));
+ALTER TABLE import_items ADD CONSTRAINT import_items_progress_chk CHECK (progress BETWEEN 0 AND 100);
+ALTER TABLE import_items ADD CONSTRAINT import_items_username_chk
+  CHECK (target_username IS NULL OR target_username ~ '^[a-z][a-z0-9]{2,15}$');
+ALTER TABLE import_items ADD CONSTRAINT import_items_vhost_chk
+  CHECK (vhost_path ~ '^/(www/server/panel/vhost/nginx/[A-Za-z0-9_-][A-Za-z0-9._-]{0,199}\.conf|etc/nginx/conf\.d/(domains/)?[A-Za-z0-9_-][A-Za-z0-9._-]{0,199}\.conf|etc/nginx/sites-enabled/[A-Za-z0-9_-][A-Za-z0-9._-]{0,199})$');
+ALTER TABLE cis_results ADD CONSTRAINT cis_results_score_chk
+  CHECK (score BETWEEN 0 AND 100 AND passed >= 0 AND failed >= 0 AND not_applicable >= 0);

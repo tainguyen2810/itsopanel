@@ -91,6 +91,9 @@ final class Permissions
             'backups.restore' => 'Khôi phục từ snapshot (theo phạm vi; ghi đè cần step-up)',
             'backups.manage' => 'Đích, chính sách, bộ khôi phục, xóa snapshot, purge account (SUPER_ADMIN)',
         ],
+        'imports' => [
+            'imports.manage' => 'Import từ aaPanel/HestiaCP/nginx: quét, lập kế hoạch, chạy, cutover, quay lại (SUPER_ADMIN; Phase 12)',
+        ],
     ];
 
     /** @var array<string, list<string>> */

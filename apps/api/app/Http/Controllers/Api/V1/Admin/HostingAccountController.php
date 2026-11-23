@@ -59,7 +59,7 @@ final class HostingAccountController
         return response()->json(Listing::page($request, $q,
             ['created_at' => 'hosting_accounts.created_at', 'username' => 'hosting_accounts.username',
                 'lifecycle_state' => 'hosting_accounts.lifecycle_state'],
-            '-created_at', fn (HostingAccount $a): array => $this->present->account($a)));
+            '-created_at', fn (HostingAccount $a): array => $this->present->account($a), fn (array $page) => $this->present->prefetch($page)));
     }
 
     public function show(Request $request, string $id): JsonResponse

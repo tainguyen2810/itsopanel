@@ -11,8 +11,10 @@ use App\Http\Controllers\Api\V1\Admin\DockerController;
 use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
 use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
+use App\Http\Controllers\Api\V1\Admin\ImportController;
 use App\Http\Controllers\Api\V1\Admin\MonitoringController;
 use App\Http\Controllers\Api\V1\Admin\NotificationChannelController;
+use App\Http\Controllers\Api\V1\Admin\ReadinessController;
 use App\Http\Controllers\Api\V1\Admin\RegistryController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
@@ -31,6 +33,7 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotificationPreferenceController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
 use App\Http\Controllers\Api\V1\Portal\PortalMonitoringController;
+use App\Http\Controllers\Api\V1\Security\CisController;
 use App\Http\Controllers\Api\V1\Security\FirewallController;
 use App\Http\Controllers\Api\V1\Security\ProtectionController;
 use App\Http\Controllers\Api\V1\Security\SecurityController;
@@ -113,6 +116,7 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('version', [SystemController::class, 'version']);
                 Route::get('status', [SystemController::class, 'status']);
                 Route::get('updates', [SystemController::class, 'updates'])->middleware('itso.perm:settings.read');
+                Route::get('readiness', [ReadinessController::class, 'show'])->middleware('itso.perm:settings.read');
             });
 
             // Người dùng, vai trò, giả danh (3.3)
@@ -284,6 +288,18 @@ Route::prefix('v1')->group(function (): void {
             Route::post('account-migrations/{id}:cleanup', [AccountMigrationController::class, 'cleanup'])
                 ->middleware(['itso.perm:accounts.write', 'itso.step-up', 'itso.idempotent']);
             Route::get('account-migrations/{id}', [AccountMigrationController::class, 'show'])->middleware('itso.perm:accounts.read');
+            // Import từ aaPanel/HestiaCP/nginx trên cùng máy (Prompt 12.3, D-108): chỉ SUPER_ADMIN.
+            Route::middleware('itso.perm:imports.manage')->group(function (): void {
+                Route::get('imports', [ImportController::class, 'index']);
+                Route::post('imports', [ImportController::class, 'store'])->middleware('itso.idempotent');
+                Route::get('imports/{id}/items', [ImportController::class, 'items']);
+                Route::put('imports/{id}/plan', [ImportController::class, 'plan']);
+                Route::post('imports/{id}:run', [ImportController::class, 'run'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::post('imports/{id}:cutover', [ImportController::class, 'cutover'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::post('imports/{id}:rollback', [ImportController::class, 'rollback'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::get('imports/{id}', [ImportController::class, 'show']);
+                Route::delete('imports/{id}', [ImportController::class, 'destroy']);
+            });
             // Cổng purge (D-46, Prompt 8.4): backup cuối đã kiểm chứng + xác nhận gõ username.
             Route::post('hosting-accounts/{id}:schedule-purge', [BackupAdminController::class, 'schedulePurge'])
                 ->middleware(['itso.perm:backups.manage', 'itso.step-up', 'itso.idempotent']);
@@ -413,6 +429,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('security/overview', [SecurityController::class, 'overview'])->middleware('itso.perm:security.read');
             Route::get('security/score', [SecurityController::class, 'score'])->middleware('itso.perm:security.read');
             Route::get('security/events', [SecurityController::class, 'events'])->middleware('itso.perm:security.read');
+            // CIS Ubuntu 24.04 L1 chỉ đọc (Prompt 12.4, D-109): xem theo phạm vi; chạy kiểm cần security.server.
+            Route::get('security/cis', [CisController::class, 'show'])->middleware('itso.perm:security.read');
+            Route::post('security/cis:audit', [CisController::class, 'audit'])->middleware(['itso.perm:security.server', 'itso.idempotent']);
             Route::post('security/events/{id}:acknowledge', [SecurityController::class, 'acknowledge'])->middleware('itso.perm:security.write');
             Route::get('security/fim/changes', [SecurityController::class, 'fimChanges'])->middleware('itso.perm:security.read');
             Route::get('security/fail2ban/bans', [SecurityController::class, 'bans'])->middleware('itso.perm:security.read');

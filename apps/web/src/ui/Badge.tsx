@@ -105,7 +105,15 @@ export type StatusKey =
   | 'sent'
   | 'sending'
   | 'retrying'
-  | 'blocked';
+  | 'blocked'
+  | 'scanning'
+  | 'scan_failed'
+  | 'planned'
+  | 'partially_failed'
+  | 'cut_over'
+  | 'interrupted'
+  | 'na'
+  | 'pending_vm';
 
 const TONE: Record<StatusKey, Tone> = {
   active: 'success',
@@ -181,6 +189,14 @@ const TONE: Record<StatusKey, Tone> = {
   sending: 'info',
   retrying: 'warning',
   blocked: 'danger',
+  scanning: 'info',
+  scan_failed: 'danger',
+  planned: 'info',
+  partially_failed: 'warning',
+  cut_over: 'success',
+  interrupted: 'danger',
+  na: 'neutral',
+  pending_vm: 'warning',
 };
 
 /** Trạng thái có trong bảng (dữ liệu API có thể có giá trị mới: hiện nguyên văn, tông trung tính). */

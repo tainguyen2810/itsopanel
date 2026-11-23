@@ -47,8 +47,25 @@ final class ProvisioningService
      */
     public function create(User $actor, User $owner, HostingPackage $package, Server $server, string $username, array $override = []): array
     {
+        $this->assertCreatable($owner, $package, $server, $username);
+        $version = $this->currentVersion($package);
+
+        return DB::transaction(function () use ($actor, $owner, $server, $username, $override, $version): array {
+            $a = $this->newRecord($owner, $version, $server, $username, $override);
+            $job = $this->dispatch($this->createSteps(new JobSpec('hosting_account.create', $a, $server->id), $a), $actor, [$a]);
+            $this->event($a, null, 'provisioning', null, $actor, $job);
+            $this->audit->record('hosting_account.create', $a, ['username' => $username, 'server' => $server->name,
+                'package_version_id' => $version->id], 'success', $server->id, $job->id, $actor);
+
+            return [$a, $job];
+        });
+    }
+
+    /** Kiểm trước khi tạo account (username, chủ, gói, server nhận account). Dùng chung cho Import (D-108). */
+    public function assertCreatable(User $owner, HostingPackage $package, Server $server, string $username, string $field = 'username'): void
+    {
         if (preg_match('/^[a-z][a-z0-9]{2,15}$/', $username) !== 1 || in_array($username, self::RESERVED, true)) {
-            throw ApiProblem::field('username', 'Username 3–16 ký tự a-z0-9, bắt đầu bằng chữ, không trùng tên hệ thống.');
+            throw ApiProblem::field($field, 'Username 3–16 ký tự a-z0-9, bắt đầu bằng chữ, không trùng tên hệ thống.');
         }
         if ($owner->realm !== 'portal' || $owner->status !== 'active') {
             throw ApiProblem::field('owner_user_uuid', 'Chủ account phải là USER Portal đang hoạt động.');
@@ -60,31 +77,37 @@ final class ProvisioningService
             throw new ApiProblem(422, 'server_not_accepting', 'Server không nhận account mới', "Server {$server->name} đang tắt nhận account mới.",
                 ['server_uuid' => ['Server không nhận account mới.']]);
         }
-        $version = $this->currentVersion($package);
+    }
 
-        return DB::transaction(function () use ($actor, $owner, $server, $username, $override, $version): array {
-            if (HostingAccount::query()->withTrashed()->where('server_id', $server->id)->where('username', $username)->exists()) {
-                throw ApiProblem::conflict("Username $username đã có trên server {$server->name}.");
-            }
-            $uid = $this->uids->allocate($server->id);
-            $a = HostingAccount::query()->create([
-                'server_id' => $server->id, 'package_version_id' => $version->id, 'owner_user_id' => $owner->id,
-                'username' => $username, 'uid' => $uid, 'home_path' => '/home/'.$username,
-                'lifecycle_state' => 'provisioning', 'status' => 'provisioning', 'limits_override' => $override,
-            ]);
-            $this->uids->bind($server->id, $uid, $a->id);
-            $limits = $this->quota->limits($a, $version);
-            $spec = (new JobSpec('hosting_account.create', $a, $server->id))
-                ->step('account.ensure', ['account' => self::ref($a), 'home_path' => $a->home_path,
-                    'shell' => $limits['ssh_allowed'] ? '/bin/bash' : '/usr/sbin/nologin', 'limits' => self::agentLimits($limits)])
-                ->step('quota.apply', ['account' => self::ref($a), 'limits' => self::agentLimits($limits)]);
-            $job = $this->dispatch($spec, $actor, [$a]);
-            $this->event($a, null, 'provisioning', null, $actor, $job);
-            $this->audit->record('hosting_account.create', $a, ['username' => $username, 'server' => $server->name,
-                'package_version_id' => $version->id], 'success', $server->id, $job->id, $actor);
+    /**
+     * Bản ghi account mới ở trạng thái provisioning + cấp UID (gọi trong transaction). Bước agent: createSteps().
+     *
+     * @param  array<string, int>  $override
+     */
+    public function newRecord(User $owner, HostingPackageVersion $version, Server $server, string $username, array $override = []): HostingAccount
+    {
+        if (HostingAccount::query()->withTrashed()->where('server_id', $server->id)->where('username', $username)->exists()) {
+            throw ApiProblem::conflict("Username $username đã có trên server {$server->name}.");
+        }
+        $uid = $this->uids->allocate($server->id);
+        $a = HostingAccount::query()->create([
+            'server_id' => $server->id, 'package_version_id' => $version->id, 'owner_user_id' => $owner->id,
+            'username' => $username, 'uid' => $uid, 'home_path' => '/home/'.$username,
+            'lifecycle_state' => 'provisioning', 'status' => 'provisioning', 'limits_override' => $override,
+        ]);
+        $this->uids->bind($server->id, $uid, $a->id);
 
-            return [$a, $job];
-        });
+        return $a;
+    }
+
+    /** Bước agent dựng account: account.ensure + quota.apply. */
+    public function createSteps(JobSpec $spec, HostingAccount $a): JobSpec
+    {
+        $limits = $this->quota->limits($a);
+
+        return $spec->step('account.ensure', ['account' => self::ref($a), 'home_path' => $a->home_path,
+            'shell' => $limits['ssh_allowed'] ? '/bin/bash' : '/usr/sbin/nologin', 'limits' => self::agentLimits($limits)])
+            ->step('quota.apply', ['account' => self::ref($a), 'limits' => self::agentLimits($limits)]);
     }
 
     public function suspend(User $actor, HostingAccount $a, string $reason): Job

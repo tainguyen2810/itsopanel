@@ -219,9 +219,23 @@ func (e *Env) inGroup(user, group string) bool {
 	return false
 }
 
-func stepPackages(ctx context.Context, e *Env, _ Options, _ *Release) error {
+func stepPackages(ctx context.Context, e *Env, o Options, _ *Release) error {
+	return e.aptEnsure(ctx, o, basePackages)
+}
+
+// OfflineAptList: danh sách nguồn apt riêng do install.sh --offline ghi (không nằm trong sources.list.d nên không đổi
+// cấu hình apt của máy; install.sh xóa nó cùng repo sau khi cài).
+const OfflineAptList = "/etc/apt/itso-offline.list"
+
+// aptOffline: tùy chọn apt để chỉ đọc repo cục bộ tạm (không mạng), giữ nguyên danh sách gói đã tải trước đó.
+func aptOffline() []string {
+	return []string{"-o", "Dir::Etc::SourceList=" + OfflineAptList, "-o", "Dir::Etc::SourceParts=-", "-o", "APT::Get::List-Cleanup=0"}
+}
+
+// aptEnsure cài các gói còn thiếu; offline thì chỉ dùng repo cục bộ (thiếu danh sách nguồn → lỗi rõ ràng, không gọi mạng).
+func (e *Env) aptEnsure(ctx context.Context, o Options, pkgs []string) error {
 	var missing []string
-	for _, p := range basePackages {
+	for _, p := range pkgs {
 		r := e.try(ctx, "dpkg-query", "-W", "-f=${Status}", p)
 		if r.ExitCode != 0 || strings.TrimSpace(string(r.Stdout)) != "install ok installed" {
 			missing = append(missing, p)
@@ -230,12 +244,19 @@ func stepPackages(ctx context.Context, e *Env, _ Options, _ *Release) error {
 	if len(missing) == 0 {
 		return nil
 	}
-	if _, err := e.cmd(ctx, "apt-get", "update", "-q"); err != nil {
+	var extra []string
+	if o.Offline {
+		if !e.FS.Exists(OfflineAptList) {
+			return fmt.Errorf("cài offline nhưng không có %s: chạy qua install.sh --offline <bundle.tar>", OfflineAptList)
+		}
+		extra = aptOffline()
+	}
+	if _, err := e.cmd(ctx, "apt-get", append(append([]string{}, extra...), "update", "-q")...); err != nil {
 		return err
 	}
-	args := append([]string{"install", "-y", "-q", "--no-install-recommends", "-o", "Dpkg::Options::=--force-confdef",
-		"-o", "Dpkg::Options::=--force-confold"}, missing...)
-	_, err := e.cmd(ctx, "apt-get", args...)
+	args := append(append([]string{}, extra...), "install", "-y", "-q", "--no-install-recommends", "-o", "Dpkg::Options::=--force-confdef",
+		"-o", "Dpkg::Options::=--force-confold")
+	_, err := e.cmd(ctx, "apt-get", append(args, missing...)...)
 	return err
 }
 
@@ -341,16 +362,24 @@ func stepSecrets(_ context.Context, e *Env, o Options, _ *Release) error {
 		if err != nil {
 			return "", err
 		}
-		return strings.Join([]string{
+		return strings.Join(append([]string{
 			"# Sinh bởi itso install. Không commit, không chia sẻ.",
 			"APP_ENV=production", "APP_DEBUG=false", "APP_KEY=base64:" + k,
 			"DB_CONNECTION=pgsql", "DB_HOST=/var/run/postgresql", "DB_PORT=" + strconv.Itoa(PGPort), "DB_DATABASE=itso", "DB_USERNAME=itso",
 			"REDIS_CLIENT=phpredis", "REDIS_SCHEME=unix", "REDIS_PATH=/run/itso-redis/redis.sock", "REDIS_PASSWORD=" + redisPass,
 			"QUEUE_CONNECTION=redis", "CACHE_STORE=redis", "SESSION_DRIVER=redis",
 			"ITSO_PANEL_PORT=" + strconv.Itoa(p.Port), "ITSO_ENTRANCE=" + p.Entrance,
-			"ITSO_AGENT_SOCKET=" + AgentSocket, "ITSO_AGENT_KEY_FILE=" + AgentKey, "ITSO_SETUP_CODE_FILE=" + SetupFile, "",
-		}, "\n"), nil
+			"ITSO_AGENT_SOCKET=" + AgentSocket, "ITSO_AGENT_KEY_FILE=" + AgentKey, "ITSO_SETUP_CODE_FILE=" + SetupFile,
+		}, offlineEnv(o)...), "\n") + "\n", nil
 	}, 0o640, itso)
+}
+
+// offlineEnv: máy cài offline không tới được CA ACME → tắt ACME (panel báo 409 rõ ràng; dùng chứng chỉ tải lên).
+func offlineEnv(o Options) []string {
+	if !o.Offline {
+		return nil
+	}
+	return []string{"ITSO_OFFLINE=1", "ITSO_ACME_DIRECTORY=disabled"}
 }
 
 func stepDatabase(ctx context.Context, e *Env, _ Options, _ *Release) error {
@@ -401,8 +430,11 @@ func stepMigrate(ctx context.Context, e *Env, _ Options, _ *Release) error {
 }
 
 // linkEnv tạo symlink api/.env → /etc/itso/itso.env (tuyệt đối, trong cùng hệ thống file đích).
-func (e *Env) linkEnv() error {
-	rp, err := e.FS.Path(CurrentLink + "/api/.env")
+func (e *Env) linkEnv() error { return e.linkEnvAt(CurrentLink) }
+
+// linkEnvAt trỏ <dir>/api/.env tới /etc/itso/panel.env.
+func (e *Env) linkEnvAt(dir string) error {
+	rp, err := e.FS.Path(dir + "/api/.env")
 	if err != nil {
 		return err
 	}

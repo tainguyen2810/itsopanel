@@ -19,6 +19,7 @@ const ADMIN_IDS: Record<string, string> = {
   websites: first('websites'),
   users: first('users'),
   jobs: first('jobs'),
+  imports: first('imports'),
 };
 const PORTAL_IDS: Record<string, string> = {
   accounts: anphat?.uuid ?? 'missing',

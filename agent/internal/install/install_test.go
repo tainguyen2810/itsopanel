@@ -510,3 +510,43 @@ func TestCompareVersions(t *testing.T) {
 		}
 	}
 }
+
+// Phase 12 (D-113): --offline → apt chỉ đọc repo cục bộ của install.sh, thiếu danh sách nguồn thì dừng trước khi gọi apt;
+// itso.env tắt ACME.
+func TestInstallOfflineUsesLocalRepoOnly(t *testing.T) {
+	r := newRig(t)
+	o := opts(release(t, "1.0.0"))
+	o.Offline = true
+	if err := r.e.Install(context.Background(), o); err == nil || !strings.Contains(err.Error(), install.OfflineAptList) {
+		t.Fatalf("thiếu repo offline phải dừng: %v", err)
+	}
+	for _, l := range r.writes() {
+		if strings.HasPrefix(l, "apt-get") {
+			t.Fatalf("không được gọi apt khi chưa có repo offline: %s", l)
+		}
+	}
+	if _, err := r.fs.WriteAtomic(install.OfflineAptList, []byte("deb [trusted=yes] file:/var/lib/itso/offline-repo ./\n"), 0o644, platform.Owner{}); err != nil {
+		t.Fatal(err)
+	}
+	r.fake.Reset()
+	if err := r.e.Install(context.Background(), o); err != nil {
+		t.Fatal(err, r.out.String())
+	}
+	opt := "-o Dir::Etc::SourceList=" + install.OfflineAptList + " -o Dir::Etc::SourceParts=- -o APT::Get::List-Cleanup=0"
+	var apt []string
+	for _, l := range r.writes() {
+		if strings.HasPrefix(l, "apt-get") {
+			apt = append(apt, l)
+		}
+	}
+	if len(apt) != 2 || !strings.HasPrefix(apt[0], "apt-get "+opt+" update") || !strings.HasPrefix(apt[1], "apt-get "+opt+" install -y") {
+		t.Fatalf("apt phải chỉ dùng repo cục bộ: %q", apt)
+	}
+	env, err := r.fs.ReadFile(install.EnvFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(env), "\nITSO_OFFLINE=1\nITSO_ACME_DIRECTORY=disabled\n") {
+		t.Fatalf("itso.env phải tắt ACME khi offline:\n%s", env)
+	}
+}

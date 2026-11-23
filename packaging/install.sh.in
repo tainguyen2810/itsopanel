@@ -5,9 +5,14 @@
 #
 #   sudo bash install.sh [--version X] [tùy chọn của itso install…]
 #   Node (Phase 9): sudo bash install.sh --role node --join https://CP:28444 --token itso_enr_… --ca-sha256 <pin>
+#   Offline (Phase 12, D-113): sudo bash install.sh --offline itso-<ver>-offline.tar [--keep-offline-repo] [tùy chọn…]
+#     Kiểm chữ ký offline-manifest.json + sha256 từng file (.deb, Packages, manifest.json) → dựng repo apt cục bộ TẠM
+#     (chỉ itso install dùng, qua /etc/apt/itso-offline.list; không đụng sources.list.d) → itso install --offline (ACME tắt)
+#     → xóa repo. --keep-offline-repo: giữ repo và đăng ký vào sources.list.d để Wizard cài nginx/PHP/DB từ bundle.
 #
 # Biến môi trường: ITSO_RELEASE_URL (máy chủ phát hành), ITSO_RELEASE_DIR (thư mục có sẵn file, cài offline),
-# ITSO_BOOTSTRAP_DIR (nơi chép file đã kiểm, mặc định /opt/itso/bootstrap).
+# ITSO_BOOTSTRAP_DIR (nơi chép file đã kiểm, mặc định /opt/itso/bootstrap), ITSO_OFFLINE_REPO_DIR (repo cục bộ,
+# mặc định /var/lib/itso/offline-repo), ITSO_APT_DIR (gốc cấu hình apt, mặc định /etc/apt; chỉ đổi khi test).
 set -euo pipefail
 
 ITSO_RELEASE_URL="${ITSO_RELEASE_URL:-@RELEASE_URL@}"
@@ -31,10 +36,15 @@ case "$(uname -m)" in
 esac
 
 VERSION="$CHANNEL_VERSION"
-if [ "${1:-}" = "--version" ]; then
-  [ -n "${2:-}" ] || die "--version cần giá trị"
-  VERSION="$2"; shift 2
-fi
+OFFLINE="" KEEP_REPO=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --version) [ -n "${2:-}" ] || die "--version cần giá trị"; VERSION="$2"; shift 2 ;;
+    --offline) [ -n "${2:-}" ] || die "--offline cần đường dẫn bundle .tar"; OFFLINE="$2"; shift 2 ;;
+    --keep-offline-repo) KEEP_REPO=1; shift ;;
+    *) break ;;
+  esac
+done
 case "$VERSION" in
   *[!0-9A-Za-z.-]*|"") die "phiên bản không hợp lệ: $VERSION" ;;
 esac
@@ -44,6 +54,36 @@ command -v sha256sum >/dev/null || die "thiếu sha256sum"
 
 WORK="$(mktemp -d /tmp/itso-install.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT
+
+if [ -n "$OFFLINE" ]; then
+  [ -f "$OFFLINE" ] || die "không có bundle $OFFLINE"
+  B="$WORK/bundle"; mkdir -p "$B"
+  # Chỉ nhận file thường + thư mục, tên an toàn (GNU tar còn tự bỏ "/" đầu và từ chối "..").
+  tar -tvf "$OFFLINE" >"$WORK/list" 2>/dev/null || die "bundle offline không đọc được"
+  if grep -qv '^[-d]' "$WORK/list" || tar -tf "$OFFLINE" | grep -q -e '^/' -e '\.\.' -e '[^A-Za-z0-9._+~%/-]'; then
+    die "bundle offline chứa mục không hợp lệ (symlink/thiết bị/tên lạ): dừng cài đặt"
+  fi
+  tar -C "$B" --no-same-owner --no-same-permissions -xf "$OFFLINE" || die "không giải nén được bundle offline"
+  D=$(find "$B" -mindepth 1 -maxdepth 1 -type d | head -n1)
+  [ -n "$D" ] && [ -f "$D/offline-manifest.json" ] && [ -f "$D/offline-manifest.sig" ] || die "bundle offline thiếu offline-manifest.json/.sig"
+  printf '%s\n' "$PUBKEY_PEM" > "$WORK/release.pub"
+  openssl pkeyutl -verify -pubin -inkey "$WORK/release.pub" -rawin -in "$D/offline-manifest.json" -sigfile "$D/offline-manifest.sig" >/dev/null 2>&1 \
+    || die "chữ ký offline-manifest KHÔNG hợp lệ: dừng cài đặt"
+  # Mỗi file một mục {"path": "...", "sha256": "..."}; đường dẫn chỉ được là debs/<tên>.deb, Packages, manifest.json.
+  grep -o '"path": *"[^"]*", *"sha256": *"[0-9a-f]\{64\}"' "$D/offline-manifest.json" \
+    | sed -E 's/"path": *"([^"]*)", *"sha256": *"([0-9a-f]+)"/\2  \1/' > "$WORK/offline.sums"
+  grep -q '  manifest.json$' "$WORK/offline.sums" && grep -q '  Packages$' "$WORK/offline.sums" || die "offline-manifest thiếu manifest.json/Packages"
+  if grep -Ev '^[0-9a-f]{64}  (debs/[A-Za-z0-9][A-Za-z0-9._+~%-]*\.deb|Packages|manifest\.json)$' "$WORK/offline.sums" | grep -q .; then
+    die "offline-manifest có đường dẫn không hợp lệ: dừng cài đặt"
+  fi
+  (cd "$D" && sha256sum -c --quiet --strict "$WORK/offline.sums") >/dev/null 2>&1 || die "sha256 trong bundle offline sai: dừng cài đặt"
+  # Không có .deb nào ngoài danh sách đã ký.
+  for f in "$D"/debs/*.deb; do
+    [ -e "$f" ] || continue
+    awk -v p="debs/$(basename "$f")" '$2 == p { f = 1 } END { exit !f }' "$WORK/offline.sums" || die "bundle offline có gói ngoài danh sách đã ký: $(basename "$f")"
+  done
+  ITSO_RELEASE_DIR="$D"
+fi
 
 fetch() { # fetch <tên file>
   if [ -n "${ITSO_RELEASE_DIR:-}" ]; then
@@ -77,6 +117,29 @@ read -r bin _ <<<"$(artifact binary)"
 chmod 0755 "$WORK/$bin"
 BOOT="${ITSO_BOOTSTRAP_DIR:-/opt/itso/bootstrap}"
 mkdir -p "$BOOT"
-cp -- "$WORK"/* "$BOOT"/
+find "$WORK" -maxdepth 1 -type f -exec cp -- {} "$BOOT"/ \;
 echo "install.sh: đã kiểm chữ ký và checksum bản $VERSION ($ARCH), chạy itso install…"
-exec "$BOOT/$bin" install --release-dir "$BOOT" "$@"
+[ -n "$OFFLINE" ] || exec "$BOOT/$bin" install --release-dir "$BOOT" "$@"
+
+# Offline: repo apt cục bộ tạm, chỉ itso install đọc (qua danh sách nguồn riêng), xóa sau khi cài.
+REPO="${ITSO_OFFLINE_REPO_DIR:-/var/lib/itso/offline-repo}"
+APT="${ITSO_APT_DIR:-/etc/apt}"
+LIST="$APT/itso-offline.list"
+rm -rf "$REPO"; mkdir -p "$REPO"
+cp -- "$D/Packages" "$REPO/Packages"
+find "$D/debs" -maxdepth 1 -name '*.deb' -type f -exec cp -- {} "$REPO/" \; 2>/dev/null || true
+chmod -R a+rX "$REPO"
+mkdir -p "$APT"
+echo "deb [trusted=yes] file:$REPO ./" > "$LIST"
+cleanup_repo() {
+  if [ "$KEEP_REPO" = 1 ]; then
+    mkdir -p "$APT/sources.list.d"; mv -f "$LIST" "$APT/sources.list.d/itso-offline.list"
+    echo "install.sh: giữ repo offline $REPO (đăng ký $APT/sources.list.d/itso-offline.list)"
+  else
+    rm -rf "$REPO" "$LIST"
+  fi
+}
+rc=0
+"$BOOT/$bin" install --release-dir "$BOOT" --offline "$@" || rc=$?
+cleanup_repo
+exit "$rc"

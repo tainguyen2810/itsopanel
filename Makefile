@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check units-check test-installer test-vm release
+.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check units-check test-installer test-vm release release-offline
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -87,8 +87,8 @@ test-e2e: ## Playwright: ảnh Design System, hành vi shell, axe-core (tự b�
 test-e2e-real: ## Playwright trên stack thật + agent sandbox (cần `make dev` đang chạy + DemoSeeder, xem docs/runbooks/phase-3-demo.md)
 	@cd apps/web && $(PNPM) exec playwright test -c playwright.real.config.ts --trace off
 
-screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/), trang chính Phase 2 (docs/screenshots/phase-2/) , mockup Phase 6–11 (docs/screenshots/phase-6/ … phase-11/)
-	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system SCREENSHOT_DIR_P2=$(CURDIR)/docs/screenshots/phase-2 SCREENSHOT_DIR_P6=$(CURDIR)/docs/screenshots/phase-6 SCREENSHOT_DIR_P7=$(CURDIR)/docs/screenshots/phase-7 SCREENSHOT_DIR_P8=$(CURDIR)/docs/screenshots/phase-8 SCREENSHOT_DIR_P9=$(CURDIR)/docs/screenshots/phase-9 SCREENSHOT_DIR_P10=$(CURDIR)/docs/screenshots/phase-10 SCREENSHOT_DIR_P11=$(CURDIR)/docs/screenshots/phase-11 $(PNPM) e2e
+screenshots: ## Chụp lại ảnh Design System (docs/screenshots/design-system/), trang chính Phase 2 (docs/screenshots/phase-2/) , mockup Phase 6–12 (docs/screenshots/phase-6/ … phase-12/)
+	@cd apps/web && SCREENSHOT_DIR=$(CURDIR)/docs/screenshots/design-system SCREENSHOT_DIR_P2=$(CURDIR)/docs/screenshots/phase-2 SCREENSHOT_DIR_P6=$(CURDIR)/docs/screenshots/phase-6 SCREENSHOT_DIR_P7=$(CURDIR)/docs/screenshots/phase-7 SCREENSHOT_DIR_P8=$(CURDIR)/docs/screenshots/phase-8 SCREENSHOT_DIR_P9=$(CURDIR)/docs/screenshots/phase-9 SCREENSHOT_DIR_P10=$(CURDIR)/docs/screenshots/phase-10 SCREENSHOT_DIR_P11=$(CURDIR)/docs/screenshots/phase-11 SCREENSHOT_DIR_P12=$(CURDIR)/docs/screenshots/phase-12 $(PNPM) e2e
 
 tokens: ## Sinh tokens.css từ design/tokens/tokens.json
 	@node design/tools/gen-tokens.mjs
@@ -104,6 +104,8 @@ test-fuzz: ## Fuzz parser envelope + validator của agent (FUZZTIME=30s cho env
 	@cd agent && go test -run='^$$' -fuzz=FuzzUsername -fuzztime=10s ./internal/validate
 	@cd agent && go test -run='^$$' -fuzz=FuzzHostname -fuzztime=10s ./internal/validate
 	@cd agent && go test -run='^$$' -fuzz=FuzzRenderVhost -fuzztime=10s ./internal/ops
+	@cd agent && go test -run='^$$' -fuzz=FuzzNginxImportParser -fuzztime=10s ./internal/ops
+	@cd agent && go test -run='^$$' -fuzz=FuzzImportPaths -fuzztime=10s ./internal/ops
 	@cd agent && go test -run='^$$' -fuzz=FuzzRenderPool -fuzztime=10s ./internal/ops
 	@cd agent && go test -run='^$$' -fuzz=FuzzCronToOnCalendar -fuzztime=10s ./internal/ops
 	@cd agent && go test -run='^$$' -fuzz=FuzzFirewallRule -fuzztime=10s ./internal/ops
@@ -160,6 +162,9 @@ test-installer: ## Test install.sh: chữ ký/sha sai, OS sai, không phải roo
 
 release: ## Đóng gói bản phát hành vào build/release/<ver> (VERSION=…; khóa ITSO_RELEASE_KEY hoặc khóa dev tạm)
 	@bash scripts/release.sh
+
+release-offline: ## Bundle cài không mạng build/release/<ver>/itso-<ver>-offline.tar (.deb khóa phiên bản + sha256, manifest ký)
+	@bash scripts/release-offline.sh
 
 check: ## Toàn bộ pipeline local như CI, in bảng kết quả (exit ≠ 0 nếu có bước đỏ)
 	@bash scripts/check-all.sh

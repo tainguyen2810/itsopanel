@@ -29,6 +29,7 @@ const (
 	OpCertInstall            = "cert.install"
 	OpCertIssue              = "cert.issue"
 	OpCertRemove             = "cert.remove"
+	OpCisAudit               = "cis.audit"
 	OpComposeApply           = "compose.apply"
 	OpComposeDown            = "compose.down"
 	OpComposePull            = "compose.pull"
@@ -107,6 +108,11 @@ const (
 	OpGitDeploy              = "git.deploy"
 	OpGitRollback            = "git.rollback"
 	OpHTTPCheck              = "http.check"
+	OpImportCopy             = "import.copy"
+	OpImportCutover          = "import.cutover"
+	OpImportDBDump           = "import.db_dump"
+	OpImportRollback         = "import.rollback"
+	OpImportScan             = "import.scan"
 	OpLogTail                = "log.tail"
 	OpMalwareDelete          = "malware.delete"
 	OpMalwareQuarantine      = "malware.quarantine"
@@ -216,6 +222,15 @@ type UUID string
 
 // UID — UID hosting account (D-07).
 type UID int64
+
+// ImportSource — kiểu ImportSource trong contracts/agent-ops. Giá trị: "aapanel", "hestia", "nginx".
+type ImportSource string
+
+// ImportSrcPath — Docroot nguồn: phải nằm dưới gốc web của nguồn (agent kiểm lại sau khi resolve).
+type ImportSrcPath string
+
+// ImportVhostPath — File vhost của panel nguồn: aaPanel vhost/nginx/*.conf, HestiaCP conf.d/domains/*.conf, nginx conf.d/*.conf hoặc sites-enabled/* (tên không bắt đầu bằng dấu chấm). Cutover đổi tên → .itso-disabled; mục sites-enabled được chuyển sang /etc/nginx/itso-disabled/<import>/.
+type ImportVhostPath string
 
 // ServiceName — kiểu ServiceName trong contracts/agent-ops. Giá trị: "nginx", "php8.1-fpm", "php8.2-fpm", "php8.3-fpm", "php8.4-fpm", "mariadb", "postgresql", "redis-server", "fail2ban", "cron", "ssh", "itso-gateway".
 type ServiceName string
@@ -939,6 +954,29 @@ type CertRemoveParams struct {
 // CertRemoveResult — result của op cert.remove (ops/cert.remove.schema.json).
 type CertRemoveResult struct {
 	Removed bool `json:"removed"`
+}
+
+// CisAuditParams — params của op cis.audit (ops/cis.audit.schema.json).
+type CisAuditParams struct {
+	// Giá trị: "ubuntu24.04-l1-hosting".
+	Profile string `json:"profile"`
+}
+
+// CisAuditResultItemsItem được sinh từ schema.
+type CisAuditResultItemsItem struct {
+	ID string `json:"id"`
+	// Giá trị: "filesystem", "services", "network", "logging", "access", "accounts", "updates".
+	Group string `json:"group"`
+	Title string `json:"title"`
+	// Giá trị: "pass", "fail", "na".
+	Status   string `json:"status"`
+	Evidence string `json:"evidence"`
+}
+
+// CisAuditResult — result của op cis.audit (ops/cis.audit.schema.json).
+type CisAuditResult struct {
+	Profile string                    `json:"profile"`
+	Items   []CisAuditResultItemsItem `json:"items"`
 }
 
 // ComposeApplyParams — params của op compose.apply (ops/compose.apply.schema.json).
@@ -2126,6 +2164,117 @@ type HTTPCheckResult struct {
 	BodySHA256 json.RawMessage `json:"body_sha256"`
 }
 
+// ImportCopyParams — params của op import.copy (ops/import.copy.schema.json).
+type ImportCopyParams struct {
+	Source   ImportSource  `json:"source"`
+	Src      ImportSrcPath `json:"src"`
+	Account  Account       `json:"account"`
+	Dst      RelPath       `json:"dst"`
+	MaxBytes int64         `json:"max_bytes"`
+}
+
+// ImportCopyResult — result của op import.copy (ops/import.copy.schema.json).
+type ImportCopyResult struct {
+	Files          int64    `json:"files"`
+	Bytes          Bytes    `json:"bytes"`
+	Skipped        int64    `json:"skipped"`
+	SkippedReasons []string `json:"skipped_reasons"`
+}
+
+// ImportCutoverParams — params của op import.cutover (ops/import.cutover.schema.json).
+type ImportCutoverParams struct {
+	Source     ImportSource      `json:"source"`
+	ImportUUID UUID              `json:"import_uuid"`
+	VhostPaths []ImportVhostPath `json:"vhost_paths"`
+}
+
+// ImportCutoverResult — result của op import.cutover (ops/import.cutover.schema.json).
+type ImportCutoverResult struct {
+	Disabled []ImportVhostPath `json:"disabled"`
+}
+
+// ImportDBDumpParams — params của op import.db_dump (ops/import.db_dump.schema.json).
+type ImportDBDumpParams struct {
+	Source   ImportSource `json:"source"`
+	SourceDB DBName       `json:"source_db"`
+	Account  Account      `json:"account"`
+	Target   RelPath      `json:"target"`
+	MaxBytes int64        `json:"max_bytes"`
+}
+
+// ImportDBDumpResult — result của op import.db_dump (ops/import.db_dump.schema.json).
+type ImportDBDumpResult struct {
+	Size   Bytes  `json:"size"`
+	SHA256 SHA256 `json:"sha256"`
+	Tables int64  `json:"tables"`
+}
+
+// ImportRollbackParams — params của op import.rollback (ops/import.rollback.schema.json).
+type ImportRollbackParams struct {
+	Source     ImportSource      `json:"source"`
+	ImportUUID UUID              `json:"import_uuid"`
+	VhostPaths []ImportVhostPath `json:"vhost_paths"`
+}
+
+// ImportRollbackResult — result của op import.rollback (ops/import.rollback.schema.json).
+type ImportRollbackResult struct {
+	Restored []ImportVhostPath `json:"restored"`
+}
+
+// ImportScanParams — params của op import.scan (ops/import.scan.schema.json).
+type ImportScanParams struct {
+	Source   ImportSource `json:"source"`
+	MaxSites int64        `json:"max_sites"`
+}
+
+// ImportScanResultSitesItemSSL được sinh từ schema.
+type ImportScanResultSitesItemSSL struct {
+	CertPath *string `json:"cert_path"`
+	NotAfter *string `json:"not_after"`
+}
+
+// ImportScanResultSitesItemDatabasesItem được sinh từ schema.
+type ImportScanResultSitesItemDatabasesItem struct {
+	Name      string `json:"name"`
+	SizeBytes Bytes  `json:"size_bytes"`
+}
+
+// ImportScanResultSitesItemCronsItem được sinh từ schema.
+type ImportScanResultSitesItemCronsItem struct {
+	Schedule string `json:"schedule"`
+	Command  string `json:"command"`
+}
+
+// ImportScanResultSitesItemWarningsItem được sinh từ schema.
+type ImportScanResultSitesItemWarningsItem struct {
+	// Giá trị: "php_missing", "ssl_expired", "symlink_outside", "unsupported".
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// ImportScanResultSitesItem được sinh từ schema.
+type ImportScanResultSitesItem struct {
+	Domain     Domain                                   `json:"domain"`
+	Aliases    []Domain                                 `json:"aliases"`
+	Docroot    ImportSrcPath                            `json:"docroot"`
+	VhostPath  ImportVhostPath                          `json:"vhost_path"`
+	PHPVersion *string                                  `json:"php_version"`
+	SSL        ImportScanResultSitesItemSSL             `json:"ssl"`
+	SizeBytes  Bytes                                    `json:"size_bytes"`
+	Files      int64                                    `json:"files"`
+	Databases  []ImportScanResultSitesItemDatabasesItem `json:"databases"`
+	Crons      []ImportScanResultSitesItemCronsItem     `json:"crons"`
+	SystemUser string                                   `json:"system_user"`
+	Warnings   []ImportScanResultSitesItemWarningsItem  `json:"warnings"`
+}
+
+// ImportScanResult — result của op import.scan (ops/import.scan.schema.json).
+type ImportScanResult struct {
+	SourceVersion *string                     `json:"source_version"`
+	Sites         []ImportScanResultSitesItem `json:"sites"`
+	Truncated     bool                        `json:"truncated"`
+}
+
 // LogTailParams — params của op log.tail (ops/log.tail.schema.json).
 type LogTailParams struct {
 	Account Account `json:"account"`
@@ -3262,6 +3411,8 @@ func NewParams(op string) any {
 		return new(CertIssueParams)
 	case OpCertRemove:
 		return new(CertRemoveParams)
+	case OpCisAudit:
+		return new(CisAuditParams)
 	case OpComposeApply:
 		return new(ComposeApplyParams)
 	case OpComposeDown:
@@ -3414,6 +3565,16 @@ func NewParams(op string) any {
 		return new(FTPUserRemoveParams)
 	case OpHTTPCheck:
 		return new(HTTPCheckParams)
+	case OpImportCopy:
+		return new(ImportCopyParams)
+	case OpImportCutover:
+		return new(ImportCutoverParams)
+	case OpImportDBDump:
+		return new(ImportDBDumpParams)
+	case OpImportRollback:
+		return new(ImportRollbackParams)
+	case OpImportScan:
+		return new(ImportScanParams)
 	case OpLogTail:
 		return new(LogTailParams)
 	case OpMalwareDelete:
@@ -3585,6 +3746,8 @@ func NewResult(op string) any {
 		return new(CertIssueResult)
 	case OpCertRemove:
 		return new(CertRemoveResult)
+	case OpCisAudit:
+		return new(CisAuditResult)
 	case OpComposeApply:
 		return new(ComposeApplyResult)
 	case OpComposeDown:
@@ -3737,6 +3900,16 @@ func NewResult(op string) any {
 		return new(FTPUserRemoveResult)
 	case OpHTTPCheck:
 		return new(HTTPCheckResult)
+	case OpImportCopy:
+		return new(ImportCopyResult)
+	case OpImportCutover:
+		return new(ImportCutoverResult)
+	case OpImportDBDump:
+		return new(ImportDBDumpResult)
+	case OpImportRollback:
+		return new(ImportRollbackResult)
+	case OpImportScan:
+		return new(ImportScanResult)
 	case OpLogTail:
 		return new(LogTailResult)
 	case OpMalwareDelete:

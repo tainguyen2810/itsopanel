@@ -19,7 +19,7 @@ final class SecurityScore
 {
     /** @var array<string, array{0: int, 1: string, 2: string}> khóa → [trọng số, tiêu đề, mức độ nếu trượt] */
     public const WEIGHTS = [
-        'ssh_password_disabled' => [15, 'SSH tắt đăng nhập mật khẩu', 'high'],
+        'ssh_password_disabled' => [10, 'SSH tắt đăng nhập mật khẩu', 'high'],
         'ssh_root_login' => [10, 'SSH không cho root đăng nhập bằng mật khẩu', 'high'],
         'firewall_policy_drop' => [15, 'Tường lửa mặc định chặn (policy drop)', 'critical'],
         'fail2ban_running' => [10, 'Fail2ban đang chạy', 'medium'],
@@ -28,6 +28,9 @@ final class SecurityScore
         'security_updates' => [10, 'Đã cài bản vá bảo mật', 'high'],
         'fim_clean' => [5, 'Toàn vẹn file hệ thống (FIM) không đổi', 'medium'],
         'admin_ip_allowlist' => [10, 'IP allowlist cho Admin Panel', 'low'],
+        // Phase 12 (D-109, ADR 0054): điểm CIS Ubuntu 24.04 L1 gần nhất; ≥ 80 đạt, ≥ 60 nửa điểm. Lấy 5 từ
+        // ssh_password_disabled vì CIS 5.1.21 đã tính lại cùng tiêu chí.
+        'cis_l1' => [5, 'Kiểm CIS Ubuntu 24.04 L1 đạt ≥ 80 %', 'medium'],
     ];
 
     /**
@@ -73,6 +76,12 @@ final class SecurityScore
         };
         $allow = DB::table('ip_allowlist')->where('scope', 'admin')->count();
         $status['admin_ip_allowlist'] = $allow > 0 ? ['pass', "$allow dải IP được phép."] : ['warn', 'Chưa giới hạn IP vào Admin Panel.'];
+        $cis = CisService::latest($server->id);
+        $status['cis_l1'] = $cis === null ? ['warn', 'Chưa kiểm CIS (Bảo mật › CIS).'] : match (true) {
+            $cis->score >= 80 => ['pass', "CIS L1 {$cis->score} % ({$cis->failed} mục chưa đạt)."],
+            $cis->score >= 60 => ['warn', "CIS L1 {$cis->score} % ({$cis->failed} mục chưa đạt)."],
+            default => ['fail', "CIS L1 {$cis->score} % ({$cis->failed} mục chưa đạt)."],
+        };
 
         $items = [];
         $score = 0;

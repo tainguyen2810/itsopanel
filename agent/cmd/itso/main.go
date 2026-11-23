@@ -25,7 +25,7 @@ import (
 
 // Ghi đè khi build release: -ldflags "-X main.version=… -X main.releasePubKey=<base64 32 byte>".
 var (
-	version       = "0.5.0-beta"
+	version       = "1.0.0-rc.1"
 	releasePubKey = ""
 )
 
@@ -153,6 +153,7 @@ func installFlags(name string, args []string) (install.Options, error) {
 		fs.StringVar(&o.Join, "join", "", "node: URL relay của control plane (https://CP:28444)")
 		fs.StringVar(&o.Token, "token", "", "node: token join một lần (hoặc biến môi trường ITSO_JOIN_TOKEN)")
 		fs.StringVar(&o.CASHA256, "ca-sha256", "", "node: sha256 CA nội bộ (ghim trước khi gửi token)")
+		fs.BoolVar(&o.Offline, "offline", false, "cài không mạng: apt chỉ dùng repo cục bộ của install.sh --offline, tắt ACME")
 	}
 	if err := fs.Parse(args); err != nil {
 		return o, errUsage

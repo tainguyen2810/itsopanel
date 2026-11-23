@@ -308,19 +308,6 @@ export function registerSetup() {
     return ok(status());
   });
 
-  on('get', P('/system/updates'), () =>
-    ok({
-      current_version: '0.4.0-demo',
-      commit: 'phase-4',
-      channel: 'stable',
-      latest_version: null,
-      update_available: false,
-      checked_at: null,
-      update_command: 'sudo itso update --release-dir <thư mục release đã tải>',
-      releases: [
-        { version: '0.4.0-demo', active: true },
-        { version: '0.3.0', active: false },
-      ],
-    } satisfies S['SystemUpdates']),
-  );
+  // Phase 12: dữ liệu cập nhật (lịch sử, journal dở dang) lấy từ bộ demo, xem handlers/production.ts.
+  on('get', P('/system/updates'), (ctx) => ok(ctx.db.data.system_updates as S['SystemUpdates']));
 }

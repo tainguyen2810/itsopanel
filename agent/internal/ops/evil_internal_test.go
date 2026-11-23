@@ -111,7 +111,15 @@ func TestEvilInputsRejectedBeforeAnyCommand(t *testing.T) {
 			{d.phpExtInstall, func(s string) map[string]any { return map[string]any{"version": "8.3", "extensions": []any{s}} }},
 			{d.phpVersionInstall, func(s string) map[string]any { return map[string]any{"version": "8.3", "extensions": []any{s}} }},
 		},
-		"email":  {{d.certIssue, func(s string) map[string]any { return issue("email", s) }}},
+		"email": {{d.certIssue, func(s string) map[string]any { return issue("email", s) }}},
+		"import_src": {{d.importCopy, func(s string) map[string]any {
+			return map[string]any{"source": "aapanel", "src": s, "account": acct, "dst": "sites/a/public", "max_bytes": 1 << 20}
+		}}},
+		"import_vhost": {{d.importCutover, func(s string) map[string]any {
+			return map[string]any{"source": "nginx", "import_uuid": "01938a3a-0001-7000-8000-00003a000001", "vhost_paths": []any{s}}
+		}}, {d.importRollback, func(s string) map[string]any {
+			return map[string]any{"source": "nginx", "import_uuid": "01938a3a-0001-7000-8000-00003a000001", "vhost_paths": []any{s}}
+		}}},
 		"recipe": {{d.softwareInstall, func(s string) map[string]any { return map[string]any{"recipe": s} }}, {d.softwareRemove, func(s string) map[string]any { return map[string]any{"recipe": s} }}},
 	}
 	n := 0

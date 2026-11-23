@@ -6,6 +6,7 @@ namespace App\Domain\Servers;
 
 use App\Domain\Hosting\QuotaService;
 use App\Models\HostingAccount;
+use App\Models\HostingPackageVersion;
 use App\Models\Server;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -31,10 +32,12 @@ final class AccountUsageQuery
     public function rows(Server $server, Collection $accounts): array
     {
         $latest = $this->latest($server->id, array_values($accounts->map(fn (HostingAccount $a): int => $a->id)->all()));
+        $versions = HostingPackageVersion::query()->whereIn('id', $accounts->pluck('package_version_id')->unique()->values()->all())
+            ->get()->keyBy('id');
         $rows = [];
         foreach ($accounts as $a) {
             $v = $latest[$a->id] ?? [];
-            $l = $this->quota->limits($a);
+            $l = $this->quota->limits($a, $versions->get($a->package_version_id));
             $at = $v['_at'] ?? null;
             $rows[] = [
                 'hosting_account' => ['uuid' => $a->uuid, 'username' => $a->username],

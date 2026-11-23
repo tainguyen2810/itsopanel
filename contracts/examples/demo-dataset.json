@@ -9080,21 +9080,75 @@
     "updated_at": "2026-11-20T08:15:00+07:00"
   },
   "system_updates": {
-    "current_version": "0.4.0",
-    "commit": "28bb3fc",
-    "channel": "stable",
-    "latest_version": null,
-    "update_available": false,
-    "checked_at": null,
-    "update_command": "sudo itso update --release-dir <thư mục>",
+    "current_version": "0.5.0-beta",
+    "commit": "359ae17",
+    "channel": "beta",
+    "latest_version": "1.0.0-rc.1",
+    "update_available": true,
+    "checked_at": "2026-11-20T06:00:00+07:00",
+    "update_command": "sudo itso update --release-dir /var/lib/itso/releases/incoming",
     "releases": [
       {
-        "version": "0.4.0",
+        "version": "0.5.0-beta",
         "active": true
       },
       {
-        "version": "0.3.0",
+        "version": "0.1.0-alpha",
         "active": false
+      }
+    ],
+    "repair_command": "sudo itso repair --fix",
+    "journal": {
+      "version_to": "1.0.0-rc.1",
+      "step": "migrated",
+      "started_at": "2026-11-20T02:10:00+07:00",
+      "interrupted": true,
+      "hint": "Update bị ngắt sau bước migrate (mất điện). Chạy lệnh repair để hoàn tất hoặc quay lại 0.5.0-beta."
+    },
+    "history": [
+      {
+        "action": "update",
+        "version_from": "0.5.0-beta",
+        "version_to": "1.0.0-rc.1",
+        "result": "interrupted",
+        "started_at": "2026-11-20T02:10:00+07:00",
+        "finished_at": null,
+        "duration_sec": null,
+        "by": "root (CLI) trên srv-hn-01",
+        "note": "Mất điện sau bước migrate"
+      },
+      {
+        "action": "update",
+        "version_from": "0.1.0-alpha",
+        "version_to": "0.5.0-beta",
+        "result": "succeeded",
+        "started_at": "2026-11-18T22:00:00+07:00",
+        "finished_at": "2026-11-18T22:03:41+07:00",
+        "duration_sec": 221,
+        "by": "root (CLI) trên srv-hn-01",
+        "note": null
+      },
+      {
+        "action": "rollback",
+        "version_from": "0.5.0-beta",
+        "version_to": "0.1.0-alpha",
+        "result": "succeeded",
+        "started_at": "2026-11-18T21:40:00+07:00",
+        "finished_at": "2026-11-18T21:41:12+07:00",
+        "duration_sec": 72,
+        "by": "tự động (health check lỗi)",
+        "note": "Panel không trả lời /healthz sau 60 giây → quay lại bản cũ"
+      },
+      {
+        "action": "update",
+        "version_from": "0.1.0-alpha",
+        "version_to": "0.5.0-beta",
+        "result": "rolled_back",
+        "started_at": "2026-11-18T21:35:00+07:00",
+        "finished_at": "2026-11-18T21:41:12+07:00",
+        "duration_sec": 372,
+        "by": "root (CLI) trên srv-hn-01",
+        "note": null
       }
     ]
   },
@@ -10914,5 +10968,918 @@
       ],
       "in_app_locked": false
     }
-  ]
+  ],
+  "import_items": [
+    {
+      "uuid": "01938a3b-0001-7000-8000-00003b000001",
+      "import_uuid": "01938a3a-0001-7000-8000-00003a000001",
+      "domain": "shop.anphatgroup.vn",
+      "aliases": [
+        "www.shop.anphatgroup.vn"
+      ],
+      "docroot": "/www/wwwroot/shop.anphatgroup.vn",
+      "php_version": "8.2",
+      "ssl": "valid",
+      "ssl_expires_at": "2027-01-30T07:00:00+07:00",
+      "size_mb": 1840,
+      "databases": [
+        {
+          "name": "shop_anphat",
+          "size_mb": 412
+        }
+      ],
+      "crons": 2,
+      "system_user": "www",
+      "warnings": [],
+      "selected": true,
+      "target": {
+        "username": "shopanphat",
+        "package": {
+          "uuid": "01938a03-0002-7000-8000-000003000002",
+          "code": "business",
+          "name": "Business",
+          "version": 1
+        },
+        "user": {
+          "uuid": "01938a01-0003-7000-8000-000001000003",
+          "name": "Công ty An Phát",
+          "email": "it@anphat.vn"
+        },
+        "new_user": null
+      },
+      "state": "pending",
+      "progress": 0,
+      "result": null
+    },
+    {
+      "uuid": "01938a3b-0002-7000-8000-00003b000002",
+      "import_uuid": "01938a3a-0001-7000-8000-00003a000001",
+      "domain": "tintuc.anphatgroup.vn",
+      "aliases": [],
+      "docroot": "/www/wwwroot/tintuc.anphatgroup.vn",
+      "php_version": "7.4",
+      "ssl": "expired",
+      "ssl_expires_at": "2026-10-02T07:00:00+07:00",
+      "size_mb": 620,
+      "databases": [
+        {
+          "name": "tintuc",
+          "size_mb": 96
+        }
+      ],
+      "crons": 0,
+      "system_user": "www",
+      "warnings": [
+        {
+          "code": "php_missing",
+          "message": "PHP 7.4 không có trong ITSO; sẽ dùng PHP 8.1 (kiểm tra tương thích trước cutover)"
+        },
+        {
+          "code": "ssl_expired",
+          "message": "Chứng chỉ đã hết hạn; sẽ cấp mới bằng ACME sau cutover"
+        }
+      ],
+      "selected": true,
+      "target": {
+        "username": "tintucap",
+        "package": {
+          "uuid": "01938a03-0001-7000-8000-000003000001",
+          "code": "basic",
+          "name": "Basic",
+          "version": 2
+        },
+        "user": {
+          "uuid": "01938a01-0003-7000-8000-000001000003",
+          "name": "Công ty An Phát",
+          "email": "it@anphat.vn"
+        },
+        "new_user": null
+      },
+      "state": "pending",
+      "progress": 0,
+      "result": null
+    },
+    {
+      "uuid": "01938a3b-0003-7000-8000-00003b000003",
+      "import_uuid": "01938a3a-0001-7000-8000-00003a000001",
+      "domain": "anphat.vn",
+      "aliases": [
+        "www.anphat.vn"
+      ],
+      "docroot": "/www/wwwroot/anphat.vn",
+      "php_version": "8.3",
+      "ssl": "valid",
+      "ssl_expires_at": "2027-02-16T07:00:00+07:00",
+      "size_mb": 2310,
+      "databases": [
+        {
+          "name": "anphat_wp",
+          "size_mb": 188
+        }
+      ],
+      "crons": 1,
+      "system_user": "www",
+      "warnings": [
+        {
+          "code": "domain_exists",
+          "message": "Domain anphat.vn đã có trong ITSO (account anphat); bỏ chọn hoặc xóa site cũ trước"
+        }
+      ],
+      "selected": false,
+      "target": {
+        "username": "anphatold",
+        "package": {
+          "uuid": "01938a03-0002-7000-8000-000003000002",
+          "code": "business",
+          "name": "Business",
+          "version": 1
+        },
+        "user": {
+          "uuid": "01938a01-0003-7000-8000-000001000003",
+          "name": "Công ty An Phát",
+          "email": "it@anphat.vn"
+        },
+        "new_user": null
+      },
+      "state": "skipped",
+      "progress": 0,
+      "result": null
+    },
+    {
+      "uuid": "01938a3b-0004-7000-8000-00003b000004",
+      "import_uuid": "01938a3a-0001-7000-8000-00003a000001",
+      "domain": "kho.anphatgroup.vn",
+      "aliases": [],
+      "docroot": "/www/wwwroot/kho.anphatgroup.vn",
+      "php_version": "8.1",
+      "ssl": "none",
+      "ssl_expires_at": null,
+      "size_mb": 9650,
+      "databases": [
+        {
+          "name": "kho_erp",
+          "size_mb": 38400
+        }
+      ],
+      "crons": 4,
+      "system_user": "www",
+      "warnings": [
+        {
+          "code": "db_large",
+          "message": "Database kho_erp 37,5 GB vượt hạn mức gói Business (10 GB/DB)"
+        },
+        {
+          "code": "quota_exceeded",
+          "message": "Dung lượng vượt gói đã chọn; chọn gói Pro"
+        }
+      ],
+      "selected": true,
+      "target": {
+        "username": "khoap",
+        "package": {
+          "uuid": "01938a03-0003-7000-8000-000003000003",
+          "code": "pro",
+          "name": "Pro",
+          "version": 1
+        },
+        "user": null,
+        "new_user": {
+          "name": "Kho An Phát",
+          "email": "kho@anphatgroup.vn"
+        }
+      },
+      "state": "pending",
+      "progress": 0,
+      "result": null
+    },
+    {
+      "uuid": "01938a3b-0005-7000-8000-00003b000005",
+      "import_uuid": "01938a3a-0002-7000-8000-00003a000002",
+      "domain": "hr.itso.vn",
+      "aliases": [],
+      "docroot": "/home/hr/web/hr.itso.vn/public_html",
+      "php_version": "8.3",
+      "ssl": "valid",
+      "ssl_expires_at": "2027-01-12T07:00:00+07:00",
+      "size_mb": 740,
+      "databases": [
+        {
+          "name": "hr_portal",
+          "size_mb": 210
+        }
+      ],
+      "crons": 1,
+      "system_user": "hr",
+      "warnings": [],
+      "selected": true,
+      "target": {
+        "username": "hrportal",
+        "package": {
+          "uuid": "01938a03-0002-7000-8000-000003000002",
+          "code": "business",
+          "name": "Business",
+          "version": 1
+        },
+        "user": {
+          "uuid": "01938a01-0004-7000-8000-000001000004",
+          "name": "Phòng Marketing",
+          "email": "marketing@itso.vn"
+        },
+        "new_user": null
+      },
+      "state": "done",
+      "progress": 100,
+      "result": {
+        "hosting_account": null,
+        "files": 18342,
+        "bytes": 775946240,
+        "skipped": 3,
+        "skipped_reasons": [
+          "2 symlink trỏ ra ngoài docroot",
+          "1 socket"
+        ],
+        "db_tables": 47,
+        "db_rows_match": true,
+        "certificate": "reused",
+        "error": null
+      }
+    },
+    {
+      "uuid": "01938a3b-0006-7000-8000-00003b000006",
+      "import_uuid": "01938a3a-0002-7000-8000-00003a000002",
+      "domain": "wiki.itso.vn",
+      "aliases": [
+        "docs.itso.vn"
+      ],
+      "docroot": "/home/hr/web/wiki.itso.vn/public_html",
+      "php_version": "8.2",
+      "ssl": "valid",
+      "ssl_expires_at": "2027-01-12T07:00:00+07:00",
+      "size_mb": 312,
+      "databases": [],
+      "crons": 0,
+      "system_user": "hr",
+      "warnings": [],
+      "selected": true,
+      "target": {
+        "username": "hrportal",
+        "package": {
+          "uuid": "01938a03-0002-7000-8000-000003000002",
+          "code": "business",
+          "name": "Business",
+          "version": 1
+        },
+        "user": {
+          "uuid": "01938a01-0004-7000-8000-000001000004",
+          "name": "Phòng Marketing",
+          "email": "marketing@itso.vn"
+        },
+        "new_user": null
+      },
+      "state": "done",
+      "progress": 100,
+      "result": {
+        "hosting_account": null,
+        "files": 4210,
+        "bytes": 327155712,
+        "skipped": 0,
+        "skipped_reasons": [],
+        "db_tables": 0,
+        "db_rows_match": true,
+        "certificate": "reused",
+        "error": null
+      }
+    },
+    {
+      "uuid": "01938a3b-0007-7000-8000-00003b000007",
+      "import_uuid": "01938a3a-0002-7000-8000-00003a000002",
+      "domain": "cu.itso.vn",
+      "aliases": [],
+      "docroot": "/home/legacy/web/cu.itso.vn/public_html",
+      "php_version": "8.1",
+      "ssl": "none",
+      "ssl_expires_at": null,
+      "size_mb": 85,
+      "databases": [
+        {
+          "name": "legacy_cu",
+          "size_mb": 12
+        }
+      ],
+      "crons": 0,
+      "system_user": "legacy",
+      "warnings": [],
+      "selected": true,
+      "target": {
+        "username": "legacycu",
+        "package": {
+          "uuid": "01938a03-0001-7000-8000-000003000001",
+          "code": "basic",
+          "name": "Basic",
+          "version": 2
+        },
+        "user": {
+          "uuid": "01938a01-0004-7000-8000-000001000004",
+          "name": "Phòng Marketing",
+          "email": "marketing@itso.vn"
+        },
+        "new_user": null
+      },
+      "state": "failed",
+      "progress": 60,
+      "result": {
+        "hosting_account": null,
+        "files": 2104,
+        "bytes": 89128960,
+        "skipped": 0,
+        "skipped_reasons": [],
+        "db_tables": 0,
+        "db_rows_match": false,
+        "certificate": null,
+        "error": "Dump legacy_cu lỗi: bảng wp_options bị hỏng (Incorrect key file); sửa ở máy nguồn rồi chạy lại mục này"
+      }
+    }
+  ],
+  "imports": [
+    {
+      "uuid": "01938a3a-0001-7000-8000-00003a000001",
+      "source": "aapanel",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "state": "planned",
+      "source_version": "aaPanel 7.0.11",
+      "scanned_at": "2026-11-20T07:40:00+07:00",
+      "error": null,
+      "summary": {
+        "sites": 4,
+        "databases": 4,
+        "crons": 7,
+        "warnings": 5,
+        "selected": 3
+      },
+      "cutover_at": null,
+      "created_by": {
+        "uuid": "01938a01-0001-7000-8000-000001000001",
+        "name": "Quản trị hệ thống",
+        "email": "superadmin@itso.local"
+      },
+      "created_at": "2026-11-20T07:38:00+07:00",
+      "updated_at": "2026-11-20T07:52:00+07:00"
+    },
+    {
+      "uuid": "01938a3a-0002-7000-8000-00003a000002",
+      "source": "hestia",
+      "server": {
+        "uuid": "01938a02-0002-7000-8000-000002000002",
+        "name": "srv-hn-02"
+      },
+      "state": "partially_failed",
+      "source_version": "HestiaCP 1.8.12",
+      "scanned_at": "2026-11-19T09:05:00+07:00",
+      "error": null,
+      "summary": {
+        "sites": 3,
+        "databases": 2,
+        "crons": 1,
+        "warnings": 0,
+        "selected": 3
+      },
+      "cutover_at": null,
+      "created_by": {
+        "uuid": "01938a01-0001-7000-8000-000001000001",
+        "name": "Quản trị hệ thống",
+        "email": "superadmin@itso.local"
+      },
+      "created_at": "2026-11-19T09:02:00+07:00",
+      "updated_at": "2026-11-19T10:41:00+07:00"
+    },
+    {
+      "uuid": "01938a3a-0003-7000-8000-00003a000003",
+      "source": "nginx",
+      "server": {
+        "uuid": "01938a02-0001-7000-8000-000002000001",
+        "name": "srv-hn-01"
+      },
+      "state": "scan_failed",
+      "source_version": null,
+      "scanned_at": "2026-11-18T16:20:00+07:00",
+      "error": "Không tìm thấy vhost nào có root/server_name trong /etc/nginx/sites-enabled",
+      "summary": {
+        "sites": 0,
+        "databases": 0,
+        "crons": 0,
+        "warnings": 0,
+        "selected": 0
+      },
+      "cutover_at": null,
+      "created_by": {
+        "uuid": "01938a01-0001-7000-8000-000001000001",
+        "name": "Quản trị hệ thống",
+        "email": "superadmin@itso.local"
+      },
+      "created_at": "2026-11-18T16:19:00+07:00",
+      "updated_at": "2026-11-18T16:20:00+07:00"
+    }
+  ],
+  "cis_report": {
+    "server": {
+      "uuid": "01938a02-0001-7000-8000-000002000001",
+      "name": "srv-hn-01"
+    },
+    "profile": "CIS Ubuntu 24.04 L1 (hosting)",
+    "audited_at": "2026-11-20T06:00:00+07:00",
+    "items": [
+      {
+        "id": "1.1.2.1",
+        "group": "filesystem",
+        "title": "/tmp là phân vùng riêng",
+        "status": "pass",
+        "evidence": "tmpfs on /tmp",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "1.1.2.3",
+        "group": "filesystem",
+        "title": "/tmp có nosuid",
+        "status": "pass",
+        "evidence": "tmpfs /tmp rw,nosuid,nodev,noexec",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "1.1.2.4",
+        "group": "filesystem",
+        "title": "/tmp có noexec",
+        "status": "pass",
+        "evidence": "tmpfs /tmp rw,nosuid,nodev,noexec",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "1.1.3.1",
+        "group": "filesystem",
+        "title": "/var là phân vùng riêng",
+        "status": "fail",
+        "evidence": "/var nằm trên /",
+        "remediation": "Tách /var khi cài lại máy; không sửa được tại chỗ an toàn",
+        "fix_href": null
+      },
+      {
+        "id": "1.3.1.2",
+        "group": "access",
+        "title": "AppArmor bật khi khởi động",
+        "status": "pass",
+        "evidence": "apparmor=1 security=apparmor",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "1.3.1.3",
+        "group": "access",
+        "title": "Mọi profile AppArmor ở enforce hoặc complain",
+        "status": "pass",
+        "evidence": "54 profile, 0 unconfined",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "1.5.1",
+        "group": "access",
+        "title": "ASLR bật (kernel.randomize_va_space = 2)",
+        "status": "pass",
+        "evidence": "kernel.randomize_va_space = 2",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "1.5.3",
+        "group": "access",
+        "title": "Tắt core dump cho chương trình setuid",
+        "status": "fail",
+        "evidence": "fs.suid_dumpable = 2",
+        "remediation": "Đặt fs.suid_dumpable = 0 trong /etc/sysctl.d",
+        "fix_href": null
+      },
+      {
+        "id": "2.1.1",
+        "group": "services",
+        "title": "Không chạy autofs",
+        "status": "na",
+        "evidence": "autofs không cài",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "2.1.6",
+        "group": "services",
+        "title": "Không chạy dịch vụ NFS",
+        "status": "pass",
+        "evidence": "nfs-server không cài",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "2.1.12",
+        "group": "services",
+        "title": "Không chạy rpcbind",
+        "status": "pass",
+        "evidence": "rpcbind không cài",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "2.1.16",
+        "group": "services",
+        "title": "Không chạy SNMP",
+        "status": "pass",
+        "evidence": "snmpd không cài",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "2.1.21",
+        "group": "services",
+        "title": "MTA chỉ nghe trên loopback",
+        "status": "pass",
+        "evidence": "postfix inet_interfaces = loopback-only",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "2.4.1.2",
+        "group": "access",
+        "title": "Quyền /etc/crontab 600 root:root",
+        "status": "fail",
+        "evidence": "/etc/crontab 644 root:root",
+        "remediation": "chmod 600 /etc/crontab",
+        "fix_href": null
+      },
+      {
+        "id": "3.3.1",
+        "group": "network",
+        "title": "Tắt IP forwarding",
+        "status": "na",
+        "evidence": "Docker đang bật trên máy (cần forwarding)",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "3.3.2",
+        "group": "network",
+        "title": "Không gửi ICMP redirect",
+        "status": "pass",
+        "evidence": "net.ipv4.conf.all.send_redirects = 0",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "3.3.5",
+        "group": "network",
+        "title": "Bỏ qua ICMP redirect",
+        "status": "pass",
+        "evidence": "net.ipv4.conf.all.accept_redirects = 0",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "3.3.8",
+        "group": "network",
+        "title": "Bật TCP SYN cookies",
+        "status": "pass",
+        "evidence": "net.ipv4.tcp_syncookies = 1",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "3.3.9",
+        "group": "network",
+        "title": "Bỏ qua IPv6 router advertisement",
+        "status": "fail",
+        "evidence": "net.ipv6.conf.all.accept_ra = 1",
+        "remediation": "Đặt net.ipv6.conf.all.accept_ra = 0 nếu không dùng SLAAC",
+        "fix_href": null
+      },
+      {
+        "id": "4.1.1",
+        "group": "network",
+        "title": "Có tường lửa với policy mặc định chặn",
+        "status": "pass",
+        "evidence": "table inet itso, policy drop",
+        "remediation": null,
+        "fix_href": "/admin/servers/01938a02-0001-7000-8000-000002000001/firewall"
+      },
+      {
+        "id": "5.1.4",
+        "group": "access",
+        "title": "SSH: giới hạn người dùng được đăng nhập",
+        "status": "pass",
+        "evidence": "AllowGroups itso-ssh sudo",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "5.1.7",
+        "group": "access",
+        "title": "SSH: ClientAliveInterval ≤ 300",
+        "status": "pass",
+        "evidence": "ClientAliveInterval 300",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "5.1.12",
+        "group": "access",
+        "title": "SSH: MaxAuthTries ≤ 4",
+        "status": "pass",
+        "evidence": "MaxAuthTries 3",
+        "remediation": null,
+        "fix_href": "/admin/security/ssh"
+      },
+      {
+        "id": "5.1.20",
+        "group": "access",
+        "title": "SSH: PermitRootLogin no",
+        "status": "pass",
+        "evidence": "PermitRootLogin no",
+        "remediation": null,
+        "fix_href": "/admin/security/ssh"
+      },
+      {
+        "id": "5.1.21",
+        "group": "access",
+        "title": "SSH: PasswordAuthentication no",
+        "status": "pass",
+        "evidence": "PasswordAuthentication no",
+        "remediation": null,
+        "fix_href": "/admin/security/ssh"
+      },
+      {
+        "id": "5.3.3.2.1",
+        "group": "accounts",
+        "title": "Mật khẩu tối thiểu 14 ký tự (pam_pwquality)",
+        "status": "fail",
+        "evidence": "minlen chưa đặt",
+        "remediation": "Đặt minlen = 14 trong /etc/security/pwquality.conf",
+        "fix_href": null
+      },
+      {
+        "id": "5.4.2.1",
+        "group": "accounts",
+        "title": "Chỉ root có UID 0",
+        "status": "pass",
+        "evidence": "root",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "5.4.2.4",
+        "group": "accounts",
+        "title": "Không có tài khoản mật khẩu rỗng",
+        "status": "pass",
+        "evidence": "0 tài khoản",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "6.1.1",
+        "group": "logging",
+        "title": "auditd đã cài và chạy",
+        "status": "fail",
+        "evidence": "auditd không cài",
+        "remediation": "Cài auditd (Software › auditd) và bật quy tắc tối thiểu",
+        "fix_href": null
+      },
+      {
+        "id": "6.2.1.1",
+        "group": "logging",
+        "title": "journald lưu bền vững",
+        "status": "pass",
+        "evidence": "Storage=persistent",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "6.2.2.1",
+        "group": "logging",
+        "title": "Quyền file log hợp lệ",
+        "status": "pass",
+        "evidence": "/var/log: không file nào ghi được bởi other",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "7.1.1",
+        "group": "filesystem",
+        "title": "Quyền /etc/passwd 644",
+        "status": "pass",
+        "evidence": "644 root:root",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "7.1.5",
+        "group": "filesystem",
+        "title": "Quyền /etc/shadow 640",
+        "status": "pass",
+        "evidence": "640 root:shadow",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "7.1.11",
+        "group": "filesystem",
+        "title": "Không có file ghi được bởi mọi người ngoài /tmp",
+        "status": "pass",
+        "evidence": "0 file",
+        "remediation": null,
+        "fix_href": null
+      },
+      {
+        "id": "8.1.1",
+        "group": "updates",
+        "title": "unattended-upgrades bật cho bản vá bảo mật",
+        "status": "pass",
+        "evidence": "security_only=true",
+        "remediation": null,
+        "fix_href": "/admin/servers/01938a02-0001-7000-8000-000002000001/software"
+      },
+      {
+        "id": "8.1.2",
+        "group": "updates",
+        "title": "Không còn bản vá bảo mật chờ cài",
+        "status": "fail",
+        "evidence": "4 gói (openssl, libc6, …)",
+        "remediation": "Chờ unattended-upgrades hoặc cài trong cửa sổ bảo trì",
+        "fix_href": "/admin/servers/01938a02-0001-7000-8000-000002000001/software"
+      }
+    ],
+    "passed": 27,
+    "failed": 7,
+    "not_applicable": 2,
+    "score": 79
+  },
+  "readiness": {
+    "checked_at": "2026-11-20T08:15:00+07:00",
+    "checks": [
+      {
+        "key": "admin_mfa",
+        "group": "access",
+        "title": "MFA bật cho mọi quản trị viên",
+        "status": "pass",
+        "detail": "2/2 quản trị viên",
+        "href": "/admin/users"
+      },
+      {
+        "key": "admin_allowlist",
+        "group": "access",
+        "title": "Admin Panel giới hạn theo IP allowlist",
+        "status": "pass",
+        "detail": "2 dải",
+        "href": "/admin/security/allowlist"
+      },
+      {
+        "key": "backup_immutable",
+        "group": "backup",
+        "title": "Có đích backup bất biến (append-only/immutable)",
+        "status": "warn",
+        "detail": "1/2 đích; đích S3 chưa bật object lock",
+        "href": "/admin/backups"
+      },
+      {
+        "key": "backup_recent",
+        "group": "backup",
+        "title": "Mọi account có snapshot trong 24 giờ",
+        "status": "pass",
+        "detail": "12/12 account",
+        "href": "/admin/backups"
+      },
+      {
+        "key": "restore_test",
+        "group": "backup",
+        "title": "Có restore test thành công trong 7 ngày",
+        "status": "fail",
+        "detail": "Lần gần nhất 12 ngày trước",
+        "href": "/admin/backups"
+      },
+      {
+        "key": "cis_score",
+        "group": "security",
+        "title": "Điểm CIS ≥ 80 trên mọi server",
+        "status": "warn",
+        "detail": "srv-hn-01: 79, srv-hn-02: chưa quét",
+        "href": "/admin/security/cis"
+      },
+      {
+        "key": "security_updates",
+        "group": "updates",
+        "title": "Không còn bản vá bảo mật chờ cài quá 7 ngày",
+        "status": "fail",
+        "detail": "srv-hn-01: 4 gói",
+        "href": "/admin/servers/01938a02-0001-7000-8000-000002000001/software"
+      },
+      {
+        "key": "update_journal",
+        "group": "updates",
+        "title": "Không có update dở dang",
+        "status": "fail",
+        "detail": "Journal dở ở bước migrate",
+        "href": "/admin/system/updates"
+      },
+      {
+        "key": "cert_expiry",
+        "group": "security",
+        "title": "Không chứng chỉ nào hết hạn trong 14 ngày",
+        "status": "pass",
+        "detail": "0 chứng chỉ",
+        "href": "/admin/ssl"
+      },
+      {
+        "key": "alert_channels",
+        "group": "monitoring",
+        "title": "Có kênh thông báo ngoài panel hoạt động",
+        "status": "pass",
+        "detail": "3 kênh đang bật",
+        "href": "/admin/monitoring/channels"
+      },
+      {
+        "key": "agents_online",
+        "group": "monitoring",
+        "title": "Mọi server đang kết nối",
+        "status": "fail",
+        "detail": "srv-hcm-01 mất kết nối",
+        "href": "/admin/servers"
+      }
+    ],
+    "gate": [
+      {
+        "id": "G1",
+        "title": "Cách ly account trên 2 server",
+        "status": "pending_vm",
+        "automated": "Pest ma trận quyền + Go test đường dẫn: đạt",
+        "evidence_doc": "docs/gate/G1.md",
+        "verified_at": null
+      },
+      {
+        "id": "G2",
+        "title": "Quota disk/inode/CPU/RAM",
+        "status": "pending_vm",
+        "automated": "Go test quota (sandbox): đạt",
+        "evidence_doc": "docs/gate/G2.md",
+        "verified_at": null
+      },
+      {
+        "id": "G3",
+        "title": "Leo thang đặc quyền (webshell, portal, giả định Laravel RCE)",
+        "status": "pending_vm",
+        "automated": "Fuzz agent + make no-exec: đạt",
+        "evidence_doc": "docs/gate/G3.md",
+        "verified_at": null
+      },
+      {
+        "id": "G4",
+        "title": "Khôi phục ngẫu nhiên 10 account + 1 sang server khác + immutable",
+        "status": "pending_vm",
+        "automated": "e2e stack thật backup/restore: đạt",
+        "evidence_doc": "docs/gate/G4.md",
+        "verified_at": null
+      },
+      {
+        "id": "G5",
+        "title": "Nâng 3 phiên bản + rollback giữa chừng",
+        "status": "pending_vm",
+        "automated": "Go test journal (crash từng bước): đạt",
+        "evidence_doc": "docs/gate/G5.md",
+        "verified_at": null
+      },
+      {
+        "id": "G6",
+        "title": "DR control plane + cả server",
+        "status": "pending_vm",
+        "automated": "Pest DR + e2e wizard khôi phục: đạt",
+        "evidence_doc": "docs/gate/G6.md",
+        "verified_at": null
+      },
+      {
+        "id": "G7",
+        "title": "Chuyển 5 account giữa server",
+        "status": "pending_vm",
+        "automated": "Pest MigrationTest: đạt",
+        "evidence_doc": "docs/gate/G7.md",
+        "verified_at": null
+      },
+      {
+        "id": "G8",
+        "title": "Gỡ cài đặt giữ site/home/DB",
+        "status": "pending_vm",
+        "automated": "test-installer uninstall: đạt",
+        "evidence_doc": "docs/gate/G8.md",
+        "verified_at": null
+      }
+    ],
+    "score": 45,
+    "ready": false
+  }
 }

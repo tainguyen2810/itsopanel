@@ -5,8 +5,11 @@ use App\Domain\Data\DataJobHandler;
 use App\Domain\Dns\DnsRecordsStep;
 use App\Domain\Docker\DockerJobHandler;
 use App\Domain\Hosting\AccountJobHandler;
+use App\Domain\Imports\ImportJobHandler;
+use App\Domain\Imports\ImportService;
 use App\Domain\Migration\MigrationJobHandler;
 use App\Domain\Migration\MigrationService;
+use App\Domain\Security\CisJobHandler;
 use App\Domain\Security\FirewallApplyStep;
 use App\Domain\Security\FirewallConfirmStep;
 use App\Domain\Security\SecurityJobHandler;
@@ -21,7 +24,7 @@ use App\Domain\WordPress\WordPressService;
 
 return [
     // Phiên bản panel; commit được truyền qua biến môi trường lúc build (không gọi git từ PHP).
-    'version' => env('ITSO_VERSION', '0.5.0-beta'),
+    'version' => env('ITSO_VERSION', '1.0.0-rc.1'),
     'commit' => env('ITSO_COMMIT', 'dev'),
     'agent_min_version' => '0.1.0',
     // Kênh cập nhật hiển thị ở /system/updates (panel không tự cập nhật; root chạy `itso update`).
@@ -29,6 +32,10 @@ return [
     // Thư mục release do installer quản lý (chỉ đọc tên thư mục để liệt kê phiên bản).
     'releases_dir' => env('ITSO_RELEASES_DIR', '/opt/itso/releases'),
     'current_link' => env('ITSO_CURRENT_LINK', '/opt/itso/current'),
+    // Body tối đa của API JSON (KB, ASVS L2 — Prompt 12.4); chunk upload File Manager có giới hạn riêng.
+    'max_body_kb' => (int) env('ITSO_MAX_BODY_KB', 2048),
+    // Journal + lịch sử cập nhật do agent ghi (D-113); panel chỉ đọc.
+    'update_state_dir' => env('ITSO_UPDATE_STATE_DIR', '/var/lib/itso'),
     // Wizard bước 0: file băm mã thiết lập do `itso setup-code` ghi (/var/lib/itso/setup-code.json).
     'setup_code_file' => env('ITSO_SETUP_CODE_FILE', '/var/lib/itso/setup-code.json'),
 
@@ -95,7 +102,9 @@ return [
       + array_fill_keys(BackupJobHandler::TYPES, BackupJobHandler::class)
       + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class)
       + array_fill_keys(DockerJobHandler::TYPES, DockerJobHandler::class)
-      + array_fill_keys(WordPressService::TYPES, WordPressJobHandler::class),
+      + array_fill_keys(WordPressService::TYPES, WordPressJobHandler::class)
+      + array_fill_keys(ImportService::TYPES, ImportJobHandler::class)
+      + ['cis.audit' => CisJobHandler::class],
 
     // Docker (Phase 10, D-94…D-98): giao diện mạng công khai cho DOCKER-USER; giới hạn mặc định chèn vào service
     // compose thiếu limit; số bản rollback image giữ lại mỗi service.

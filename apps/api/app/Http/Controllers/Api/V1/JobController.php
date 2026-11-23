@@ -48,7 +48,7 @@ final class JobController
 
         return response()->json(Listing::page($request, $q,
             ['created_at' => 'jobs.created_at', 'state' => 'jobs.state', 'type' => 'jobs.type'],
-            '-created_at', fn (Job $j): array => $this->present->job($j, $realm)));
+            '-created_at', fn (Job $j): array => $this->present->job($j, $realm), fn (array $page) => $this->present->prefetch($page)));
     }
 
     public function show(Request $request, string $id): JsonResponse

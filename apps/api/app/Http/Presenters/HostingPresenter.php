@@ -65,16 +65,18 @@ final class HostingPresenter
     /** @return array<string, mixed> */
     public function account(HostingAccount $a): array
     {
-        $v = HostingPackageVersion::query()->findOrFail($a->package_version_id);
-        $p = HostingPackage::query()->withTrashed()->findOrFail($v->package_id);
-        $server = Server::query()->withTrashed()->findOrFail($a->server_id);
+        $v = $this->refs['v'][$a->package_version_id] ?? HostingPackageVersion::query()->findOrFail($a->package_version_id);
+        $p = $this->refs['p'][$v->package_id] ?? HostingPackage::query()->withTrashed()->findOrFail($v->package_id);
+        $server = $this->refs['s'][$a->server_id] ?? Server::query()->withTrashed()->findOrFail($a->server_id);
+        $owner = array_key_exists((int) $a->owner_user_id, $this->refs['u']) ? $this->refs['u'][(int) $a->owner_user_id]
+            : User::query()->find($a->owner_user_id);
 
         return [
             'uuid' => $a->uuid,
             'username' => $a->username,
             'server' => ['uuid' => $server->uuid, 'name' => $server->name],
             'package' => self::packageRef($p, $v),
-            'owner' => self::userRef(User::query()->find($a->owner_user_id)),
+            'owner' => self::userRef($owner),
             'uid' => $a->uid,
             'home_path' => $a->home_path,
             'lifecycle_state' => $a->lifecycle_state,
@@ -91,6 +93,26 @@ final class HostingPresenter
             'created_at' => $a->created_at->toIso8601String(),
             'updated_at' => $a->updated_at->toIso8601String(),
         ];
+    }
+
+    /** @var array{v: array<int, HostingPackageVersion>, p: array<int, HostingPackage>, s: array<int, Server>, u: array<int, User|null>} */
+    private array $refs = ['v' => [], 'p' => [], 's' => [], 'u' => []];
+
+    /**
+     * Nạp trước gói/phiên bản/server/chủ + mức dùng cho cả trang danh sách (Prompt 12.5): số truy vấn không tăng theo số dòng.
+     *
+     * @param  list<HostingAccount>  $accounts
+     */
+    public function prefetch(array $accounts): void
+    {
+        $col = fn (string $k): array => array_values(array_unique(array_map(fn (HostingAccount $a): int => (int) $a->{$k}, $accounts)));
+        $this->refs['v'] = HostingPackageVersion::query()->whereIn('id', $col('package_version_id'))->get()->keyBy('id')->all();
+        $this->refs['p'] = HostingPackage::query()->withTrashed()
+            ->whereIn('id', array_map(fn (HostingPackageVersion $v): int => $v->package_id, $this->refs['v']))->get()->keyBy('id')->all();
+        $this->refs['s'] = Server::query()->withTrashed()->whereIn('id', $col('server_id'))->get()->keyBy('id')->all();
+        $users = User::query()->whereIn('id', $col('owner_user_id'))->get()->keyBy('id');
+        $this->refs['u'] = array_map(fn (int $id): ?User => $users->get($id), array_combine($col('owner_user_id'), $col('owner_user_id')));
+        $this->quota->prefetchUsage(array_map(fn (HostingAccount $a): int => $a->id, $accounts));
     }
 
     public static function accountEtag(HostingAccount $a): string

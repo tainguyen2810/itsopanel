@@ -200,22 +200,8 @@ func stepNodeUsers(ctx context.Context, e *Env, _ Options, _ *Release) error {
 // nodePackages: node chỉ cần công cụ cho agent; nginx/PHP/DB/restic cài qua op software.* theo role tag.
 var nodePackages = []string{"nftables", "acl", "quota", "ca-certificates"}
 
-func stepNodePackages(ctx context.Context, e *Env, _ Options, _ *Release) error {
-	var missing []string
-	for _, p := range nodePackages {
-		r := e.try(ctx, "dpkg-query", "-W", "-f=${Status}", p)
-		if r.ExitCode != 0 || strings.TrimSpace(string(r.Stdout)) != "install ok installed" {
-			missing = append(missing, p)
-		}
-	}
-	if len(missing) == 0 {
-		return nil
-	}
-	if _, err := e.cmd(ctx, "apt-get", "update", "-q"); err != nil {
-		return err
-	}
-	_, err := e.cmd(ctx, "apt-get", append([]string{"install", "-y", "-q", "--no-install-recommends"}, missing...)...)
-	return err
+func stepNodePackages(ctx context.Context, e *Env, o Options, _ *Release) error {
+	return e.aptEnsure(ctx, o, nodePackages)
 }
 
 func stepJoin(ctx context.Context, e *Env, o Options, _ *Release) error {

@@ -5,10 +5,10 @@
 ## Hiện tại
 
 - **Phase:** 12 — Production Hardening & Production Gate (kế hoạch `docs/planning/seed/PHASE_12_PROMPTS.md`, nhánh `phase-12`; người dùng yêu cầu 2026-11-23: "merge và làm tiếp parse 12"). Phase 11 ✓ APPROVED 2026-11-23 (merge `359ae17`, tag local `v0.5.0-beta`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 12.0
-- **Task đang làm:** 12.0
-- **Commit cuối:** xem `git log -1` trên `main`
-- **Bước tiếp theo:** làm hàng loạt 12.0 → 12.8, tự merge, DỪNG cuối Phase 12; chạy `tests/vm/phase4–11.sh` + bài Gate khi có VM
+- **Prompt hiện tại:** 12.8 ✓ (Phase 12 xong phần không cần VM, **chờ duyệt**)
+- **Task đang làm:** không (DỪNG chờ duyệt Phase 12 và `v1.0.0-rc.1`)
+- **Commit cuối:** xem `git log -1` trên `main` (merge `phase-12`, tag local `v1.0.0-rc.1`)
+- **Bước tiếp theo:** người dùng duyệt Phase 12; chạy `tests/vm/phase4–11.sh` + `tests/vm/gate.sh` (G1–G8) trên VM, ghi `itso:gate-record`; `v1.0.0` chỉ khi cả 8 Gate `pass`
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -27,21 +27,21 @@
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✓ APPROVED (báo cáo `docs/reports/phase-11.md`; `v0.5.0-beta` tag local; tiêu chí cần VM: chờ VM) |
-| 12 | Production Hardening & Production Gate → v1.0.0 | ✱ đang làm (nhánh `phase-12`) |
+| 12 | Production Hardening & Production Gate → v1.0.0 | ✓ chờ duyệt (báo cáo `docs/reports/phase-12.md`; `v1.0.0-rc.1` tag local; Gate G1–G8 `pending_vm`) |
 
 ## Checklist Phase hiện tại
 
-Phase 12: ✱ đang làm (nhánh `phase-12`) — prompt chi tiết: `docs/planning/seed/PHASE_12_PROMPTS.md`
+Phase 12: ✓ chờ duyệt (merge vào `main`, tag local `v1.0.0-rc.1`) — prompt chi tiết: `docs/planning/seed/PHASE_12_PROMPTS.md`
 
-- ✱ 12.0 Mockup Import, CIS, Cập nhật, Sẵn sàng production trên bản demo (`docs/screenshots/phase-12/`)
-- ○ 12.1 ADR 0053–0060 (D-108…D-115), contracts, migration Phase 12
-- ○ 12.2 Agent: `import.scan`, `import.copy`, `cis.audit`, update journal + repair
-- ○ 12.3 Panel import: API, job `import.run`, cutover + rollback
-- ○ 12.4 Hardening: ASVS L2, ma trận quyền tự động, CIS API, ADR RLS/helper, siết systemd
-- ○ 12.5 Hiệu năng 200 account/server (`itso:bench`, `docs/perf/phase-12.md`)
-- ○ 12.6 Offline installer, update/rollback 20 vòng + chaos, chính sách cập nhật
-- ○ 12.7 UI nối API thật, sổ tay vận hành
-- ○ 12.8 Gate G1–G8, e2e Phase 12, `make check`, `v1.0.0-rc.1`, merge
+- ✓ 12.0 Mockup Import, CIS, Cập nhật, Sẵn sàng production trên bản demo (`docs/screenshots/phase-12/`, 10 cảnh × 4 = 40 ảnh)
+- ✓ 12.1 ADR 0053–0060 (D-108…D-115), contracts, migration Phase 12 (+ sửa CHECK regex Phase 10/11)
+- ✓ 12.2 Agent: `import.scan`, `import.copy`, `import.cutover/rollback`, `cis.audit`, update journal + `itso repair` (crash từng bước)
+- ✓ 12.3 Panel import: API, job `import.run` (op mới `import.db_dump`), cutover + ACME, rollback
+- ✓ 12.4 Hardening: ASVS L2 (`docs/security/asvs-l2.md`), ma trận quyền tự động, CIS API + điểm, ADR RLS/helper có số liệu, siết systemd (4.9)
+- ✓ 12.5 Hiệu năng 200 account/server (`PerfSeeder`, `itso:bench`, `docs/perf/phase-12.md`: mọi mục tiêu D-112 đạt; chỉ mục chuỗi audit, N+1 ở 7 danh sách)
+- ✓ 12.6 Offline installer (`make release-offline`, `install.sh --offline`, `itso install --offline`), `tests/vm/upgrade-loop.sh` (20 vòng + chaos, chờ VM), `docs/security/update-policy.md`
+- ✓ 12.7 UI nối API thật (API `GET /admin/system/readiness` + `itso:gate-record`; Import/CIS/Cập nhật đã có API ở 12.3–12.4), `docs/runbooks/operations-handbook.md`
+- ✓ 12.8 e2e stack thật Phase 12 (3 luồng; toàn bộ 35/35, spec Phase 11 chạy lại riêng trên DB sạch), sửa lỗi import khi gói không có PHP đã cài, `tests/vm/gate.sh` + `docs/gate/G1–G8.md` (`pending_vm`), `make check`, `make release` + `release-offline` `1.0.0-rc.1`, báo cáo, merge, tag local `v1.0.0-rc.1`
 
 Phase 11: ✓ APPROVED 2026-11-23 (merge `359ae17`, tag `v0.5.0-beta`) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
 

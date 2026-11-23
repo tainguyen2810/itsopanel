@@ -65,6 +65,8 @@ type Env struct {
 	HealthDelay time.Duration
 	// HTTP (test) dựng client HTTPS cho join node; mặc định http.Client thường với cấu hình TLS cho trước.
 	HTTP func(*tls.Config) *http.Client
+	// AfterStep (test) được gọi sau mỗi bước journal cập nhật; trả lỗi = giả lập tiến trình chết ngay sau bước đó.
+	AfterStep func(step string) error
 	// IP trả địa chỉ in trong URL (mặc định: IPv4 đầu tiên không phải loopback).
 	IP func() string
 }
