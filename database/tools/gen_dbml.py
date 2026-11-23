@@ -769,6 +769,37 @@ t("ops", "uptime_rollups", IDN + [
     "ok_count int [not null]", "total int [not null]", "avg_latency_ms int",
 ], ["(check_id, bucket) [unique]"], "D-105: % uptime theo giờ (từ uptime_results), giữ 90 ngày cho % 30 ngày; itso:metrics-rollup.")
 
+# ---------------------------------------------------------------- Phase 12 (D-108, D-109)
+t("hosting", "imports", ID + [
+    "source text [not null, note: 'aapanel|hestia|nginx (D-108)']",
+    "server_id bigint [not null, ref: > servers.id]",
+    "state text [not null, default: 'scanning', note: 'scanning|scan_failed|planned|running|completed|partially_failed|cut_over|rolled_back']",
+    "source_version text", "scanned_at timestamptz", "error text", "cutover_at timestamptz",
+    "scan_job_id bigint [ref: > jobs.id]", "run_job_id bigint [ref: > jobs.id]",
+    "created_by_user_id bigint [ref: > users.id]",
+] + TS, ["(server_id, state)"], "Một lượt import từ panel khác trên cùng máy; máy nguồn không bị sửa trước cutover (ADR 0053).")
+t("hosting", "import_items", ID + [
+    "import_id bigint [not null, ref: > imports.id]",
+    "domain text [not null]", "aliases text[] [not null, default: `'{}'`]",
+    "docroot text [not null]", "vhost_path text [not null, note: 'File vhost của nguồn, cutover đổi tên → .itso-disabled']",
+    "php_version text", "ssl jsonb [not null, default: `'{}'`, note: 'cert_path, not_after, state none|valid|expired']",
+    "size_bytes bigint [not null, default: 0]", "databases jsonb [not null, default: `'[]'`]",
+    "crons jsonb [not null, default: `'[]'`]", "system_user text [not null]",
+    "warnings jsonb [not null, default: `'[]'`]",
+    "selected boolean [not null, default: true]",
+    "target_username text", "target_package_id bigint [ref: > hosting_packages.id]",
+    "target_user_id bigint [ref: > users.id]", "target_new_user jsonb [note: 'name, email khi tạo USER mới; không chứa mật khẩu']",
+    "hosting_account_id bigint [ref: > hosting_accounts.id, note: 'Account ITSO đã tạo']",
+    "state text [not null, default: 'pending', note: 'pending|skipped|running|done|failed']",
+    "progress int [not null, default: 0]", "result jsonb [note: 'files, bytes, skipped, db_tables, certificate, error']",
+] + TS, ["(import_id)", "(import_id, domain) [unique]"])
+t("security", "cis_results", IDN + [
+    "server_id bigint [not null, ref: > servers.id]", "profile text [not null]",
+    "score int [not null]", "passed int [not null]", "failed int [not null]", "not_applicable int [not null]",
+    "items jsonb [not null, note: 'id, group, title, status pass|fail|na, evidence (≤ 500 ký tự)']",
+    "job_id bigint [ref: > jobs.id]", "audited_at timestamptz [not null]",
+], ["(server_id, audited_at)"], "D-109: kết quả cis.audit (chỉ đọc); giữ 30 lượt gần nhất mỗi server.")
+
 GROUP_NAMES = {
     "identity": "Danh tính và phân quyền", "infra": "Hạ tầng", "hosting": "Hosting",
     "docker": "Docker (chỉ admin)", "backup": "Backup và Restore", "jobs": "Jobs",

@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.1 (ADR, contracts agent-ops, migration) — nhánh `phase-12`
+
+Phạm vi: ADR 0053–0060 (D-108…D-115 Accepted; D-115 theo lựa chọn `v1.0.0-rc.1` của người dùng). Agent-ops có schema: `import.scan` (nguồn, `max_sites` ≤ 500; trả site/alias/docroot/vhost/PHP/SSL/DB/cron/cảnh báo, không nhận gốc tự do), `import.copy` (src phải dưới gốc web của nguồn, dst `RelPath` trong home, `max_bytes`), `import.cutover`/`import.rollback` (chỉ file vhost của nguồn `.conf`), `cis.audit` (profile cố định); defs `ImportSource`, `ImportSrcPath`, `ImportVhostPath`; 14 vector độc mới (ngoài gốc web, traversal, file nginx chính, vhost của ITSO). DBML + migration Phase 12: `imports` (một lượt đang quét/chạy mỗi server bằng unique index một phần), `import_items` (vhost nguồn theo regex, username hợp lệ, unique domain trong lượt), `cis_results`.
+
+**Lỗi có từ trước tìm ra:** `gen_migrations.py` nhân đôi dấu `\` trong khi migration dùng nowdoc (`<<<'SQL'`) → hai CHECK chặn traversal của Phase 10/11 (`wordpress_sites_path_chk`, `uptime_checks_path_chk`) thành regex sai, không chặn gì ở tầng DB (ứng dụng và agent vẫn kiểm). `db-verify` không thấy vì so SQL do script in ra, không phải file PHP. Sửa generator, sinh lại migration 10/11/12, thêm migration `2026_11_23_000001_fix_regex_check_constraints.php` tạo lại hai CHECK cho DB đã migrate; test hồi quy trong `SchemaTest`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `check-contracts.sh` · `make codegen` | PASS (163 op có schema, 2 op khai báo, 358 vector) |
+| DB | `bash scripts/db-verify.sh` | PASS (178 test SQL; migration Phase 3 → 12 áp lần lượt = đặc tả) |
+| Pest Schema | `pest tests/Feature/Schema` (PostgreSQL thật) | **14/14 PASS** (mới: Phase 12 ràng buộc, CHECK traversal 12.1) |
+| Go | `go build ./...` · `go test ./internal/contracts/ ./internal/server/...` | PASS |
+| Playwright demo toàn bộ (12.0) | `playwright test` | đang chạy (417/758 khi commit); 2 lỗi cùng nguyên nhân `/admin/imports/$id` thiếu id mẫu (audit + smoke), đã sửa ở `e2e/demo.ts` trong 12.0, chạy lại ở 12.2 |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-23 — Phase 12 / Prompt 12.0 (mockup Import, CIS, Cập nhật, Sẵn sàng production) — nhánh `phase-12`
 
 Phạm vi: chỉ bản demo + contracts. OpenAPI admin thêm `/imports` (quét = job `import.scan`, chi tiết, xóa, mục, `PUT /plan`, `:run`, `:cutover`, `:rollback`), `/security/cis` + `:audit`, `/system/readiness`; `SystemUpdates` thêm `journal`, `history`, `repair_command`. Schema `Import`, `ImportItem`, `ImportWarning`, `ImportScanInput`, `ImportPlanInput`, `CisReport`, `Readiness`. Op `import.scan/copy/cutover/rollback`, `cis.audit` khai báo tên (schema chi tiết ở 12.1). Dữ liệu demo: 3 lượt import (aaPanel đã lập kế hoạch có cảnh báo trùng domain/DB lớn/thiếu PHP, HestiaCP lỗi một phần chờ cutover, Nginx quét lỗi), CIS 36 mục (điểm 79), lịch sử update + journal dở ở bước migrate, readiness 11 kiểm + Gate G1–G8 chờ VM. MSW `handlers/production.ts` mô phỏng hành vi API (chỉ SA, 409 khi máy mất kết nối hoặc đang chạy, 422 theo từng mục kế hoạch, job đổi trạng thái). Trang: Import (danh sách + hộp quét), chi tiết import (bước, kế hoạch, sửa mục, báo cáo khác biệt, cutover/rollback), Bảo mật › CIS, Hệ thống › Sẵn sàng production / Cập nhật; i18n vi/en.

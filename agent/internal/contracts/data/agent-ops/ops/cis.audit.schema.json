@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/cis.audit.schema.json",
+  "title": "cis.audit",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "enum": [
+            "ubuntu24.04-l1-hosting"
+          ]
+        }
+      },
+      "required": [
+        "profile"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9]+(\\.[0-9]+){1,4}$"
+              },
+              "group": {
+                "type": "string",
+                "enum": [
+                  "filesystem",
+                  "services",
+                  "network",
+                  "logging",
+                  "access",
+                  "accounts",
+                  "updates"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "fail",
+                  "na"
+                ]
+              },
+              "evidence": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "id",
+              "group",
+              "title",
+              "status",
+              "evidence"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "profile",
+        "items"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

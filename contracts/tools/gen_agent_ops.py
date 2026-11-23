@@ -52,6 +52,13 @@ DEFS = {
     **PATTERNS,
     "Uuid": s(pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"),
     "Uid": i(minimum=20000, maximum=59999, description="UID hosting account (D-07)."),
+    # Phase 12 (D-108, ADR 0053): nguồn import trên cùng máy; agent tự biết gốc của từng nguồn, không nhận gốc tự do.
+    "ImportSource": enum("aapanel", "hestia", "nginx"),
+    "ImportSrcPath": {**s(maxLength=4096, pattern="^/(www/wwwroot|home|var/www|srv)/[^\\x00-\\x1f]+$"),
+                      "not": {"pattern": "(^|/)\\.{1,2}(/|$)|//"},
+                      "description": "Docroot nguồn: phải nằm dưới gốc web của nguồn (agent kiểm lại sau khi resolve)."},
+    "ImportVhostPath": {**s(maxLength=512, pattern="^/(www/server/panel/vhost/nginx|etc/nginx/(sites-enabled|conf\\.d))/[A-Za-z0-9._-]{1,200}\\.conf$"),
+                        "description": "File vhost của panel nguồn (cutover đổi tên → .itso-disabled)."},
     "ServiceName": enum("nginx", "php8.1-fpm", "php8.2-fpm", "php8.3-fpm", "php8.4-fpm", "mariadb", "postgresql",
                         "redis-server", "fail2ban", "cron", "ssh", "itso-gateway"),
     "Sha256": s(pattern="^[0-9a-f]{64}$"),
@@ -593,6 +600,45 @@ OPS = [
                                 "cert_expires_at": {"type": ["string", "null"], "format": "date-time"},
                                 "keyword_found": {"type": ["boolean", "null"]},
                                 "error": {"type": ["string", "null"], "maxLength": 300}}), maxItems=50)})),
+    # -- Phase 12 (D-108, ADR 0053): import từ panel khác trên cùng máy. Quét chỉ đọc; copy ghi dưới UID account,
+    # bỏ symlink/hardlink ra ngoài docroot, socket, device; cutover chỉ đổi tên file vhost có trong kế hoạch.
+    ("import.scan", "import", "low", True, 12, "root", 300,
+     obj({"source": d("ImportSource"), "max_sites": i(minimum=1, maximum=500)}),
+     obj({"source_version": {"type": ["string", "null"], "maxLength": 100},
+          "sites": arr(obj({
+              "domain": d("Domain"), "aliases": arr(d("Domain"), maxItems=100),
+              "docroot": d("ImportSrcPath"), "vhost_path": d("ImportVhostPath"),
+              "php_version": {"type": ["string", "null"], "pattern": "^[5-8]\\.[0-9]$"},
+              "ssl": obj({"cert_path": {"type": ["string", "null"], "maxLength": 4096},
+                          "not_after": {"type": ["string", "null"], "format": "date-time"}}),
+              "size_bytes": d("Bytes"), "files": i(minimum=0),
+              "databases": arr(obj({"name": s(pattern="^[A-Za-z0-9_]{1,64}$"), "size_bytes": d("Bytes")}), maxItems=50),
+              "crons": arr(obj({"schedule": s(maxLength=100), "command": s(maxLength=1000)}), maxItems=100),
+              "system_user": s(pattern="^[a-z_][a-z0-9_-]{0,31}$"),
+              "warnings": arr(obj({"code": enum("php_missing", "ssl_expired", "symlink_outside", "unsupported"),
+                                   "message": s(maxLength=500)}), maxItems=20)}), maxItems=500),
+          "truncated": b()})),
+    ("import.copy", "import", "high", True, 12, "root", 7200,  # đọc nguồn bằng root (O_NOFOLLOW), ghi bằng fsuid/fsgid của account
+     obj({"source": d("ImportSource"), "src": d("ImportSrcPath"), "account": A, "dst": d("RelPath"),
+          "max_bytes": i(minimum=1, maximum=2199023255552)}),
+     obj({"files": i(minimum=0), "bytes": d("Bytes"), "skipped": i(minimum=0),
+          "skipped_reasons": arr(s(maxLength=200), maxItems=20)})),
+    ("import.cutover", "import", "high", True, 12, "root", 120,
+     obj({"source": d("ImportSource"), "import_uuid": d("Uuid"),
+          "vhost_paths": arr(d("ImportVhostPath"), minItems=1, maxItems=500, uniqueItems=True)}),
+     obj({"disabled": arr(d("ImportVhostPath"), maxItems=500)})),
+    ("import.rollback", "import", "high", True, 12, "root", 120,
+     obj({"source": d("ImportSource"), "import_uuid": d("Uuid"),
+          "vhost_paths": arr(d("ImportVhostPath"), minItems=1, maxItems=500, uniqueItems=True)}),
+     obj({"restored": arr(d("ImportVhostPath"), maxItems=500)})),
+    # D-109 (ADR 0054): CIS L1 hosting, chỉ đọc, không đọc nội dung file nhạy cảm (chỉ quyền/chủ).
+    ("cis.audit", "security", "low", True, 12, "root", 120,
+     obj({"profile": enum("ubuntu24.04-l1-hosting")}),
+     obj({"profile": s(), "items": arr(obj({
+         "id": s(pattern="^[0-9]+(\\.[0-9]+){1,4}$"),
+         "group": enum("filesystem", "services", "network", "logging", "access", "accounts", "updates"),
+         "title": s(maxLength=200), "status": enum("pass", "fail", "na"), "evidence": s(maxLength=500)}),
+         maxItems=100)})),
     ("http.check", "web", "low", True, 9, "root", 30,
      obj({"host": d("Domain"), "path": d("HttpCheckPath"), "scheme": enum("http", "https"),
           "expect_status": arr(i(minimum=100, maximum=599), minItems=1, maxItems=10, uniqueItems=True)}),
@@ -809,12 +855,6 @@ DECLARED = [
     # Git deploy: hoãn sang Phase sau (Docker for USER/Git chưa vào phạm vi Phase 10).
     ("git.deploy", "git", "high", True, 10),
     ("git.rollback", "git", "high", True, 10),
-    # Phase 12 (mockup 12.0): schema chi tiết viết ở 12.1 (D-108, D-109).
-    ("import.scan", "import", "low", True, 12),
-    ("import.copy", "import", "high", True, 12),
-    ("import.cutover", "import", "high", True, 12),
-    ("import.rollback", "import", "high", True, 12),
-    ("cis.audit", "security", "low", True, 12),
 ]
 
 # Bước do worker của panel thực hiện (gọi API bên ngoài), không phải op của agent.

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/import.copy.schema.json",
+  "title": "import.copy",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "../defs.schema.json#/$defs/ImportSource"
+        },
+        "src": {
+          "$ref": "../defs.schema.json#/$defs/ImportSrcPath"
+        },
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "dst": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2199023255552
+        }
+      },
+      "required": [
+        "source",
+        "src",
+        "account",
+        "dst",
+        "max_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bytes": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "files",
+        "bytes",
+        "skipped",
+        "skipped_reasons"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -37,6 +37,7 @@ const PHASE10_TABLES = ['docker_hosts', 'registries', 'compose_projects', 'compo
     'git_repositories', 'git_deployments'];
 const PHASE11_TABLES = ['metric_rollups', 'alert_rules', 'alerts', 'uptime_checks', 'uptime_results',
     'uptime_rollups', 'notification_channels', 'notification_preferences', 'notification_deliveries'];
+const PHASE12_TABLES = ['imports', 'import_items', 'cis_results'];
 const PHASE8_TABLES = ['backup_destinations', 'backup_repositories', 'backup_policies', 'backup_policy_destinations',
     'backup_jobs', 'backup_snapshots', 'backup_verifications', 'restore_jobs', 'purge_records'];
 
@@ -52,12 +53,12 @@ function rejects(callable $fn, string $pattern): void
     throw new RuntimeException('Mong đợi lỗi DB khớp '.$pattern);
 }
 
-it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 + 9 bảng Phase 8 + 3 bảng Phase 9 + 12 bảng Phase 10 + 9 bảng Phase 11 (không hơn), audit_logs, metric_samples, waf_events và uptime_results có partition mặc định', function () {
+it('tạo đủ 26 bảng Phase 3 + 6 bảng Phase 4 + 9 bảng Phase 5 + 10 bảng Phase 6 + 12 bảng Phase 7 + 9 bảng Phase 8 + 3 bảng Phase 9 + 12 bảng Phase 10 + 9 bảng Phase 11 + 3 bảng Phase 12 (không hơn), audit_logs, metric_samples, waf_events và uptime_results có partition mặc định', function () {
     $tables = collect(DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         ->pluck('tablename')
         ->reject(fn ($t) => in_array($t, ['migrations', 'audit_logs_default', 'metric_samples_default', 'waf_events_default', 'uptime_results_default'], true))
         ->sort()->values()->all();
-    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES, ...PHASE7_TABLES, ...PHASE8_TABLES, ...PHASE9_TABLES, ...PHASE10_TABLES, ...PHASE11_TABLES])->sort()->values()->all());
+    expect($tables)->toEqual(collect([...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES, ...PHASE6_TABLES, ...PHASE7_TABLES, ...PHASE8_TABLES, ...PHASE9_TABLES, ...PHASE10_TABLES, ...PHASE11_TABLES, ...PHASE12_TABLES])->sort()->values()->all());
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'metric_samples_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'audit_logs_default'"))->toBe(1);
     expect(DB::scalar("SELECT count(*) FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid WHERE c.relname = 'waf_events_default'"))->toBe(1);
@@ -188,4 +189,28 @@ it('Phase 7: một safe-apply chờ xác nhận cho mỗi loại/máy chủ; WAF
         'severity' => 'low', 'action' => 'allow']), '/waf_events_action_chk/');
     rejects(fn () => DB::table('fim_changes')->insert(['server_id' => $srv, 'path' => '/etc/passwd', 'change' => 'renamed']),
         '/fim_changes_change_chk/');
+});
+
+it('Phase 12: một lượt import đang quét/chạy mỗi server; miền giá trị import, file vhost nguồn, điểm CIS (D-108, D-109)', function () {
+    $srv = HostingAccount::factory()->create()->server_id;
+    $imp = DB::table('imports')->insertGetId(['source' => 'aapanel', 'server_id' => $srv], 'id');
+    rejects(fn () => DB::table('imports')->insert(['source' => 'hestia', 'server_id' => $srv]), '/imports_busy_uq/');
+    rejects(fn () => DB::table('imports')->insert(['source' => 'cpanel', 'server_id' => $srv, 'state' => 'planned']), '/imports_source_chk/');
+    $item = ['import_id' => $imp, 'domain' => 'shop.example.vn', 'docroot' => '/www/wwwroot/shop.example.vn',
+        'vhost_path' => '/www/server/panel/vhost/nginx/shop.example.vn.conf', 'system_user' => 'www'];
+    DB::table('import_items')->insert($item);
+    rejects(fn () => DB::table('import_items')->insert($item), '/import_items_import_id_domain/');
+    rejects(fn () => DB::table('import_items')->insert(['domain' => 'b.example.vn', 'vhost_path' => '/etc/nginx/nginx.conf'] + $item), '/import_items_vhost_chk/');
+    rejects(fn () => DB::table('import_items')->insert(['domain' => 'c.example.vn', 'target_username' => 'Root'] + $item), '/import_items_username_chk/');
+    rejects(fn () => DB::table('cis_results')->insert(['server_id' => $srv, 'profile' => 'ubuntu24.04-l1-hosting', 'score' => 101,
+        'passed' => 1, 'failed' => 0, 'not_applicable' => 0, 'items' => '[]', 'audited_at' => now()]), '/cis_results_score_chk/');
+});
+
+it('12.1: CHECK chặn traversal của Phase 10/11 hoạt động (migration không nhân đôi dấu \\)', function () {
+    $acc = HostingAccount::factory()->create();
+    $site = DB::table('websites')->insertGetId(['hosting_account_id' => $acc->id, 'server_id' => $acc->server_id,
+        'primary_domain' => 'trav.example.vn'], 'id');
+    rejects(fn () => DB::table('uptime_checks')->insert(['website_id' => $site, 'path' => '/../etc/passwd']), '/uptime_checks_path_chk/');
+    expect(DB::scalar("SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'wordpress_sites_path_chk'"))
+        ->not->toContain('\\\\');
 });

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 344,
+  "total": 358,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -2481,6 +2481,100 @@
           "expect": "accept",
           "layer": "semantic",
           "note": "Domain không thuộc website của check: panel chỉ gửi domain chính của website"
+        }
+      ]
+    },
+    "import_src": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ImportSrcPath",
+      "vectors": [
+        {
+          "input": "/www/wwwroot/shop.anphatgroup.vn",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Docroot aaPanel"
+        },
+        {
+          "input": "/home/hr/web/hr.itso.vn/public_html",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "Docroot HestiaCP"
+        },
+        {
+          "input": "/etc/shadow",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoài gốc web"
+        },
+        {
+          "input": "/www/wwwroot/../../etc",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal"
+        },
+        {
+          "input": "/home//root",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Hai gạch"
+        },
+        {
+          "input": "/www/wwwroot/a\nb",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Xuống dòng"
+        },
+        {
+          "input": "/home/anphat",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Home của account ITSO: agent từ chối nguồn nằm trong home account ITSO"
+        },
+        {
+          "input": "/www/wwwroot/link",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "Symlink trỏ ra ngoài gốc web: agent kiểm sau khi resolve"
+        }
+      ]
+    },
+    "import_vhost": {
+      "schema": "agent-ops/defs.schema.json#/$defs/ImportVhostPath",
+      "vectors": [
+        {
+          "input": "/www/server/panel/vhost/nginx/shop.anphatgroup.vn.conf",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "vhost aaPanel"
+        },
+        {
+          "input": "/etc/nginx/sites-enabled/wiki.conf",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "vhost nginx"
+        },
+        {
+          "input": "/etc/nginx/nginx.conf",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "File nginx chính"
+        },
+        {
+          "input": "/etc/passwd",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Ngoài thư mục vhost"
+        },
+        {
+          "input": "/etc/nginx/sites-enabled/../nginx.conf",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Traversal"
+        },
+        {
+          "input": "/etc/nginx/sites-enabled/itso-anphat.conf",
+          "expect": "reject",
+          "layer": "semantic",
+          "note": "vhost do ITSO quản lý: agent từ chối"
         }
       ]
     }

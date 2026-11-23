@@ -272,7 +272,7 @@ ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_interval_chk CHECK (inter
 ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_state_chk CHECK (state IN ('up', 'down', 'unknown'));
 
 ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_path_chk
-  CHECK (path ~ '^/' AND path !~ '//' AND path !~ '(^|/)\\.\\.?(/|\\?|$)' AND length(path) <= 200);
+  CHECK (path ~ '^/' AND path !~ '//' AND path !~ '(^|/)\.\.?(/|\?|$)' AND length(path) <= 200);
 
 ALTER TABLE uptime_checks ADD CONSTRAINT uptime_checks_keyword_chk CHECK (keyword IS NULL OR length(keyword) BETWEEN 1 AND 100);
 

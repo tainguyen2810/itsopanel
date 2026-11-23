@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/import.rollback.schema.json",
+  "title": "import.rollback",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "../defs.schema.json#/$defs/ImportSource"
+        },
+        "import_uuid": {
+          "$ref": "../defs.schema.json#/$defs/Uuid"
+        },
+        "vhost_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ImportVhostPath"
+          },
+          "minItems": 1,
+          "maxItems": 500,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "source",
+        "import_uuid",
+        "vhost_paths"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "restored": {
+          "type": "array",
+          "items": {
+            "$ref": "../defs.schema.json#/$defs/ImportVhostPath"
+          },
+          "maxItems": 500
+        }
+      },
+      "required": [
+        "restored"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

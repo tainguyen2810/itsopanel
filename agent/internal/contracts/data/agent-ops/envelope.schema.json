@@ -134,6 +134,11 @@
         "pki.sign_csr",
         "agent.cert.rotate",
         "uptime.probe",
+        "import.scan",
+        "import.copy",
+        "import.cutover",
+        "import.rollback",
+        "cis.audit",
         "http.check",
         "migrate.preflight",
         "migrate.verify",
@@ -180,12 +185,7 @@
         "wp.admin_password",
         "wp.maintenance",
         "git.deploy",
-        "git.rollback",
-        "import.scan",
-        "import.copy",
-        "import.cutover",
-        "import.rollback",
-        "cis.audit"
+        "git.rollback"
       ]
     },
     "op_id": {
@@ -2382,6 +2382,101 @@
         "properties": {
           "params": {
             "$ref": "ops/uptime.probe.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "import.scan"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/import.scan.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "import.copy"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/import.copy.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "import.cutover"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/import.cutover.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "import.rollback"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/import.rollback.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "cis.audit"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/cis.audit.schema.json#/$defs/params"
           }
         }
       }

@@ -1245,6 +1245,61 @@
       "status": "specified"
     },
     {
+      "op": "import.scan",
+      "domain": "import",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": 300,
+      "schema": "ops/import.scan.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "import.copy",
+      "domain": "import",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": 7200,
+      "schema": "ops/import.copy.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "import.cutover",
+      "domain": "import",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": 120,
+      "schema": "ops/import.cutover.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "import.rollback",
+      "domain": "import",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": 120,
+      "schema": "ops/import.rollback.schema.json",
+      "status": "specified"
+    },
+    {
+      "op": "cis.audit",
+      "domain": "security",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": 120,
+      "schema": "ops/cis.audit.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "http.check",
       "domain": "web",
       "risk": "low",
@@ -1756,61 +1811,6 @@
       "risk": "high",
       "default_enabled": true,
       "phase": 10,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
-      "op": "import.scan",
-      "domain": "import",
-      "risk": "low",
-      "default_enabled": true,
-      "phase": 12,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
-      "op": "import.copy",
-      "domain": "import",
-      "risk": "high",
-      "default_enabled": true,
-      "phase": 12,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
-      "op": "import.cutover",
-      "domain": "import",
-      "risk": "high",
-      "default_enabled": true,
-      "phase": 12,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
-      "op": "import.rollback",
-      "domain": "import",
-      "risk": "high",
-      "default_enabled": true,
-      "phase": 12,
-      "runs_as": "root",
-      "timeout_sec": null,
-      "schema": null,
-      "status": "declared"
-    },
-    {
-      "op": "cis.audit",
-      "domain": "security",
-      "risk": "low",
-      "default_enabled": true,
-      "phase": 12,
       "runs_as": "root",
       "timeout_sec": null,
       "schema": null,

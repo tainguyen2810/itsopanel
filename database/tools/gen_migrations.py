@@ -46,6 +46,7 @@ PHASES: dict[int, list[str]] = {
          "git_repositories", "git_deployments"],
     11: ["metric_rollups", "alert_rules", "alerts", "uptime_checks", "uptime_results", "uptime_rollups", "notification_channels",
          "notification_preferences", "notification_deliveries"],
+    12: ["imports", "import_items", "cis_results"],
 }
 STAMP = "2026_11_20_{:06d}"
 
@@ -143,7 +144,9 @@ def select(phase: int) -> tuple[list[str], list[str]]:
 
 def render(phase: int) -> str:
     stmts, own = select(phase)
-    sql = "\n\n".join(stmts).replace("\\", "\\\\").replace("'''", "\\'\\'\\'")
+    # Nowdoc (<<<'SQL') giữ nguyên ký tự: KHÔNG nhân đôi dấu \ (trước 12.1 bị nhân đôi làm regex CHECK sai).
+    sql = "\n\n".join(stmts)
+    assert "\nSQL" not in sql, "SQL chứa dòng kết thúc nowdoc"
     drops = ", ".join(f'"{t}"' for t in reversed(own))
     return f"""<?php
 

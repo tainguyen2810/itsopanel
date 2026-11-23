@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/import.scan.schema.json",
+  "title": "import.scan",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "../defs.schema.json#/$defs/ImportSource"
+        },
+        "max_sites": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        }
+      },
+      "required": [
+        "source",
+        "max_sites"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "source_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "sites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "domain": {
+                "$ref": "../defs.schema.json#/$defs/Domain"
+              },
+              "aliases": {
+                "type": "array",
+                "items": {
+                  "$ref": "../defs.schema.json#/$defs/Domain"
+                },
+                "maxItems": 100
+              },
+              "docroot": {
+                "$ref": "../defs.schema.json#/$defs/ImportSrcPath"
+              },
+              "vhost_path": {
+                "$ref": "../defs.schema.json#/$defs/ImportVhostPath"
+              },
+              "php_version": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[5-8]\\.[0-9]$"
+              },
+              "ssl": {
+                "type": "object",
+                "properties": {
+                  "cert_path": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4096
+                  },
+                  "not_after": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "cert_path",
+                  "not_after"
+                ],
+                "additionalProperties": false
+              },
+              "size_bytes": {
+                "$ref": "../defs.schema.json#/$defs/Bytes"
+              },
+              "files": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "databases": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_]{1,64}$"
+                    },
+                    "size_bytes": {
+                      "$ref": "../defs.schema.json#/$defs/Bytes"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "size_bytes"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 50
+              },
+              "crons": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "schedule": {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    "command": {
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "schedule",
+                    "command"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 100
+              },
+              "system_user": {
+                "type": "string",
+                "pattern": "^[a-z_][a-z0-9_-]{0,31}$"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "php_missing",
+                        "ssl_expired",
+                        "symlink_outside",
+                        "unsupported"
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "maxLength": 500
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 20
+              }
+            },
+            "required": [
+              "domain",
+              "aliases",
+              "docroot",
+              "vhost_path",
+              "php_version",
+              "ssl",
+              "size_bytes",
+              "files",
+              "databases",
+              "crons",
+              "system_user",
+              "warnings"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 500
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_version",
+        "sites",
+        "truncated"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
