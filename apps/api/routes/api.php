@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotificationPreferenceController;
 use App\Http\Controllers\Api\V1\Portal\PortalController;
 use App\Http\Controllers\Api\V1\Portal\PortalMonitoringController;
+use App\Http\Controllers\Api\V1\Security\CisController;
 use App\Http\Controllers\Api\V1\Security\FirewallController;
 use App\Http\Controllers\Api\V1\Security\ProtectionController;
 use App\Http\Controllers\Api\V1\Security\SecurityController;
@@ -426,6 +427,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('security/overview', [SecurityController::class, 'overview'])->middleware('itso.perm:security.read');
             Route::get('security/score', [SecurityController::class, 'score'])->middleware('itso.perm:security.read');
             Route::get('security/events', [SecurityController::class, 'events'])->middleware('itso.perm:security.read');
+            // CIS Ubuntu 24.04 L1 chỉ đọc (Prompt 12.4, D-109): xem theo phạm vi; chạy kiểm cần security.server.
+            Route::get('security/cis', [CisController::class, 'show'])->middleware('itso.perm:security.read');
+            Route::post('security/cis:audit', [CisController::class, 'audit'])->middleware(['itso.perm:security.server', 'itso.idempotent']);
             Route::post('security/events/{id}:acknowledge', [SecurityController::class, 'acknowledge'])->middleware('itso.perm:security.write');
             Route::get('security/fim/changes', [SecurityController::class, 'fimChanges'])->middleware('itso.perm:security.read');
             Route::get('security/fail2ban/bans', [SecurityController::class, 'bans'])->middleware('itso.perm:security.read');

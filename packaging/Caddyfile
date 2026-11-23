@@ -12,7 +12,10 @@
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy same-origin
-		Content-Security-Policy "default-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		Content-Security-Policy "default-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy same-origin
 		-Server
 	}
 	log {
@@ -31,6 +34,10 @@
 
 	@api path /api/* /sanctum/* /up
 	handle @api {
+		# ASVS V13.1 (Prompt 12.4): chặn body lớn trước PHP; chunk upload File Manager 8 MB + phần đầu, Laravel kiểm chi tiết.
+		request_body {
+			max_size 10MB
+		}
 		root * /opt/itso/current/api/public
 		php_server
 	}

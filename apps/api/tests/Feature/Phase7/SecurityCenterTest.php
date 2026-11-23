@@ -64,7 +64,7 @@ it('điểm bảo mật mặc định ≥ 80 với dữ kiện sau cài; trọng
     expect(array_sum(array_column($r->json('data.items'), 'weight')))->toBe(100)
         ->and($r->json('data.score'))->toBeGreaterThanOrEqual(80)->and($r->json('data.grade'))->toBe('B');
     $items = collect($r->json('data.items'))->keyBy('key');
-    expect($items['ssh_password_disabled']['status'])->toBe('fail')->and($items['admin_ip_allowlist']['earned'])->toBe(5)
+    expect($items['ssh_password_disabled']['status'])->toBe('fail')->and($items['admin_ip_allowlist']['earned'])->toBe(5)->and($items['cis_l1']['status'])->toBe('warn')
         ->and($items['admin_mfa']['status'])->toBe('pass');
 
     $ov = $sa->get('/api/v1/admin/security/overview');

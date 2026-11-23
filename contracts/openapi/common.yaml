@@ -188,6 +188,7 @@ components:
       - setup_completed
       - captcha_required
       - would_lock_out
+      - payload_too_large
       - internal_error
     CursorMeta:
       type: object

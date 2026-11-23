@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.4 (Hardening: ASVS L2, ma trận quyền, CIS, RLS/helper, systemd) — nhánh `phase-12`
+
+Phạm vi: `docs/security/asvs-l2.md` (V1–V14, bằng chứng từng mục; không còn High/Critical mở). Bốn mục thiếu đã sửa: cookie phiên `Secure` mặc định ở production; middleware `SecurityHeaders` (nosniff, `X-Frame-Options`, `Referrer-Policy`, CSP cho JSON, `Cache-Control: no-store`) + Caddy thêm `X-Frame-Options`, `Permissions-Policy`, COOP; middleware `LimitRequestBody` (JSON ≤ 2 MB, chunk upload ≤ 9 MB → 413 `payload_too_large`, mã lỗi mới trong contracts) + Caddy `request_body max_size`; test ma trận quyền sinh từ route. CIS: `GET /security/cis`, `POST /security/cis:audit` (job `cis.audit` chỉ đọc, `cis_results` giữ 30 lượt, hướng dẫn sửa + `fix_href`), mục `cis_l1` (5 điểm) trong điểm bảo mật — lấy từ `ssh_password_disabled` (15 → 10) vì CIS 5.1.21 tính lại cùng tiêu chí; điểm sau cài vẫn ≥ 80. ADR 0055 có số liệu RLS đo thật; ADR 0056 + unit `itso-agent`/`itso-agent-node`: `systemd-analyze security --offline` 6.1 → **4.9**, kiểm trong `make units-check`.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Ma trận quyền | `pest tests/Feature/Phase12/RouteMatrixTest.php` | **3/3 PASS**: route ghi Admin thiếu `itso.perm` = 0 (11 ngoại lệ có lý do: wizard, dữ liệu của chính mình); GET Admin thiếu quyền = 0 (8 ngoại lệ); > 250 route có `{id}` gọi bằng ADMIN ngoài phạm vi / USER khác với id thật → chỉ 403/404 (đối chứng: actor trong phạm vi → 200) |
+| Hardening + CIS | `pest tests/Feature/Phase12/HardeningTest.php` | **3/3 PASS**: CIS rỗng → kiểm → điểm 78 (7 pass/2 fail/1 na), hướng dẫn + `fix_href`, `cis_l1` warn, giữ 30 lượt, quyền (ADMIN trong phạm vi xem, không chạy; ngoài phạm vi 404); header bảo mật; 413; cookie Secure |
+| Điểm bảo mật | `pest tests/Feature/Phase7/SecurityCenterTest.php` | 6/6 PASS (trọng số mới, tổng 100, sau cài ≥ 80) |
+| Pest toàn bộ | `vendor/bin/pest` (PostgreSQL + Redis thật) | **551/551 PASS** (127 s) |
+| RLS (số liệu ADR 0055) | PL/pgSQL 20 000 truy vấn trên 60 600 dòng | không RLS 0,0057 ms · RLS đơn giản 0,0079 ms · RLS theo bảng phạm vi 0,0306 ms |
+| Unit systemd | `make units-check` | PASS (18 unit; exposure agent 4.9, agent-node 4.9 ≤ 5.0) |
+| Lint / contracts | `pint --test` · `phpstan` · `make contracts-check` · `make codegen-check` · `check-no-exec` | PASS |
+
+**Test bị bỏ qua:** không. `systemd-analyze security` trên máy thật + chạy mọi op với unit siết: chờ VM.
+
 ## 2026-11-23 — Phase 12 / Prompt 12.3 (Panel import: API, job `import.run`, cutover + rollback) — nhánh `phase-12`
 
 Phạm vi: `Admin/ImportController` (quyền mới `imports.manage`, chỉ SUPER_ADMIN; chạy/cutover/quay lại cần step-up; idempotent) + `Domain/Imports/ImportService` + `ImportJobHandler`. Quét = job `import.scan` (chỉ đọc) → `import_items` (cảnh báo phía panel `domain_exists`, `db_large`; gợi ý username không trùng; mục có domain đã ở ITSO bị bỏ chọn). `PUT /plan`: map username/gói/USER có sẵn hoặc USER mới, lỗi 422 theo `items.N.field` (username trùng/không hợp lệ, cùng username khác gói/chủ, vượt website/database/disk của gói, domain đã có, email trùng). `:run`: mỗi username một job `import.run` = `account.ensure` → `quota.apply` → mỗi site `fs.site_layout.ensure` → `import.copy` (uid account) → `php.pool.apply` → `nginx.vhost.apply` → DB `owner_ensure/create/user_ensure` (mật khẩu sinh ở panel, chỉ đi qua `Secrets::ref`) → op mới `import.db_dump` (dump DB nguồn vào home account, `max_bytes`) → `db.mysql.import` → `fs.delete`; cron tạo ở trạng thái tắt; PHP giữ bản nguồn nếu hỗ trợ + gói cho phép + đã cài, không thì bản mặc định. Báo cáo khác biệt theo mục (file, byte, bỏ qua + lý do, số bảng, chứng chỉ). `:cutover` = `import.cutover` + ACME cho site có SSL ở nguồn (nếu đã cấu hình); `:rollback` = `import.rollback`, account ITSO giữ nguyên. `ProvisioningService::create` tách `assertCreatable`/`newRecord`/`createSteps` để import dùng lại.

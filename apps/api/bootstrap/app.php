@@ -7,12 +7,14 @@ use App\Http\Middleware\AuditDenied;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureIpAllowed;
 use App\Http\Middleware\Idempotency;
+use App\Http\Middleware\LimitRequestBody;
 use App\Http\Middleware\RejectImpersonation;
 use App\Http\Middleware\RequireMfa;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\RequireStepUp;
 use App\Http\Middleware\RequireTokenScope;
 use App\Http\Middleware\ResolveRealm;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyCsrf;
 use App\Support\ProblemRenderer;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -31,6 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignRequestId::class);
+        // ASVS L2 (Prompt 12.4): header bảo mật + giới hạn kích thước body cho mọi yêu cầu.
+        $middleware->append(SecurityHeaders::class);
+        $middleware->append(LimitRequestBody::class);
         // API SPA cùng origin (D-58): phiên cookie theo realm + CSRF double-submit.
         $middleware->group('itso.web', [
             ResolveRealm::class,

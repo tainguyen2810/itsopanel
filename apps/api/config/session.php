@@ -169,7 +169,8 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Panel chỉ chạy HTTPS ở production (ASVS V3.4.1, Prompt 12.4): cookie Secure trừ khi đặt rõ.
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------

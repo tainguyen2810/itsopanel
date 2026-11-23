@@ -9,6 +9,7 @@ use App\Domain\Imports\ImportJobHandler;
 use App\Domain\Imports\ImportService;
 use App\Domain\Migration\MigrationJobHandler;
 use App\Domain\Migration\MigrationService;
+use App\Domain\Security\CisJobHandler;
 use App\Domain\Security\FirewallApplyStep;
 use App\Domain\Security\FirewallConfirmStep;
 use App\Domain\Security\SecurityJobHandler;
@@ -31,6 +32,8 @@ return [
     // Thư mục release do installer quản lý (chỉ đọc tên thư mục để liệt kê phiên bản).
     'releases_dir' => env('ITSO_RELEASES_DIR', '/opt/itso/releases'),
     'current_link' => env('ITSO_CURRENT_LINK', '/opt/itso/current'),
+    // Body tối đa của API JSON (KB, ASVS L2 — Prompt 12.4); chunk upload File Manager có giới hạn riêng.
+    'max_body_kb' => (int) env('ITSO_MAX_BODY_KB', 2048),
     // Journal + lịch sử cập nhật do agent ghi (D-113); panel chỉ đọc.
     'update_state_dir' => env('ITSO_UPDATE_STATE_DIR', '/var/lib/itso'),
     // Wizard bước 0: file băm mã thiết lập do `itso setup-code` ghi (/var/lib/itso/setup-code.json).
@@ -100,7 +103,8 @@ return [
       + array_fill_keys(MigrationService::TYPES, MigrationJobHandler::class)
       + array_fill_keys(DockerJobHandler::TYPES, DockerJobHandler::class)
       + array_fill_keys(WordPressService::TYPES, WordPressJobHandler::class)
-      + array_fill_keys(ImportService::TYPES, ImportJobHandler::class),
+      + array_fill_keys(ImportService::TYPES, ImportJobHandler::class)
+      + ['cis.audit' => CisJobHandler::class],
 
     // Docker (Phase 10, D-94…D-98): giao diện mạng công khai cho DOCKER-USER; giới hạn mặc định chèn vào service
     // compose thiếu limit; số bản rollback image giữ lại mỗi service.
