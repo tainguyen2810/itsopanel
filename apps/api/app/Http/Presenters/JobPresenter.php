@@ -18,6 +18,7 @@ use App\Models\Job;
 use App\Models\JobLog;
 use App\Models\JobStep;
 use App\Models\MalwareFinding;
+use App\Models\PanelImport;
 use App\Models\QuarantineItem;
 use App\Models\Registry;
 use App\Models\Server;
@@ -52,6 +53,7 @@ final class JobPresenter
         'compose_project' => ComposeProject::class,
         'registry' => Registry::class,
         'wordpress_site' => WordPressSite::class,
+        'import' => PanelImport::class,
     ];
 
     /** @return array{type: string, uuid: string}|null */

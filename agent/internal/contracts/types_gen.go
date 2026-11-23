@@ -110,6 +110,7 @@ const (
 	OpHTTPCheck              = "http.check"
 	OpImportCopy             = "import.copy"
 	OpImportCutover          = "import.cutover"
+	OpImportDBDump           = "import.db_dump"
 	OpImportRollback         = "import.rollback"
 	OpImportScan             = "import.scan"
 	OpLogTail                = "log.tail"
@@ -2192,6 +2193,22 @@ type ImportCutoverResult struct {
 	Disabled []ImportVhostPath `json:"disabled"`
 }
 
+// ImportDBDumpParams — params của op import.db_dump (ops/import.db_dump.schema.json).
+type ImportDBDumpParams struct {
+	Source   ImportSource `json:"source"`
+	SourceDB DBName       `json:"source_db"`
+	Account  Account      `json:"account"`
+	Target   RelPath      `json:"target"`
+	MaxBytes int64        `json:"max_bytes"`
+}
+
+// ImportDBDumpResult — result của op import.db_dump (ops/import.db_dump.schema.json).
+type ImportDBDumpResult struct {
+	Size   Bytes  `json:"size"`
+	SHA256 SHA256 `json:"sha256"`
+	Tables int64  `json:"tables"`
+}
+
 // ImportRollbackParams — params của op import.rollback (ops/import.rollback.schema.json).
 type ImportRollbackParams struct {
 	Source     ImportSource      `json:"source"`
@@ -3552,6 +3569,8 @@ func NewParams(op string) any {
 		return new(ImportCopyParams)
 	case OpImportCutover:
 		return new(ImportCutoverParams)
+	case OpImportDBDump:
+		return new(ImportDBDumpParams)
 	case OpImportRollback:
 		return new(ImportRollbackParams)
 	case OpImportScan:
@@ -3885,6 +3904,8 @@ func NewResult(op string) any {
 		return new(ImportCopyResult)
 	case OpImportCutover:
 		return new(ImportCutoverResult)
+	case OpImportDBDump:
+		return new(ImportDBDumpResult)
 	case OpImportRollback:
 		return new(ImportRollbackResult)
 	case OpImportScan:

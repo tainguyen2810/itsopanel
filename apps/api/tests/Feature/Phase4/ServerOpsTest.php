@@ -194,10 +194,30 @@ it('/system/updates: phiên bản hiện tại, release còn giữ (đọc thư 
     touch("$dir/releases/0.3.0/.complete");
     touch("$dir/releases/0.4.0/.complete");
     symlink('releases/0.4.0', "$dir/current");
-    config(['itso.releases_dir' => "$dir/releases", 'itso.current_link' => "$dir/current", 'itso.version' => '0.4.0']);
-    $r = $a->spa('SA')->get('/api/v1/admin/system/updates');
+    config(['itso.releases_dir' => "$dir/releases", 'itso.current_link' => "$dir/current", 'itso.version' => '0.4.0',
+        'itso.update_state_dir' => "$dir/state"]);
+    $sa = $a->spa('SA');
+    $r = $sa->get('/api/v1/admin/system/updates');
     assertMatchesContract(P4, 'get', '/api/v1/admin/system/updates', 200, $r);
-    expect($r->json('data'))->toMatchArray(['current_version' => '0.4.0', 'channel' => 'stable', 'update_available' => false])
+    expect($r->json('data'))->toMatchArray(['current_version' => '0.4.0', 'channel' => 'stable', 'update_available' => false,
+        'journal' => null, 'history' => [], 'repair_command' => 'sudo itso repair --fix'])
         ->and($r->json('data.releases'))->toBe([['version' => '0.4.0', 'active' => true], ['version' => '0.3.0', 'active' => false]])
         ->and($r->json('data.update_command'))->toStartWith('sudo itso update');
+
+    // Phase 12 (D-113): journal dở do agent ghi + lịch sử jsonl (dòng hỏng bị bỏ, mới nhất trước).
+    mkdir("$dir/state");
+    file_put_contents("$dir/state/update.journal", json_encode(['version_from' => '0.4.0', 'version_to' => '0.5.0',
+        'step' => 'migrated', 'started_at' => now()->subHour()->toIso8601String()]));
+    file_put_contents("$dir/state/update-history.jsonl", implode("\n", [
+        json_encode(['action' => 'update', 'version_from' => '0.3.0', 'version_to' => '0.4.0', 'result' => 'succeeded',
+            'started_at' => '2026-11-20T01:00:00Z', 'finished_at' => '2026-11-20T01:02:00Z', 'duration_sec' => 120, 'by' => 'cli', 'note' => null]),
+        '{hỏng',
+        json_encode(['action' => 'rollback', 'version_from' => '0.4.0', 'version_to' => '0.3.0', 'result' => 'failed',
+            'started_at' => '2026-11-21T01:00:00Z', 'finished_at' => null, 'duration_sec' => null, 'by' => 'cli', 'note' => 'thử']),
+    ])."\n");
+    $r = $sa->get('/api/v1/admin/system/updates');
+    assertMatchesContract(P4, 'get', '/api/v1/admin/system/updates', 200, $r);
+    expect($r->json('data.journal'))->toMatchArray(['version_to' => '0.5.0', 'step' => 'migrated', 'interrupted' => true])
+        ->and($r->json('data.journal.hint'))->toContain('repair --fix')
+        ->and(array_column($r->json('data.history'), 'action'))->toBe(['rollback', 'update']);
 });

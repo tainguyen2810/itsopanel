@@ -1267,6 +1267,17 @@
       "status": "specified"
     },
     {
+      "op": "import.db_dump",
+      "domain": "import",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": 3600,
+      "schema": "ops/import.db_dump.schema.json",
+      "status": "specified"
+    },
+    {
       "op": "import.cutover",
       "domain": "import",
       "risk": "high",

@@ -674,7 +674,7 @@ def admin_paths(api: Api):
     api.add("post", "/imports/{id}:run", "runImport", "Chạy import các mục đã chọn", "Imports", params=idp, job=True,
             step_up=True,
             job_example=jobs("import.run", "import", imp["uuid"],
-                             ["account.ensure", "import.copy", "db.mysql.dump", "db.mysql.import", "nginx.vhost.apply", "cert.issue"]),
+                             ["account.ensure", "import.copy", "import.db_dump", "db.mysql.import", "nginx.vhost.apply", "cert.issue"]),
             desc="Mỗi account một job con: tạo account → copy file dưới UID account → dump + import DB → vhost/SSL → "
                  "cron. Mật khẩu DB mới sinh ở panel, không vào params job. Site cũ vẫn chạy tới khi cutover.")
     api.add("post", "/imports/{id}:cutover", "cutoverImport", "Chuyển nginx sang site ITSO (tắt vhost nguồn)",

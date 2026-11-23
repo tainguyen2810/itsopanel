@@ -20092,7 +20092,7 @@ export interface operations {
                      *           },
                      *           {
                      *             "seq": 3,
-                     *             "op": "db.mysql.dump",
+                     *             "op": "import.db_dump",
                      *             "state": "pending",
                      *             "started_at": null,
                      *             "finished_at": null

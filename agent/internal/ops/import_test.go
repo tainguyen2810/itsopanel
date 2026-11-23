@@ -1,6 +1,7 @@
 package ops_test
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"slices"
@@ -290,4 +291,40 @@ func TestCisAudit(t *testing.T) {
 		}
 	}
 	e.h.Fail(contracts.OpCisAudit, map[string]any{"profile": "ubuntu22.04"}, "invalid_params")
+}
+
+func TestImportDBDump(t *testing.T) {
+	e := newEnv(t)
+	e.h.OK(contracts.OpAccountEnsure, ct.EnsureParams("anphat", 20001))
+	if r, _ := e.sim.Handle(platform.Cmd{Bin: "mariadb", Stdin: []byte("CREATE DATABASE `hr_wp`;\n")}); r.ExitCode != 0 {
+		t.Fatal(string(r.Stderr))
+	}
+	dump := "CREATE TABLE `wp_posts` (id int);\nINSERT INTO wp_posts VALUES (1);\nCREATE TABLE `wp_options` (id int);\n"
+	if code, err := e.sim.Stream(context.Background(), platform.Proc{Bin: "mariadb", Args: []string{"--batch", "hr_wp"}, Stdin: strings.NewReader(dump)}); code != 0 || err != nil {
+		t.Fatal(code, err)
+	}
+	p := map[string]any{"source": "hestia", "source_db": "hr_wp", "account": ct.Acct("anphat", 20001), "target": ".itso-import/hr_wp.sql", "max_bytes": 1 << 20}
+	e.fake.Reset()
+	d := e.h.OK(contracts.OpImportDBDump, p)
+	if d["tables"].(float64) != 2 || d["size"].(float64) < float64(len(dump)) {
+		t.Fatalf("%+v", d)
+	}
+	if !strings.Contains(e.file("/home/anphat/.itso-import/hr_wp.sql"), "CREATE TABLE `wp_options`") {
+		t.Fatal("chưa ghi dump vào home account")
+	}
+	if l := strings.Join(e.fake.Lines(), "\n"); !strings.Contains(l, "mariadb-dump --user=root") || !strings.Contains(l, "[uid=20001] itso-fs-helper") {
+		t.Fatalf("dump phải chạy root, ghi bằng helper uid account:\n%s", l)
+	}
+	p["max_bytes"] = 10
+	e.h.Fail(contracts.OpImportDBDump, p, "quota_exceeded")
+	if e.fs.Exists("/home/anphat/.itso-import/hr_wp.sql") {
+		t.Fatal("dump vượt giới hạn phải bị xóa")
+	}
+	p["max_bytes"] = 1 << 20
+	for _, bad := range []string{"mysql", "anphat_db", "Bad-Name"} {
+		p["source_db"] = bad
+		e.h.Fail(contracts.OpImportDBDump, p, "invalid_params")
+	}
+	p["source_db"] = "missing_db"
+	e.h.Fail(contracts.OpImportDBDump, p, "precondition_failed")
 }

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.itso.local/agent-ops/ops/import.db_dump.schema.json",
+  "title": "import.db_dump",
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "../defs.schema.json#/$defs/ImportSource"
+        },
+        "source_db": {
+          "$ref": "../defs.schema.json#/$defs/DbName"
+        },
+        "account": {
+          "$ref": "../defs.schema.json#/$defs/Account"
+        },
+        "target": {
+          "$ref": "../defs.schema.json#/$defs/RelPath"
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1099511627776
+        }
+      },
+      "required": [
+        "source",
+        "source_db",
+        "account",
+        "target",
+        "max_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "$ref": "../defs.schema.json#/$defs/Bytes"
+        },
+        "sha256": {
+          "$ref": "../defs.schema.json#/$defs/Sha256"
+        },
+        "tables": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "size",
+        "sha256",
+        "tables"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

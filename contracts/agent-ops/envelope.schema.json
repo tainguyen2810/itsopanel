@@ -136,6 +136,7 @@
         "uptime.probe",
         "import.scan",
         "import.copy",
+        "import.db_dump",
         "import.cutover",
         "import.rollback",
         "cis.audit",
@@ -2420,6 +2421,25 @@
         "properties": {
           "params": {
             "$ref": "ops/import.copy.schema.json#/$defs/params"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "import.db_dump"
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "$ref": "ops/import.db_dump.schema.json#/$defs/params"
           }
         }
       }

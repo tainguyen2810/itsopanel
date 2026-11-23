@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\DockerController;
 use App\Http\Controllers\Api\V1\Admin\HostingAccountController;
 use App\Http\Controllers\Api\V1\Admin\HostingPackageController;
 use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
+use App\Http\Controllers\Api\V1\Admin\ImportController;
 use App\Http\Controllers\Api\V1\Admin\MonitoringController;
 use App\Http\Controllers\Api\V1\Admin\NotificationChannelController;
 use App\Http\Controllers\Api\V1\Admin\RegistryController;
@@ -284,6 +285,18 @@ Route::prefix('v1')->group(function (): void {
             Route::post('account-migrations/{id}:cleanup', [AccountMigrationController::class, 'cleanup'])
                 ->middleware(['itso.perm:accounts.write', 'itso.step-up', 'itso.idempotent']);
             Route::get('account-migrations/{id}', [AccountMigrationController::class, 'show'])->middleware('itso.perm:accounts.read');
+            // Import từ aaPanel/HestiaCP/nginx trên cùng máy (Prompt 12.3, D-108): chỉ SUPER_ADMIN.
+            Route::middleware('itso.perm:imports.manage')->group(function (): void {
+                Route::get('imports', [ImportController::class, 'index']);
+                Route::post('imports', [ImportController::class, 'store'])->middleware('itso.idempotent');
+                Route::get('imports/{id}/items', [ImportController::class, 'items']);
+                Route::put('imports/{id}/plan', [ImportController::class, 'plan']);
+                Route::post('imports/{id}:run', [ImportController::class, 'run'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::post('imports/{id}:cutover', [ImportController::class, 'cutover'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::post('imports/{id}:rollback', [ImportController::class, 'rollback'])->middleware(['itso.step-up', 'itso.idempotent']);
+                Route::get('imports/{id}', [ImportController::class, 'show']);
+                Route::delete('imports/{id}', [ImportController::class, 'destroy']);
+            });
             // Cổng purge (D-46, Prompt 8.4): backup cuối đã kiểm chứng + xác nhận gõ username.
             Route::post('hosting-accounts/{id}:schedule-purge', [BackupAdminController::class, 'schedulePurge'])
                 ->middleware(['itso.perm:backups.manage', 'itso.step-up', 'itso.idempotent']);

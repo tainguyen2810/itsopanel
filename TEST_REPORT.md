@@ -2,6 +2,20 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.3 (Panel import: API, job `import.run`, cutover + rollback) — nhánh `phase-12`
+
+Phạm vi: `Admin/ImportController` (quyền mới `imports.manage`, chỉ SUPER_ADMIN; chạy/cutover/quay lại cần step-up; idempotent) + `Domain/Imports/ImportService` + `ImportJobHandler`. Quét = job `import.scan` (chỉ đọc) → `import_items` (cảnh báo phía panel `domain_exists`, `db_large`; gợi ý username không trùng; mục có domain đã ở ITSO bị bỏ chọn). `PUT /plan`: map username/gói/USER có sẵn hoặc USER mới, lỗi 422 theo `items.N.field` (username trùng/không hợp lệ, cùng username khác gói/chủ, vượt website/database/disk của gói, domain đã có, email trùng). `:run`: mỗi username một job `import.run` = `account.ensure` → `quota.apply` → mỗi site `fs.site_layout.ensure` → `import.copy` (uid account) → `php.pool.apply` → `nginx.vhost.apply` → DB `owner_ensure/create/user_ensure` (mật khẩu sinh ở panel, chỉ đi qua `Secrets::ref`) → op mới `import.db_dump` (dump DB nguồn vào home account, `max_bytes`) → `db.mysql.import` → `fs.delete`; cron tạo ở trạng thái tắt; PHP giữ bản nguồn nếu hỗ trợ + gói cho phép + đã cài, không thì bản mặc định. Báo cáo khác biệt theo mục (file, byte, bỏ qua + lý do, số bảng, chứng chỉ). `:cutover` = `import.cutover` + ACME cho site có SSL ở nguồn (nếu đã cấu hình); `:rollback` = `import.rollback`, account ITSO giữ nguyên. `ProvisioningService::create` tách `assertCreatable`/`newRecord`/`createSteps` để import dùng lại.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Pest import | `pest tests/Feature/Phase12/ImportTest.php` (PostgreSQL + Redis thật) | **7/7 PASS**: quét → kế hoạch + contract; scan_failed; 422 theo mục (trùng, khác gói, quota, domain đã có, email trùng, mục lạ, chủ không phải Portal); chạy đủ bước + mật khẩu DB không lộ (`p8leak`) + cutover ACME + rollback; một account lỗi → `partially_failed`, cutover chỉ mục xong; cutover lỗi → giữ `completed`, xóa lượt không đụng account; quyền ADMIN 403 / USER 401-403 / portal 404 / chưa step-up 403 |
+| Pest toàn bộ | `vendor/bin/pest` | 544/545 lượt đầu: lỗi duy nhất `ServerOpsTest` `/system/updates` thiếu `repair_command`/`journal`/`history` (contract đổi ở 12.0, chưa hiện thực) → đã hiện thực (panel chỉ đọc `update.journal` + `update-history.jsonl`, đặt `ITSO_UPDATE_STATE_DIR`), thêm test journal/lịch sử; chạy lại `ServerOpsTest` **9/9 PASS** |
+| Go agent | `go test ./...` (mới `TestImportDBDump`) · `gofmt -l` · `go vet` | PASS |
+| Lint API | `pint --test` · `phpstan analyse` | PASS |
+| Contracts | `make contracts-check` · `make codegen-check` · `check-no-exec` | PASS |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-23 — Phase 12 / Prompt 12.2 (Agent: import, CIS, journal cập nhật) — nhánh `phase-12`
 
 Phạm vi: op `import.scan` (aaPanel, HestiaCP, nginx thuần; parser nginx tối thiểu ≤ 256 KB, không theo include, gộp khối 80/443, cảnh báo `php_missing`/`ssl_expired`/`symlink_outside`/`unsupported`, bỏ vhost `itso-*` và docroot trong home account ITSO), `import.copy` (`fsx.SourceTar`: openat O_NOFOLLOW từng thành phần; bỏ symlink, hardlink, socket, FIFO, thiết bị; helper uid account giải bằng `restore_tar`; `max_bytes` → `quota_exceeded`, không để lại đích dở), `import.cutover`/`import.rollback` (đổi tên `.itso-disabled` hoặc chuyển `sites-enabled/*` sang `/etc/nginx/itso-disabled/<import>/`, idempotent, `nginx -t`/reload lỗi → hoàn tác; HestiaCP kéo theo `.ssl.conf`), `cis.audit` (36 mục CIS Ubuntu 24.04 L1, chỉ đọc /proc, /sys, cấu hình, quyền/chủ; lệnh chỉ `dpkg-query`, `apt-get -s`; không đọc `/etc/shadow`). Cây aaPanel giả được seed trong `--sandbox`. Journal cập nhật `/var/lib/itso/update.journal` + lịch sử `update-history.jsonl`; `itso update` ghi 6 bước, migrate bằng artisan của bản mới trước khi đổi symlink; `itso repair --fix` dọn (trước `migrated`) hoặc hoàn tất/quay lại (từ `migrated`); `itso doctor` báo journal dở.

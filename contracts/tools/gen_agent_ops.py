@@ -625,6 +625,12 @@ OPS = [
           "max_bytes": i(minimum=1, maximum=2199023255552)}),
      obj({"files": i(minimum=0), "bytes": d("Bytes"), "skipped": i(minimum=0),
           "skipped_reasons": arr(s(maxLength=200), maxItems=20)})),
+    # DB nguồn không thuộc account ITSO nào: root dump qua socket, helper uid account ghi file dump vào home; nạp vào DB
+    # mới bằng db.mysql.import (dưới uid account). Không có mật khẩu trong params.
+    ("import.db_dump", "import", "high", True, 12, "root", 3600,
+     obj({"source": d("ImportSource"), "source_db": d("DbName"), "account": A, "target": d("RelPath"),
+          "max_bytes": i(minimum=1, maximum=1099511627776)}),
+     obj({"size": d("Bytes"), "sha256": d("Sha256"), "tables": i(minimum=0)})),
     ("import.cutover", "import", "high", True, 12, "root", 120,
      obj({"source": d("ImportSource"), "import_uuid": d("Uuid"),
           "vhost_paths": arr(d("ImportVhostPath"), minItems=1, maxItems=500, uniqueItems=True)}),
