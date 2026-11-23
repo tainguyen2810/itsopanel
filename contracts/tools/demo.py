@@ -11,7 +11,8 @@ sftp ssh_key cron snapshot job restore wordpress notification dns_zone dns_recor
 backup_destination backup_policy firewall_rule security_event malware_scan quarantine container compose
 audit alert_rule alert api_token session registry upload lifecycle enrollment cron_run software
 uptime_check impersonation scope channel git_repository git_deployment dns_provider terminal malware_finding waf_event fim_change
-backup_repository backup_verification wp_update notification_channel notification_delivery""".split())}
+backup_repository backup_verification wp_update notification_channel notification_delivery
+import import_item""".split())}
 
 
 def u(kind: str, n: int) -> str:
@@ -1805,3 +1806,223 @@ NOTIFICATION_EVENTS = [
         ("wordpress.rolled_back", "wordpress", "high", _ALL + ["user"], ["in_app", "email"]),
     ]
 ]
+
+
+# ================================================================ Phase 12 (mockup 12.0, D-108…D-115)
+# Import từ panel khác (aaPanel, HestiaCP, Nginx thuần) trên cùng máy: quét chỉ đọc → kế hoạch → chọn + map gói/USER
+# → chạy theo account → báo cáo khác biệt → cutover/rollback. Máy nguồn không bị sửa (D-108).
+def _w(code, msg):
+    return {"code": code, "message": msg}
+
+
+def _target(username, pkg=None, user=None, new_user=None):
+    return {"username": username, "package": pkg_ref(*pkg) if pkg else None,
+            "user": user_ref(user) if user is not None else None, "new_user": new_user}
+
+
+_IMP = [u("import", n) for n in (1, 2, 3)]
+IMPORT_ITEMS = [
+    # Import 1: aaPanel trên srv-hn-01, đã quét, đang lập kế hoạch.
+    {"uuid": u("import_item", 1), "import_uuid": _IMP[0], "domain": "shop.anphatgroup.vn",
+     "aliases": ["www.shop.anphatgroup.vn"], "docroot": "/www/wwwroot/shop.anphatgroup.vn", "php_version": "8.2",
+     "ssl": "valid", "ssl_expires_at": "2027-01-30T07:00:00+07:00", "size_mb": 1840,
+     "databases": [{"name": "shop_anphat", "size_mb": 412}], "crons": 2, "system_user": "www",
+     "warnings": [], "selected": True,
+     "target": _target("shopanphat", (1, 1), 2), "state": "pending", "progress": 0, "result": None},
+    {"uuid": u("import_item", 2), "import_uuid": _IMP[0], "domain": "tintuc.anphatgroup.vn", "aliases": [],
+     "docroot": "/www/wwwroot/tintuc.anphatgroup.vn", "php_version": "7.4", "ssl": "expired",
+     "ssl_expires_at": "2026-10-02T07:00:00+07:00", "size_mb": 620,
+     "databases": [{"name": "tintuc", "size_mb": 96}], "crons": 0, "system_user": "www",
+     "warnings": [_w("php_missing", "PHP 7.4 không có trong ITSO; sẽ dùng PHP 8.1 (kiểm tra tương thích trước cutover)"),
+                  _w("ssl_expired", "Chứng chỉ đã hết hạn; sẽ cấp mới bằng ACME sau cutover")],
+     "selected": True, "target": _target("tintucap", (0, 2), 2), "state": "pending", "progress": 0, "result": None},
+    {"uuid": u("import_item", 3), "import_uuid": _IMP[0], "domain": "anphat.vn", "aliases": ["www.anphat.vn"],
+     "docroot": "/www/wwwroot/anphat.vn", "php_version": "8.3", "ssl": "valid",
+     "ssl_expires_at": "2027-02-16T07:00:00+07:00", "size_mb": 2310,
+     "databases": [{"name": "anphat_wp", "size_mb": 188}], "crons": 1, "system_user": "www",
+     "warnings": [_w("domain_exists", "Domain anphat.vn đã có trong ITSO (account anphat); bỏ chọn hoặc xóa site cũ trước")],
+     "selected": False, "target": _target("anphatold", (1, 1), 2), "state": "skipped", "progress": 0, "result": None},
+    {"uuid": u("import_item", 4), "import_uuid": _IMP[0], "domain": "kho.anphatgroup.vn", "aliases": [],
+     "docroot": "/www/wwwroot/kho.anphatgroup.vn", "php_version": "8.1", "ssl": "none", "ssl_expires_at": None,
+     "size_mb": 9650, "databases": [{"name": "kho_erp", "size_mb": 38400}], "crons": 4, "system_user": "www",
+     "warnings": [_w("db_large", "Database kho_erp 37,5 GB vượt hạn mức gói Business (10 GB/DB)"),
+                  _w("quota_exceeded", "Dung lượng vượt gói đã chọn; chọn gói Pro")],
+     "selected": True, "target": _target("khoap", (2, 1), None, {"name": "Kho An Phát", "email": "kho@anphatgroup.vn"}),
+     "state": "pending", "progress": 0, "result": None},
+    # Import 2: HestiaCP trên srv-hn-02, đã chạy xong, chờ cutover.
+    {"uuid": u("import_item", 5), "import_uuid": _IMP[1], "domain": "hr.itso.vn", "aliases": [],
+     "docroot": "/home/hr/web/hr.itso.vn/public_html", "php_version": "8.3", "ssl": "valid",
+     "ssl_expires_at": "2027-01-12T07:00:00+07:00", "size_mb": 740,
+     "databases": [{"name": "hr_portal", "size_mb": 210}], "crons": 1, "system_user": "hr", "warnings": [],
+     "selected": True, "target": _target("hrportal", (1, 1), 3), "state": "done", "progress": 100,
+     "result": {"hosting_account": None, "files": 18342, "bytes": 775946240, "skipped": 3,
+                "skipped_reasons": ["2 symlink trỏ ra ngoài docroot", "1 socket"], "db_tables": 47, "db_rows_match": True,
+                "certificate": "reused", "error": None}},
+    {"uuid": u("import_item", 6), "import_uuid": _IMP[1], "domain": "wiki.itso.vn", "aliases": ["docs.itso.vn"],
+     "docroot": "/home/hr/web/wiki.itso.vn/public_html", "php_version": "8.2", "ssl": "valid",
+     "ssl_expires_at": "2027-01-12T07:00:00+07:00", "size_mb": 312, "databases": [], "crons": 0,
+     "system_user": "hr", "warnings": [], "selected": True, "target": _target("hrportal", (1, 1), 3), "state": "done",
+     "progress": 100,
+     "result": {"hosting_account": None, "files": 4210, "bytes": 327155712, "skipped": 0, "skipped_reasons": [],
+                "db_tables": 0, "db_rows_match": True, "certificate": "reused", "error": None}},
+    {"uuid": u("import_item", 7), "import_uuid": _IMP[1], "domain": "cu.itso.vn", "aliases": [],
+     "docroot": "/home/legacy/web/cu.itso.vn/public_html", "php_version": "8.1", "ssl": "none", "ssl_expires_at": None,
+     "size_mb": 85, "databases": [{"name": "legacy_cu", "size_mb": 12}], "crons": 0, "system_user": "legacy",
+     "warnings": [], "selected": True, "target": _target("legacycu", (0, 2), 3), "state": "failed", "progress": 60,
+     "result": {"hosting_account": None, "files": 2104, "bytes": 89128960, "skipped": 0, "skipped_reasons": [],
+                "db_tables": 0, "db_rows_match": False, "certificate": None,
+                "error": "Dump legacy_cu lỗi: bảng wp_options bị hỏng (Incorrect key file); sửa ở máy nguồn rồi chạy lại mục này"}},
+]
+IMPORTS = [
+    {"uuid": _IMP[0], "source": "aapanel", "server": server_ref(0), "state": "planned",
+     "source_version": "aaPanel 7.0.11", "scanned_at": "2026-11-20T07:40:00+07:00", "error": None,
+     "summary": {"sites": 4, "databases": 4, "crons": 7, "warnings": 5, "selected": 3},
+     "cutover_at": None, "created_by": user_ref(0), **ts("2026-11-20T07:38:00+07:00", "2026-11-20T07:52:00+07:00")},
+    {"uuid": _IMP[1], "source": "hestia", "server": server_ref(1), "state": "partially_failed",
+     "source_version": "HestiaCP 1.8.12", "scanned_at": "2026-11-19T09:05:00+07:00", "error": None,
+     "summary": {"sites": 3, "databases": 2, "crons": 1, "warnings": 0, "selected": 3},
+     "cutover_at": None, "created_by": user_ref(0), **ts("2026-11-19T09:02:00+07:00", "2026-11-19T10:41:00+07:00")},
+    {"uuid": _IMP[2], "source": "nginx", "server": server_ref(0), "state": "scan_failed", "source_version": None,
+     "scanned_at": "2026-11-18T16:20:00+07:00",
+     "error": "Không tìm thấy vhost nào có root/server_name trong /etc/nginx/sites-enabled",
+     "summary": {"sites": 0, "databases": 0, "crons": 0, "warnings": 0, "selected": 0},
+     "cutover_at": None, "created_by": user_ref(0), **ts("2026-11-18T16:19:00+07:00", "2026-11-18T16:20:00+07:00")},
+]
+
+# CIS Ubuntu 24.04 L1 (phần liên quan máy chủ hosting), chỉ đọc (D-109).
+def _cis(cid, group, title, status, evidence, remediation=None, fix_href=None):
+    return {"id": cid, "group": group, "title": title, "status": status, "evidence": evidence,
+            "remediation": remediation, "fix_href": fix_href}
+
+
+CIS_REPORT = {
+    "server": server_ref(0), "profile": "CIS Ubuntu 24.04 L1 (hosting)", "audited_at": "2026-11-20T06:00:00+07:00",
+    "items": [
+        _cis("1.1.2.1", "filesystem", "/tmp là phân vùng riêng", "pass", "tmpfs on /tmp"),
+        _cis("1.1.2.3", "filesystem", "/tmp có nosuid", "pass", "tmpfs /tmp rw,nosuid,nodev,noexec"),
+        _cis("1.1.2.4", "filesystem", "/tmp có noexec", "pass", "tmpfs /tmp rw,nosuid,nodev,noexec"),
+        _cis("1.1.3.1", "filesystem", "/var là phân vùng riêng", "fail", "/var nằm trên /",
+             "Tách /var khi cài lại máy; không sửa được tại chỗ an toàn"),
+        _cis("1.3.1.2", "access", "AppArmor bật khi khởi động", "pass", "apparmor=1 security=apparmor"),
+        _cis("1.3.1.3", "access", "Mọi profile AppArmor ở enforce hoặc complain", "pass", "54 profile, 0 unconfined"),
+        _cis("1.5.1", "access", "ASLR bật (kernel.randomize_va_space = 2)", "pass", "kernel.randomize_va_space = 2"),
+        _cis("1.5.3", "access", "Tắt core dump cho chương trình setuid", "fail", "fs.suid_dumpable = 2",
+             "Đặt fs.suid_dumpable = 0 trong /etc/sysctl.d"),
+        _cis("2.1.1", "services", "Không chạy autofs", "na", "autofs không cài"),
+        _cis("2.1.6", "services", "Không chạy dịch vụ NFS", "pass", "nfs-server không cài"),
+        _cis("2.1.12", "services", "Không chạy rpcbind", "pass", "rpcbind không cài"),
+        _cis("2.1.16", "services", "Không chạy SNMP", "pass", "snmpd không cài"),
+        _cis("2.1.21", "services", "MTA chỉ nghe trên loopback", "pass", "postfix inet_interfaces = loopback-only"),
+        _cis("2.4.1.2", "access", "Quyền /etc/crontab 600 root:root", "fail", "/etc/crontab 644 root:root",
+             "chmod 600 /etc/crontab"),
+        _cis("3.3.1", "network", "Tắt IP forwarding", "na", "Docker đang bật trên máy (cần forwarding)"),
+        _cis("3.3.2", "network", "Không gửi ICMP redirect", "pass", "net.ipv4.conf.all.send_redirects = 0"),
+        _cis("3.3.5", "network", "Bỏ qua ICMP redirect", "pass", "net.ipv4.conf.all.accept_redirects = 0"),
+        _cis("3.3.8", "network", "Bật TCP SYN cookies", "pass", "net.ipv4.tcp_syncookies = 1"),
+        _cis("3.3.9", "network", "Bỏ qua IPv6 router advertisement", "fail", "net.ipv6.conf.all.accept_ra = 1",
+             "Đặt net.ipv6.conf.all.accept_ra = 0 nếu không dùng SLAAC"),
+        _cis("4.1.1", "network", "Có tường lửa với policy mặc định chặn", "pass", "table inet itso, policy drop",
+             None, "/admin/servers/%s/firewall" % SERVERS[0]["uuid"]),
+        _cis("5.1.4", "access", "SSH: giới hạn người dùng được đăng nhập", "pass", "AllowGroups itso-ssh sudo"),
+        _cis("5.1.7", "access", "SSH: ClientAliveInterval ≤ 300", "pass", "ClientAliveInterval 300"),
+        _cis("5.1.12", "access", "SSH: MaxAuthTries ≤ 4", "pass", "MaxAuthTries 3", None, "/admin/security/ssh"),
+        _cis("5.1.20", "access", "SSH: PermitRootLogin no", "pass", "PermitRootLogin no", None, "/admin/security/ssh"),
+        _cis("5.1.21", "access", "SSH: PasswordAuthentication no", "pass", "PasswordAuthentication no", None,
+             "/admin/security/ssh"),
+        _cis("5.3.3.2.1", "accounts", "Mật khẩu tối thiểu 14 ký tự (pam_pwquality)", "fail", "minlen chưa đặt",
+             "Đặt minlen = 14 trong /etc/security/pwquality.conf"),
+        _cis("5.4.2.1", "accounts", "Chỉ root có UID 0", "pass", "root"),
+        _cis("5.4.2.4", "accounts", "Không có tài khoản mật khẩu rỗng", "pass", "0 tài khoản"),
+        _cis("6.1.1", "logging", "auditd đã cài và chạy", "fail", "auditd không cài",
+             "Cài auditd (Software › auditd) và bật quy tắc tối thiểu"),
+        _cis("6.2.1.1", "logging", "journald lưu bền vững", "pass", "Storage=persistent"),
+        _cis("6.2.2.1", "logging", "Quyền file log hợp lệ", "pass", "/var/log: không file nào ghi được bởi other"),
+        _cis("7.1.1", "filesystem", "Quyền /etc/passwd 644", "pass", "644 root:root"),
+        _cis("7.1.5", "filesystem", "Quyền /etc/shadow 640", "pass", "640 root:shadow"),
+        _cis("7.1.11", "filesystem", "Không có file ghi được bởi mọi người ngoài /tmp", "pass", "0 file"),
+        _cis("8.1.1", "updates", "unattended-upgrades bật cho bản vá bảo mật", "pass", "security_only=true",
+             None, "/admin/servers/%s/software" % SERVERS[0]["uuid"]),
+        _cis("8.1.2", "updates", "Không còn bản vá bảo mật chờ cài", "fail", "4 gói (openssl, libc6, …)",
+             "Chờ unattended-upgrades hoặc cài trong cửa sổ bảo trì", "/admin/servers/%s/software" % SERVERS[0]["uuid"]),
+    ],
+}
+CIS_REPORT["passed"] = sum(1 for x in CIS_REPORT["items"] if x["status"] == "pass")
+CIS_REPORT["failed"] = sum(1 for x in CIS_REPORT["items"] if x["status"] == "fail")
+CIS_REPORT["not_applicable"] = sum(1 for x in CIS_REPORT["items"] if x["status"] == "na")
+CIS_REPORT["score"] = round(100 * CIS_REPORT["passed"] / (CIS_REPORT["passed"] + CIS_REPORT["failed"]))
+
+# Cập nhật hệ thống: lịch sử update/rollback + journal dở dang sau mất điện (D-114).
+SYSTEM_UPDATES.update({
+    "current_version": "0.5.0-beta", "commit": "359ae17", "channel": "beta", "latest_version": "1.0.0-rc.1",
+    "update_available": True, "checked_at": "2026-11-20T06:00:00+07:00",
+    "update_command": "sudo itso update --release-dir /var/lib/itso/releases/incoming",
+    "repair_command": "sudo itso repair --fix",
+    "releases": [{"version": "0.5.0-beta", "active": True}, {"version": "0.1.0-alpha", "active": False}],
+    "journal": {"version_to": "1.0.0-rc.1", "step": "migrated", "started_at": "2026-11-20T02:10:00+07:00",
+                "interrupted": True,
+                "hint": "Update bị ngắt sau bước migrate (mất điện). Chạy lệnh repair để hoàn tất hoặc quay lại 0.5.0-beta."},
+    "history": [
+        {"action": "update", "version_from": "0.5.0-beta", "version_to": "1.0.0-rc.1", "result": "interrupted",
+         "started_at": "2026-11-20T02:10:00+07:00", "finished_at": None, "duration_sec": None,
+         "by": "root (CLI) trên srv-hn-01", "note": "Mất điện sau bước migrate"},
+        {"action": "update", "version_from": "0.1.0-alpha", "version_to": "0.5.0-beta", "result": "succeeded",
+         "started_at": "2026-11-18T22:00:00+07:00", "finished_at": "2026-11-18T22:03:41+07:00", "duration_sec": 221,
+         "by": "root (CLI) trên srv-hn-01", "note": None},
+        {"action": "rollback", "version_from": "0.5.0-beta", "version_to": "0.1.0-alpha", "result": "succeeded",
+         "started_at": "2026-11-18T21:40:00+07:00", "finished_at": "2026-11-18T21:41:12+07:00", "duration_sec": 72,
+         "by": "tự động (health check lỗi)", "note": "Panel không trả lời /healthz sau 60 giây → quay lại bản cũ"},
+        {"action": "update", "version_from": "0.1.0-alpha", "version_to": "0.5.0-beta", "result": "rolled_back",
+         "started_at": "2026-11-18T21:35:00+07:00", "finished_at": "2026-11-18T21:41:12+07:00", "duration_sec": 372,
+         "by": "root (CLI) trên srv-hn-01", "note": None},
+    ],
+})
+
+# Sẵn sàng production: kiểm tự động từ dữ liệu panel + trạng thái Gate G1–G8 (D-115).
+def _rc(key, group, title, status, detail, href=None):
+    return {"key": key, "group": group, "title": title, "status": status, "detail": detail, "href": href}
+
+
+def _gate(gid, title, status, automated, verified_at=None):
+    return {"id": gid, "title": title, "status": status, "automated": automated,
+            "evidence_doc": "docs/gate/%s.md" % gid, "verified_at": verified_at}
+
+
+READINESS = {
+    "checked_at": T2,
+    "checks": [
+        _rc("admin_mfa", "access", "MFA bật cho mọi quản trị viên", "pass", "2/2 quản trị viên", "/admin/users"),
+        _rc("admin_allowlist", "access", "Admin Panel giới hạn theo IP allowlist", "pass", "2 dải",
+            "/admin/security/allowlist"),
+        _rc("backup_immutable", "backup", "Có đích backup bất biến (append-only/immutable)", "warn",
+            "1/2 đích; đích S3 chưa bật object lock", "/admin/backups"),
+        _rc("backup_recent", "backup", "Mọi account có snapshot trong 24 giờ", "pass", "12/12 account", "/admin/backups"),
+        _rc("restore_test", "backup", "Có restore test thành công trong 7 ngày", "fail", "Lần gần nhất 12 ngày trước",
+            "/admin/backups"),
+        _rc("cis_score", "security", "Điểm CIS ≥ 80 trên mọi server", "warn", "srv-hn-01: %d, srv-hn-02: chưa quét" % CIS_REPORT["score"],
+            "/admin/security/cis"),
+        _rc("security_updates", "updates", "Không còn bản vá bảo mật chờ cài quá 7 ngày", "fail", "srv-hn-01: 4 gói",
+            "/admin/servers/%s/software" % SERVERS[0]["uuid"]),
+        _rc("update_journal", "updates", "Không có update dở dang", "fail", "Journal dở ở bước migrate",
+            "/admin/system/updates"),
+        _rc("cert_expiry", "security", "Không chứng chỉ nào hết hạn trong 14 ngày", "pass", "0 chứng chỉ", "/admin/ssl"),
+        _rc("alert_channels", "monitoring", "Có kênh thông báo ngoài panel hoạt động", "pass", "3 kênh đang bật",
+            "/admin/monitoring/channels"),
+        _rc("agents_online", "monitoring", "Mọi server đang kết nối", "fail", "srv-hcm-01 mất kết nối",
+            "/admin/servers"),
+    ],
+    "gate": [
+        _gate("G1", "Cách ly account trên 2 server", "pending_vm", "Pest ma trận quyền + Go test đường dẫn: đạt"),
+        _gate("G2", "Quota disk/inode/CPU/RAM", "pending_vm", "Go test quota (sandbox): đạt"),
+        _gate("G3", "Leo thang đặc quyền (webshell, portal, giả định Laravel RCE)", "pending_vm",
+              "Fuzz agent + make no-exec: đạt"),
+        _gate("G4", "Khôi phục ngẫu nhiên 10 account + 1 sang server khác + immutable", "pending_vm",
+              "e2e stack thật backup/restore: đạt"),
+        _gate("G5", "Nâng 3 phiên bản + rollback giữa chừng", "pending_vm", "Go test journal (crash từng bước): đạt"),
+        _gate("G6", "DR control plane + cả server", "pending_vm", "Pest DR + e2e wizard khôi phục: đạt"),
+        _gate("G7", "Chuyển 5 account giữa server", "pending_vm", "Pest MigrationTest: đạt"),
+        _gate("G8", "Gỡ cài đặt giữ site/home/DB", "pending_vm", "test-installer uninstall: đạt"),
+    ],
+}
+READINESS["score"] = round(100 * sum(1 for c in READINESS["checks"] if c["status"] == "pass") / len(READINESS["checks"]))
+READINESS["ready"] = all(c["status"] == "pass" for c in READINESS["checks"]) and all(
+    g["status"] == "pass" for g in READINESS["gate"])

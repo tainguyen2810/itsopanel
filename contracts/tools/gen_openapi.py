@@ -646,6 +646,45 @@ def admin_paths(api: Api):
     api.add("get", "/system/updates", "getSystemUpdates", "Phiên bản hiện tại, kênh và lệnh cập nhật", "System",
             ok=ref("SystemUpdates"), ok_example=one(D.SYSTEM_UPDATES),
             desc="Chỉ đọc. Cập nhật chạy bằng CLI root `itso update` trên server (D-65: release ký Ed25519, tự rollback).")
+    api.add("get", "/system/readiness", "getSystemReadiness", "Sẵn sàng production: kiểm tự động + Gate G1–G8",
+            "System", ok=ref("Readiness"), ok_example=one(D.READINESS),
+            desc="Chỉ SUPER_ADMIN. Chỉ đọc dữ liệu panel; trạng thái Gate lấy từ bằng chứng đã ghi (D-115).")
+    # -- import từ panel khác (Phase 12, D-108; chỉ SUPER_ADMIN)
+    imp = D.IMPORTS[0]
+    api.add("get", "/imports", "listImports", "Các lượt import từ panel khác", "Imports", list_=True,
+            ok=ref("Import"), ok_example=page(D.IMPORTS))
+    api.add("post", "/imports", "createImport", "Quét nguồn (chỉ đọc) và lập kế hoạch import", "Imports",
+            body=ref("ImportScanInput"), body_example={"source": "aapanel", "server": srv["uuid"]}, job=True,
+            job_example=jobs("import.scan", "import", imp["uuid"], ["import.scan"]),
+            desc="Op `import.scan` chỉ đọc cấu hình/thư mục của nguồn trên server đã chọn. Đang có lượt `scanning`/`running` "
+                 "trên cùng server → 409 `conflict`.")
+    api.add("get", "/imports/{id}", "getImport", "Chi tiết lượt import", "Imports", params=idp, ok=ref("Import"),
+            ok_example=one(imp))
+    api.add("delete", "/imports/{id}", "deleteImport", "Xóa lượt import (không đụng máy nguồn hay account đã tạo)",
+            "Imports", params=idp, no_content=True, desc="Đang `scanning`/`running` → 409 `conflict`.")
+    api.add("get", "/imports/{id}/items", "listImportItems", "Mục tìm thấy (website, DB, cron) và kế hoạch", "Imports",
+            params=idp, list_=True, ok=ref("ImportItem"), ok_example=page(D.IMPORT_ITEMS))
+    api.add("put", "/imports/{id}/plan", "updateImportPlan", "Chọn mục, map sang gói và USER", "Imports", params=idp,
+            body=ref("ImportPlanInput"),
+            body_example={"items": [{"uuid": D.IMPORT_ITEMS[0]["uuid"], "selected": True, "username": "shopanphat",
+                                     "package": D.PACKAGES[1]["uuid"], "user": D.USERS[2]["uuid"], "new_user": None}]},
+            ok=ref("Import"), ok_example=one(imp),
+            desc="Chỉ khi `planned`. Kiểm trùng domain/username, hạn mức gói; lỗi → 422 theo từng mục "
+                 "(`errors[\"items.N.field\"]`).")
+    api.add("post", "/imports/{id}:run", "runImport", "Chạy import các mục đã chọn", "Imports", params=idp, job=True,
+            step_up=True,
+            job_example=jobs("import.run", "import", imp["uuid"],
+                             ["account.ensure", "import.copy", "db.mysql.dump", "db.mysql.import", "nginx.vhost.apply", "cert.issue"]),
+            desc="Mỗi account một job con: tạo account → copy file dưới UID account → dump + import DB → vhost/SSL → "
+                 "cron. Mật khẩu DB mới sinh ở panel, không vào params job. Site cũ vẫn chạy tới khi cutover.")
+    api.add("post", "/imports/{id}:cutover", "cutoverImport", "Chuyển nginx sang site ITSO (tắt vhost nguồn)",
+            "Imports", params=idp, job=True, step_up=True,
+            job_example=jobs("import.cutover", "import", imp["uuid"], ["import.cutover"]),
+            desc="Chỉ khi `completed`/`partially_failed`. Vhost của panel nguồn chỉ đổi tên `.conf` → `.itso-disabled`.")
+    api.add("post", "/imports/{id}:rollback", "rollbackImport", "Quay lại vhost nguồn sau cutover", "Imports",
+            params=idp, job=True, step_up=True,
+            job_example=jobs("import.rollback", "import", imp["uuid"], ["import.rollback"]),
+            desc="Chỉ khi `cut_over`. Account ITSO đã tạo được giữ nguyên để xem lại.")
     setup_paths(api, jobs)
     # -- servers
     api.crud("/servers", "server", ref("Server"), "Servers", D.SERVERS, ops="lru", update_body=ref("ServerUpdate"),
@@ -928,6 +967,12 @@ def admin_paths(api: Api):
     api.add("get", "/security/score", "getSecurityScore", "Điểm bảo mật chi tiết theo máy chủ", "Security",
             params=[Api.p("ServerQuery")], ok=ref("SecurityScore"), ok_example=one(D.SECURITY_SCORE),
             desc="Laravel tính từ `security.audit` của agent + dữ liệu panel theo bảng trọng số công khai (D-80).")
+    api.add("get", "/security/cis", "getCisReport", "Kết quả kiểm CIS Ubuntu 24.04 L1 theo máy chủ", "Security",
+            params=[Api.p("ServerQuery")], ok=ref("CisReport"), ok_example=one(D.CIS_REPORT),
+            desc="Chỉ đọc (D-109). Chưa quét → `audited_at` null, `items` rỗng.")
+    api.add("post", "/security/cis:audit", "auditCis", "Chạy kiểm CIS (chỉ đọc)", "Security",
+            params=[Api.p("ServerQuery")], job=True,
+            job_example=jobs("cis.audit", "server", srv["uuid"], ["cis.audit"]))
     api.add("get", "/security/ip-allowlist", "getIpAllowlist", "IP allowlist cho Admin Panel", "Security",
             ok=ref("IpAllowlist"), ok_example=one(D.IP_ALLOWLIST))
     api.add("put", "/security/ip-allowlist", "setIpAllowlist", "Đặt IP allowlist (từ chối nếu khóa chính mình)",

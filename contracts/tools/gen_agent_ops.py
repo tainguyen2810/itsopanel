@@ -809,6 +809,12 @@ DECLARED = [
     # Git deploy: hoãn sang Phase sau (Docker for USER/Git chưa vào phạm vi Phase 10).
     ("git.deploy", "git", "high", True, 10),
     ("git.rollback", "git", "high", True, 10),
+    # Phase 12 (mockup 12.0): schema chi tiết viết ở 12.1 (D-108, D-109).
+    ("import.scan", "import", "low", True, 12),
+    ("import.copy", "import", "high", True, 12),
+    ("import.cutover", "import", "high", True, 12),
+    ("import.rollback", "import", "high", True, 12),
+    ("cis.audit", "security", "low", True, 12),
 ]
 
 # Bước do worker của panel thực hiện (gọi API bên ngoài), không phải op của agent.

@@ -46,6 +46,8 @@ export const ADMIN_ROUTES: RouteDef[] = [
   { id: 'wordpress', path: '/wordpress', nav: 'wordpress' },
   { id: 'wordpressDetail', path: '/wordpress/$id', nav: 'wordpress' },
   { id: 'gitDeployments', path: '/git-deployments', nav: 'gitDeployments' },
+  { id: 'imports', path: '/imports', nav: 'imports', roles: SA },
+  { id: 'importDetail', path: '/imports/$id', nav: 'imports', roles: SA },
 
   { id: 'security', path: '/security', nav: 'security' },
   { id: 'securityWaf', path: '/security/waf', nav: 'security' },
@@ -55,6 +57,7 @@ export const ADMIN_ROUTES: RouteDef[] = [
   { id: 'securityFim', path: '/security/fim', nav: 'security', roles: SA },
   { id: 'securityAllowlist', path: '/security/allowlist', nav: 'security', roles: SA },
   { id: 'securityTerminal', path: '/security/terminal', nav: 'security', roles: SA },
+  { id: 'securityCis', path: '/security/cis', nav: 'security' },
   { id: 'backups', path: '/backups', nav: 'backups' },
   { id: 'restores', path: '/restores', nav: 'restores' },
   { id: 'restoreNew', path: '/restores/new', nav: 'restores' },
@@ -71,4 +74,7 @@ export const ADMIN_ROUTES: RouteDef[] = [
   { id: 'audit', path: '/audit-logs', nav: 'audit' },
   { id: 'notifications', path: '/notifications', nav: 'notifications' },
   { id: 'settings', path: '/settings', nav: 'settings', roles: SA },
+  { id: 'system', path: '/system', redirect: '/system/readiness' },
+  { id: 'systemReadiness', path: '/system/readiness', nav: 'system', roles: SA },
+  { id: 'systemUpdates', path: '/system/updates', nav: 'system', roles: SA },
 ];

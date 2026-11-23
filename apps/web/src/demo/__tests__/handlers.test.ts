@@ -27,6 +27,7 @@ const ID_BY_SEGMENT: Record<string, string> = {
   'compose-projects': first('compose'),
   'alert-rules': first('alert_rules'),
   'uptime-checks': first('uptime'),
+  imports: first('imports'),
   'notification-channels': first('notification_channels'),
   'notification-deliveries': first('notification_deliveries'),
   alerts: first('alerts'),
@@ -54,6 +55,7 @@ const QUERY: Record<string, string> = {
   '/api/v1/admin/security/ssh': '?server=01938a02-0001-7000-8000-000002000001',
   '/api/v1/admin/security/fail2ban': '?server=01938a02-0001-7000-8000-000002000001',
   '/api/v1/admin/security/score': '?server=01938a02-0001-7000-8000-000002000001',
+  '/api/v1/admin/security/cis': '?server=01938a02-0001-7000-8000-000002000001',
 };
 // Portal dùng cùng tham số (người gọi mặc định là chủ account anphat).
 for (const [k, v] of Object.entries(QUERY)) QUERY[k.replace('/admin/', '/portal/')] = v;

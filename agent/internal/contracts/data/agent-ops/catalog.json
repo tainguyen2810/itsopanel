@@ -1760,6 +1760,61 @@
       "timeout_sec": null,
       "schema": null,
       "status": "declared"
+    },
+    {
+      "op": "import.scan",
+      "domain": "import",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "import.copy",
+      "domain": "import",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "import.cutover",
+      "domain": "import",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "import.rollback",
+      "domain": "import",
+      "risk": "high",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
+    },
+    {
+      "op": "cis.audit",
+      "domain": "security",
+      "risk": "low",
+      "default_enabled": true,
+      "phase": 12,
+      "runs_as": "root",
+      "timeout_sec": null,
+      "schema": null,
+      "status": "declared"
     }
   ],
   "panel_steps": [

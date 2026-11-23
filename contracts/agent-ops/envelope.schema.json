@@ -180,7 +180,12 @@
         "wp.admin_password",
         "wp.maintenance",
         "git.deploy",
-        "git.rollback"
+        "git.rollback",
+        "import.scan",
+        "import.copy",
+        "import.cutover",
+        "import.rollback",
+        "cis.audit"
       ]
     },
     "op_id": {

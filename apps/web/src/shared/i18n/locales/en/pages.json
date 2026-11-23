@@ -59,7 +59,13 @@
     "audit": "Audit log",
     "notifications": "Notifications",
     "settings": "System settings",
-    "wordpressDetail": "WordPress details"
+    "wordpressDetail": "WordPress details",
+    "securityCis": "CIS audit",
+    "imports": "Import from other panels",
+    "importDetail": "Import details",
+    "system": "System",
+    "systemReadiness": "Production readiness",
+    "systemUpdates": "System updates"
   },
   "portal": {
     "login": "Sign in",

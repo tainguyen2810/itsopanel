@@ -2,6 +2,22 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.0 (mockup Import, CIS, Cập nhật, Sẵn sàng production) — nhánh `phase-12`
+
+Phạm vi: chỉ bản demo + contracts. OpenAPI admin thêm `/imports` (quét = job `import.scan`, chi tiết, xóa, mục, `PUT /plan`, `:run`, `:cutover`, `:rollback`), `/security/cis` + `:audit`, `/system/readiness`; `SystemUpdates` thêm `journal`, `history`, `repair_command`. Schema `Import`, `ImportItem`, `ImportWarning`, `ImportScanInput`, `ImportPlanInput`, `CisReport`, `Readiness`. Op `import.scan/copy/cutover/rollback`, `cis.audit` khai báo tên (schema chi tiết ở 12.1). Dữ liệu demo: 3 lượt import (aaPanel đã lập kế hoạch có cảnh báo trùng domain/DB lớn/thiếu PHP, HestiaCP lỗi một phần chờ cutover, Nginx quét lỗi), CIS 36 mục (điểm 79), lịch sử update + journal dở ở bước migrate, readiness 11 kiểm + Gate G1–G8 chờ VM. MSW `handlers/production.ts` mô phỏng hành vi API (chỉ SA, 409 khi máy mất kết nối hoặc đang chạy, 422 theo từng mục kế hoạch, job đổi trạng thái). Trang: Import (danh sách + hộp quét), chi tiết import (bước, kế hoạch, sửa mục, báo cáo khác biệt, cutover/rollback), Bảo mật › CIS, Hệ thống › Sẵn sàng production / Cập nhật; i18n vi/en.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `bash scripts/check-contracts.sh` · `make codegen` · `codegen-check` | PASS (admin 319 operation, 557 example hợp lệ, 100 % operation có example) |
+| Dữ liệu demo | `python3 contracts/tools/check_demo.py` | OK |
+| Vitest | `npx vitest run` | **638/638 PASS** (mới `phase12.test.ts` 10 test: quyền SA, quét → kế hoạch, scan_failed, 409 máy mất kết nối, 422 trùng domain/username theo mục, chạy → báo cáo → cutover → rollback, CIS trước/sau kiểm, updates journal, readiness; `handlers.test.ts` mọi GET mới theo schema) |
+| Go | `go test ./internal/contracts/... ./internal/ops/` | PASS (catalog có 5 op khai báo mới) |
+| Ảnh mockup | `playwright test e2e/screenshots-phase12.spec.ts` (`make screenshots` → `docs/screenshots/phase-12`) | **40/40 PASS**, 10 cảnh × 1440/390 × sáng/tối |
+| Lint | `tsc --noEmit` · ESLint · Prettier | PASS |
+| Playwright demo (toàn bộ, gồm axe) | `playwright test` | đang chạy khi commit; kết quả ghi ở mục 12.1. Lần chạy này bắt được 1 lỗi: `demo-audit /admin/imports/$id` thiếu id mẫu → đã thêm `imports` vào `e2e/demo.ts` |
+
+**Test bị bỏ qua:** không.
+
 ## 2026-11-22 — Phase 11 / Prompt 11.8 (Tích hợp: e2e stack thật, VM, review bảo mật, make check, v0.5.0-beta) — nhánh `phase-11`
 
 Môi trường: PostgreSQL 16 + Redis cục bộ; `make dev` (Laravel + queue `default,notifications` + Vite + itso-agent `--sandbox` + node sandbox), DB `migrate:fresh --seed` + `DemoSeeder`. Webhook giả nghe trên IP dải riêng `10.99.0.1` thêm vào `lo` (SsrfGuard chặn loopback và `192.0.2.0/24` của container); SMTP giả Node trên `127.0.0.1:2525`. Container không có cgroup v2/systemd/nftables thật: `tests/vm/phase11.sh` **chờ VM**.

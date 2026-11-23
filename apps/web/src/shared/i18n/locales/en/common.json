@@ -103,7 +103,15 @@
     "sent": "Sent",
     "sending": "Sending",
     "retrying": "Retrying",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "scanning": "Scanning",
+    "scan_failed": "Scan failed",
+    "planned": "Planned",
+    "partially_failed": "Partially failed",
+    "cut_over": "Cut over",
+    "interrupted": "Interrupted",
+    "na": "Not applicable",
+    "pending_vm": "Pending VM"
   },
   "table": {
     "selected_one": "{{count}} row selected",
@@ -423,6 +431,17 @@
       "rollback": "Server move rollback",
       "rollback_source": "Reopen account on source server",
       "cleanup": "Source cleanup after move"
+    },
+    "import": {
+      "scan": "Scan source panel",
+      "run": "Run import",
+      "cutover": "Import cutover",
+      "rollback": "Roll back cutover",
+      "delete": "Delete import",
+      "plan": "Update import plan"
+    },
+    "cis": {
+      "audit": "CIS audit"
     }
   },
   "ops": {
@@ -571,6 +590,15 @@
     },
     "fail2ban": {
       "apply": "Apply Fail2ban config"
+    },
+    "import": {
+      "scan": "Scan source panel config (read-only)",
+      "copy": "Copy files into account",
+      "cutover": "Disable source vhost, enable ITSO site",
+      "rollback": "Re-enable source vhost"
+    },
+    "cis": {
+      "audit": "CIS audit (read-only)"
     }
   },
   "wizard": {
