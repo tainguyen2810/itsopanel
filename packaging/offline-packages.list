@@ -1,0 +1,25 @@
+# Gói gốc của bundle offline (D-113, ADR 0058). `scripts/release-offline.sh --update-lock` (chạy trên Ubuntu 24.04 amd64
+# có mạng) tính bao đóng phụ thuộc (Depends + Pre-Depends, không Recommends) và ghi phiên bản + sha256 vào
+# offline-packages.lock. Phải khớp basePackages/nodePackages trong agent/internal/install; thêm stack của Wizard để máy
+# offline cài được nginx/PHP/MariaDB từ repo giữ lại (install.sh --keep-offline-repo).
+postgresql-16
+redis-server
+nftables
+acl
+quota
+ca-certificates
+nginx
+php8.3-fpm
+php8.3-cli
+php8.3-mysql
+php8.3-pgsql
+php8.3-curl
+php8.3-gd
+php8.3-intl
+php8.3-mbstring
+php8.3-xml
+php8.3-zip
+php8.3-bcmath
+php8.3-opcache
+mariadb-server
+restic

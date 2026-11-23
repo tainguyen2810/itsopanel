@@ -33,6 +33,8 @@ type Options struct {
 	DryRun     bool
 	Yes        bool
 	Restore    bool // cài như mới rồi vào chế độ khôi phục từ backup (DR)
+	// Phase 12 (D-113): cài offline — apt chỉ đọc repo cục bộ tạm do install.sh --offline dựng (OfflineAptList), ACME tắt.
+	Offline bool
 	// Phase 9 (D-88): vai trò; node cần Join + Token + CASHA256 (token không bao giờ ghi xuống đĩa/log).
 	Role     string
 	Join     string

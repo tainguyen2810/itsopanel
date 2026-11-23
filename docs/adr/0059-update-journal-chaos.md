@@ -12,3 +12,5 @@
 2. Khởi động sau sự cố (kill -9, mất điện): `itso doctor` báo journal dở; `itso repair --fix` quyết định theo bước: trước `migrated` → xóa bản giải nén dở, giữ bản cũ; `migrated`/`switched` → hoàn tất (migration chỉ thêm — expand/contract) hoặc quay lại nếu health check lỗi; `restarted` → chỉ kiểm sức khỏe. Xóa journal khi xong; ghi lịch sử vào `/var/lib/itso/update-history.jsonl` (panel đọc qua `/system/updates`).
 3. Manifest có `breaking_db`; khi true phải backup panel trước, rollback qua bản backup.
 4. Kiểm: Go test giả lập crash ở từng bước bằng Runner giả; `tests/vm/upgrade-loop.sh` 20 vòng update → kiểm → rollback → update, chaos `kill -9` và `sysrq b` ở từng bước, đo 0 lỗi HTTP ở site account (chờ VM).
+
+> Hiện thực 12.6: `tests/vm/upgrade-loop.sh` (20 vòng, kill -9 lần lượt ở 6 bước, `--reboot <bước>` cho sysrq b, site account gọi 5 lần/giây phải 0 lỗi HTTP). Chạy trên VM: chờ VM.

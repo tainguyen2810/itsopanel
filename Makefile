@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 
 PNPX ?= npx -y
 
-.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check units-check test-installer test-vm release
+.PHONY: help structure docs-check db-schema db-erd db-migrations db-verify contracts contracts-check contracts-docs setup dev services-up services-down test test-web test-api test-api-pg test-agent test-fuzz test-e2e test-e2e-real screenshots tokens tokens-check lint lint-web lint-api lint-agent no-exec build build-web build-agent build-demo dev-demo codegen codegen-check check units-check test-installer test-vm release release-offline
 
 help: ## Liệt kê các lệnh
 	@echo "ITSO Panel — các lệnh make:"
@@ -162,6 +162,9 @@ test-installer: ## Test install.sh: chữ ký/sha sai, OS sai, không phải roo
 
 release: ## Đóng gói bản phát hành vào build/release/<ver> (VERSION=…; khóa ITSO_RELEASE_KEY hoặc khóa dev tạm)
 	@bash scripts/release.sh
+
+release-offline: ## Bundle cài không mạng build/release/<ver>/itso-<ver>-offline.tar (.deb khóa phiên bản + sha256, manifest ký)
+	@bash scripts/release-offline.sh
 
 check: ## Toàn bộ pipeline local như CI, in bảng kết quả (exit ≠ 0 nếu có bước đỏ)
 	@bash scripts/check-all.sh

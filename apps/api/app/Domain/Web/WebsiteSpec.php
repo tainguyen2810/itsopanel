@@ -82,10 +82,14 @@ final class WebsiteSpec
             ->where('source', $w->ssl_mode === 'custom' ? 'upload' : 'acme')->orderByDesc('not_after')->first();
     }
 
-    /** ACME directory theo cài đặt (D-69): letsencrypt | letsencrypt-staging | pebble (chỉ khi ITSO_ACME_ALLOW_PEBBLE). */
+    /** ACME directory theo cài đặt (D-69): letsencrypt | letsencrypt-staging | pebble (chỉ khi ITSO_ACME_ALLOW_PEBBLE); disabled khi cài offline (D-113). */
     public static function acmeDirectory(): string
     {
         $d = (string) config('itso.acme.directory', 'letsencrypt');
+        if ($d === 'disabled') { // cài offline (D-113): không tới được CA
+            throw new ApiProblem(409, 'precondition_failed', 'ACME đã tắt',
+                'Panel cài offline (ITSO_ACME_DIRECTORY=disabled) nên không cấp được chứng chỉ ACME; tải chứng chỉ lên (SSL tùy chỉnh).');
+        }
         if (! isset(self::ACME_DIRECTORIES[$d]) || ($d === 'pebble' && ! (bool) config('itso.acme.allow_pebble', false))) {
             throw new ApiProblem(409, 'precondition_failed', 'ACME directory không hợp lệ',
                 "ITSO_ACME_DIRECTORY=$d không được phép (letsencrypt, letsencrypt-staging; pebble cần ITSO_ACME_ALLOW_PEBBLE).");

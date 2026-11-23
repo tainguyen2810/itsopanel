@@ -2,6 +2,20 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.6 (Offline installer, vòng cập nhật + chaos, chính sách cập nhật) — nhánh `phase-12`
+
+Phạm vi: `scripts/release-offline.sh` + `make release-offline` (bundle `itso-<ver>-offline.tar`: bản phát hành + `.deb` theo `packaging/offline-packages.lock` kiểm sha256 + `Packages` + `offline-manifest.json` ký Ed25519 cùng khóa release; `--update-lock` tính bao đóng phụ thuộc trên Ubuntu 24.04). `install.sh --offline <bundle>` (từ chối mục tar không phải file/thư mục, kiểm chữ ký + sha256 từng file + không có `.deb` ngoài danh sách → repo apt tạm qua `/etc/apt/itso-offline.list` → `itso install --offline` → xóa repo; `--keep-offline-repo` cho Wizard). `itso install --offline`: apt chỉ đọc repo cục bộ (`Dir::Etc::SourceList`, `SourceParts=-`), thiếu repo → dừng trước khi gọi apt; `itso.env` có `ITSO_ACME_DIRECTORY=disabled` → panel trả 409 kèm hướng dẫn tải chứng chỉ lên. `tests/vm/upgrade-loop.sh` (20 vòng update → kiểm → rollback, kill -9 lần lượt ở 6 bước journal, `--reboot <bước>` sysrq b, site account 5 lần/giây phải 0 lỗi HTTP). `docs/security/update-policy.md` (kênh, thời hạn vá, ký, xoay khóa, SBOM, báo lỗi nội bộ).
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Installer | `make test-installer` | **20/20 PASS** (mới 9): release-offline với `.deb` thật tối giản (dpkg-deb) → Packages + manifest ký; sha `.deb` khác lock → dừng; `--offline` → repo tạm cho `itso install --offline` rồi xóa; `--keep-offline-repo`; `.deb` bị thay / `.deb` ngoài danh sách / `manifest.json` bị đổi / ký khóa khác / symlink trong bundle → từ chối |
+| Bundle thật | `VERSION=1.0.0-rc.1 make release-offline` rồi `install.sh --offline itso-1.0.0-rc.1-offline.tar --dry-run` (repo/apt trong thư mục tạm) | PASS: bundle 53 MB (lock rỗng → 0 `.deb`, có CẢNH BÁO); chữ ký offline + release đúng, `itso install --offline --dry-run` chạy preflight (FAIL đúng vì container không có systemd), repo tạm đã xóa |
+| Go agent | `go test ./...` (mới `TestInstallOfflineUsesLocalRepoOnly`) · `gofmt -l` · `go vet` | PASS |
+| Pest | `pest tests/Feature/Phase5 tests/Feature/Phase12` (mới `OfflineAcmeTest`) | 36/36 PASS |
+| Lint | `pint --test` · `phpstan` · `check-no-exec` · `make structure` · `make docs-check` | PASS |
+
+**Chưa chạy (chờ VM/máy build):** sinh lock thật bằng `--update-lock` trên Ubuntu 24.04 có mạng; cài offline trên VM không mạng; `tests/vm/upgrade-loop.sh` 20 vòng + `--reboot`. **Test bị bỏ qua:** không.
+
 ## 2026-11-23 — Phase 12 / Prompt 12.5 (Hiệu năng 200 account/server) — nhánh `phase-12`
 
 Phạm vi: `PerfSeeder` (chỉ local/testing: 200 account × 3 website × 2 DB, 7 ngày metrics ≈ 2,5 triệu dòng, 10 000 job, 100 000 audit qua trigger hash thật), lệnh `itso:bench` (HTTP kernel nội bộ với token SUPER_ADMIN tạm, 9 danh sách + 8 chi tiết, `alerts-evaluate`, insert metrics; p50/p95/max + số truy vấn; mã thoát ≠ 0 nếu trượt), `docs/perf/phase-12.md` (trước/sau). Điểm nóng đã sửa: chỉ mục `audit_logs (at, id)` cho trigger chuỗi hash (đặc tả + migration cho DB cũ; 200 audit ở 100 000 dòng 3 657 → 5,7 ms); N+1 ở `hosting-accounts`, `jobs`, `databases`, `websites`, `audit-logs`, `users`, `metrics/servers/{id}/accounts` (`Listing::page` thêm `prefetch`); `audit-logs` không còn 500 khi `resource_type` số ít.

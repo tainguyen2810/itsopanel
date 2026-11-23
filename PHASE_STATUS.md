@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 12 — Production Hardening & Production Gate (kế hoạch `docs/planning/seed/PHASE_12_PROMPTS.md`, nhánh `phase-12`; người dùng yêu cầu 2026-11-23: "merge và làm tiếp parse 12"). Phase 11 ✓ APPROVED 2026-11-23 (merge `359ae17`, tag local `v0.5.0-beta`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 12.6
-- **Task đang làm:** 12.6
+- **Prompt hiện tại:** 12.7
+- **Task đang làm:** 12.7
 - **Commit cuối:** xem `git log -1` trên `main`
 - **Bước tiếp theo:** làm hàng loạt 12.0 → 12.8, tự merge, DỪNG cuối Phase 12; chạy `tests/vm/phase4–11.sh` + bài Gate khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -39,8 +39,8 @@ Phase 12: ✱ đang làm (nhánh `phase-12`) — prompt chi tiết: `docs/planni
 - ✓ 12.3 Panel import: API, job `import.run` (op mới `import.db_dump`), cutover + ACME, rollback
 - ✓ 12.4 Hardening: ASVS L2 (`docs/security/asvs-l2.md`), ma trận quyền tự động, CIS API + điểm, ADR RLS/helper có số liệu, siết systemd (4.9)
 - ✓ 12.5 Hiệu năng 200 account/server (`PerfSeeder`, `itso:bench`, `docs/perf/phase-12.md`: mọi mục tiêu D-112 đạt; chỉ mục chuỗi audit, N+1 ở 7 danh sách)
-- ✱ 12.6 Offline installer, update/rollback 20 vòng + chaos, chính sách cập nhật
-- ○ 12.7 UI nối API thật, sổ tay vận hành
+- ✓ 12.6 Offline installer (`make release-offline`, `install.sh --offline`, `itso install --offline`), `tests/vm/upgrade-loop.sh` (20 vòng + chaos, chờ VM), `docs/security/update-policy.md`
+- ✱ 12.7 UI nối API thật, sổ tay vận hành
 - ○ 12.8 Gate G1–G8, e2e Phase 12, `make check`, `v1.0.0-rc.1`, merge
 
 Phase 11: ✓ APPROVED 2026-11-23 (merge `359ae17`, tag `v0.5.0-beta`) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`

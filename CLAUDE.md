@@ -46,6 +46,7 @@ ITSO Panel là hệ thống quản trị máy chủ và Hosting **dùng nội b�
 | Giao diện demo (API giả lập MSW theo OpenAPI, không cần Laravel) · build demo + kiểm build thường không có MSW | `make dev-demo` · `make build-demo` | 2.1 |
 | Đóng gói release ký Ed25519 · kiểm unit systemd · test install.sh | `make release` · `make units-check` · `make test-installer` | 4.4 |
 | Playwright stack thật (agent sandbox) · kiểm thử VM Ubuntu 24.04 (Multipass) | `make test-e2e-real` · `make test-vm` | 4.6 |
+| Bundle cài offline (`.deb` khóa phiên bản, manifest ký) · vòng cập nhật/quay lại + chaos trên VM | `make release-offline` · `tests/vm/upgrade-loop.sh` | 12.6 |
 
 ## 5. Tài liệu
 
