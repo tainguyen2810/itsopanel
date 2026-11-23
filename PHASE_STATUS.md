@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 12 — Production Hardening & Production Gate (kế hoạch `docs/planning/seed/PHASE_12_PROMPTS.md`, nhánh `phase-12`; người dùng yêu cầu 2026-11-23: "merge và làm tiếp parse 12"). Phase 11 ✓ APPROVED 2026-11-23 (merge `359ae17`, tag local `v0.5.0-beta`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 12.8 ✓ (Phase 12 xong phần không cần VM, **chờ duyệt**)
-- **Task đang làm:** không (DỪNG chờ duyệt Phase 12 và `v1.0.0-rc.1`)
-- **Commit cuối:** xem `git log -1` trên `main` (merge `phase-12`, tag local `v1.0.0-rc.1`)
-- **Bước tiếp theo:** người dùng duyệt Phase 12; chạy `tests/vm/phase4–11.sh` + `tests/vm/gate.sh` (G1–G8) trên VM, ghi `itso:gate-record`; `v1.0.0` chỉ khi cả 8 Gate `pass`
+- **Phase:** 12 — Production Hardening & Production Gate ✓ APPROVED 2026-11-23 (người dùng: "merge và lên kế hoạch làm tiếp"; merge `234729d`, tag local `v1.0.0-rc.1`; Gate G1–G8 `pending_vm`). Kế hoạch 12 Phase đã hết
+- **Prompt hiện tại:** không có (chờ người dùng chọn hướng sau Phase 12)
+- **Task đang làm:** không
+- **Commit cuối:** xem `git log -1` trên `main`
+- **Bước tiếp theo:** đề xuất Phase 13 = chạy bộ test VM Phase 4–11 + Gate G1–G8 trên VM Ubuntu 24.04 thật, sửa lỗi tìm ra, phát hành `v1.0.0` (cần người dùng cấp VM); chờ người dùng chọn
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -27,11 +27,11 @@
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✓ APPROVED (báo cáo `docs/reports/phase-11.md`; `v0.5.0-beta` tag local; tiêu chí cần VM: chờ VM) |
-| 12 | Production Hardening & Production Gate → v1.0.0 | ✓ chờ duyệt (báo cáo `docs/reports/phase-12.md`; `v1.0.0-rc.1` tag local; Gate G1–G8 `pending_vm`) |
+| 12 | Production Hardening & Production Gate → v1.0.0 | ✓ APPROVED (báo cáo `docs/reports/phase-12.md`; `v1.0.0-rc.1` tag local; Gate G1–G8 `pending_vm`) |
 
 ## Checklist Phase hiện tại
 
-Phase 12: ✓ chờ duyệt (merge vào `main`, tag local `v1.0.0-rc.1`) — prompt chi tiết: `docs/planning/seed/PHASE_12_PROMPTS.md`
+Phase 12: ✓ APPROVED 2026-11-23 (merge `234729d`, tag local `v1.0.0-rc.1`) — prompt chi tiết: `docs/planning/seed/PHASE_12_PROMPTS.md`
 
 - ✓ 12.0 Mockup Import, CIS, Cập nhật, Sẵn sàng production trên bản demo (`docs/screenshots/phase-12/`, 10 cảnh × 4 = 40 ảnh)
 - ✓ 12.1 ADR 0053–0060 (D-108…D-115), contracts, migration Phase 12 (+ sửa CHECK regex Phase 10/11)
