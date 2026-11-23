@@ -8,7 +8,7 @@
 - **Prompt hiện tại:** không có (chờ người dùng chọn hướng sau Phase 12)
 - **Task đang làm:** không
 - **Commit cuối:** xem `git log -1` trên `main`
-- **Bước tiếp theo:** đề xuất Phase 13 = chạy bộ test VM Phase 4–11 + Gate G1–G8 trên VM Ubuntu 24.04 thật, sửa lỗi tìm ra, phát hành `v1.0.0` (cần người dùng cấp VM); chờ người dùng chọn
+- **Bước tiếp theo:** Phase 13 = kiểm thử trên VPS thật → `v1.0.0` (người dùng chọn 2026-11-23; kế hoạch `docs/planning/seed/PHASE_13_PROMPTS.md`). Chờ người dùng cấp VPS (IP) + SSH key; điều khiển qua Remote Control trên máy Windows của người dùng vì cloud chặn cổng 22
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -27,7 +27,8 @@
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
 | 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✓ APPROVED (báo cáo `docs/reports/phase-11.md`; `v0.5.0-beta` tag local; tiêu chí cần VM: chờ VM) |
-| 12 | Production Hardening & Production Gate → v1.0.0 | ✓ APPROVED (báo cáo `docs/reports/phase-12.md`; `v1.0.0-rc.1` tag local; Gate G1–G8 `pending_vm`) |
+| 12 | Production Hardening & Production Gate → v1.0.0-rc.1 | ✓ APPROVED (báo cáo `docs/reports/phase-12.md`; `v1.0.0-rc.1` tag local; Gate G1–G8 `pending_vm`) |
+| 13 | Kiểm thử VPS thật, Production Gate → v1.0.0 | ○ chờ VPS (kế hoạch `docs/planning/seed/PHASE_13_PROMPTS.md`) |
 
 ## Checklist Phase hiện tại
 
