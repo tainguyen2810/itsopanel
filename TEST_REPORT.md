@@ -2,6 +2,20 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.5 (Hiệu năng 200 account/server) — nhánh `phase-12`
+
+Phạm vi: `PerfSeeder` (chỉ local/testing: 200 account × 3 website × 2 DB, 7 ngày metrics ≈ 2,5 triệu dòng, 10 000 job, 100 000 audit qua trigger hash thật), lệnh `itso:bench` (HTTP kernel nội bộ với token SUPER_ADMIN tạm, 9 danh sách + 8 chi tiết, `alerts-evaluate`, insert metrics; p50/p95/max + số truy vấn; mã thoát ≠ 0 nếu trượt), `docs/perf/phase-12.md` (trước/sau). Điểm nóng đã sửa: chỉ mục `audit_logs (at, id)` cho trigger chuỗi hash (đặc tả + migration cho DB cũ; 200 audit ở 100 000 dòng 3 657 → 5,7 ms); N+1 ở `hosting-accounts`, `jobs`, `databases`, `websites`, `audit-logs`, `users`, `metrics/servers/{id}/accounts` (`Listing::page` thêm `prefetch`); `audit-logs` không còn 500 khi `resource_type` số ít.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Đếm truy vấn | `pest tests/Feature/Phase12/QueryCountTest.php` | **1/1 PASS** (10 trang, limit 5 vs 40, chênh ≤ 3). Đối chứng với mã 12.4 (`git stash`): trượt 6 trang, ví dụ `hosting-accounts` 77 → 528 truy vấn |
+| Bench | `php artisan db:seed --class=PerfSeeder` (31 s) · `php artisan itso:bench --n=30` (DB `itso_perf`) | **Mọi mục tiêu đạt**: danh sách p95 ≤ 61 ms (trước: `hosting-accounts` 703 ms ✗), chi tiết p95 ≤ 36 ms, `alerts-evaluate` 42 ms, insert metrics 200 account × 7 86 ms |
+| DB | `bash scripts/db-verify.sh` | PASS (Phase 3 → 12 = đặc tả, có chỉ mục mới) |
+| Pest toàn bộ | `vendor/bin/pest` (PostgreSQL + Redis thật) | **552/552 PASS** (135 s) |
+| Lint | `pint --test` · `phpstan analyse` | PASS |
+
+**Test bị bỏ qua:** không. Đo qua Caddy + PHP-FPM và tải song song: chờ VM (bài Gate 12.8).
+
 ## 2026-11-23 — Phase 12 / Prompt 12.4 (Hardening: ASVS L2, ma trận quyền, CIS, RLS/helper, systemd) — nhánh `phase-12`
 
 Phạm vi: `docs/security/asvs-l2.md` (V1–V14, bằng chứng từng mục; không còn High/Critical mở). Bốn mục thiếu đã sửa: cookie phiên `Secure` mặc định ở production; middleware `SecurityHeaders` (nosniff, `X-Frame-Options`, `Referrer-Policy`, CSP cho JSON, `Cache-Control: no-store`) + Caddy thêm `X-Frame-Options`, `Permissions-Policy`, COOP; middleware `LimitRequestBody` (JSON ≤ 2 MB, chunk upload ≤ 9 MB → 413 `payload_too_large`, mã lỗi mới trong contracts) + Caddy `request_body max_size`; test ma trận quyền sinh từ route. CIS: `GET /security/cis`, `POST /security/cis:audit` (job `cis.audit` chỉ đọc, `cis_results` giữ 30 lượt, hướng dẫn sửa + `fix_href`), mục `cis_l1` (5 điểm) trong điểm bảo mật — lấy từ `ssh_password_disabled` (15 → 10) vì CIS 5.1.21 tính lại cùng tiêu chí; điểm sau cài vẫn ≥ 80. ADR 0055 có số liệu RLS đo thật; ADR 0056 + unit `itso-agent`/`itso-agent-node`: `systemd-analyze security --offline` 6.1 → **4.9**, kiểm trong `make units-check`.

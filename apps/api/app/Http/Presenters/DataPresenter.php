@@ -25,11 +25,12 @@ final class DataPresenter
     /** @return array<string, mixed> */
     public static function database(Database $d): array
     {
-        $users = DB::table('database_grants')->join('database_users', 'database_users.id', '=', 'database_grants.database_user_id')
-            ->where('database_grants.database_id', $d->id)->whereNull('database_users.deleted_at')->orderBy('database_users.username')
-            ->pluck('database_users.username')->map(fn ($u): string => (string) $u)->all();
+        $users = isset(self::$pre['grants']) ? self::$pre['grants'][$d->id] ?? []
+            : DB::table('database_grants')->join('database_users', 'database_users.id', '=', 'database_grants.database_user_id')
+                ->where('database_grants.database_id', $d->id)->whereNull('database_users.deleted_at')->orderBy('database_users.username')
+                ->pluck('database_users.username')->map(fn ($u): string => (string) $u)->all();
         /** @var Server $s */
-        $s = Server::query()->findOrFail($d->server_id);
+        $s = self::$pre['servers'][$d->server_id] ?? Server::query()->findOrFail($d->server_id);
 
         return ['uuid' => $d->uuid, 'hosting_account' => self::acct($d), 'server' => ['uuid' => $s->uuid, 'name' => $s->name],
             'engine' => $d->engine, 'name' => $d->name, 'size_mb' => (float) ($d->size_mb ?? 0), 'charset' => $d->charset,
@@ -93,11 +94,41 @@ final class DataPresenter
         return '"d-'.$m->getAttribute('spec_version').'-'.$m->getAttribute('updated_at')?->getTimestamp().'"';
     }
 
+    /** @var array{accounts?: array<int, HostingAccount>, servers?: array<int, Server>, grants?: array<int, list<string>>} */
+    private static array $pre = [];
+
+    /**
+     * Nạp trước account, server, user được cấp quyền cho cả trang danh sách (Prompt 12.5, chặn N+1). Trả hàm dọn cache tĩnh
+     * (Listing::page gọi sau khi trình bày xong).
+     *
+     * @param  list<Model>  $models
+     */
+    public static function prefetch(array $models): \Closure
+    {
+        $ids = fn (string $k): array => array_values(array_unique(array_filter(array_map(fn (Model $m): ?int => $m->getAttribute($k), $models)))) ?: [0];
+        self::$pre = ['accounts' => HostingAccount::withTrashed()->whereIn('id', $ids('hosting_account_id'))->get()->keyBy('id')->all()];
+        if ($models !== [] && $models[0] instanceof Database) {
+            self::$pre['servers'] = Server::query()->whereIn('id', $ids('server_id'))->get()->keyBy('id')->all();
+            $grants = [];
+            foreach (DB::table('database_grants')->join('database_users', 'database_users.id', '=', 'database_grants.database_user_id')
+                ->whereIn('database_grants.database_id', $ids('id'))->whereNull('database_users.deleted_at')->orderBy('database_users.username')
+                ->get(['database_grants.database_id', 'database_users.username']) as $r) {
+                $grants[(int) $r->database_id][] = (string) $r->username;
+            }
+            self::$pre['grants'] = $grants;
+        }
+
+        return function (): void {
+            self::$pre = [];
+        };
+    }
+
     /** @return array{uuid: string, username: string} */
     private static function acct(Model $m): array
     {
         /** @var HostingAccount $a */
-        $a = HostingAccount::withTrashed()->findOrFail($m->getAttribute('hosting_account_id'));
+        $a = self::$pre['accounts'][(int) $m->getAttribute('hosting_account_id')]
+            ?? HostingAccount::withTrashed()->findOrFail($m->getAttribute('hosting_account_id'));
 
         return ['uuid' => $a->uuid, 'username' => $a->username];
     }

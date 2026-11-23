@@ -593,7 +593,7 @@ t("security", "audit_logs", [
     "resource_type text", "resource_id bigint", "server_id bigint",
     "job_id bigint", "changes jsonb", "result text [not null, default: 'success']",
     "prev_hash text", "hash text",
-], ["(id, at) [pk]", "(actor_user_id, at)", "(resource_type, resource_id)"],
+], ["(id, at) [pk]", "(at, id)", "(actor_user_id, at)", "(resource_type, resource_id)"],
   "Append-only (trigger), partition theo tháng (extras.sql).")
 t("security", "security_events", ID + [
     "server_id bigint [ref: > servers.id]", "website_id bigint [ref: > websites.id]",

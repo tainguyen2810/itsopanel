@@ -8,6 +8,7 @@ use App\Auth\Access;
 use App\Auth\MfaService;
 use App\Auth\SessionKeys;
 use App\Models\ImpersonationSession;
+use App\Models\MfaCredential;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,26 @@ use Illuminate\Support\Facades\DB;
 /** Biểu diễn User / Me theo contracts/openapi/common.yaml. */
 final class UserPresenter
 {
+    /** @var array<int, int>|null user_id có TOTP của trang đang trình bày (prefetch, chặn N+1). */
+    private ?array $mfaUsers = null;
+
     public function __construct(private readonly MfaService $mfa, private readonly Access $access) {}
+
+    /**
+     * Nạp trước trạng thái MFA cho một trang danh sách; trả closure dọn dẹp (Listing::page gọi sau khi trình bày).
+     *
+     * @param  list<User>  $users
+     */
+    public function prefetch(array $users): \Closure
+    {
+        $ids = array_map(fn (User $u): int => $u->id, $users) ?: [0];
+        $this->mfaUsers = array_flip(array_map('intval', MfaCredential::query()->whereIn('user_id', $ids)->where('type', 'totp')
+            ->distinct()->pluck('user_id')->all()));
+
+        return function (): void {
+            $this->mfaUsers = null;
+        };
+    }
 
     /** @return array<string, mixed> */
     public function user(User $u): array
@@ -27,7 +47,7 @@ final class UserPresenter
             'email' => $u->email,
             'role' => $u->roleKey() ?? ($u->realm === 'admin' ? 'ADMIN' : 'USER'),
             'status' => $u->status,
-            'mfa_enabled' => $this->mfa->enabled($u),
+            'mfa_enabled' => $this->mfaUsers !== null ? isset($this->mfaUsers[$u->id]) : $this->mfa->enabled($u),
             'locale' => in_array($u->locale, ['vi', 'en'], true) ? $u->locale : 'vi',
             'timezone' => $u->timezone,
             'last_login_at' => $u->last_login_at?->toIso8601String(),

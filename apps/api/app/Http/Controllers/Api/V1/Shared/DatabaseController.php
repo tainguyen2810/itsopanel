@@ -33,7 +33,7 @@ final class DatabaseController extends DataController
 
         return response()->json(Listing::page($request, $q, ['created_at' => 'databases.created_at', 'name' => 'databases.name',
             'size_mb' => 'databases.size_mb', 'status' => 'databases.status'], '-created_at',
-            fn (Database $d): array => DataPresenter::database($d)));
+            fn (Database $d): array => DataPresenter::database($d), fn (array $page) => DataPresenter::prefetch($page)));
     }
 
     public function store(Request $request): JsonResponse

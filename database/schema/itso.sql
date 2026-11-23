@@ -1683,6 +1683,8 @@ CREATE UNIQUE INDEX ON "job_steps" ("job_id", "seq");
 
 CREATE INDEX ON "job_logs" ("job_id", "at");
 
+CREATE INDEX ON "audit_logs" ("at", "id");
+
 CREATE INDEX ON "audit_logs" ("actor_user_id", "at");
 
 CREATE INDEX ON "audit_logs" ("resource_type", "resource_id");

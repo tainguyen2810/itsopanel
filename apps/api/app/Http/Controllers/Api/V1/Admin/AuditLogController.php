@@ -40,7 +40,7 @@ final class AuditLogController
         Listing::search($request, $q, ['audit_logs.action']);
 
         return response()->json(Listing::page($request, $q, ['at' => 'audit_logs.at', 'action' => 'audit_logs.action'],
-            '-at', fn (AuditLog $l): array => $this->present($l)));
+            '-at', fn (AuditLog $l): array => $this->present($l), fn (array $page) => $this->prefetch($page)));
     }
 
     public function export(Request $request): StreamedResponse
@@ -107,12 +107,36 @@ final class AuditLogController
         return $q;
     }
 
+    /** @var array{users: array<int, User>, servers: array<int, Server>, jobs: array<int, string>, res: array<string, array<int, string>>}|null */
+    private ?array $pre = null;
+
+    /**
+     * Nạp trước người dùng, server, job, uuid tài nguyên cho cả trang (Prompt 12.5, chặn N+1).
+     *
+     * @param  list<AuditLog>  $logs
+     */
+    private function prefetch(array $logs): void
+    {
+        $ids = fn (string $k): array => array_values(array_unique(array_filter(array_map(fn (AuditLog $l): ?int => $l->{$k}, $logs)))) ?: [0];
+        $res = [];
+        foreach (collect($logs)->filter(fn (AuditLog $l): bool => $l->resource_type !== null && $l->resource_id !== null)->groupBy('resource_type') as $table => $group) {
+            $type = self::TYPES[$table] ?? Str::singular((string) $table);
+            if (isset(JobPresenter::RESOURCE_MODELS[$type]) || $type === 'job') {
+                $res[(string) $table] = DB::table(self::table($type))->whereIn('id', $group->pluck('resource_id')->unique()->values()->all())->pluck('uuid', 'id')->all();
+            }
+        }
+        $this->pre = ['users' => User::query()->whereIn('id', array_merge($ids('actor_user_id'), $ids('impersonator_user_id')))->get()->keyBy('id')->all(),
+            'servers' => Server::query()->whereIn('id', $ids('server_id'))->get()->keyBy('id')->all(),
+            'jobs' => Job::query()->whereIn('id', $ids('job_id'))->pluck('uuid', 'id')->all(), 'res' => $res];
+    }
+
     /** @return array<string, mixed> */
     private function present(AuditLog $l): array
     {
-        $user = fn (?int $id): ?array => ($u = $id !== null ? User::query()->find($id) : null) instanceof User
+        $pre = $this->pre;
+        $user = fn (?int $id): ?array => ($u = $id === null ? null : ($pre !== null ? $pre['users'][$id] ?? null : User::query()->find($id))) instanceof User
             ? ['uuid' => $u->uuid, 'name' => $u->name, 'email' => $u->email] : null;
-        $server = $l->server_id !== null ? Server::query()->find($l->server_id) : null;
+        $server = $l->server_id === null ? null : ($pre !== null ? $pre['servers'][$l->server_id] ?? null : Server::query()->find($l->server_id));
         $changes = $l->changes;
         if (is_array($changes) && array_is_list($changes) && $changes !== []) {
             $changes = ['items' => $changes];
@@ -127,7 +151,7 @@ final class AuditLogController
             'action' => $l->action,
             'resource' => $this->resource($l),
             'server' => $server instanceof Server ? ['uuid' => $server->uuid, 'name' => $server->name] : null,
-            'job_uuid' => $l->job_id !== null ? Job::query()->whereKey($l->job_id)->value('uuid') : null,
+            'job_uuid' => $l->job_id === null ? null : ($pre !== null ? $pre['jobs'][$l->job_id] ?? null : Job::query()->whereKey($l->job_id)->value('uuid')),
             'result' => in_array($l->result, ['success', 'failure', 'denied'], true) ? $l->result : 'failure',
             'changes' => $changes === [] ? (object) [] : $changes,
             'hash' => (string) $l->hash,
@@ -142,11 +166,20 @@ final class AuditLogController
         }
         $type = self::TYPES[$l->resource_type] ?? Str::singular($l->resource_type);
         if (isset(JobPresenter::RESOURCE_MODELS[$type]) || $type === 'job') {
-            $uuid = DB::table($l->resource_type)->where('id', $l->resource_id)->value('uuid');
+            $uuid = $this->pre !== null && isset($this->pre['res'][$l->resource_type]) ? $this->pre['res'][$l->resource_type][$l->resource_id] ?? null
+                : DB::table(self::table($type))->where('id', $l->resource_id)->value('uuid');
 
             return is_string($uuid) ? ['type' => $type, 'uuid' => $uuid] : null;
         }
 
         return ['type' => $type, 'uuid' => PublicId::encode($type, $l->resource_id)];
+    }
+
+    /** Bảng thật của loại tài nguyên (audit cũ/tổng hợp có thể ghi resource_type số ít, không phải tên bảng). */
+    private static function table(string $type): string
+    {
+        $model = JobPresenter::RESOURCE_MODELS[$type] ?? null;
+
+        return $model !== null ? (new $model)->getTable() : 'jobs';
     }
 }

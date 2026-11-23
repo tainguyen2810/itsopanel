@@ -21,9 +21,11 @@ final class Listing
      * @param  Builder<TModel>  $query
      * @param  array<string, string>  $sortable  tên sort công khai → cột
      * @param  callable(TModel): array<string, mixed>  $present
+     * @param  (callable(list<TModel>): mixed)|null  $prefetch  nạp trước dữ liệu liên quan của cả trang (chặn N+1); trả callable thì
+     *                                                          gọi sau khi trình bày xong (xóa cache tĩnh)
      * @return array{data: list<array<string, mixed>>, meta: array{next_cursor: string|null, limit: int}}
      */
-    public static function page(Request $request, Builder $query, array $sortable, string $defaultSort, callable $present): array
+    public static function page(Request $request, Builder $query, array $sortable, string $defaultSort, callable $present, ?callable $prefetch = null): array
     {
         $limit = $request->query('limit', '50');
         if (! is_string($limit) || ! ctype_digit($limit) || (int) $limit < 1 || (int) $limit > 200) {
@@ -52,8 +54,15 @@ final class Listing
             throw ApiProblem::field('cursor', 'cursor không hợp lệ.');
         }
         $data = [];
-        foreach ($page->items() as $item) {
-            $data[] = $present($item);
+        $done = $prefetch !== null ? $prefetch(array_values($page->items())) : null;
+        try {
+            foreach ($page->items() as $item) {
+                $data[] = $present($item);
+            }
+        } finally {
+            if (is_callable($done)) {
+                $done();
+            }
         }
 
         return ['data' => $data, 'meta' => ['next_cursor' => $page->nextCursor()?->encode(), 'limit' => (int) $limit]];

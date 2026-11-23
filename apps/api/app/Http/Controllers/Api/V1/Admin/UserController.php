@@ -51,7 +51,7 @@ final class UserController
         return response()->json(Listing::page($request, $q,
             ['created_at' => 'users.created_at', 'name' => 'users.name', 'email' => 'users.email',
                 'last_login_at' => 'users.last_login_at'],
-            '-created_at', fn (User $u): array => $this->present->user($u)));
+            '-created_at', fn (User $u): array => $this->present->user($u), fn (array $page) => $this->present->prefetch($page)));
     }
 
     public function store(Request $request): JsonResponse

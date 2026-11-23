@@ -1340,6 +1340,7 @@ Table audit_logs {
   hash text
   indexes {
     (id, at) [pk]
+    (at, id)
     (actor_user_id, at)
     (resource_type, resource_id)
   }
