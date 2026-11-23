@@ -74,7 +74,7 @@ final class SystemController
      *
      * @return array{version_to: string, step: string, started_at: string, interrupted: bool, hint: string}|null
      */
-    private static function journal(): ?array
+    public static function journal(): ?array
     {
         $j = self::readJson(rtrim((string) config('itso.update_state_dir'), '/').'/update.journal');
         if (! is_array($j) || ! is_string($j['version_to'] ?? null) || ! in_array($j['step'] ?? null, self::JOURNAL_STEPS, true)

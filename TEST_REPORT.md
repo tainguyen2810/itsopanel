@@ -2,6 +2,19 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.7 (UI nối API thật, sổ tay vận hành) — nhánh `phase-12`
+
+Phạm vi: rà 4 trang mockup 12.0 so với API thật. Import (12.3), CIS (12.4), Cập nhật (`/system/updates` có journal + lịch sử, 12.3) đã gọi đúng endpoint thật; còn thiếu `GET /admin/system/readiness` → hiện thực `Domain/System/ProductionReadiness` (11 kiểm chỉ đọc: MFA quản trị, allowlist Admin, đích backup bất biến, snapshot 24 giờ, restore test 7 ngày, CIS ≥ 80, bản vá bảo mật chờ, journal dở, chứng chỉ < 14 ngày, kênh thông báo, agent kết nối; điểm = pass 2/warn 1/fail 0) + Gate G1–G8 đọc từ bằng chứng đã ghi bằng lệnh mới `php artisan itso:gate-record G<n> <pass|fail|partial|pending_vm>` (chưa ghi = `pending_vm`); `ready` chỉ true khi mọi kiểm và mọi Gate `pass`. Chỉ SUPER_ADMIN (`settings.read`). MSW của 12.0 đã theo contract nên giao diện không đổi. `docs/runbooks/operations-handbook.md`: cài (online/offline), nâng cấp/quay lại/repair, backup/DR, 9 sự cố thường gặp, xoay khóa (7 loại bí mật), thêm/bớt server, import, gỡ cài đặt, lịch kiểm định kỳ, vai trò; trỏ tới runbook Phase 4–11.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Readiness | `pest tests/Feature/Phase12/ReadinessTest.php` | **1/1 PASS**: contract 200; dữ liệu trống → allowlist/backup/kênh/agent fail, CIS warn, Gate `pending_vm`; thêm allowlist + kênh + agent + journal dở + ghi Gate G5 → kiểm đổi theo, G5 `pass` có `verified_at`, điểm tăng; G9 bị từ chối; ADMIN 403, USER 401 |
+| Pest toàn bộ | `vendor/bin/pest` (PostgreSQL + Redis thật) | **554/554 PASS** (145 s) |
+| Web | `vitest run src/demo/__tests__/phase12.test.ts` | 10/10 PASS (MSW theo hành vi API) |
+| Lint | `pint --test` · `phpstan` · `make docs-check` | PASS |
+
+**Test bị bỏ qua:** không. Giao diện chạy với stack thật: e2e `phase12.spec.ts` ở 12.8.
+
 ## 2026-11-23 — Phase 12 / Prompt 12.6 (Offline installer, vòng cập nhật + chaos, chính sách cập nhật) — nhánh `phase-12`
 
 Phạm vi: `scripts/release-offline.sh` + `make release-offline` (bundle `itso-<ver>-offline.tar`: bản phát hành + `.deb` theo `packaging/offline-packages.lock` kiểm sha256 + `Packages` + `offline-manifest.json` ký Ed25519 cùng khóa release; `--update-lock` tính bao đóng phụ thuộc trên Ubuntu 24.04). `install.sh --offline <bundle>` (từ chối mục tar không phải file/thư mục, kiểm chữ ký + sha256 từng file + không có `.deb` ngoài danh sách → repo apt tạm qua `/etc/apt/itso-offline.list` → `itso install --offline` → xóa repo; `--keep-offline-repo` cho Wizard). `itso install --offline`: apt chỉ đọc repo cục bộ (`Dir::Etc::SourceList`, `SourceParts=-`), thiếu repo → dừng trước khi gọi apt; `itso.env` có `ITSO_ACME_DIRECTORY=disabled` → panel trả 409 kèm hướng dẫn tải chứng chỉ lên. `tests/vm/upgrade-loop.sh` (20 vòng update → kiểm → rollback, kill -9 lần lượt ở 6 bước journal, `--reboot <bước>` sysrq b, site account 5 lần/giây phải 0 lỗi HTTP). `docs/security/update-policy.md` (kênh, thời hạn vá, ký, xoay khóa, SBOM, báo lỗi nội bộ).

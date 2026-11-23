@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Admin\ImpersonationController;
 use App\Http\Controllers\Api\V1\Admin\ImportController;
 use App\Http\Controllers\Api\V1\Admin\MonitoringController;
 use App\Http\Controllers\Api\V1\Admin\NotificationChannelController;
+use App\Http\Controllers\Api\V1\Admin\ReadinessController;
 use App\Http\Controllers\Api\V1\Admin\RegistryController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\ServerController;
@@ -115,6 +116,7 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('version', [SystemController::class, 'version']);
                 Route::get('status', [SystemController::class, 'status']);
                 Route::get('updates', [SystemController::class, 'updates'])->middleware('itso.perm:settings.read');
+                Route::get('readiness', [ReadinessController::class, 'show'])->middleware('itso.perm:settings.read');
             });
 
             // Người dùng, vai trò, giả danh (3.3)
