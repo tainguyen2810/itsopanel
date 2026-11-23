@@ -15,6 +15,8 @@
 
 ## Hạ tầng test (người dùng cấp)
 
+> Cập nhật 2026-11-23 07:46Z: người dùng chọn **VMware trên máy Windows** thay cho VPS: VM 1 4 vCPU/6–8 GB/60 GB, VM 2 2 vCPU/3–4 GB/30 GB, VM 3 (tùy chọn, MinIO object lock) 1 vCPU/1–2 GB/40 GB; mạng NAT; snapshot "sạch" cho mỗi VM; không IP public nên ACME thật thay bằng Pebble (đã có); SSH bằng user có sudo không mật khẩu nếu root bị khóa. Bảng dưới là cấu hình VPS ban đầu, vẫn dùng được.
+
 | Máy | Vai trò | Tối thiểu |
 |---|---|---|
 | VPS 1 | Panel + server chính (all-in-one) | 4 vCPU, 8 GB RAM, 80 GB SSD |
@@ -23,7 +25,7 @@
 
 Mức tiết kiệm vẫn chạy được (bài nặng chậm hơn): VPS 1 2 vCPU/4 GB/40 GB, VPS 2 1–2 vCPU/2 GB/20 GB. Đây là cấu hình cho **bộ test**; panel tự nó cần tối thiểu 1 vCPU/1 GB/10 GB, khuyến nghị 2 vCPU/2 GB/20 GB (preflight installer).
 
-Chung: Ubuntu 24.04 LTS sạch, ảo hóa KVM, kernel generic (có quota v2, cgroup v2, nftables), IPv4 public, root qua SSH key, cổng 22/80/443. Chỉ dùng để test, không chứa dữ liệu thật; có snapshot càng tốt. Tùy chọn: subdomain test trỏ về VPS 1 (ACME thật), SMTP test (M4 Phase 11).
+Chung: Ubuntu 24.04 LTS sạch, ảo hóa đầy đủ (KVM hoặc VMware; không dùng container OpenVZ/LXC), kernel generic (có quota v2, cgroup v2, nftables), IPv4 public, root qua SSH key, cổng 22/80/443. Chỉ dùng để test, không chứa dữ liệu thật; có snapshot càng tốt. Tùy chọn: subdomain test trỏ về VPS 1 (ACME thật), SMTP test (M4 Phase 11).
 
 ## Cách điều khiển
 
@@ -54,7 +56,7 @@ Chung: Ubuntu 24.04 LTS sạch, ảo hóa KVM, kernel generic (có quota v2, cgr
 ## Prompt 13.0 — Kết nối và kiểm điều kiện
 
 - Mở Remote Control trên máy người dùng; `ssh` thử từng VPS; ghi `known_hosts` (đối chiếu fingerprint với người dùng nếu nhà cung cấp hiển thị).
-- Script mới `tests/vm/preflight-remote.sh` (chỉ đọc): phiên bản Ubuntu, kernel, `systemd-detect-virt` = `kvm`, cgroup v2, module quota, nftables, RAM/disk, giờ hệ thống, DNS ra ngoài. Lưu kết quả vào `docs/reports/phase-13.md` (che IP).
+- Script mới `tests/vm/preflight-remote.sh` (chỉ đọc): phiên bản Ubuntu, kernel, `systemd-detect-virt` là `kvm` hoặc `vmware` (không phải container), cgroup v2, module quota, nftables, RAM/disk, giờ hệ thống, DNS ra ngoài. Lưu kết quả vào `docs/reports/phase-13.md` (che IP).
 - Chụp snapshot "sạch" nếu nhà cung cấp hỗ trợ (người dùng bấm hoặc cấp API).
 
 ## Prompt 13.1 — Cài sạch + Phase 4
