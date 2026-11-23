@@ -5,8 +5,8 @@
 ## Hiện tại
 
 - **Phase:** 12 — Production Hardening & Production Gate (kế hoạch `docs/planning/seed/PHASE_12_PROMPTS.md`, nhánh `phase-12`; người dùng yêu cầu 2026-11-23: "merge và làm tiếp parse 12"). Phase 11 ✓ APPROVED 2026-11-23 (merge `359ae17`, tag local `v0.5.0-beta`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** 12.2
-- **Task đang làm:** 12.2
+- **Prompt hiện tại:** 12.3
+- **Task đang làm:** 12.3
 - **Commit cuối:** xem `git log -1` trên `main`
 - **Bước tiếp theo:** làm hàng loạt 12.0 → 12.8, tự merge, DỪNG cuối Phase 12; chạy `tests/vm/phase4–11.sh` + bài Gate khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
@@ -35,8 +35,8 @@ Phase 12: ✱ đang làm (nhánh `phase-12`) — prompt chi tiết: `docs/planni
 
 - ✓ 12.0 Mockup Import, CIS, Cập nhật, Sẵn sàng production trên bản demo (`docs/screenshots/phase-12/`, 10 cảnh × 4 = 40 ảnh)
 - ✓ 12.1 ADR 0053–0060 (D-108…D-115), contracts, migration Phase 12 (+ sửa CHECK regex Phase 10/11)
-- ✱ 12.2 Agent: `import.scan`, `import.copy`, `cis.audit`, update journal + repair
-- ○ 12.3 Panel import: API, job `import.run`, cutover + rollback
+- ✓ 12.2 Agent: `import.scan`, `import.copy`, `import.cutover/rollback`, `cis.audit`, update journal + `itso repair` (crash từng bước)
+- ✱ 12.3 Panel import: API, job `import.run`, cutover + rollback
 - ○ 12.4 Hardening: ASVS L2, ma trận quyền tự động, CIS API, ADR RLS/helper, siết systemd
 - ○ 12.5 Hiệu năng 200 account/server (`itso:bench`, `docs/perf/phase-12.md`)
 - ○ 12.6 Offline installer, update/rollback 20 vòng + chaos, chính sách cập nhật

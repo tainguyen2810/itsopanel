@@ -2,6 +2,24 @@
 
 > Cập nhật cuối mỗi prompt và cuối mỗi Phase. Ghi lệnh chạy thật và kết quả thật.
 
+## 2026-11-23 — Phase 12 / Prompt 12.2 (Agent: import, CIS, journal cập nhật) — nhánh `phase-12`
+
+Phạm vi: op `import.scan` (aaPanel, HestiaCP, nginx thuần; parser nginx tối thiểu ≤ 256 KB, không theo include, gộp khối 80/443, cảnh báo `php_missing`/`ssl_expired`/`symlink_outside`/`unsupported`, bỏ vhost `itso-*` và docroot trong home account ITSO), `import.copy` (`fsx.SourceTar`: openat O_NOFOLLOW từng thành phần; bỏ symlink, hardlink, socket, FIFO, thiết bị; helper uid account giải bằng `restore_tar`; `max_bytes` → `quota_exceeded`, không để lại đích dở), `import.cutover`/`import.rollback` (đổi tên `.itso-disabled` hoặc chuyển `sites-enabled/*` sang `/etc/nginx/itso-disabled/<import>/`, idempotent, `nginx -t`/reload lỗi → hoàn tác; HestiaCP kéo theo `.ssl.conf`), `cis.audit` (36 mục CIS Ubuntu 24.04 L1, chỉ đọc /proc, /sys, cấu hình, quyền/chủ; lệnh chỉ `dpkg-query`, `apt-get -s`; không đọc `/etc/shadow`). Cây aaPanel giả được seed trong `--sandbox`. Journal cập nhật `/var/lib/itso/update.journal` + lịch sử `update-history.jsonl`; `itso update` ghi 6 bước, migrate bằng artisan của bản mới trước khi đổi symlink; `itso repair --fix` dọn (trước `migrated`) hoặc hoàn tất/quay lại (từ `migrated`); `itso doctor` báo journal dở.
+
+Contracts: `ImportVhostPath` nới cho đúng thực tế (HestiaCP `conf.d/domains/`, `sites-enabled/*` không bắt buộc `.conf`, tên không bắt đầu bằng dấu chấm); CHECK `import_items_vhost_chk` và migration Phase 12 sinh lại theo; +4 vector độc.
+
+| Bộ test | Lệnh | Kết quả |
+|---|---|---|
+| Contracts | `make contracts` · `make contracts-check` · `make codegen-check` | PASS (362 vector) |
+| DB | `bash scripts/db-verify.sh` | PASS (Phase 3 → 12 = đặc tả) |
+| Go agent | `go test ./...` | PASS toàn bộ (mới: `TestImportScanAaPanel`, `TestImportScanHestiaAndNginx`, `TestImportScanRejectsUnsafeVhosts`, `TestImportCopyUnderAccountUID`, `TestImportCutoverRollback`, `TestCisAudit`, vector độc `import_src`/`import_vhost`) |
+| Crash từng bước | `go test ./internal/install -run 'Crash\|Unhealthy\|HistoryAndOrder'` | PASS: crash sau 6 bước × repair --fix; hoàn tất lỗi sức khỏe → quay về; journal hỏng chặn update |
+| Fuzz | `FuzzNginxImportParser` 30 s · `FuzzImportPaths` 15 s | PASS (corpus giữ ca `..000` để hồi quy); thêm vào `make test-fuzz` |
+| Lint agent | `make lint-agent` | PASS |
+| Playwright demo (chạy lại 2 ca lỗi của 12.0) | `playwright test e2e/demo-audit.spec.ts e2e/demo-smoke.spec.ts -g imports` | **4/4 PASS**; lượt toàn bộ 12.0: 756/758, 2 lỗi đó đã sửa |
+
+**Test bị bỏ qua:** không. Chạy thật trên VM (aaPanel/HestiaCP cài thật, kill -9 thật): chờ Gate 12.8.
+
 ## 2026-11-23 — Phase 12 / Prompt 12.1 (ADR, contracts agent-ops, migration) — nhánh `phase-12`
 
 Phạm vi: ADR 0053–0060 (D-108…D-115 Accepted; D-115 theo lựa chọn `v1.0.0-rc.1` của người dùng). Agent-ops có schema: `import.scan` (nguồn, `max_sites` ≤ 500; trả site/alias/docroot/vhost/PHP/SSL/DB/cron/cảnh báo, không nhận gốc tự do), `import.copy` (src phải dưới gốc web của nguồn, dst `RelPath` trong home, `max_bytes`), `import.cutover`/`import.rollback` (chỉ file vhost của nguồn `.conf`), `cis.audit` (profile cố định); defs `ImportSource`, `ImportSrcPath`, `ImportVhostPath`; 14 vector độc mới (ngoài gốc web, traversal, file nginx chính, vhost của ITSO). DBML + migration Phase 12: `imports` (một lượt đang quét/chạy mỗi server bằng unique index một phần), `import_items` (vhost nguồn theo regex, username hợp lệ, unique domain trong lượt), `cis_results`.

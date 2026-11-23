@@ -57,8 +57,10 @@ DEFS = {
     "ImportSrcPath": {**s(maxLength=4096, pattern="^/(www/wwwroot|home|var/www|srv)/[^\\x00-\\x1f]+$"),
                       "not": {"pattern": "(^|/)\\.{1,2}(/|$)|//"},
                       "description": "Docroot nguồn: phải nằm dưới gốc web của nguồn (agent kiểm lại sau khi resolve)."},
-    "ImportVhostPath": {**s(maxLength=512, pattern="^/(www/server/panel/vhost/nginx|etc/nginx/(sites-enabled|conf\\.d))/[A-Za-z0-9._-]{1,200}\\.conf$"),
-                        "description": "File vhost của panel nguồn (cutover đổi tên → .itso-disabled)."},
+    "ImportVhostPath": {**s(maxLength=512, pattern="^/(www/server/panel/vhost/nginx/[A-Za-z0-9_-][A-Za-z0-9._-]{0,199}\\.conf|etc/nginx/conf\\.d/(domains/)?[A-Za-z0-9_-][A-Za-z0-9._-]{0,199}\\.conf|etc/nginx/sites-enabled/[A-Za-z0-9_-][A-Za-z0-9._-]{0,199})$"),
+                        "description": "File vhost của panel nguồn: aaPanel vhost/nginx/*.conf, HestiaCP conf.d/domains/*.conf, nginx "
+                                       "conf.d/*.conf hoặc sites-enabled/* (tên không bắt đầu bằng dấu chấm). Cutover đổi tên "
+                                       "→ .itso-disabled; mục sites-enabled được chuyển sang /etc/nginx/itso-disabled/<import>/."},
     "ServiceName": enum("nginx", "php8.1-fpm", "php8.2-fpm", "php8.3-fpm", "php8.4-fpm", "mariadb", "postgresql",
                         "redis-server", "fail2ban", "cron", "ssh", "itso-gateway"),
     "Sha256": s(pattern="^[0-9a-f]{64}$"),

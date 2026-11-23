@@ -228,7 +228,7 @@ type ImportSource string
 // ImportSrcPath — Docroot nguồn: phải nằm dưới gốc web của nguồn (agent kiểm lại sau khi resolve).
 type ImportSrcPath string
 
-// ImportVhostPath — File vhost của panel nguồn (cutover đổi tên → .itso-disabled).
+// ImportVhostPath — File vhost của panel nguồn: aaPanel vhost/nginx/*.conf, HestiaCP conf.d/domains/*.conf, nginx conf.d/*.conf hoặc sites-enabled/* (tên không bắt đầu bằng dấu chấm). Cutover đổi tên → .itso-disabled; mục sites-enabled được chuyển sang /etc/nginx/itso-disabled/<import>/.
 type ImportVhostPath string
 
 // ServiceName — kiểu ServiceName trong contracts/agent-ops. Giá trị: "nginx", "php8.1-fpm", "php8.2-fpm", "php8.3-fpm", "php8.4-fpm", "mariadb", "postgresql", "redis-server", "fail2ban", "cron", "ssh", "itso-gateway".

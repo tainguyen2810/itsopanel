@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 358,
+  "total": 362,
   "categories": {
     "domain": {
       "schema": "agent-ops/defs.schema.json#/$defs/Domain",
@@ -2569,6 +2569,30 @@
           "expect": "reject",
           "layer": "schema",
           "note": "Traversal"
+        },
+        {
+          "input": "/etc/nginx/sites-enabled/wiki",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "sites-enabled không đuôi .conf"
+        },
+        {
+          "input": "/etc/nginx/conf.d/domains/hr.itso.vn.conf",
+          "expect": "accept",
+          "layer": "schema",
+          "note": "vhost HestiaCP"
+        },
+        {
+          "input": "/etc/nginx/sites-enabled/..",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Tên bắt đầu bằng dấu chấm"
+        },
+        {
+          "input": "/etc/nginx/conf.d/domains/x/y.conf",
+          "expect": "reject",
+          "layer": "schema",
+          "note": "Thư mục con sâu hơn"
         },
         {
           "input": "/etc/nginx/sites-enabled/itso-anphat.conf",

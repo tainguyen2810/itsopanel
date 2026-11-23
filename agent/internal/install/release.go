@@ -328,7 +328,9 @@ func (e *Env) artisan(ctx context.Context, args ...string) (platform.Result, err
 	return e.run(ctx, platform.Cmd{Bin: "frankenphp", Args: append([]string{"php-cli", CurrentLink + "/api/artisan"}, args...), As: cred})
 }
 
-// Update cập nhật lên bản trong dir (10 §7). Lỗi sau khi đổi symlink → tự rollback.
+// Update cập nhật lên bản trong dir (10 §7, ADR 0059). Mỗi bước xong ghi journal (downloaded → verified →
+// extracted → migrated → switched → restarted) để `itso repair --fix` tiếp tục hoặc hoàn tác sau sự cố. Migration
+// chạy từ bản mới trước khi đổi symlink (chỉ mở rộng nên bản cũ vẫn chạy được). Lỗi → tự rollback.
 func (e *Env) Update(ctx context.Context, dir string) error {
 	var st State
 	if _, err := e.readJSON(StateFile, &st); err != nil {
@@ -338,6 +340,13 @@ func (e *Env) Update(ctx context.Context, dir string) error {
 	if cur == "" {
 		return errors.New("chưa cài ITSO Panel (chạy itso install)")
 	}
+	if j, err := e.ReadJournal(); err != nil || j != nil {
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("lượt cập nhật %s → %s còn dở ở bước %s: chạy itso repair --fix trước", j.VersionFrom, j.VersionTo, j.Step)
+	}
+	j := &Journal{VersionFrom: cur, StartedAt: e.now().UTC()}
 	r, err := e.loadRelease(dir)
 	if err != nil {
 		return err
@@ -349,9 +358,13 @@ func (e *Env) Update(ctx context.Context, dir string) error {
 	if r.Manifest.MinFromVersion != "" && CompareVersions(cur, r.Manifest.MinFromVersion) < 0 {
 		return fmt.Errorf("bản %s cần cập nhật từ ≥ %s (đang %s)", nv, r.Manifest.MinFromVersion, cur)
 	}
+	j.VersionTo, j.BreakingDB = nv, r.Manifest.BreakingDB
 	e.printf("Cập nhật %s → %s\n", cur, nv)
 	if e.Role() == RoleNode {
 		return e.updateNode(ctx, &st, r, cur, nv)
+	}
+	if err := e.journalStep(j, StepDownloaded); err != nil {
+		return err
 	}
 	// Sao lưu DB panel + /etc/itso trước khi đổi gì.
 	bdir := BackupDir + "/pre-update"
@@ -364,12 +377,19 @@ func (e *Env) Update(ctx context.Context, dir string) error {
 		return err
 	}
 	if _, err := e.run(ctx, platform.Cmd{Bin: "pg_dump", Args: []string{"--cluster", "16/itso", "-Fc", "-f", dump, "itso"}, As: pg}); err != nil {
-		return fmt.Errorf("sao lưu DB trước cập nhật: %w", err)
+		return e.abortEarly(j, fmt.Errorf("sao lưu DB trước cập nhật: %w", err))
 	}
 	if err := e.copyTree(EtcDir, bdir+"/"+cur+"-etc"); err != nil {
+		return e.abortEarly(j, err)
+	}
+	if err := e.journalStep(j, StepVerified); err != nil {
 		return err
 	}
-	if _, err := e.extract(r); err != nil {
+	dest, err := e.extract(r)
+	if err != nil {
+		return e.abortEarly(j, err)
+	}
+	if err := e.journalStep(j, StepExtracted); err != nil {
 		return err
 	}
 	if _, err := e.artisan(ctx, "down", "--retry=15"); err != nil {
@@ -383,7 +403,19 @@ func (e *Env) Update(ctx context.Context, dir string) error {
 		_ = e.installUnits(ctx)
 		_, _ = e.cmd(ctx, "systemctl", "restart", "itso.target")
 		_, _ = e.artisan(ctx, "up")
+		_ = e.appendHistory(HistoryEntry{Action: "update", VersionFrom: cur, VersionTo: nv, Result: "rolled_back",
+			StartedAt: j.StartedAt, By: "itso update", Note: strp(cause.Error())})
+		_ = e.clearJournal()
 		return fmt.Errorf("cập nhật thất bại, đã rollback về %s: %w", cur, cause)
+	}
+	if err := e.linkEnvAt(dest); err != nil {
+		return fail(err)
+	}
+	if _, err := e.artisanAt(ctx, dest, "migrate", "--force"); err != nil {
+		return fail(err)
+	}
+	if err := e.journalStep(j, StepMigrated); err != nil {
+		return err
 	}
 	if err := e.activate(nv); err != nil {
 		return fail(err)
@@ -391,14 +423,17 @@ func (e *Env) Update(ctx context.Context, dir string) error {
 	if err := e.linkEnv(); err != nil {
 		return fail(err)
 	}
-	if _, err := e.artisan(ctx, "migrate", "--force"); err != nil {
-		return fail(err)
+	if err := e.journalStep(j, StepSwitched); err != nil {
+		return err
 	}
 	if err := e.installUnits(ctx); err != nil {
 		return fail(err)
 	}
 	if _, err := e.cmd(ctx, "systemctl", "restart", "itso.target"); err != nil {
 		return fail(err)
+	}
+	if err := e.journalStep(j, StepRestarted); err != nil {
+		return err
 	}
 	if err := e.healthy(ctx); err != nil {
 		return fail(err)
@@ -410,9 +445,32 @@ func (e *Env) Update(ctx context.Context, dir string) error {
 	if err := e.saveState(&st); err != nil {
 		return err
 	}
+	if err := e.appendHistory(HistoryEntry{Action: "update", VersionFrom: cur, VersionTo: nv, Result: "succeeded", StartedAt: j.StartedAt, By: "itso update"}); err != nil {
+		return err
+	}
+	if err := e.clearJournal(); err != nil {
+		return err
+	}
 	e.prune(&st)
 	e.printf("Đã cập nhật lên %s (bản trước %s giữ để rollback)\n", nv, cur)
 	return nil
+}
+
+// abortEarly: lỗi trước khi đụng tới bản đang chạy → bỏ journal, ghi lịch sử failed.
+func (e *Env) abortEarly(j *Journal, cause error) error {
+	_ = e.appendHistory(HistoryEntry{Action: "update", VersionFrom: j.VersionFrom, VersionTo: j.VersionTo, Result: "failed",
+		StartedAt: j.StartedAt, By: "itso update", Note: strp(cause.Error())})
+	_ = e.clearJournal()
+	return cause
+}
+
+// artisanAt chạy artisan của một bản đã giải nén (chưa trỏ current) dưới user itso.
+func (e *Env) artisanAt(ctx context.Context, dir string, args ...string) (platform.Result, error) {
+	cred, err := e.as("itso")
+	if err != nil {
+		return platform.Result{}, err
+	}
+	return e.run(ctx, platform.Cmd{Bin: "frankenphp", Args: append([]string{"php-cli", dir + "/api/artisan"}, args...), As: cred})
 }
 
 // Rollback trỏ current về bản trước (state.previous) và khởi động lại.
@@ -439,6 +497,8 @@ func (e *Env) Rollback(ctx context.Context) error {
 	if err := e.saveState(&st); err != nil {
 		return err
 	}
+	now := e.now().UTC()
+	_ = e.appendHistory(HistoryEntry{Action: "rollback", VersionFrom: cur, VersionTo: prev, Result: "succeeded", StartedAt: now, By: "itso rollback"})
 	e.printf("Đã rollback %s → %s. Migration chỉ mở rộng (expand-only) nên DB tương thích; nếu bản mới có breaking_db, khôi phục dump trong %s/pre-update.\n", cur, prev, BackupDir)
 	return nil
 }

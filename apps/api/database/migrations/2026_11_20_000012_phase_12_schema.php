@@ -135,7 +135,7 @@ ALTER TABLE import_items ADD CONSTRAINT import_items_username_chk
   CHECK (target_username IS NULL OR target_username ~ '^[a-z][a-z0-9]{2,15}$');
 
 ALTER TABLE import_items ADD CONSTRAINT import_items_vhost_chk
-  CHECK (vhost_path ~ '^/(www/server/panel/vhost/nginx|etc/nginx/(sites-enabled|conf\.d))/[A-Za-z0-9._-]{1,200}\.conf$');
+  CHECK (vhost_path ~ '^/(www/server/panel/vhost/nginx/[A-Za-z0-9_-][A-Za-z0-9._-]{0,199}\.conf|etc/nginx/conf\.d/(domains/)?[A-Za-z0-9_-][A-Za-z0-9._-]{0,199}\.conf|etc/nginx/sites-enabled/[A-Za-z0-9_-][A-Za-z0-9._-]{0,199})$');
 
 ALTER TABLE cis_results ADD CONSTRAINT cis_results_score_chk
   CHECK (score BETWEEN 0 AND 100 AND passed >= 0 AND failed >= 0 AND not_applicable >= 0);

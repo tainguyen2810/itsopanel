@@ -112,6 +112,8 @@ func (e *Env) Doctor(ctx context.Context) []Check {
 	} else {
 		add("release", Pass, "%s", v)
 	}
+	jc, _ := e.journalCheck()
+	cs = append(cs, jc)
 	node := e.Role() == RoleNode
 	units, secrets := panelUnits, []string{AgentKey, EnvFile, TLSKey}
 	if node {
@@ -249,6 +251,16 @@ func (e *Env) Repair(ctx context.Context, fix bool) ([]Check, error) {
 	if e.CurrentVersion() == "" {
 		return nil, errors.New("chưa cài")
 	}
+	// Journal cập nhật dở (ADR 0059) xử lý trước: kiểm checksum/unit sau khi đã chọn bản.
+	jc, j := e.journalCheck()
+	if j != nil && fix {
+		c, err := e.resumeUpdate(ctx, j)
+		if err != nil {
+			return nil, err
+		}
+		jc = c
+	}
+	cs = append(cs, jc)
 	bad := 0
 	for _, l := range strings.Split(e.readFile(CurrentLink+"/checksums.txt"), "\n") {
 		f := strings.Fields(l)

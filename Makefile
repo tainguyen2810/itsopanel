@@ -104,6 +104,8 @@ test-fuzz: ## Fuzz parser envelope + validator của agent (FUZZTIME=30s cho env
 	@cd agent && go test -run='^$$' -fuzz=FuzzUsername -fuzztime=10s ./internal/validate
 	@cd agent && go test -run='^$$' -fuzz=FuzzHostname -fuzztime=10s ./internal/validate
 	@cd agent && go test -run='^$$' -fuzz=FuzzRenderVhost -fuzztime=10s ./internal/ops
+	@cd agent && go test -run='^$$' -fuzz=FuzzNginxImportParser -fuzztime=10s ./internal/ops
+	@cd agent && go test -run='^$$' -fuzz=FuzzImportPaths -fuzztime=10s ./internal/ops
 	@cd agent && go test -run='^$$' -fuzz=FuzzRenderPool -fuzztime=10s ./internal/ops
 	@cd agent && go test -run='^$$' -fuzz=FuzzCronToOnCalendar -fuzztime=10s ./internal/ops
 	@cd agent && go test -run='^$$' -fuzz=FuzzFirewallRule -fuzztime=10s ./internal/ops

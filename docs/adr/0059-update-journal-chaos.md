@@ -6,6 +6,8 @@
 
 ## Quyết định
 
+> Hiện thực 12.2: `internal/install/journal.go`. Migration chạy bằng artisan của **bản mới** trước khi đổi symlink (đúng thứ tự `migrated → switched`); `itso update` từ chối chạy khi còn journal; `itso doctor` và `itso repair` (không `--fix`) báo FAIL kèm bước; bản có `breaking_db` không tự hoàn tất.
+
 1. `itso update` ghi **journal** `/var/lib/itso/update.journal` (JSON, fsync sau mỗi bước, ghi tạm rồi rename): `version_from`, `version_to`, `step` ∈ `downloaded → verified → extracted → migrated → switched → restarted`, `started_at`.
 2. Khởi động sau sự cố (kill -9, mất điện): `itso doctor` báo journal dở; `itso repair --fix` quyết định theo bước: trước `migrated` → xóa bản giải nén dở, giữ bản cũ; `migrated`/`switched` → hoàn tất (migration chỉ thêm — expand/contract) hoặc quay lại nếu health check lỗi; `restarted` → chỉ kiểm sức khỏe. Xóa journal khi xong; ghi lịch sử vào `/var/lib/itso/update-history.jsonl` (panel đọc qua `/system/updates`).
 3. Manifest có `breaking_db`; khi true phải backup panel trước, rollback qua bản backup.

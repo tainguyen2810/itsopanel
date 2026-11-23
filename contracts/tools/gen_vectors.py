@@ -472,6 +472,10 @@ V = {
         ("/etc/nginx/sites-enabled/wiki.conf", A, "schema", "vhost nginx"),
         ("/etc/nginx/nginx.conf", R, "schema", "File nginx chính"), ("/etc/passwd", R, "schema", "Ngoài thư mục vhost"),
         ("/etc/nginx/sites-enabled/../nginx.conf", R, "schema", "Traversal"),
+        ("/etc/nginx/sites-enabled/wiki", A, "schema", "sites-enabled không đuôi .conf"),
+        ("/etc/nginx/conf.d/domains/hr.itso.vn.conf", A, "schema", "vhost HestiaCP"),
+        ("/etc/nginx/sites-enabled/..", R, "schema", "Tên bắt đầu bằng dấu chấm"),
+        ("/etc/nginx/conf.d/domains/x/y.conf", R, "schema", "Thư mục con sâu hơn"),
         ("/etc/nginx/sites-enabled/itso-anphat.conf", R, "semantic", "vhost do ITSO quản lý: agent từ chối"),
     ]),
 }

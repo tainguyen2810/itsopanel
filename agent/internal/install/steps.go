@@ -401,8 +401,11 @@ func stepMigrate(ctx context.Context, e *Env, _ Options, _ *Release) error {
 }
 
 // linkEnv tạo symlink api/.env → /etc/itso/itso.env (tuyệt đối, trong cùng hệ thống file đích).
-func (e *Env) linkEnv() error {
-	rp, err := e.FS.Path(CurrentLink + "/api/.env")
+func (e *Env) linkEnv() error { return e.linkEnvAt(CurrentLink) }
+
+// linkEnvAt trỏ <dir>/api/.env tới /etc/itso/panel.env.
+func (e *Env) linkEnvAt(dir string) error {
+	rp, err := e.FS.Path(dir + "/api/.env")
 	if err != nil {
 		return err
 	}
