@@ -4,11 +4,11 @@
 
 ## Hiện tại
 
-- **Phase:** 11 — Monitoring, Alerts, Notifications → `v0.5.0-beta` ✓ hoàn tất phần không cần VM, **chờ duyệt** (báo cáo `docs/reports/phase-11.md`, release notes `docs/releases/v0.5.0-beta.md`; merge `--no-ff` vào `main`, tag local `v0.5.0-beta`). Phase 10 ✓ APPROVED 2026-11-22 (merge `ea528c9`; kết quả VM vẫn chờ chạy)
-- **Prompt hiện tại:** — (11.0–11.8 ✓)
-- **Task đang làm:** không; DỪNG trước Phase 12, chờ người dùng duyệt Phase 11
+- **Phase:** 12 — Production Hardening & Production Gate (kế hoạch `docs/planning/seed/PHASE_12_PROMPTS.md`, nhánh `phase-12`; người dùng yêu cầu 2026-11-23: "merge và làm tiếp parse 12"). Phase 11 ✓ APPROVED 2026-11-23 (merge `359ae17`, tag local `v0.5.0-beta`; kết quả VM vẫn chờ chạy)
+- **Prompt hiện tại:** 12.0
+- **Task đang làm:** 12.0
 - **Commit cuối:** xem `git log -1` trên `main`
-- **Bước tiếp theo:** người dùng duyệt Phase 11 / `v0.5.0-beta`, rồi chọn bắt đầu Phase 12; chạy `tests/vm/phase4–11.sh` khi có VM
+- **Bước tiếp theo:** làm hàng loạt 12.0 → 12.8, tự merge, DỪNG cuối Phase 12; chạy `tests/vm/phase4–11.sh` + bài Gate khi có VM
 - **Blocker:** Không có. Lưu ý: container cloud không có KVM/systemd nên test VM chạy bằng bộ script `tests/vm/` khi có VM
 
 ## Tổng quan Phase (phạm vi nội bộ, chốt 2026-11-20)
@@ -26,12 +26,24 @@
 | 8 | Backup & Restore → v0.1.0-alpha | ✓ APPROVED (báo cáo `docs/reports/phase-8.md`; `v0.1.0-alpha`; tiêu chí cần VM: chờ VM) |
 | 9 | Multi-server & chuyển tài khoản | ✓ APPROVED (báo cáo `docs/reports/phase-9.md`; tiêu chí cần VM: chờ VM) |
 | 10 | Docker Manager, WordPress Toolkit, Software | ✓ APPROVED (báo cáo `docs/reports/phase-10.md`; tiêu chí cần VM: chờ VM) |
-| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✓ chờ duyệt (báo cáo `docs/reports/phase-11.md`; `v0.5.0-beta` tag local; tiêu chí cần VM: chờ VM) |
-| 12 | Production Hardening & Production Gate → v1.0.0 | ○ |
+| 11 | Monitoring, Alerts, Notifications → v0.5.0-beta | ✓ APPROVED (báo cáo `docs/reports/phase-11.md`; `v0.5.0-beta` tag local; tiêu chí cần VM: chờ VM) |
+| 12 | Production Hardening & Production Gate → v1.0.0 | ✱ đang làm (nhánh `phase-12`) |
 
 ## Checklist Phase hiện tại
 
-Phase 11 (bắt đầu 2026-11-22, nhánh `phase-11`) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
+Phase 12: ✱ đang làm (nhánh `phase-12`) — prompt chi tiết: `docs/planning/seed/PHASE_12_PROMPTS.md`
+
+- ✱ 12.0 Mockup Import, CIS, Cập nhật, Sẵn sàng production trên bản demo (`docs/screenshots/phase-12/`)
+- ○ 12.1 ADR 0053–0060 (D-108…D-115), contracts, migration Phase 12
+- ○ 12.2 Agent: `import.scan`, `import.copy`, `cis.audit`, update journal + repair
+- ○ 12.3 Panel import: API, job `import.run`, cutover + rollback
+- ○ 12.4 Hardening: ASVS L2, ma trận quyền tự động, CIS API, ADR RLS/helper, siết systemd
+- ○ 12.5 Hiệu năng 200 account/server (`itso:bench`, `docs/perf/phase-12.md`)
+- ○ 12.6 Offline installer, update/rollback 20 vòng + chaos, chính sách cập nhật
+- ○ 12.7 UI nối API thật, sổ tay vận hành
+- ○ 12.8 Gate G1–G8, e2e Phase 12, `make check`, `v1.0.0-rc.1`, merge
+
+Phase 11: ✓ APPROVED 2026-11-23 (merge `359ae17`, tag `v0.5.0-beta`) — prompt chi tiết: `docs/planning/seed/PHASE_11_PROMPTS.md`
 
 - ✓ 11.0 Mockup Monitoring, Uptime, Alerts, kênh + tùy chọn thông báo trên bản demo (`docs/screenshots/phase-11/`, 19 cảnh × 4 = 76 ảnh)
 - ✓ 11.1 ADR 0046–0052 (D-101…D-107), contracts, migration Phase 11
